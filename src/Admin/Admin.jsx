@@ -25,7 +25,7 @@ export default function Admin() {
                 if (data.success) setInventoryCount(data.count);
                 else setError('Failed to fetch count: ' + (data.message || 'Unknown error'));
             } catch (e) {
-                setError('Error fetching inventory count: ' + e.message);
+                setError('Something went wrong: ' + e.message);
             } finally {
                 setLoading(false);
             }
