@@ -302,7 +302,6 @@ export default function AddProduct() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-start justify-center p-4 font-sans">
-      <Toaster position="top-center" />
 
       <div className="bg-white p-6 shadow-sm border border-gray-200 w-full max-w-6xl mx-4 my-8">
         <div className="flex items-center mb-6">
@@ -596,7 +595,6 @@ export default function AddProduct() {
                   placeholder="e.g. 20"
                   min="0"
                   max="100"
-                  readOnly
                 />
               </div>
 

@@ -10,6 +10,7 @@ export default function Users() {
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [usersPerPage] = useState(10);
+  const [searching, setSearching] = useState(false);
 
   const navigate = useNavigate();
 
@@ -75,23 +76,51 @@ export default function Users() {
     }
   };
 
-  const handleSearch = (e) => {
+  const handleSearch = async (e) => {
     e.preventDefault();
-    // Implement search functionality if your API supports it
-    // For now, we'll just filter the existing users client-side
-    // You should replace this with an actual API search call
-    const filtered = users.filter(user =>
-      user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-    setUsers(filtered);
+    if (!searchTerm.trim()) {
+      // If search is empty, restore full user list and count
+      setSearching(false);
+      fetchUsers();
+      fetchTotalUsers();
+      return;
+    }
+    try {
+      setLoading(true);
+      setSearching(true);
+      const response = await fetch(
+        `${import.meta.env.VITE_SERVER}/admin/users/search?q=${encodeURIComponent(searchTerm)}`,
+        {
+          credentials: 'include',
+        }
+      );
+
+      if (response.status === 401) {
+        navigate('/login');
+        return;
+      }
+
+      if (!response.ok) {
+        throw new Error('Failed to search users');
+      }
+
+      const data = await response.json();
+      setUsers(data.users || []);
+      setTotalUsers(data.users?.length || 0);
+      setCurrentPage(1); // Optionally reset pagination for search results
+    } catch (error) {
+      console.error('Error searching users:', error);
+      toast.error(error.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Pagination logic
   const indexOfLastUser = currentPage * usersPerPage;
   const indexOfFirstUser = indexOfLastUser - usersPerPage;
-  const currentUsers = users.slice(indexOfFirstUser, indexOfLastUser);
-  const totalPages = Math.ceil(totalUsers / usersPerPage);
+  const currentUsers = searching ? users : users.slice(indexOfFirstUser, indexOfLastUser);
+  const totalPages = searching ? 1 : Math.ceil(totalUsers / usersPerPage);
 
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
@@ -170,7 +199,7 @@ export default function Users() {
                   <thead className="bg-gray-100">
                     <tr>
                       <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Name</th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Email</th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Phone</th>
                       <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Status</th>
                       <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Joined</th>
                       <th className="px-6 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Actions</th>
@@ -180,22 +209,27 @@ export default function Users() {
                     {currentUsers.map((user) => (
                       <tr key={user._id} className="hover:bg-gray-50">
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{user.name}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{user.email}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{user.phone || 'N/A'}</td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`px-2 py-1 inline-flex text-xs font-semibold ${user.status
+                          <span className={`px-2 py-1 inline-flex text-xs font-semibold ${user.status.isActive
                             ? 'bg-green-100 text-green-800'
                             : 'bg-red-100 text-red-800'
                             }`}>
-                            {user.status ? 'Active' : 'Inactive'}
+                            {user.status.isActive ? 'Active' : 'Inactive'}
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                           {new Date(user.createdAt).toLocaleDateString()}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
-                          <button className="text-red-600 hover:text-red-800 px-3 py-1 transition">
-                            Action
-                          </button>
+                          <div className="flex justify-center items-center gap-2">
+                            <button
+                              onClick={() => navigate(`/users/${user._id}`)}
+                              className="px-3 py-1 bg-blue-600 text-white text-xs hover:bg-blue-700 transition"
+                            >
+                              View Details
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -204,56 +238,58 @@ export default function Users() {
               </div>
 
               {/* Pagination */}
-              <div className="px-4 py-3 flex items-center justify-between border-t border-gray-200">
-                <div className="text-sm text-gray-700">
-                  Showing <span className="font-medium">{indexOfFirstUser + 1}</span> to{' '}
-                  <span className="font-medium">{Math.min(indexOfLastUser, totalUsers)}</span> of{' '}
-                  <span className="font-medium">{totalUsers}</span> users
+              {!searching && (
+                <div className="px-4 py-3 flex items-center justify-between border-t border-gray-200">
+                  <div className="text-sm text-gray-700">
+                    Showing <span className="font-medium">{indexOfFirstUser + 1}</span> to{' '}
+                    <span className="font-medium">{Math.min(indexOfLastUser, totalUsers)}</span> of{' '}
+                    <span className="font-medium">{totalUsers}</span> users
+                  </div>
+                  <nav className="inline-flex shadow-sm" aria-label="Pagination">
+                    <button
+                      onClick={() => paginate(Math.max(1, currentPage - 1))}
+                      disabled={currentPage === 1}
+                      className={`px-2 py-2 border bg-white text-sm font-medium ${currentPage === 1 ? 'text-gray-300 cursor-not-allowed' : 'text-gray-500 hover:bg-gray-50'
+                        }`}
+                    >
+                      <FiChevronLeft className="h-5 w-5" />
+                    </button>
+                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                      let pageNum;
+                      if (totalPages <= 5) {
+                        pageNum = i + 1;
+                      } else if (currentPage <= 3) {
+                        pageNum = i + 1;
+                      } else if (currentPage >= totalPages - 2) {
+                        pageNum = totalPages - 4 + i;
+                      } else {
+                        pageNum = currentPage - 2 + i;
+                      }
+                      return (
+                        <button
+                          key={pageNum}
+                          onClick={() => paginate(pageNum)}
+                          className={`px-4 py-2 border-t border-b bg-white text-sm font-medium ${currentPage === pageNum
+                            ? 'z-10 bg-green-50 border-green-500 text-green-600'
+                            : 'border-gray-300 text-gray-500 hover:bg-gray-50'
+                            }`}
+                          style={{ borderLeft: i === 0 ? undefined : 'none', borderRight: i === 4 ? undefined : 'none' }}
+                        >
+                          {pageNum}
+                        </button>
+                      );
+                    })}
+                    <button
+                      onClick={() => paginate(Math.min(totalPages, currentPage + 1))}
+                      disabled={currentPage === totalPages}
+                      className={`px-2 py-2 border bg-white text-sm font-medium ${currentPage === totalPages ? 'text-gray-300 cursor-not-allowed' : 'text-gray-500 hover:bg-gray-50'
+                        }`}
+                    >
+                      <FiChevronRight className="h-5 w-5" />
+                    </button>
+                  </nav>
                 </div>
-                <nav className="inline-flex shadow-sm" aria-label="Pagination">
-                  <button
-                    onClick={() => paginate(Math.max(1, currentPage - 1))}
-                    disabled={currentPage === 1}
-                    className={`px-2 py-2 border bg-white text-sm font-medium ${currentPage === 1 ? 'text-gray-300 cursor-not-allowed' : 'text-gray-500 hover:bg-gray-50'
-                      }`}
-                  >
-                    <FiChevronLeft className="h-5 w-5" />
-                  </button>
-                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                    let pageNum;
-                    if (totalPages <= 5) {
-                      pageNum = i + 1;
-                    } else if (currentPage <= 3) {
-                      pageNum = i + 1;
-                    } else if (currentPage >= totalPages - 2) {
-                      pageNum = totalPages - 4 + i;
-                    } else {
-                      pageNum = currentPage - 2 + i;
-                    }
-                    return (
-                      <button
-                        key={pageNum}
-                        onClick={() => paginate(pageNum)}
-                        className={`px-4 py-2 border-t border-b bg-white text-sm font-medium ${currentPage === pageNum
-                          ? 'z-10 bg-green-50 border-green-500 text-green-600'
-                          : 'border-gray-300 text-gray-500 hover:bg-gray-50'
-                          }`}
-                        style={{ borderLeft: i === 0 ? undefined : 'none', borderRight: i === 4 ? undefined : 'none' }}
-                      >
-                        {pageNum}
-                      </button>
-                    );
-                  })}
-                  <button
-                    onClick={() => paginate(Math.min(totalPages, currentPage + 1))}
-                    disabled={currentPage === totalPages}
-                    className={`px-2 py-2 border bg-white text-sm font-medium ${currentPage === totalPages ? 'text-gray-300 cursor-not-allowed' : 'text-gray-500 hover:bg-gray-50'
-                      }`}
-                  >
-                    <FiChevronRight className="h-5 w-5" />
-                  </button>
-                </nav>
-              </div>
+              )}
             </>
           )}
         </div>

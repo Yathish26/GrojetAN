@@ -5,7 +5,7 @@ import {
   Trash2,
   Edit,
   Image as ImageIcon,
-  CheckCircle,
+  CircleCheck,
   XCircle,
   Loader2,
   Star,
@@ -13,7 +13,6 @@ import {
   Search,
   Filter,
   RotateCcw,
-  CircleCheck
 } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
 
@@ -362,7 +361,6 @@ export default function Categories() {
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-6 font-sans">
-      <Toaster position="top-center" />
 
       <div className="bg-white border border-gray-200  overflow-hidden shadow-sm">
         {/* Header */}
@@ -432,7 +430,7 @@ export default function Categories() {
             {/* Active Status Filter */}
             <div>
               <label htmlFor="filterIsActive" className="block text-sm font-medium text-gray-700 mb-1">
-                <CheckCircle size={14} className="inline-block mr-1" /> Filter by Status
+                <CircleCheck size={14} className="inline-block mr-1" /> Filter by Status
               </label>
               <select
                 id="filterIsActive"

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Lock, Mail, Loader2, AlertCircle } from 'lucide-react';
+import { Lock, Mail, Loader2, AlertCircle, Shield } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 export default function AdminLogin() {
   const [formData, setFormData] = useState({
@@ -17,6 +18,8 @@ export default function AdminLogin() {
       ...prev,
       [name]: value
     }));
+    // Clear error when user starts typing
+    if (error) setError(null);
   };
 
   const handleSubmit = async (event) => {
@@ -31,7 +34,7 @@ export default function AdminLogin() {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify(formData),
-        credentials: 'include' // <-- This is required for cookies!
+        credentials: 'include'
       });
 
       const data = await response.json();
@@ -41,7 +44,8 @@ export default function AdminLogin() {
       }
 
       if (data.success) {
-        // No need to store token, cookie is set by the server
+        toast.success(`Welcome back, ${data.admin?.name || 'Admin'}!`);
+        localStorage.setItem('adminUser', JSON.stringify(data.admin));
         navigate('/');
       }
     } catch (err) {
@@ -52,23 +56,58 @@ export default function AdminLogin() {
     }
   };
 
+  // Demo credentials handler
+  const fillDemoCredentials = () => {
+    setFormData({
+      email: 'superadmin@grojet.com',
+      password: 'SuperAdmin@123'
+    });
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-green-700 flex items-center justify-center p-4">
-      <div className="bg-white p-8 shadow-sm border border-gray-200 w-full max-w-md">
+    <div className="min-h-screen bg-gradient-to-br from-green-50 to-green-300 flex items-center justify-center p-4">
+      <div className="bg-white p-8 shadow-xl border border-gray-200 w-full max-w-md">
+        {/* Header */}
         <div className="flex flex-col items-center mb-8">
-          <img draggable="false" className='w-24 mb-4' src="/grojet.png" alt="Grojet" />
-          <h1 className="text-2xl font-semibold text-gray-800 mb-2">Admin Portal</h1>
-          <p className="text-gray-500">Enter your credentials to access the dashboard</p>
+          <div className="w-fit h-fit flex items-center justify-center mb-4">
+            <img draggable="false" className='w-16 h-16 object-contain' src="/grojet.png" alt="Grojet" />
+          </div>
+          <h1 className="text-2xl font-bold text-gray-800 mb-2">Admin Portal</h1>
+          <p className="text-gray-500 text-center">
+            Industry-grade grocery delivery management system
+          </p>
         </div>
 
+        {/* Error Alert */}
         {error && (
-          <div className="flex items-center gap-2 bg-red-50 text-red-600 p-3  mb-6">
-            <AlertCircle className="w-5 h-5" />
+          <div className="flex items-center gap-2 bg-red-50 text-red-600 p-4  mb-6 border border-red-200">
+            <AlertCircle className="w-5 h-5 flex-shrink-0" />
             <span className="text-sm">{error}</span>
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-5">
+        {/* Demo Credentials Info */}
+        {/* <div className="bg-blue-50 border border-blue-200  p-4 mb-6">
+          <div className="flex items-start gap-2">
+            <Shield className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+            <div>
+              <p className="text-sm font-medium text-blue-800 mb-2">Demo Access Available</p>
+              <p className="text-xs text-blue-600 mb-3">
+                Use the demo credentials below to explore the admin panel with full super admin privileges.
+              </p>
+              <button
+                type="button"
+                onClick={fillDemoCredentials}
+                className="text-xs bg-blue-100 hover:bg-blue-200 text-blue-700 px-3 py-1 rounded-full transition-colors"
+              >
+                Fill Demo Credentials
+              </button>
+            </div>
+          </div>
+        </div> */}
+
+        {/* Login Form */}
+        <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-1">
             <label htmlFor="email" className="block text-sm font-medium text-gray-700">
               Access ID
@@ -81,7 +120,7 @@ export default function AdminLogin() {
                 type="email"
                 id="email"
                 name="email"
-                className="block w-full pl-10 pr-3 py-2.5 border border-gray-300  focus:ring-2 focus:ring-green-400 focus:border-green-400 transition-colors"
+                className="block w-full pl-10 pr-3 py-3 border border-gray-300  focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
                 placeholder="ID"
                 value={formData.email}
                 onChange={handleChange}
@@ -92,7 +131,7 @@ export default function AdminLogin() {
 
           <div className="space-y-1">
             <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-              Password
+              Passcode
             </label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -102,7 +141,7 @@ export default function AdminLogin() {
                 type="password"
                 id="password"
                 name="password"
-                className="block w-full pl-10 pr-3 py-2.5 border border-gray-300  focus:ring-2 focus:ring-green-400 focus:border-green-400 transition-colors"
+                className="block w-full pl-10 pr-3 py-3 border border-gray-300  focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
                 placeholder="••••••••"
                 value={formData.password}
                 onChange={handleChange}
@@ -114,7 +153,7 @@ export default function AdminLogin() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full flex justify-center items-center gap-2 py-3 px-4 border border-transparent  shadow-sm text-white bg-green-500 hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-400 disabled:opacity-70 transition-colors"
+            className="w-full flex justify-center items-center gap-2 py-3 px-4 border border-transparent  shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-70 transition-colors font-medium"
           >
             {loading ? (
               <>
@@ -122,19 +161,23 @@ export default function AdminLogin() {
                 <span>Signing in...</span>
               </>
             ) : (
-              <span>Sign in</span>
+              <>
+                <Shield className="h-5 w-5" />
+                <span>Access Admin Panel</span>
+              </>
             )}
           </button>
         </form>
 
-        <div className="mt-6">
+        {/* Footer */}
+        <div className="mt-6 text-center">
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-gray-300"></div>
             </div>
             <div className="relative flex justify-center text-sm">
               <span className="px-2 bg-white text-gray-500">
-                Secure admin portal
+                Secure Admin Access
               </span>
             </div>
           </div>
