@@ -181,7 +181,7 @@ export default function AdminRegistrationAuth({ onAuthSuccess, onGoBack }) {
               <div className="text-center p-4 bg-blue-50 border border-blue-200 rounded-lg mb-6">
                 <Mail className="w-6 h-6 text-blue-600 mx-auto mb-2" />
                 <p className="text-sm text-blue-800">
-                  OTP has been sent to <strong>yathishkumar2013@gmail.com</strong>
+                  OTP has been sent to <strong>Authorized Mail</strong>
                 </p>
               </div>
               
