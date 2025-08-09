@@ -65,16 +65,16 @@ export default function AdminLogin() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-green-300 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-green-900 to-green-300 flex items-center justify-center p-4">
       <div className="bg-white p-8 shadow-xl border border-gray-200 w-full max-w-md">
         {/* Header */}
         <div className="flex flex-col items-center mb-8">
           <div className="w-fit h-fit flex items-center justify-center mb-4">
-            <img draggable="false" className='w-16 h-16 object-contain' src="/grojet.png" alt="Grojet" />
+            <img draggable="false" className='w-24 h-24 object-contain' src="/grojet.png" alt="Grojet" />
           </div>
           <h1 className="text-2xl font-bold text-gray-800 mb-2">Admin Portal</h1>
           <p className="text-gray-500 text-center">
-            Industry-grade grocery delivery management system
+            Delivery management system
           </p>
         </div>
 
@@ -85,26 +85,6 @@ export default function AdminLogin() {
             <span className="text-sm">{error}</span>
           </div>
         )}
-
-        {/* Demo Credentials Info */}
-        {/* <div className="bg-blue-50 border border-blue-200  p-4 mb-6">
-          <div className="flex items-start gap-2">
-            <Shield className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
-            <div>
-              <p className="text-sm font-medium text-blue-800 mb-2">Demo Access Available</p>
-              <p className="text-xs text-blue-600 mb-3">
-                Use the demo credentials below to explore the admin panel with full super admin privileges.
-              </p>
-              <button
-                type="button"
-                onClick={fillDemoCredentials}
-                className="text-xs bg-blue-100 hover:bg-blue-200 text-blue-700 px-3 py-1 rounded-full transition-colors"
-              >
-                Fill Demo Credentials
-              </button>
-            </div>
-          </div>
-        </div> */}
 
         {/* Login Form */}
         <form onSubmit={handleSubmit} className="space-y-6">

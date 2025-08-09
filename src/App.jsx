@@ -93,7 +93,7 @@ function App() {
           {/* Settings & Profile */}
           <Route path="/profile" element={<Profile />} />
           <Route path="/settings" element={<Settings />} />
-          
+
           {/* 404 */}
           <Route path="*" element={<Error404 />} />
         </Routes>

@@ -18,6 +18,37 @@ import toast, { Toaster } from 'react-hot-toast';
 
 export default function Categories() {
   const navigate = useNavigate();
+  const [currentUser, setCurrentUser] = useState(null);
+  const [checkingUser, setCheckingUser] = useState(true);
+  const allowedRoles = ['super_admin', 'admin', 'inventory_manager'];
+
+  useEffect(() => {
+    const fetchCurrentUser = async () => {
+      try {
+        const local = localStorage.getItem('adminUser');
+        if (local) {
+          setCurrentUser(JSON.parse(local));
+        } else {
+          const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/auth/profile`, { credentials: 'include' });
+          const data = await response.json();
+          if (data.tokenValid === false) {
+            navigate('/login', { replace: true });
+            return;
+          }
+            if (response.ok && data.admin) {
+              setCurrentUser(data.admin);
+              localStorage.setItem('adminUser', JSON.stringify(data.admin));
+            }
+        }
+      } catch (err) {
+        console.error('Failed to fetch current user', err);
+      } finally {
+        setCheckingUser(false);
+      }
+    };
+    fetchCurrentUser();
+  }, [navigate]);
+  const isAuthorized = allowedRoles.includes(currentUser?.role);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editingCategory, setEditingCategory] = useState(null);
@@ -79,8 +110,8 @@ export default function Categories() {
   }, [navigate]);
 
   useEffect(() => {
-    fetchCategories();
-  }, [fetchCategories]);
+    if (isAuthorized) fetchCategories();
+  }, [fetchCategories, isAuthorized]);
 
   // Handle form input changes
   const handleInputChange = (e) => {
@@ -359,6 +390,22 @@ export default function Categories() {
     );
   };
 
+  if (checkingUser) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+      </div>
+    );
+  }
+  if (!isAuthorized) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen">
+        <svg xmlns="http://www.w3.org/2000/svg" className="w-16 h-16 text-red-500 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-.293-1.035l-6-10a2 2 0 00-3.414 0l-6 10A2 2 0 004 13v6a2 2 0 002 2z" /></svg>
+        <h2 className="text-xl font-semibold text-gray-800 mb-2">Access Denied</h2>
+        <p className="text-gray-600">Only Admins and Super Admins can manage categories.</p>
+      </div>
+    );
+  }
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-6 font-sans">
 

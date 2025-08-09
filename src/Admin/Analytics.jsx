@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   TrendingUp,
   Package,
@@ -60,6 +60,36 @@ export default function Analytics() {
   const [error, setError] = useState(null);
   const [timeRange, setTimeRange] = useState('7d');
   const [refreshing, setRefreshing] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
+  const [checkingUser, setCheckingUser] = useState(true);
+  const allowedRoles = ['super_admin', 'admin'];
+
+  const fetchCurrentUser = useCallback(async () => {
+    try {
+      const local = localStorage.getItem('adminUser');
+      if (local) {
+        setCurrentUser(JSON.parse(local));
+      } else {
+        const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/auth/profile`, { credentials: 'include' });
+        const data = await response.json();
+        if (data.tokenValid === false) {
+          window.location.replace('/login');
+          return;
+        }
+        if (response.ok && data.admin) {
+          setCurrentUser(data.admin);
+          localStorage.setItem('adminUser', JSON.stringify(data.admin));
+        }
+      }
+    } catch (err) {
+      console.error('Failed to fetch current user', err);
+    } finally {
+      setCheckingUser(false);
+    }
+  }, []);
+
+  useEffect(()=>{ fetchCurrentUser(); }, [fetchCurrentUser]);
+  const isAuthorized = allowedRoles.includes(currentUser?.role);
 
   // Derived metrics
   const [metrics, setMetrics] = useState({
@@ -89,9 +119,11 @@ export default function Analytics() {
   });
 
   useEffect(() => {
-    fetchAnalytics();
+    if (isAuthorized) {
+      fetchAnalytics();
+    }
     // eslint-disable-next-line
-  }, [timeRange]);
+  }, [timeRange, isAuthorized]);
 
   const fetchAnalytics = async () => {
     try {
@@ -239,6 +271,7 @@ export default function Analytics() {
   };
 
   const refreshAnalytics = async () => {
+    if (!isAuthorized) return;
     setRefreshing(true);
     await fetchAnalytics();
     setRefreshing(false);
@@ -246,6 +279,7 @@ export default function Analytics() {
   };
 
   const exportAnalytics = () => {
+    if (!isAuthorized) return;
     // Export daily analytics as CSV
     const csvHeader = ['Date', 'Orders', 'Revenue', 'Avg Order Value'];
     const csvRows = analytics.map((point) => [
@@ -265,6 +299,24 @@ export default function Analytics() {
     window.URL.revokeObjectURL(url);
     toast.success('Analytics exported successfully');
   };
+
+  // Guard states
+  if (checkingUser) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+      </div>
+    );
+  }
+  if (!isAuthorized) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen">
+        <svg xmlns="http://www.w3.org/2000/svg" className="w-16 h-16 text-red-500 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-.293-1.035l-6-10a2 2 0 00-3.414 0l-6 10A2 2 0 004 13v6a2 2 0 002 2z" /></svg>
+        <h2 className="text-xl font-semibold text-gray-800 mb-2">Access Denied</h2>
+        <p className="text-gray-600">Only Admins and Super Admins can view analytics.</p>
+      </div>
+    );
+  }
 
   // CHART DATA
   const chartLabels = analytics.map((point) =>

@@ -7,6 +7,8 @@ import {
     Users, Clock, CircleCheck,
     IndianRupee
 } from 'lucide-react';
+import LoaderSpinner from '../Components/Loader';
+
 
 export default function Admin() {
     const [dashboardStats, setDashboardStats] = useState({
@@ -18,6 +20,7 @@ export default function Admin() {
     });
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [redirecting, setRedirecting] = useState(false);
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -34,7 +37,8 @@ export default function Admin() {
 
                 if (inventoryRes.status === 401 || ordersRes.status === 401 ||
                     agentsRes.status === 401 || usersRes.status === 401) {
-                    navigate('/login');
+                    setRedirecting(true);
+                    navigate('/login', { replace: true });
                     return;
                 }
 
@@ -66,6 +70,17 @@ export default function Admin() {
         fetchDashboardData();
     }, [navigate]);
 
+    // Prevent blink: show spinner while loading, render nothing if redirecting
+    if (redirecting) return null;
+    if (loading) {
+        return (
+            <div className="flex flex-col items-center gap-4 justify-center h-screen">
+                <LoaderSpinner />
+                <span className="ml-4 text-green-700 text-lg font-semibold">Loading dashboard...</span>
+            </div>
+        );
+    }
+
     // Boxy, green-themed, minimal color, industry-standard card
     const StatCard = ({ title, value, icon: Icon, trend = null, onClick = null }) => (
         <div
@@ -96,7 +111,7 @@ export default function Admin() {
     const QuickAction = ({ title, description, icon: Icon, onClick }) => (
         <button
             onClick={onClick}
-            className="bg-green-600 text-white p-5 border border-green-700 transition-opacity hover:opacity-95 text-left w-full"
+            className="bg-green-600 text-white p-5 cursor-pointer transition-opacity hover:opacity-95 text-left w-full"
             style={{ borderRadius: '0.25rem', boxShadow: 'none' }}
         >
             <div className="flex items-start justify-between">
@@ -231,14 +246,14 @@ export default function Admin() {
                         <div className="space-y-2">
                             <button
                                 onClick={() => navigate('/products')}
-                                className="flex items-center gap-2 text-gray-700 hover:text-green-700 transition-colors"
+                                className="flex cursor-pointer items-center gap-2 text-gray-700 hover:text-green-700 transition-colors"
                             >
                                 <Package size={16} />
                                 View All Products
                             </button>
                             <button
                                 onClick={() => navigate('/categories')}
-                                className="flex items-center gap-2 text-gray-700 hover:text-green-700 transition-colors"
+                                className="flex cursor-pointer items-center gap-2 text-gray-700 hover:text-green-700 transition-colors"
                             >
                                 <ChartBarStacked size={16} />
                                 Manage Categories
@@ -251,14 +266,14 @@ export default function Admin() {
                         <div className="space-y-2">
                             <button
                                 onClick={() => navigate('/users')}
-                                className="flex items-center gap-2 text-gray-700 hover:text-green-700 transition-colors"
+                                className="flex items-center gap-2 cursor-pointer text-gray-700 hover:text-green-700 transition-colors"
                             >
                                 <Users size={16} />
                                 Customer Accounts
                             </button>
                             <button
                                 onClick={() => navigate('/merchants')}
-                                className="flex items-center gap-2 text-gray-700 hover:text-green-700 transition-colors"
+                                className="flex items-center gap-2 cursor-pointer text-gray-700 hover:text-green-700 transition-colors"
                             >
                                 <Store size={16} />
                                 Merchant Enquiries
@@ -271,14 +286,14 @@ export default function Admin() {
                         <div className="space-y-2">
                             <button
                                 onClick={() => navigate('/delivery-agents')}
-                                className="flex items-center gap-2 text-gray-700 hover:text-green-700 transition-colors"
+                                className="flex items-center cursor-pointer gap-2 text-gray-700 hover:text-green-700 transition-colors"
                             >
                                 <Truck size={16} />
                                 Delivery Agents
                             </button>
                             <button
                                 onClick={() => navigate('/delivery-zones')}
-                                className="flex items-center gap-2 text-gray-700 hover:text-green-700 transition-colors"
+                                className="flex items-center cursor-pointer gap-2 text-gray-700 hover:text-green-700 transition-colors"
                             >
                                 <MapPin size={16} />
                                 Delivery Zones

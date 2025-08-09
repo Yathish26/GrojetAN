@@ -1,11 +1,42 @@
-import React, { useState, useEffect } from 'react';
-import { Package, Plus, ArrowLeft, Loader2, XCircle, CircleCheck, Image, Tag, Scale, Box, Star } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Package, Plus, ArrowLeft, Loader2, XCircle, CircleCheck, Image, Tag, Scale, Box, Star, Shield } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import toast, { Toaster } from 'react-hot-toast';
 import ChipInput from '../Components/ChipInput';
 
 export default function AddProduct() {
   const navigate = useNavigate();
+  // Role guard state
+  const [currentUser, setCurrentUser] = useState(null);
+  const [checkingUser, setCheckingUser] = useState(true);
+  const allowedRoles = ['super_admin', 'admin', 'inventory_manager'];
+
+  const fetchCurrentUser = useCallback(async () => {
+    try {
+      const local = localStorage.getItem('adminUser');
+      if (local) {
+        setCurrentUser(JSON.parse(local));
+      } else {
+        const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/auth/profile`, { credentials: 'include' });
+        const data = await response.json();
+        if (data.tokenValid === false) {
+          navigate('/login', { replace: true });
+          return;
+        }
+        if (response.ok && data.admin) {
+          setCurrentUser(data.admin);
+          localStorage.setItem('adminUser', JSON.stringify(data.admin));
+        }
+      }
+    } catch (err) {
+      console.error('Failed to fetch current user', err);
+    } finally {
+      setCheckingUser(false);
+    }
+  }, [navigate]);
+
+  useEffect(() => { fetchCurrentUser(); }, [fetchCurrentUser]);
+  const isAuthorized = allowedRoles.includes(currentUser?.role);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -71,6 +102,7 @@ export default function AddProduct() {
   }, []);
 
   useEffect(() => {
+    if (!isAuthorized) return; // wait until authorized
     const fetchCategories = async () => {
       try {
         const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/categories`, {
@@ -96,7 +128,7 @@ export default function AddProduct() {
 
     fetchCategories();
     // eslint-disable-next-line
-  }, [navigate]);
+  }, [navigate, isAuthorized]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -299,6 +331,23 @@ export default function AddProduct() {
       setLoading(false);
     }
   };
+
+  if (checkingUser) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+      </div>
+    );
+  }
+  if (!isAuthorized) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen">
+        <Shield className="w-16 h-16 text-red-500 mb-4" />
+        <h2 className="text-xl font-semibold text-gray-800 mb-2">Access Denied</h2>
+        <p className="text-gray-600">Only Admins and Super Admins can add products.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-start justify-center p-4 font-sans">

@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  User, 
-  Mail, 
-  Phone, 
-  Lock, 
-  Shield, 
-  Eye, 
+import {
+  User,
+  Mail,
+  Phone,
+  Lock,
+  Shield,
+  Eye,
   EyeOff,
   UserPlus,
   Save,
@@ -24,18 +24,10 @@ export default function AdminRegister() {
     phone: '',
     password: '',
     confirmPassword: '',
-    role: 'admin', // admin, super_admin, delivery_manager, inventory_manager
+    role: '', // admin, super_admin, delivery_manager, inventory_manager
     department: '',
-    permissions: {
-      users: false,
-      orders: false,
-      products: false,
-      delivery: false,
-      merchants: false,
-      analytics: false
-    }
   });
-  
+
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -48,15 +40,6 @@ export default function AdminRegister() {
     { value: 'inventory_manager', label: 'Inventory Manager', description: 'Product & inventory management' }
   ];
 
-  const permissionsList = [
-    { key: 'users', label: 'User Management', description: 'Manage customer accounts' },
-    { key: 'orders', label: 'Order Management', description: 'View and manage orders' },
-    { key: 'products', label: 'Product Management', description: 'Manage inventory and products' },
-    { key: 'delivery', label: 'Delivery Management', description: 'Manage delivery agents and zones' },
-    { key: 'merchants', label: 'Merchant Management', description: 'Handle merchant enquiries and partnerships' },
-    { key: 'analytics', label: 'Analytics & Reports', description: 'View analytics and generate reports' }
-  ];
-
   // Check authorization status on component mount
   useEffect(() => {
     const checkAuthorization = () => {
@@ -67,7 +50,7 @@ export default function AdminRegister() {
       }
       setCheckingAuth(false);
     };
-    
+
     checkAuthorization();
   }, []);
 
@@ -86,66 +69,10 @@ export default function AdminRegister() {
     }));
   };
 
-  const handlePermissionChange = (permission, checked) => {
-    setFormData(prev => ({
-      ...prev,
-      permissions: {
-        ...prev.permissions,
-        [permission]: checked
-      }
-    }));
-  };
-
   const handleRoleChange = (role) => {
-    let permissions = {};
-    
-    // Auto-assign permissions based on role
-    switch (role) {
-      case 'super_admin':
-        permissions = {
-          users: true,
-          orders: true,
-          products: true,
-          delivery: true,
-          merchants: true,
-          analytics: true
-        };
-        break;
-      case 'delivery_manager':
-        permissions = {
-          users: false,
-          orders: true,
-          products: false,
-          delivery: true,
-          merchants: false,
-          analytics: true
-        };
-        break;
-      case 'inventory_manager':
-        permissions = {
-          users: false,
-          orders: true,
-          products: true,
-          delivery: false,
-          merchants: true,
-          analytics: true
-        };
-        break;
-      default: // admin
-        permissions = {
-          users: true,
-          orders: true,
-          products: true,
-          delivery: false,
-          merchants: true,
-          analytics: true
-        };
-    }
-    
     setFormData(prev => ({
       ...prev,
       role,
-      permissions
     }));
   };
 
@@ -154,40 +81,40 @@ export default function AdminRegister() {
       toast.error('Name is required');
       return false;
     }
-    
+
     if (!formData.email.trim()) {
       toast.error('Email is required');
       return false;
     }
-    
+
     if (!formData.phone.trim()) {
       toast.error('Phone number is required');
       return false;
     }
-    
+
     if (!formData.password) {
       toast.error('Password is required');
       return false;
     }
-    
+
     if (formData.password.length < 6) {
       toast.error('Password must be at least 6 characters');
       return false;
     }
-    
+
     if (formData.password !== formData.confirmPassword) {
       toast.error('Passwords do not match');
       return false;
     }
-    
+
     return true;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!validateForm()) return;
-    
+
     // Check if still authorized
     const authToken = localStorage.getItem('adminRegAuthToken');
     if (!authToken) {
@@ -195,17 +122,9 @@ export default function AdminRegister() {
       setIsAuthorized(false);
       return;
     }
-    
+
     setLoading(true);
     try {
-      // Convert frontend permissions to backend format
-      const backendPermissions = Object.entries(formData.permissions)
-        .filter(([_, enabled]) => enabled)
-        .map(([module, _]) => ({
-          module,
-          actions: ['read', 'create', 'update', 'delete'] // Grant full permissions for enabled modules
-        }));
-
       const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/auth/create`, {
         method: 'POST',
         headers: {
@@ -219,8 +138,7 @@ export default function AdminRegister() {
           phone: formData.phone.trim(),
           password: formData.password,
           role: formData.role,
-          address: formData.department.trim(), // Backend expects 'address' field instead of 'department'
-          permissions: backendPermissions
+          department: formData.department.trim(),
         })
       });
 
@@ -236,10 +154,10 @@ export default function AdminRegister() {
       }
 
       toast.success('Admin registered successfully!');
-      
+
       // Clear auth token after successful registration
       localStorage.removeItem('adminRegAuthToken');
-      
+
       // Reset form
       setFormData({
         name: '',
@@ -249,21 +167,13 @@ export default function AdminRegister() {
         confirmPassword: '',
         role: 'admin',
         department: '',
-        permissions: {
-          users: false,
-          orders: false,
-          products: false,
-          delivery: false,
-          merchants: false,
-          analytics: false
-        }
       });
-      
+
       // Navigate to admin management page
       setTimeout(() => {
         navigate('/admin-management');
       }, 1500);
-      
+
     } catch (err) {
       console.error('Registration error:', err);
       if (err.message.includes('Authorization expired')) {
@@ -288,7 +198,7 @@ export default function AdminRegister() {
   // Show authorization component if not authorized
   if (!isAuthorized) {
     return (
-      <AdminRegistrationAuth 
+      <AdminRegistrationAuth
         onAuthSuccess={handleAuthSuccess}
         onGoBack={handleGoBack}
       />
@@ -302,7 +212,7 @@ export default function AdminRegister() {
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-3xl font-bold text-gray-800 mb-2">Register New Admin</h1>
-            <p className="text-gray-600">Create a new admin account with specific permissions</p>
+            <p className="text-gray-600">Create a new admin account with specific roles</p>
           </div>
           <button
             onClick={() => {
@@ -317,9 +227,9 @@ export default function AdminRegister() {
         </div>
 
         {/* Registration Form */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
+        <div className="bg-white  shadow-sm border border-gray-200 p-8">
           {/* Important Notice */}
-          <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+          <div className="mb-6 p-4 bg-green-50 border border-green-200 ">
             <div className="flex items-start gap-3">
               <Shield className="w-5 h-5 text-green-600 mt-0.5" />
               <div>
@@ -346,11 +256,11 @@ export default function AdminRegister() {
                     required
                     value={formData.name}
                     onChange={(e) => handleInputChange('name', e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    className="w-full px-4 py-3 border border-gray-300  focus:ring-2 focus:ring-green-500 focus:border-green-500"
                     placeholder="Enter full name"
                   />
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     <Mail className="w-4 h-4 inline mr-1" />
@@ -361,11 +271,11 @@ export default function AdminRegister() {
                     required
                     value={formData.email}
                     onChange={(e) => handleInputChange('email', e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    className="w-full px-4 py-3 border border-gray-300  focus:ring-2 focus:ring-green-500 focus:border-green-500"
                     placeholder="Enter email address"
                   />
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     <Phone className="w-4 h-4 inline mr-1" />
@@ -376,11 +286,11 @@ export default function AdminRegister() {
                     required
                     value={formData.phone}
                     onChange={(e) => handleInputChange('phone', e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    className="w-full px-4 py-3 border border-gray-300  focus:ring-2 focus:ring-green-500 focus:border-green-500"
                     placeholder="Enter phone number"
                   />
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Department
@@ -389,7 +299,7 @@ export default function AdminRegister() {
                     type="text"
                     value={formData.department}
                     onChange={(e) => handleInputChange('department', e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    className="w-full px-4 py-3 border border-gray-300  focus:ring-2 focus:ring-green-500 focus:border-green-500"
                     placeholder="e.g., Operations, IT, Customer Service"
                   />
                 </div>
@@ -411,7 +321,7 @@ export default function AdminRegister() {
                       required
                       value={formData.password}
                       onChange={(e) => handleInputChange('password', e.target.value)}
-                      className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                      className="w-full px-4 py-3 pr-12 border border-gray-300  focus:ring-2 focus:ring-green-500 focus:border-green-500"
                       placeholder="Enter password"
                       minLength={6}
                     />
@@ -424,7 +334,7 @@ export default function AdminRegister() {
                     </button>
                   </div>
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     <Lock className="w-4 h-4 inline mr-1" />
@@ -436,7 +346,7 @@ export default function AdminRegister() {
                       required
                       value={formData.confirmPassword}
                       onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
-                      className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                      className="w-full px-4 py-3 pr-12 border border-gray-300  focus:ring-2 focus:ring-green-500 focus:border-green-500"
                       placeholder="Confirm password"
                     />
                     <button
@@ -457,7 +367,7 @@ export default function AdminRegister() {
             {/* Role Selection */}
             <div>
               <h2 className="text-xl font-semibold text-gray-800 mb-6">Role & Permissions</h2>
-              
+
               <div className="mb-6">
                 <label className="block text-sm font-medium text-gray-700 mb-3">
                   <Shield className="w-4 h-4 inline mr-1" />
@@ -465,13 +375,12 @@ export default function AdminRegister() {
                 </label>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {roles.map(role => (
-                    <div 
+                    <div
                       key={role.value}
-                      className={`border rounded-lg p-4 cursor-pointer transition-colors ${
-                        formData.role === role.value
-                          ? 'border-green-500 bg-green-50'
-                          : 'border-gray-300 hover:border-gray-400'
-                      }`}
+                      className={`border  p-4 cursor-pointer transition-colors ${formData.role === role.value
+                        ? 'border-green-500 bg-green-50'
+                        : 'border-gray-300 hover:border-gray-400'
+                        }`}
                       onClick={() => handleRoleChange(role.value)}
                     >
                       <div className="flex items-center gap-3">
@@ -492,29 +401,6 @@ export default function AdminRegister() {
                   ))}
                 </div>
               </div>
-
-              {/* Permissions */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-3">
-                  Specific Permissions
-                </label>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {permissionsList.map(permission => (
-                    <div key={permission.key} className="flex items-start gap-3 p-3 border border-gray-200 rounded-lg">
-                      <input
-                        type="checkbox"
-                        checked={formData.permissions[permission.key]}
-                        onChange={(e) => handlePermissionChange(permission.key, e.target.checked)}
-                        className="mt-1 text-green-600 focus:ring-green-500"
-                      />
-                      <div>
-                        <h4 className="font-medium text-gray-900">{permission.label}</h4>
-                        <p className="text-sm text-gray-600">{permission.description}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
             </div>
 
             {/* Submit Button */}
@@ -522,7 +408,7 @@ export default function AdminRegister() {
               <button
                 type="submit"
                 disabled={loading}
-                className="flex items-center gap-2 px-8 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex items-center gap-2 px-8 py-3 bg-green-600 text-white  hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? (
                   <>

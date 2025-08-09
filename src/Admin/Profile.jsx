@@ -522,44 +522,6 @@ export default function Profile() {
           </div>
         )}
       </div>
-
-      {/* Permissions */}
-      <div className="bg-white border border-gray-200 shadow-sm">
-        <div className="p-4 sm:p-6 border-b border-gray-200 flex items-center gap-2">
-          <Settings className="w-5 h-5 text-green-600" />
-          <h2 className="text-lg font-semibold text-gray-900">Your Permissions</h2>
-        </div>
-        <div className="p-4 sm:p-6">
-          <div className="flex flex-wrap gap-4">
-            {Array.isArray(profile.permissions) && profile.permissions.length > 0 ? (
-              profile.permissions.map((permission, idx) => (
-                <div
-                  key={permission?.toString() || idx}
-                  className="flex items-center gap-2 px-4 py-3 bg-gray-50 border border-green-200 min-w-[220px] w-full sm:w-auto"
-                >
-                  <div className="flex items-center justify-center w-8 h-8 bg-green-100">
-                    <CircleCheck className="w-4 h-4 text-green-600" />
-                  </div>
-                  <div className="flex-1">
-                    <div className="text-sm font-semibold text-gray-900 capitalize">
-                      {permission.module}
-                    </div>
-                    <div className="text-xs text-green-700">
-                      {permission.actions.join(', ')}
-                    </div>
-                  </div>
-                </div>
-              ))
-            ) : (
-              <div className="w-full text-center py-8">
-                <p className="text-gray-400 text-base flex items-center justify-center gap-2">
-                  <AlertCircle className="w-5 h-5" /> No permissions assigned
-                </p>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
     </div>
   );
 }

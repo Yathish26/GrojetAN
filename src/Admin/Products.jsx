@@ -1,9 +1,10 @@
 import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Plus, Edit, Trash2, X, Loader2, ChevronLeft, ChevronRight, Layout } from 'lucide-react';
+import { Search, Plus, Edit, Trash2, X, Loader2, ChevronLeft, ChevronRight, Layout, Shield } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
 import Modal from 'react-modal';
 import ChipInput from '../Components/ChipInput';
+import LoaderSpinner from '../Components/Loader';
 
 Modal.setAppElement('#root');
 
@@ -41,7 +42,6 @@ export default function Products() {
   const [searchTerm, setSearchTerm] = useState('');
   const [categorylist, setCategorylist] = useState([]);
   const [filters, setFilters] = useState({ category: '', status: 'all' });
-
   // Pagination
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -51,6 +51,41 @@ export default function Products() {
   const [pendingSearch, setPendingSearch] = useState('');
 
   const navigate = useNavigate();
+
+  // Current user / role guard
+  const [currentUser, setCurrentUser] = useState(null);
+  const [checkingUser, setCheckingUser] = useState(true);
+  const allowedRoles = ['super_admin', 'admin', 'inventory_manager'];
+
+  const fetchCurrentUser = useCallback(async () => {
+    try {
+      const local = localStorage.getItem('adminUser');
+      if (local) {
+        setCurrentUser(JSON.parse(local));
+        return;
+      }
+      const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/auth/profile`, { credentials: 'include' });
+      const data = await response.json();
+      if (data.tokenValid === false) {
+        navigate('/login', { replace: true });
+        return;
+      }
+      if (response.ok && data.admin) {
+        setCurrentUser(data.admin);
+        localStorage.setItem('adminUser', JSON.stringify(data.admin));
+      }
+    } catch (err) {
+      console.error('Failed to fetch current user', err);
+    } finally {
+      setCheckingUser(false);
+    }
+  }, [navigate]);
+
+  useEffect(() => {
+    fetchCurrentUser();
+  }, [fetchCurrentUser]);
+
+  const isAuthorized = allowedRoles.includes(currentUser?.role);
 
   // Fetch products using backend's paginated and filtered API
   const fetchProducts = useCallback(async (params = {}) => {
@@ -120,17 +155,21 @@ export default function Products() {
 
   // First load
   useEffect(() => {
-    fetchProducts({ page: 1 });
-    setPage(1);
-    fetchCategories();
+    if (isAuthorized) {
+      fetchProducts({ page: 1 });
+      setPage(1);
+      fetchCategories();
+    }
     // eslint-disable-next-line
-  }, []);
+  }, [isAuthorized]);
 
   // Refetch whenever page, searchTerm, filters.category, filters.status change
   useEffect(() => {
-    fetchProducts({ page, search: searchTerm, category: filters.category, status: filters.status });
+    if (isAuthorized) {
+      fetchProducts({ page, search: searchTerm, category: filters.category, status: filters.status });
+    }
     // eslint-disable-next-line
-  }, [page, searchTerm, filters.category, filters.status]);
+  }, [page, searchTerm, filters.category, filters.status, isAuthorized]);
 
   // Memoized categories for filter dropdown
   const categories = useMemo(() => {
@@ -292,6 +331,25 @@ export default function Products() {
     setPage(1);
   };
 
+  // Loading current user (guard)
+  if (checkingUser) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+      </div>
+    );
+  }
+
+  if (!isAuthorized) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen">
+        <Shield className="w-16 h-16 text-red-500 mb-4" />
+        <h2 className="text-xl font-semibold text-gray-800 mb-2">Access Denied</h2>
+        <p className="text-gray-600">Only Admins and Super Admins can access products management.</p>
+      </div>
+    );
+  }
+
   return (
       <div className="min-h-screen bg-gray-50 p-4 md:p-6">
 
@@ -390,8 +448,8 @@ export default function Products() {
         {/* Loading */}
         {
           loading && (
-            <div className="flex items-center justify-center h-64">
-              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-green-500"></div>
+            <div className="flex items-center flex-col gap-4 justify-center h-64">
+              <LoaderSpinner />
               <p className="ml-3 text-gray-600">Loading products...</p>
             </div>
           )

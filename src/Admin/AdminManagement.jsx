@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Plus,
   Edit3,
   Trash2,
   User,
@@ -13,7 +12,6 @@ import {
   XCircle,
   AlertCircle,
   Crown,
-  Settings,
   Lock,
   Unlock,
   UserPlus
@@ -36,27 +34,24 @@ export default function AdminManagement() {
   const navigate = useNavigate();
   const [admins, setAdmins] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
-  const [permissionDraft, setPermissionDraft] = useState([]);
 
   const [createForm, setCreateForm] = useState({
     name: '',
     email: '',
     password: '',
-    role: 'admin',
+    role: '',
     phone: '',
     department: ''
   });
 
   const [editingAdmin, setEditingAdmin] = useState(null);
   const [editForm, setEditForm] = useState({});
-  const [editPermissions, setEditPermissions] = useState([]);
 
   useEffect(() => {
     fetchAdmins();
@@ -75,8 +70,12 @@ export default function AdminManagement() {
           credentials: 'include'
         });
 
+        const data = await response.json();
+        if (data.tokenValid === false) {
+          navigate('/login', { replace: true });
+          return;
+        }
         if (response.ok) {
-          const data = await response.json();
           setCurrentUser(data.admin);
           localStorage.setItem('adminUser', JSON.stringify(data.admin));
         }
@@ -93,13 +92,16 @@ export default function AdminManagement() {
       const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/admin-management`, {
         credentials: 'include'
       });
+      const data = await response.json();
+      if (data.tokenValid === false) {
+        navigate('/login', { replace: true });
+        return;
+      }
       if (!response.ok) {
         throw new Error('Failed to fetch admins');
       }
-      const data = await response.json();
       setAdmins(data.admins || []);
     } catch (err) {
-      setError(err.message);
       toast.error('Failed to load admins');
     } finally {
       setLoading(false);
@@ -113,7 +115,7 @@ export default function AdminManagement() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ ...createForm, permissions: permissionDraft }),
+        body: JSON.stringify({ ...createForm }),
       });
       if (!response.ok) throw new Error((await response.json()).message || 'Failed to create admin');
       const data = await response.json();
@@ -122,7 +124,6 @@ export default function AdminManagement() {
       setCreateForm({
         name: '', email: '', password: '', role: 'admin', phone: '', department: ''
       });
-      setPermissionDraft([]);
       toast.success('Admin created successfully');
     } catch (err) {
       toast.error(err.message);
@@ -139,16 +140,15 @@ export default function AdminManagement() {
       department: admin.department || '',
       status: admin.status || 'active'
     });
-    setEditPermissions(admin.permissions || []);
   };
 
-  const handleUpdateAdmin = async (adminId, updates, perms) => {
+  const handleUpdateAdmin = async (adminId, updates) => {
     try {
       const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/admin-management/${adminId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ ...updates, permissions: perms }),
+        body: JSON.stringify({ ...updates }),
       });
       if (!response.ok) throw new Error('Failed to update admin');
       const data = await response.json();
@@ -158,29 +158,6 @@ export default function AdminManagement() {
     } catch (err) {
       toast.error(err.message);
     }
-  };
-
-  // Permission UI logic
-  const toggleModuleAction = (draft, setDraft, module, action) => {
-    setDraft(prev => {
-      const idx = prev.findIndex(p => p.module === module);
-      if (idx === -1) {
-        // Add new module with this action
-        return [...prev, { module, actions: [action] }];
-      }
-      const mod = prev[idx];
-      const actionsSet = new Set(mod.actions);
-      if (actionsSet.has(action)) {
-        actionsSet.delete(action);
-      } else {
-        actionsSet.add(action);
-      }
-      const newMod = { ...mod, actions: Array.from(actionsSet) };
-      const newDraft = [...prev];
-      newDraft[idx] = newMod;
-      // Remove module if no actions left
-      return newMod.actions.length === 0 ? newDraft.filter((_, i) => i !== idx) : newDraft;
-    });
   };
 
   const handleDeleteAdmin = async (adminId) => {
@@ -203,21 +180,8 @@ export default function AdminManagement() {
   };
 
   const toggleAdminStatus = async (adminId, currentStatus) => {
-    const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
+    const newStatus = currentStatus === 'Active' ? 'Inactive' : 'Active';
     await handleUpdateAdmin(adminId, { status: newStatus }, []);
-  };
-
-  const getStatusIcon = (status) => {
-    switch (status) {
-      case 'active':
-        return <CircleCheck className="w-5 h-5 text-green-500" />;
-      case 'inactive':
-        return <XCircle className="w-5 h-5 text-gray-500" />;
-      case 'suspended':
-        return <XCircle className="w-5 h-5 text-red-500" />;
-      default:
-        return <AlertCircle className="w-5 h-5 text-yellow-500" />;
-    }
   };
 
   const getStatusColor = (status) => {
@@ -284,23 +248,23 @@ export default function AdminManagement() {
         <div className="flex gap-2">
           <button
             onClick={() => navigate('/admin-register')}
-            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white  hover:bg-green-700 transition-colors"
           >
             <UserPlus className="w-4 h-4" />
             Register New Admin
           </button>
-          <button
+          {/* <button
             onClick={() => setShowCreateModal(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white  hover:bg-blue-700 transition-colors"
           >
             <Plus className="w-4 h-4" />
             Quick Add Admin
-          </button>
+          </button> */}
         </div>
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+      <div className="bg-white  shadow-sm border border-gray-200 p-6">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -309,13 +273,13 @@ export default function AdminManagement() {
               placeholder="Search admins..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+              className="pl-10 pr-4 py-2 w-full border border-gray-300  focus:ring-2 focus:ring-green-500 focus:border-green-500"
             />
           </div>
           <select
             value={roleFilter}
             onChange={(e) => setRoleFilter(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+            className="px-3 py-2 border border-gray-300  focus:ring-2 focus:ring-green-500 focus:border-green-500"
           >
             <option value="all">All Roles</option>
             {Object.entries(roleHierarchy).map(([key, value]) => (
@@ -325,7 +289,7 @@ export default function AdminManagement() {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+            className="px-3 py-2 border border-gray-300  focus:ring-2 focus:ring-green-500 focus:border-green-500"
           >
             <option value="all">All Status</option>
             <option value="active">Active</option>
@@ -340,7 +304,7 @@ export default function AdminManagement() {
       </div>
 
       {/* Admins List */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+      <div className="bg-white  shadow-sm border border-gray-200">
         <div className="p-6 border-b border-gray-200">
           <h2 className="text-lg font-semibold text-gray-800">System Administrators</h2>
         </div>
@@ -359,9 +323,6 @@ export default function AdminManagement() {
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Last Login
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Permissions
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Actions
@@ -403,28 +364,13 @@ export default function AdminManagement() {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center gap-2">
-                      {getStatusIcon(admin.status || (admin.isActive ? 'active' : 'inactive'))}
                       <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(admin.status || (admin.isActive ? 'active' : 'inactive'))}`}>
-                        {admin.status || (admin.isActive ? 'active' : 'inactive')}
+                        {admin.status || (admin.isActive ? 'Active' : 'Inactive')}
                       </span>
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {admin.lastLogin ? new Date(admin.lastLogin).toLocaleDateString() : 'Never'}
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex flex-wrap gap-1">
-                      {admin.permissions?.slice(0, 3).map((perm, idx) => (
-                        <span key={perm.module + idx} className="inline-flex px-2 py-1 text-xs bg-gray-100 text-gray-700 rounded">
-                          {perm.module}: {perm.actions.join(', ')}
-                        </span>
-                      ))}
-                      {admin.permissions?.length > 3 && (
-                        <span className="inline-flex px-2 py-1 text-xs bg-gray-100 text-gray-700 rounded">
-                          +{admin.permissions.length - 3} more
-                        </span>
-                      )}
-                    </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div className="flex items-center gap-2">
@@ -432,7 +378,7 @@ export default function AdminManagement() {
                         <>
                           <button
                             onClick={() => toggleAdminStatus(admin._id, admin.status || (admin.isActive ? 'active' : 'inactive'))}
-                            className={`p-1 rounded hover:bg-gray-100 ${(admin.status || (admin.isActive ? 'active' : 'inactive')) === 'active' ? 'text-red-600' : 'text-green-600'
+                            className={`p-1 hover:bg-gray-100 ${(admin.status || (admin.isActive ? 'active' : 'inactive')) === 'active' ? 'text-red-600' : 'text-green-600'
                               }`}
                             title={(admin.status || (admin.isActive ? 'active' : 'inactive')) === 'active' ? 'Deactivate' : 'Activate'}
                           >
@@ -473,7 +419,7 @@ export default function AdminManagement() {
       {/* Create Admin Modal */}
       {showCreateModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-screen overflow-y-auto">
+          <div className="bg-white  shadow-xl max-w-2xl w-full max-h-screen overflow-y-auto">
             <div className="p-6 border-b border-gray-200">
               <h2 className="text-xl font-semibold text-gray-800">Create New Admin</h2>
             </div>
@@ -486,7 +432,7 @@ export default function AdminManagement() {
                     required
                     value={createForm.name}
                     onChange={(e) => setCreateForm({ ...createForm, name: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    className="w-full px-3 py-2 border border-gray-300  focus:ring-2 focus:ring-green-500 focus:border-green-500"
                   />
                 </div>
                 <div>
@@ -496,7 +442,7 @@ export default function AdminManagement() {
                     required
                     value={createForm.email}
                     onChange={(e) => setCreateForm({ ...createForm, email: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    className="w-full px-3 py-2 border border-gray-300  focus:ring-2 focus:ring-green-500 focus:border-green-500"
                   />
                 </div>
                 <div>
@@ -507,7 +453,7 @@ export default function AdminManagement() {
                       required
                       value={createForm.password}
                       onChange={(e) => setCreateForm({ ...createForm, password: e.target.value })}
-                      className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                      className="w-full px-3 py-2 pr-10 border border-gray-300  focus:ring-2 focus:ring-green-500 focus:border-green-500"
                     />
                     <button
                       type="button"
@@ -524,7 +470,7 @@ export default function AdminManagement() {
                     type="tel"
                     value={createForm.phone}
                     onChange={(e) => setCreateForm({ ...createForm, phone: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    className="w-full px-3 py-2 border border-gray-300  focus:ring-2 focus:ring-green-500 focus:border-green-500"
                   />
                 </div>
                 <div>
@@ -533,7 +479,7 @@ export default function AdminManagement() {
                     required
                     value={createForm.role}
                     onChange={(e) => setCreateForm({ ...createForm, role: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    className="w-full px-3 py-2 border border-gray-300  focus:ring-2 focus:ring-green-500 focus:border-green-500"
                   >
                     {Object.entries(roleHierarchy).map(([key, value]) => (
                       <option key={key} value={key}>{value}</option>
@@ -546,41 +492,21 @@ export default function AdminManagement() {
                     type="text"
                     value={createForm.department}
                     onChange={(e) => setCreateForm({ ...createForm, department: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    className="w-full px-3 py-2 border border-gray-300  focus:ring-2 focus:ring-green-500 focus:border-green-500"
                   />
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Permissions</label>
-                <div className="space-y-2">
-                  {MODULES.map(module => (
-                    <div key={module} className="flex items-center gap-2">
-                      <span className="w-24 text-xs font-semibold capitalize">{module}</span>
-                      {ACTIONS.map(action => (
-                        <label key={module + action} className="flex items-center gap-1 text-xs">
-                          <input
-                            type="checkbox"
-                            checked={!!permissionDraft.find(p => p.module === module && p.actions.includes(action))}
-                            onChange={() => toggleModuleAction(permissionDraft, setPermissionDraft, module, action)}
-                          />
-                          {action}
-                        </label>
-                      ))}
-                    </div>
-                  ))}
                 </div>
               </div>
               <div className="flex justify-end gap-3 pt-4">
                 <button
                   type="button"
                   onClick={() => setShowCreateModal(false)}
-                  className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                  className="px-4 py-2 text-gray-700 border border-gray-300  hover:bg-gray-50 transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                  className="px-4 py-2 bg-green-600 text-white  hover:bg-green-700 transition-colors"
                 >
                   Create Admin
                 </button>
@@ -592,14 +518,14 @@ export default function AdminManagement() {
       {/* Edit Admin Modal */}
       {editingAdmin && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-screen overflow-y-auto">
+          <div className="bg-white  shadow-xl max-w-2xl w-full max-h-screen overflow-y-auto">
             <div className="p-6 border-b border-gray-200">
               <h2 className="text-xl font-semibold text-gray-800">Edit Admin</h2>
             </div>
             <form
               onSubmit={e => {
                 e.preventDefault();
-                handleUpdateAdmin(editingAdmin._id, editForm, editPermissions);
+                handleUpdateAdmin(editingAdmin._id, editForm);
               }}
               className="p-6 space-y-4"
             >
@@ -611,7 +537,7 @@ export default function AdminManagement() {
                     required
                     value={editForm.name}
                     onChange={e => setEditForm({ ...editForm, name: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    className="w-full px-3 py-2 border border-gray-300  focus:ring-2 focus:ring-green-500 focus:border-green-500"
                   />
                 </div>
                 <div>
@@ -621,7 +547,7 @@ export default function AdminManagement() {
                     required
                     value={editForm.email}
                     onChange={e => setEditForm({ ...editForm, email: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    className="w-full px-3 py-2 border border-gray-300  focus:ring-2 focus:ring-green-500 focus:border-green-500"
                   />
                 </div>
                 <div>
@@ -630,7 +556,7 @@ export default function AdminManagement() {
                     type="tel"
                     value={editForm.phone}
                     onChange={e => setEditForm({ ...editForm, phone: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    className="w-full px-3 py-2 border border-gray-300  focus:ring-2 focus:ring-green-500 focus:border-green-500"
                   />
                 </div>
                 <div>
@@ -639,7 +565,7 @@ export default function AdminManagement() {
                     required
                     value={editForm.role}
                     onChange={e => setEditForm({ ...editForm, role: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    className="w-full px-3 py-2 border border-gray-300  focus:ring-2 focus:ring-green-500 focus:border-green-500"
                   >
                     {Object.entries(roleHierarchy).map(([key, value]) => (
                       <option key={key} value={key}>{value}</option>
@@ -652,7 +578,7 @@ export default function AdminManagement() {
                     type="text"
                     value={editForm.department}
                     onChange={e => setEditForm({ ...editForm, department: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    className="w-full px-3 py-2 border border-gray-300  focus:ring-2 focus:ring-green-500 focus:border-green-500"
                   />
                 </div>
                 <div>
@@ -661,7 +587,7 @@ export default function AdminManagement() {
                     required
                     value={editForm.status}
                     onChange={e => setEditForm({ ...editForm, status: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    className="w-full px-3 py-2 border border-gray-300  focus:ring-2 focus:ring-green-500 focus:border-green-500"
                   >
                     <option value="active">Active</option>
                     <option value="inactive">Inactive</option>
@@ -669,37 +595,17 @@ export default function AdminManagement() {
                   </select>
                 </div>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Permissions</label>
-                <div className="space-y-2">
-                  {MODULES.map(module => (
-                    <div key={module} className="flex items-center gap-2">
-                      <span className="w-24 text-xs font-semibold capitalize">{module}</span>
-                      {ACTIONS.map(action => (
-                        <label key={module + action} className="flex items-center gap-1 text-xs">
-                          <input
-                            type="checkbox"
-                            checked={!!editPermissions.find(p => p.module === module && p.actions.includes(action))}
-                            onChange={() => toggleModuleAction(editPermissions, setEditPermissions, module, action)}
-                          />
-                          {action}
-                        </label>
-                      ))}
-                    </div>
-                  ))}
-                </div>
-              </div>
               <div className="flex justify-end gap-3 pt-4">
                 <button
                   type="button"
                   onClick={() => setEditingAdmin(null)}
-                  className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                  className="px-4 py-2 text-gray-700 border border-gray-300  hover:bg-gray-50 transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  className="px-4 py-2 bg-blue-600 text-white  hover:bg-blue-700 transition-colors"
                 >
                   Save Changes
                 </button>
