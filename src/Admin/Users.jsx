@@ -270,8 +270,8 @@ export default function Users() {
                   <tbody className="bg-white divide-y divide-gray-200">
                     {currentUsers.map((user) => (
                       <tr key={user._id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{user.name}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{user.phone || 'N/A'}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{user.personalInfo.name}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{user.personalInfo.phone || 'N/A'}</td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span className={`px-2 py-1 inline-flex text-xs font-semibold ${user.status.isActive
                             ? 'bg-green-100 text-green-800'
