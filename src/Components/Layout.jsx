@@ -107,7 +107,7 @@ const Layout = ({ children, title }) => {
         {currentAdmin && (
           <div className="p-4 border-b border-neutral-200 flex-shrink-0">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-green-50 flex items-center justify-center border border-green-200">
+              <div onClick={() => navigate('/profile')} className="w-10 h-10 cursor-pointer bg-green-50 flex items-center justify-center border border-green-200">
                 <User size={20} className="text-green-700" />
               </div>
               <div>
@@ -142,7 +142,7 @@ const Layout = ({ children, title }) => {
         {/* Bottom Actions */}
         <div className="p-3 border-t border-neutral-200 bg-white mt-auto flex-shrink-0">
           <button
-            onClick={() => navigate('/profile')}
+            onClick={() => navigate('/settings')}
             className="w-full flex items-center gap-3 px-3 py-2 text-neutral-700 hover:bg-neutral-100 mb-2"
             style={{ borderRadius: 0 }}
           >
