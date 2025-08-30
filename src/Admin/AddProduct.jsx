@@ -46,6 +46,7 @@ export default function AddProduct() {
     brand: '',
     category: '',
     sku: '',
+  hsnCode: '',
     barcode: '',
     variants: [{
       label: '',
@@ -287,6 +288,7 @@ export default function AddProduct() {
           brand: '',
           category: '',
           sku: '',
+          hsnCode: '',
           barcode: '',
           variants: [{
             label: '',
@@ -537,7 +539,22 @@ export default function AddProduct() {
                 </div>
               </div>
 
-              <div className="space-y-2">
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">
+                HSN Code
+              </label>
+              <input
+                type="text"
+                name="hsnCode"
+                className="w-full px-4 py-2.5 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                value={formData.hsnCode}
+                onChange={(e) => {
+                  const sanitizedValue = e.target.value.replace(/[^a-zA-Z0-9]/g, '');
+                  setFormData(prev => ({ ...prev, hsnCode: sanitizedValue }));
+                }}
+                placeholder="e.g. 08081000"
+              />
+            </div>              <div className="space-y-2">
                 <label className="block text-sm font-medium text-gray-700">
                   Barcode
                 </label>

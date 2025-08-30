@@ -139,7 +139,7 @@ export default function Merchants() {
             
             <div className="max-w-7xl mx-auto">
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
-                    <h1 className="text-2xl font-bold text-gray-900">Merchant Applications</h1>
+                    <h1 className="text-2xl font-bold text-gray-900">Merchant Enquiries</h1>
                     <div className="flex items-center gap-3">
                         <div className="relative w-full md:w-64">
                             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />

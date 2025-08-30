@@ -66,7 +66,7 @@ const Layout = ({ children, title }) => {
     { name: 'Add Product', icon: Plus, path: '/products/add', roles: ['super_admin', 'admin', 'inventory_manager'] },
     { name: 'Categories', icon: ChartBarStacked, path: '/categories', roles: ['super_admin', 'admin', 'inventory_manager'] },
     { name: 'Users', icon: Users, path: '/users', roles: ['super_admin', 'admin'] },
-    { name: 'Merchants', icon: Store, path: '/merchants', roles: ['super_admin', 'admin'] },
+    { name: 'Merchant Enquiries', icon: Store, path: '/merchants', roles: ['super_admin', 'admin'] },
     { name: 'Delivery Agents', icon: Truck, path: '/delivery-agents', roles: ['super_admin', 'admin', 'delivery_manager'] },
     { name: 'Delivery Zones', icon: MapPin, path: '/delivery-zones', roles: ['super_admin', 'admin', 'delivery_manager'] },
     { name: 'Analytics', icon: BarChart3, path: '/analytics', roles: ['super_admin', 'admin'] },

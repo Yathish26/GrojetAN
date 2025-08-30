@@ -475,6 +475,7 @@ export default function Products() {
                       <tr>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">SKU</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">HSN</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
                         <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Stock</th>
                         <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
@@ -498,9 +499,8 @@ export default function Products() {
                               </div>
                             </div>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {product.sku || 'N/A'}
-                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{product.sku || 'N/A'}</td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{product.hsnCode || '—'}</td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                             {product.category_string || product.category?.name || 'Uncategorized'}
                           </td>
@@ -608,6 +608,21 @@ export default function Products() {
                     disabled={isSaving}
                     required
                   />
+                  <div>
+                    <label className="block text-gray-700 text-sm font-medium mb-1">HSN Code</label>
+                    <input
+                      type="text"
+                      name="hsnCode"
+                      className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500"
+                      value={editProduct.hsnCode || ''}
+                      onChange={(e) => {
+                        const sanitizedValue = e.target.value.replace(/[^a-zA-Z0-9]/g, '');
+                        setEditProduct(prev => ({ ...prev, hsnCode: sanitizedValue }));
+                      }}
+                      disabled={isSaving}
+                      placeholder="e.g. 08081000"
+                    />
+                  </div>
                   <EditInput
                     label="Brand"
                     name="brand"
