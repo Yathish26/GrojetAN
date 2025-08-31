@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
   Home, Package, Plus, Users, Store, ChartBarStacked,
@@ -11,6 +11,8 @@ import toast from 'react-hot-toast';
 const Layout = ({ children, title }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [currentAdmin, setCurrentAdmin] = useState(null);
+  const navRef = useRef(null);
+  const mainRef = useRef(null);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -43,6 +45,37 @@ const Layout = ({ children, title }) => {
     }
   }, []);
 
+  // Preserve sidebar scroll position across navigations
+  useEffect(() => {
+    const el = navRef.current;
+    if (!el) return;
+    const saved = sessionStorage.getItem('sidebarScrollTop');
+    if (saved) {
+      el.scrollTop = parseInt(saved, 10) || 0;
+    }
+    const onScroll = () => {
+      sessionStorage.setItem('sidebarScrollTop', String(el.scrollTop));
+    };
+    el.addEventListener('scroll', onScroll);
+    return () => el.removeEventListener('scroll', onScroll);
+  }, []);
+
+  // Preserve main content scroll position per-route to avoid jump-to-top
+  useEffect(() => {
+    const el = mainRef.current;
+    if (!el) return;
+    const key = `mainScroll:${location.pathname}`;
+    const saved = sessionStorage.getItem(key);
+    if (saved) {
+      el.scrollTop = parseInt(saved, 10) || 0;
+    }
+    const onScroll = () => {
+      sessionStorage.setItem(key, String(el.scrollTop));
+    };
+    el.addEventListener('scroll', onScroll);
+    return () => el.removeEventListener('scroll', onScroll);
+  }, [location.pathname]);
+
 
   const handleLogout = async () => {
     try {
@@ -60,7 +93,7 @@ const Layout = ({ children, title }) => {
   };
 
   const menuItems = [
-    { name: 'Dashboard', icon: Home, path: '/', roles: ['super_admin', 'admin', 'delivery_manager', 'inventory_manager'] },
+    { name: 'Dashboard', icon: Home, path: '/', roles: ['super_admin', 'admin', 'delivery_manager', 'inventory_manager', 'customer_service'] },
     { name: 'Orders', icon: ShoppingCart, path: '/orders', roles: ['super_admin', 'admin', 'delivery_manager'] },
     { name: 'Products', icon: Package, path: '/products', roles: ['super_admin', 'admin', 'inventory_manager'] },
     { name: 'Add Product', icon: Plus, path: '/products/add', roles: ['super_admin', 'admin', 'inventory_manager'] },
@@ -70,7 +103,12 @@ const Layout = ({ children, title }) => {
     { name: 'Delivery Agents', icon: Truck, path: '/delivery-agents', roles: ['super_admin', 'admin', 'delivery_manager'] },
     { name: 'Delivery Zones', icon: MapPin, path: '/delivery-zones', roles: ['super_admin', 'admin', 'delivery_manager'] },
     { name: 'Analytics', icon: BarChart3, path: '/analytics', roles: ['super_admin', 'admin'] },
-    { name: 'Admin Management', icon: Shield, path: '/admin-management', roles: ['super_admin'] },
+  { name: 'Admin Management', icon: Shield, path: '/admin-management', roles: ['super_admin'] },
+  // Support Suite
+  { name: 'Support Dashboard', icon: Home, path: '/support', roles: ['customer_service', 'super_admin', 'admin'] },
+  { name: 'Tickets', icon: Bell, path: '/support/tickets', roles: ['customer_service', 'super_admin', 'admin'] },
+  { name: 'Live Chat (Customers)', icon: Users, path: '/support/chat/customers', roles: ['customer_service', 'super_admin', 'admin'] },
+  { name: 'Live Chat (Merchants)', icon: Store, path: '/support/chat/merchants', roles: ['customer_service', 'super_admin', 'admin'] },
   ];
 
   const filteredMenuItems = menuItems.filter(item =>
@@ -119,7 +157,7 @@ const Layout = ({ children, title }) => {
         )}
 
         {/* Navigation */}
-        <nav className="mt-4 px-2 flex-1 overflow-y-auto">
+  <nav ref={navRef} className="mt-4 px-2 flex-1 overflow-y-auto">
           {filteredMenuItems.map((item) => (
             <button
               key={item.name}
@@ -189,7 +227,7 @@ const Layout = ({ children, title }) => {
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 overflow-auto p-6">
+  <main ref={mainRef} className="flex-1 overflow-auto p-6">
           {children}
         </main>
       </div>

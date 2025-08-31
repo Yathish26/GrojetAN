@@ -18,6 +18,10 @@ import Analytics from './Admin/Analytics.jsx'
 import AdminManagement from './Admin/AdminManagement.jsx'
 import Profile from './Admin/Profile.jsx'
 import Settings from './Admin/Settings.jsx'
+import SupportDashboard from './Admin/SupportDashboard.jsx'
+import SupportTickets from './Admin/SupportTickets.jsx'
+import SupportChatCustomers from './Admin/SupportChatCustomers.jsx'
+import SupportChatMerchants from './Admin/SupportChatMerchants.jsx'
 import DeliveryAgentSignup from './Admin/DeliveryAgentSignup.jsx'
 import Error404 from './Error404.jsx'
 import { Toaster } from 'react-hot-toast'
@@ -93,6 +97,12 @@ function App() {
           {/* Settings & Profile */}
           <Route path="/profile" element={<Profile />} />
           <Route path="/settings" element={<Settings />} />
+
+          {/* Support Suite */}
+          <Route path="/support" element={<SupportDashboard />} />
+          <Route path="/support/tickets" element={<SupportTickets />} />
+          <Route path="/support/chat/customers" element={<SupportChatCustomers />} />
+          <Route path="/support/chat/merchants" element={<SupportChatMerchants />} />
 
           {/* 404 */}
           <Route path="*" element={<Error404 />} />
