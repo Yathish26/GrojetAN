@@ -14,7 +14,7 @@ export default function SupportTickets(){
   const [page, setPage] = useState(1);
   const [showCreate, setShowCreate] = useState(false);
   const [creating, setCreating] = useState(false);
-  const [form, setForm] = useState({ subject: '', description: '', priority: 'medium', category: 'general' });
+  const [form, setForm] = useState({ subject: '', description: '', priority: 'medium', category: 'other' });
 
   const load = async (pageNum = page) => {
     try {
@@ -59,7 +59,7 @@ export default function SupportTickets(){
       if (!res.ok || !data.success) throw new Error(data.message || 'Create failed');
       toast.success('Ticket created');
       setShowCreate(false);
-      setForm({ subject: '', description: '', priority: 'medium', category: 'general' });
+  setForm({ subject: '', description: '', priority: 'medium', category: 'other' });
       load(1);
     } catch (e) {
       toast.error(e.message);
@@ -183,9 +183,10 @@ export default function SupportTickets(){
                 <div>
                   <label className="text-sm">Category</label>
                   <select value={form.category} onChange={e=>setForm(f=>({...f, category: e.target.value}))} className="w-full border px-2 py-2">
-                    <option value="general">General</option>
+                    <option value="other">Other</option>
                     <option value="order">Order</option>
                     <option value="payment">Payment</option>
+                    <option value="refund">Refund</option>
                     <option value="merchant">Merchant</option>
                     <option value="delivery">Delivery</option>
                   </select>
