@@ -25,7 +25,8 @@ import {
   Navigation,
   Shield,
   Eye,
-  Download
+  Download,
+  RefreshCw
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -40,6 +41,7 @@ export default function DeliveryAgentDetails() {
   const [updating, setUpdating] = useState(false);
   const [recentOrders, setRecentOrders] = useState([]);
   const [agentStats, setAgentStats] = useState(null);
+  const [refreshingStats, setRefreshingStats] = useState(false);
 
   useEffect(() => {
     fetchAgentDetails();
@@ -83,6 +85,7 @@ export default function DeliveryAgentDetails() {
   };
 
   const fetchAgentStats = async () => {
+    setRefreshingStats(true);
     try {
       const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/delivery-agents/${id}/stats`, {
         credentials: 'include'
@@ -94,6 +97,8 @@ export default function DeliveryAgentDetails() {
       }
     } catch (err) {
       console.error('Failed to fetch agent stats:', err);
+    } finally {
+      setRefreshingStats(false);
     }
   };
 
@@ -219,7 +224,8 @@ export default function DeliveryAgentDetails() {
   const formatTime = (hours) => {
     if (!hours || hours === 0) return '00:00:00';
     
-    const totalSeconds = Math.floor(hours * 3600);
+    const absHours = Math.abs(hours);
+    const totalSeconds = Math.floor(absHours * 3600);
     const hrs = Math.floor(totalSeconds / 3600);
     const mins = Math.floor((totalSeconds % 3600) / 60);
     const secs = totalSeconds % 60;
@@ -728,10 +734,20 @@ export default function DeliveryAgentDetails() {
           {/* Online Tracking Stats */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200">
             <div className="p-6 border-b border-gray-200">
-              <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-                <Clock className="w-5 h-5" />
-                Online Tracking
-              </h2>
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                  <Clock className="w-5 h-5" />
+                  Online Tracking
+                </h2>
+                <button
+                  onClick={fetchAgentStats}
+                  disabled={refreshingStats}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
+                  title="Refresh data"
+                >
+                  <RefreshCw className={`w-5 h-5 text-gray-600 ${refreshingStats ? 'animate-spin' : ''}`} />
+                </button>
+              </div>
             </div>
             <div className="p-6 space-y-4">
               <div className="flex items-center justify-between">
