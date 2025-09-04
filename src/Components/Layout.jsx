@@ -99,16 +99,12 @@ const Layout = ({ children, title }) => {
     { name: 'Add Product', icon: Plus, path: '/products/add', roles: ['super_admin', 'admin', 'inventory_manager'] },
     { name: 'Categories', icon: ChartBarStacked, path: '/categories', roles: ['super_admin', 'admin', 'inventory_manager'] },
     { name: 'Users', icon: Users, path: '/users', roles: ['super_admin', 'admin'] },
-    { name: 'Merchant Enquiries', icon: Store, path: '/merchants', roles: ['super_admin', 'admin'] },
+    { name: 'Merchant Enquiries', icon: Store, path: '/merchant-enquiries', roles: ['super_admin', 'admin'] },
+    { name: 'Merchants', icon: Store, path: '/merchants', roles: ['super_admin', 'admin'] },
     { name: 'Delivery Agents', icon: Truck, path: '/delivery-agents', roles: ['super_admin', 'admin', 'delivery_manager'] },
     { name: 'Delivery Zones', icon: MapPin, path: '/delivery-zones', roles: ['super_admin', 'admin', 'delivery_manager'] },
     { name: 'Analytics', icon: BarChart3, path: '/analytics', roles: ['super_admin', 'admin'] },
-  { name: 'Admin Management', icon: Shield, path: '/admin-management', roles: ['super_admin'] },
-  // Support Suite
-  { name: 'Support Dashboard', icon: Home, path: '/support', roles: ['customer_service', 'super_admin', 'admin'] },
-  { name: 'Tickets', icon: Bell, path: '/support/tickets', roles: ['customer_service', 'super_admin', 'admin'] },
-  { name: 'Live Chat (Customers)', icon: Users, path: '/support/chat/customers', roles: ['customer_service', 'super_admin', 'admin'] },
-  { name: 'Live Chat (Merchants)', icon: Store, path: '/support/chat/merchants', roles: ['customer_service', 'super_admin', 'admin'] },
+    { name: 'Admin Management', icon: Shield, path: '/admin-management', roles: ['super_admin'] },
   ];
 
   const filteredMenuItems = menuItems.filter(item =>
@@ -157,7 +153,7 @@ const Layout = ({ children, title }) => {
         )}
 
         {/* Navigation */}
-  <nav ref={navRef} className="mt-4 px-2 flex-1 overflow-y-auto">
+        <nav ref={navRef} className="mt-4 px-2 flex-1 overflow-y-auto">
           {filteredMenuItems.map((item) => (
             <button
               key={item.name}
@@ -166,8 +162,8 @@ const Layout = ({ children, title }) => {
                 setSidebarOpen(false);
               }}
               className={`w-full flex items-center cursor-pointer gap-3 px-3 py-2 text-left mb-1 transition-colors border-l-4 ${isActive(item.path)
-                  ? 'bg-neutral-200 text-green-700 border-green-500'
-                  : 'text-neutral-700 hover:bg-neutral-100 border-transparent'
+                ? 'bg-neutral-200 text-green-700 border-green-500'
+                : 'text-neutral-700 hover:bg-neutral-100 border-transparent'
                 }`}
               style={{ borderRadius: 0 }}
             >
@@ -227,7 +223,7 @@ const Layout = ({ children, title }) => {
         </header>
 
         {/* Page Content */}
-  <main ref={mainRef} className="flex-1 overflow-auto p-6">
+        <main ref={mainRef} className="flex-1 overflow-auto p-6">
           {children}
         </main>
       </div>

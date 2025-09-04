@@ -3,7 +3,6 @@ import { BrowserRouter as Router, Route, Routes } from 'react-router-dom'
 import AdminNew from './Admin/AdminNew.jsx'
 import AdminLogin from './Admin/AdminLogin.jsx'
 import AdminRegister from './Admin/AdminRegister.jsx'
-import Merchants from './Admin/Merchants.jsx'
 import Categories from './Admin/Categories.jsx'
 import Products from './Admin/Products.jsx'
 import AddProduct from './Admin/AddProduct.jsx'
@@ -18,13 +17,14 @@ import Analytics from './Admin/Analytics.jsx'
 import AdminManagement from './Admin/AdminManagement.jsx'
 import Profile from './Admin/Profile.jsx'
 import Settings from './Admin/Settings.jsx'
-import SupportDashboard from './Admin/SupportDashboard.jsx'
-import SupportTickets from './Admin/SupportTickets.jsx'
-import SupportChatCustomers from './Admin/SupportChatCustomers.jsx'
-import SupportChatMerchants from './Admin/SupportChatMerchants.jsx'
 import DeliveryAgentSignup from './Admin/DeliveryAgentSignup.jsx'
 import Error404 from './Error404.jsx'
 import { Toaster } from 'react-hot-toast'
+import MerchantEnq from './Admin/MerchantEnq.jsx'
+import Merchants from './Admin/Merchants.jsx'
+import AddMerchant from './Admin/AddMerchant.jsx'
+import MerchantDetails from './Admin/MerchantDetails.jsx'
+import EditMerchant from './Admin/EditMerchant.jsx'
 
 function App() {
   return (
@@ -76,7 +76,11 @@ function App() {
           <Route path="/users/:id" element={<UserData />} />
           
           {/* Merchant Management */}
+          <Route path="/merchant-enquiries" element={<MerchantEnq />} />
           <Route path="/merchants" element={<Merchants />} />
+          <Route path="/merchants/add" element={<AddMerchant />} />
+          <Route path="/merchants/:id" element={<MerchantDetails />} />
+          <Route path="/merchants/:id/edit" element={<EditMerchant />} />
           
           {/* Category Management */}
           <Route path="/categories" element={<Categories />} />
@@ -97,12 +101,6 @@ function App() {
           {/* Settings & Profile */}
           <Route path="/profile" element={<Profile />} />
           <Route path="/settings" element={<Settings />} />
-
-          {/* Support Suite */}
-          <Route path="/support" element={<SupportDashboard />} />
-          <Route path="/support/tickets" element={<SupportTickets />} />
-          <Route path="/support/chat/customers" element={<SupportChatCustomers />} />
-          <Route path="/support/chat/merchants" element={<SupportChatMerchants />} />
 
           {/* 404 */}
           <Route path="*" element={<Error404 />} />

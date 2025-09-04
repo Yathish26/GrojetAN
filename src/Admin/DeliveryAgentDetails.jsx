@@ -216,6 +216,36 @@ export default function DeliveryAgentDetails() {
     }
   };
 
+  const formatTime = (hours) => {
+    if (!hours || hours === 0) return '00:00:00';
+    
+    const totalSeconds = Math.floor(hours * 3600);
+    const hrs = Math.floor(totalSeconds / 3600);
+    const mins = Math.floor((totalSeconds % 3600) / 60);
+    const secs = totalSeconds % 60;
+    
+    return `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const formatISTTime = (dateString) => {
+    if (!dateString) return 'Not available';
+    
+    const date = new Date(dateString);
+    // Convert to IST (UTC+5:30)
+    const istOffset = 5.5 * 60 * 60 * 1000; // 5.5 hours in milliseconds
+    const istDate = new Date(date.getTime() + istOffset);
+    
+    return istDate.toLocaleString('en-IN', {
+      timeZone: 'Asia/Kolkata',
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    });
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -304,7 +334,7 @@ export default function DeliveryAgentDetails() {
                 <div>
                   <label className="text-sm text-gray-500">Date of Birth</label>
                   <p className="font-medium text-gray-800">
-                    {agent.personalInfo?.dateOfBirth ? new Date(agent.personalInfo.dateOfBirth).toLocaleDateString() : 'Not provided'}
+                    {agent.personalInfo?.dateOfBirth ? formatISTTime(agent.personalInfo.dateOfBirth).split(',')[0] : 'Not provided'}
                   </p>
                 </div>
                 <div>
@@ -341,7 +371,7 @@ export default function DeliveryAgentDetails() {
                 <div>
                   <label className="text-sm text-gray-500">Joining Date</label>
                   <p className="font-medium text-gray-800">
-                    {new Date(agent.createdAt).toLocaleDateString()}
+                    {formatISTTime(agent.createdAt).split(',')[0]}
                   </p>
                 </div>
               </div>
@@ -695,6 +725,69 @@ export default function DeliveryAgentDetails() {
             </div>
           </div>
 
+          {/* Online Tracking Stats */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+            <div className="p-6 border-b border-gray-200">
+              <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                <Clock className="w-5 h-5" />
+                Online Tracking
+              </h2>
+            </div>
+            <div className="p-6 space-y-4">
+              <div className="flex items-center justify-between">
+                <span className="text-gray-600">Current Status</span>
+                <div className="flex items-center gap-2">
+                  <div className={`w-3 h-3 rounded-full ${agentStats?.onlineStats?.isOnline ? 'bg-green-500' : 'bg-gray-400'}`}></div>
+                  <span className={`font-medium ${agentStats?.onlineStats?.isOnline ? 'text-green-600' : 'text-gray-600'}`}>
+                    {agentStats?.onlineStats?.isOnline ? 'Online' : 'Offline'}
+                  </span>
+                </div>
+              </div>
+
+              {agentStats?.onlineStats?.isOnline && (
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-600">Current Session</span>
+                  <span className="font-medium text-blue-600">
+                    {formatTime(agentStats.onlineStats.currentSessionDuration)}
+                  </span>
+                </div>
+              )}
+
+              <div className="flex items-center justify-between">
+                <span className="text-gray-600">Today</span>
+                <span className="font-medium">{formatTime(agentStats?.onlineStats?.todayHours || 0)}</span>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <span className="text-gray-600">This Week</span>
+                <span className="font-medium">{formatTime(agentStats?.onlineStats?.weekHours || 0)}</span>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <span className="text-gray-600">This Month</span>
+                <span className="font-medium">{formatTime(agentStats?.onlineStats?.monthHours || 0)}</span>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <span className="text-gray-600">Total Hours</span>
+                <span className="font-medium">{formatTime(agentStats?.onlineStats?.totalHours || 0)}</span>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <span className="text-gray-600">Sessions Today</span>
+                <span className="font-medium">{agentStats?.onlineStats?.sessionCount || 0}</span>
+              </div>
+
+              {agentStats?.onlineStats?.lastUpdate && (
+                <div className="pt-2 border-t border-gray-100">
+                  <p className="text-xs text-gray-500 text-center">
+                    Last updated: {formatISTTime(agentStats.onlineStats.lastUpdate)}
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+
           {/* Application Status & Actions */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200">
             <div className="p-6 border-b border-gray-200">
@@ -803,7 +896,7 @@ export default function DeliveryAgentDetails() {
                   </div>
                   {agent.status.currentLocation.lastUpdated && (
                     <p className="text-xs text-gray-500">
-                      Last updated: {new Date(agent.status.currentLocation.lastUpdated).toLocaleString()}
+                      Last updated: {formatISTTime(agent.status.currentLocation.lastUpdated)}
                     </p>
                   )}
                   {agent.status.deliveryZone && (

@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { FiUsers, FiUser, FiSearch, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
-import toast, { Toaster } from 'react-hot-toast';
+import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import { Loader } from 'lucide-react';
 import LoaderSpinner from '../Components/Loader';
+import Layout from '../Components/Layout';
 
 
 export default function Users() {
@@ -187,23 +188,17 @@ export default function Users() {
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 md:p-8">
-      <Toaster
-        position="top-center"
-        toastOptions={{
-          duration: 4000,
-          style: {
-            background: '#fff',
-            color: '#333',
-            border: '1px solid #e5e7eb',
-            padding: '16px',
-            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
-          },
-          success: { iconTheme: { primary: '#10B981', secondary: '#fff' } },
-          error: { iconTheme: { primary: '#EF4444', secondary: '#fff' } },
-        }}
-      />
-      <div className="max-w-6xl mx-auto">
+    <Layout title="Users">
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Users</h1>
+            <p className="text-gray-600">Manage all registered users</p>
+          </div>
+        </div>
+
+        <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
           <div className="flex items-center gap-2 mb-4 md:mb-0">
@@ -355,7 +350,8 @@ export default function Users() {
             </>
           )}
         </div>
+        </div>
       </div>
-    </div>
+    </Layout>
   );
 }

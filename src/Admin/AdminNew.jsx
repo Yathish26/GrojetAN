@@ -272,7 +272,7 @@ export default function Admin() {
                                 Customer Accounts
                             </button>
                             <button
-                                onClick={() => navigate('/merchants')}
+                                onClick={() => navigate('/merchant-enquiries')}
                                 className="flex items-center gap-2 cursor-pointer text-gray-700 hover:text-green-700 transition-colors"
                             >
                                 <Store size={16} />
