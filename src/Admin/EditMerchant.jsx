@@ -34,7 +34,6 @@ const EditMerchant = () => {
     mobile: '',
     alternateMobile: '',
     email: '',
-    password: '',
     governmentIdType: '',
     governmentId: '',
     ownerAddress: {
@@ -147,7 +146,6 @@ const EditMerchant = () => {
 
     // Status
     status: 'pending_verification',
-    isActive: false,
     storeStatus: 'closed'
   });
 
@@ -187,7 +185,6 @@ const EditMerchant = () => {
             mobile: merchant.ownerInfo?.mobile || '',
             alternateMobile: merchant.ownerInfo?.alternateMobile || '',
             email: merchant.ownerInfo?.email || '',
-            password: merchant.ownerInfo?.password || '',
             governmentIdType: merchant.ownerInfo?.governmentIdType || '',
             governmentId: merchant.ownerInfo?.governmentId || '',
             ownerAddress: {
@@ -300,7 +297,6 @@ const EditMerchant = () => {
 
             // Status
             status: merchant.status || 'pending_verification',
-            isActive: merchant.isActive || false,
             storeStatus: merchant.storeStatus || 'closed'
           });
         } else {
@@ -559,7 +555,6 @@ const EditMerchant = () => {
           kycRemarks: formData.complianceInfo.kycRemarks
         },
         status: formData.status,
-        isActive: formData.isActive,
         storeStatus: formData.storeStatus
       };
 
@@ -846,21 +841,6 @@ const EditMerchant = () => {
                   required
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   placeholder="Enter email address"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Password *
-                </label>
-                <input
-                  type="password"
-                  name="password"
-                  value={formData.password}
-                  onChange={handleInputChange}
-                  required
-                  minLength="6"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                  placeholder="Enter password (min 6 characters)"
                 />
               </div>
               <div>
