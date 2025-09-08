@@ -3,6 +3,7 @@ import { Package, Plus, ArrowLeft, Loader2, XCircle, CircleCheck, Image, Tag, Sc
 import { useNavigate } from 'react-router-dom';
 import toast, { Toaster } from 'react-hot-toast';
 import ChipInput from '../Components/ChipInput';
+import Layout from '../Components/Layout';
 
 export default function AddProduct() {
   const navigate = useNavigate();
@@ -352,7 +353,8 @@ export default function AddProduct() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-start justify-center p-4 font-sans">
+    <Layout title="Add Product">
+      <div className="min-h-screen bg-gray-50 flex items-start justify-center p-4 font-sans">
 
       <div className="bg-white p-6 shadow-sm border border-gray-200 w-full max-w-6xl mx-4 my-8">
         <div className="flex items-center mb-6">
@@ -1005,5 +1007,6 @@ export default function AddProduct() {
         </form>
       </div>
     </div>
+    </Layout>
   );
 }

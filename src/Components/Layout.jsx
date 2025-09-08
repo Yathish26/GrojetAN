@@ -115,7 +115,20 @@ const Layout = ({ children, title }) => {
     if (path === '/') {
       return location.pathname === '/';
     }
-    return location.pathname.startsWith(path);
+    // Check for exact match first
+    if (location.pathname === path) {
+      return true;
+    }
+    // For nested routes, only consider active if it's a parent route and not overridden by a more specific route
+    if (location.pathname.startsWith(path + '/')) {
+      // Check if there's a more specific menu item that matches exactly
+      const moreSpecificItem = menuItems.find(item =>
+        item.path !== path &&
+        location.pathname === item.path
+      );
+      return !moreSpecificItem;
+    }
+    return false;
   };
 
   return (

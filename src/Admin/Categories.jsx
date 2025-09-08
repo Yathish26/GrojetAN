@@ -15,6 +15,7 @@ import {
   RotateCcw,
 } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
+import Layout from '../Components/Layout';
 
 export default function Categories() {
   const navigate = useNavigate();
@@ -407,7 +408,8 @@ export default function Categories() {
     );
   }
   return (
-    <div className="min-h-screen bg-gray-50 p-4 md:p-6 font-sans">
+    <Layout title="Categories">
+      <div className="min-h-screen bg-gray-50 p-4 md:p-6 font-sans">
 
       <div className="bg-white border border-gray-200  overflow-hidden shadow-sm">
         {/* Header */}
@@ -707,5 +709,6 @@ export default function Categories() {
         </div>
       )}
     </div>
+    </Layout>
   );
 }

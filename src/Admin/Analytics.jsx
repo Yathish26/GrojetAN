@@ -17,6 +17,7 @@ import {
   MapPin
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import Layout from '../Components/Layout';
 import {
   Line,
   Bar,
@@ -438,7 +439,8 @@ export default function Analytics() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto p-6 space-y-6">
+    <Layout title="Analytics">
+      <div className="max-w-7xl mx-auto p-6 space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
@@ -766,5 +768,6 @@ export default function Analytics() {
         </div>
       </div>
     </div>
+    </Layout>
   );
 }

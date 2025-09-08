@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import ChipInput from '../Components/ChipInput';
+import Layout from '../Components/Layout';
 
 export default function DeliveryZones() {
   const [zones, setZones] = useState([]);
@@ -210,7 +211,8 @@ export default function DeliveryZones() {
   });
 
   return (
-    <div className="max-w-7xl mx-auto p-6 space-y-6">
+    <Layout title="Delivery Zones">
+      <div className="max-w-7xl mx-auto p-6 space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
@@ -609,5 +611,6 @@ export default function DeliveryZones() {
         </div>
       )}
     </div>
+    </Layout>
   );
 }

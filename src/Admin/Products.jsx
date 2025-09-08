@@ -1,10 +1,11 @@
 import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Plus, Edit, Trash2, X, Loader2, ChevronLeft, ChevronRight, Layout, Shield } from 'lucide-react';
+import { Search, Plus, Edit, Trash2, X, Loader2, ChevronLeft, ChevronRight, Shield } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
 import Modal from 'react-modal';
 import ChipInput from '../Components/ChipInput';
 import LoaderSpinner from '../Components/Loader';
+import Layout from '../Components/Layout';
 
 Modal.setAppElement('#root');
 
@@ -351,6 +352,7 @@ export default function Products() {
   }
 
   return (
+    <Layout title="Products">
       <div className="min-h-screen bg-gray-50 p-4 md:p-6">
 
         {/* Delete Modal */}
@@ -1020,5 +1022,6 @@ export default function Products() {
           </div>
         </Modal>
       </div >
+    </Layout>
   );
 }
