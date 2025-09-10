@@ -99,7 +99,6 @@ const AddMerchant = () => {
       gstinCertificate: '',
       shopEstablishmentLicense: '',
       fssaiLicense: '',
-      incorporationCertificate: '',
       cancelledCheque: '',
       bankPassbook: '',
       storeLogo: '',
@@ -678,7 +677,6 @@ const AddMerchant = () => {
                     {renderFileUpload('GSTIN Certificate', 'gstinCertificate', 'image/*')}
                     {renderFileUpload('Shop Establishment License', 'shopEstablishmentLicense', 'image/*')}
                     {renderFileUpload('FSSAI License', 'fssaiLicense', 'image/*')}
-                    {renderFileUpload('Incorporation Certificate', 'incorporationCertificate', 'image/*')}
                     {renderFileUpload('Cancelled Cheque', 'cancelledCheque', 'image/*', true)}
                   </div>
                 </div>

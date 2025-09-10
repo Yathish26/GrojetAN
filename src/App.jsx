@@ -25,6 +25,8 @@ import Merchants from './Admin/Merchants.jsx'
 import AddMerchant from './Admin/AddMerchant.jsx'
 import MerchantDetails from './Admin/MerchantDetails.jsx'
 import EditMerchant from './Admin/EditMerchant.jsx'
+import GoogleMapsTest from './Admin/GoogleMapsTest.jsx'
+import AppControls from './Admin/AppControls.jsx'
 
 function App() {
   return (
@@ -91,6 +93,9 @@ function App() {
           <Route path="/delivery-zones" element={<DeliveryZones />} />
           <Route path="/delivery-signup" element={<DeliveryAgentSignup />} />
           
+          {/* Google Maps Test */}
+          <Route path="/maps-test" element={<GoogleMapsTest />} />
+          
           {/* Analytics & Reports */}
           <Route path="/analytics" element={<Analytics />} />
           
@@ -101,6 +106,7 @@ function App() {
           {/* Settings & Profile */}
           <Route path="/profile" element={<Profile />} />
           <Route path="/settings" element={<Settings />} />
+          <Route path="/app-controls" element={<AppControls />} />
 
           {/* 404 */}
           <Route path="*" element={<Error404 />} />

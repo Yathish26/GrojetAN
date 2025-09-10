@@ -161,7 +161,7 @@ const DeliveryAgents = () => {
   };
 
   const StatCard = ({ title, value, icon: Icon, color = 'text-gray-600' }) => (
-    <div className="bg-white rounded-lg shadow p-6">
+    <div className="bg-white  shadow p-6">
       <div className="flex items-center justify-between">
         <div>
           <p className="text-sm font-medium text-gray-500">{title}</p>
@@ -209,7 +209,7 @@ const DeliveryAgents = () => {
         <div className="flex justify-end mb-6">
           <button
             onClick={() => navigate('/delivery-signup')}
-            className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center gap-2"
+            className="bg-green-600 text-white px-4 py-2  hover:bg-green-700 flex items-center gap-2"
           >
             <Plus size={16} />
             Add New Agent
@@ -217,7 +217,7 @@ const DeliveryAgents = () => {
         </div>
 
         {/* Filters and Search */}
-        <div className="bg-white rounded-lg shadow mb-6">
+        <div className="bg-white  shadow mb-6">
           <div className="p-6 border-b border-gray-200">
             <div className="flex flex-col lg:flex-row gap-4">
               {/* Search */}
@@ -227,7 +227,7 @@ const DeliveryAgents = () => {
                   <input
                     type="text"
                     placeholder="Search by name, email, or phone..."
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    className="w-full pl-10 pr-4 py-2 border border-gray-300  focus:ring-2 focus:ring-green-500 focus:border-green-500"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                   />
@@ -239,7 +239,7 @@ const DeliveryAgents = () => {
                 <select
                   value={filters.applicationStatus}
                   onChange={(e) => handleFilterChange('applicationStatus', e.target.value)}
-                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+                  className="px-3 py-2 border border-gray-300  focus:ring-2 focus:ring-green-500"
                 >
                   <option value="">All Applications</option>
                   <option value="pending">Pending</option>
@@ -252,7 +252,7 @@ const DeliveryAgents = () => {
                 <select
                   value={filters.status}
                   onChange={(e) => handleFilterChange('status', e.target.value)}
-                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+                  className="px-3 py-2 border border-gray-300  focus:ring-2 focus:ring-green-500"
                 >
                   <option value="">All Status</option>
                   <option value="active">Active</option>
@@ -261,7 +261,7 @@ const DeliveryAgents = () => {
 
                 <button
                   onClick={fetchAgents}
-                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-2"
+                  className="px-4 py-2 bg-green-600 text-white  hover:bg-green-700 flex items-center gap-2"
                 >
                   <RefreshCw size={16} />
                   Refresh
@@ -272,7 +272,7 @@ const DeliveryAgents = () => {
         </div>
 
         {/* Agents Table */}
-        <div className="bg-white rounded-lg shadow overflow-hidden">
+        <div className="bg-white  shadow overflow-hidden">
           {loading ? (
             <div className="flex justify-center items-center p-12">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500"></div>
@@ -455,7 +455,7 @@ const DeliveryAgents = () => {
         {/* Status Update Modal */}
         {showStatusModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <div className="bg-white  p-6 w-full max-w-md">
               <h3 className="text-lg font-semibold mb-4">Update Agent Status</h3>
               
               <div className="space-y-4">
@@ -466,7 +466,7 @@ const DeliveryAgents = () => {
                   <select
                     value={statusUpdate.applicationStatus}
                     onChange={(e) => setStatusUpdate(prev => ({ ...prev, applicationStatus: e.target.value }))}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500"
+                    className="w-full border border-gray-300  px-3 py-2 focus:ring-2 focus:ring-green-500"
                   >
                     <option value="pending">Pending</option>
                     <option value="under_review">Under Review</option>
@@ -486,7 +486,7 @@ const DeliveryAgents = () => {
                       value={statusUpdate.deliveryZone}
                       onChange={(e) => setStatusUpdate(prev => ({ ...prev, deliveryZone: e.target.value }))}
                       placeholder="Enter delivery zone"
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500"
+                      className="w-full border border-gray-300  px-3 py-2 focus:ring-2 focus:ring-green-500"
                     />
                   </div>
                 )}
@@ -500,7 +500,7 @@ const DeliveryAgents = () => {
                       value={statusUpdate.rejectionReason}
                       onChange={(e) => setStatusUpdate(prev => ({ ...prev, rejectionReason: e.target.value }))}
                       placeholder="Enter reason for rejection"
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500"
+                      className="w-full border border-gray-300  px-3 py-2 focus:ring-2 focus:ring-green-500"
                       rows={3}
                     />
                   </div>
@@ -510,13 +510,13 @@ const DeliveryAgents = () => {
               <div className="flex justify-end gap-3 mt-6">
                 <button
                   onClick={() => setShowStatusModal(false)}
-                  className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50"
+                  className="px-4 py-2 text-gray-700 border border-gray-300  hover:bg-gray-50"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={updateAgentStatus}
-                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                  className="px-4 py-2 bg-green-600 text-white  hover:bg-green-700"
                 >
                   Update Status
                 </button>

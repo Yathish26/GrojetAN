@@ -3,16 +3,19 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import {
   Home, Package, Plus, Users, Store, ChartBarStacked,
   Truck, MapPin, BarChart3, Settings, LogOut, User,
-  Menu, X, Shield, ShoppingCart, Bell
+  Menu, X, Shield, ShoppingCart, Bell,
+  TabletSmartphone
 } from 'lucide-react';
 import { MdAdminPanelSettings } from 'react-icons/md';
 import toast from 'react-hot-toast';
 
 const Layout = ({ children, title }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [currentAdmin, setCurrentAdmin] = useState(null);
   const navRef = useRef(null);
   const mainRef = useRef(null);
+  const notificationsRef = useRef(null);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -76,6 +79,23 @@ const Layout = ({ children, title }) => {
     return () => el.removeEventListener('scroll', onScroll);
   }, [location.pathname]);
 
+  // Close notifications when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (notificationsRef.current && !notificationsRef.current.contains(event.target)) {
+        setNotificationsOpen(false);
+      }
+    };
+
+    if (notificationsOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [notificationsOpen]);
+
 
   const handleLogout = async () => {
     try {
@@ -104,6 +124,7 @@ const Layout = ({ children, title }) => {
     { name: 'Delivery Agents', icon: Truck, path: '/delivery-agents', roles: ['super_admin', 'admin', 'delivery_manager'] },
     { name: 'Delivery Zones', icon: MapPin, path: '/delivery-zones', roles: ['super_admin', 'admin', 'delivery_manager'] },
     { name: 'Analytics', icon: BarChart3, path: '/analytics', roles: ['super_admin', 'admin'] },
+    { name: 'App Controls', icon: TabletSmartphone, path: '/app-controls', roles: ['super_admin', 'admin'] },
     { name: 'Admin Management', icon: Shield, path: '/admin-management', roles: ['super_admin'] },
   ];
 
@@ -222,10 +243,31 @@ const Layout = ({ children, title }) => {
           </div>
 
           <div className="flex items-center gap-4">
-            <button className="p-2 hover:bg-neutral-100 relative">
-              <Bell size={20} className="text-neutral-600" />
-              <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full"></span>
-            </button>
+            <div className="relative" ref={notificationsRef}>
+              <button 
+                onClick={() => setNotificationsOpen(!notificationsOpen)}
+                className="p-2 hover:bg-neutral-100 cursor-pointer relative"
+              >
+                <Bell size={20} className="text-neutral-600" />
+                <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full"></span>
+              </button>
+
+              {/* Notifications Panel */}
+              {notificationsOpen && (
+                <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-neutral-200 z-50">
+                  <div className="p-4 border-b border-neutral-200">
+                    <h3 className="text-lg font-semibold text-neutral-900">Notifications</h3>
+                  </div>
+                  <div className="p-4">
+                    <div className="text-center py-8">
+                      <Bell size={48} className="text-neutral-400 mx-auto mb-4" />
+                      <p className="text-neutral-500 text-sm">No notifications</p>
+                      <p className="text-neutral-400 text-xs mt-1">You're all caught up!</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
             <div className="flex items-center gap-2">
               <MdAdminPanelSettings className="text-green-700" size={22} />
               <span className="hidden sm:block text-xs font-medium text-neutral-700 tracking-wide">

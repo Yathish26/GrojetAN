@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   User,
   Mail,
@@ -14,11 +15,13 @@ import {
   AlertCircle,
   ArrowRight,
   ArrowLeft,
-  Save
+  Save,
+  ArrowLeft as BackIcon
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export default function DeliveryAgentSignup() {
+  const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [uploadingDoc, setUploadingDoc] = useState({});
@@ -59,8 +62,7 @@ export default function DeliveryAgentSignup() {
       vehicleType: '',
       vehicleNumber: '',
       rcBook: null,
-      insurance: null,
-      puc: null
+      insurance: null
     },
     
     // Documents
@@ -168,7 +170,7 @@ export default function DeliveryAgentSignup() {
       }
 
       // Handle vehicle documents vs regular documents
-      if (['rcBook', 'insurance', 'puc'].includes(documentType)) {
+      if (['rcBook', 'insurance'].includes(documentType)) {
         setFormData(prev => ({
           ...prev,
           vehicleInfo: {
@@ -208,7 +210,7 @@ export default function DeliveryAgentSignup() {
   const validateStep = (step) => {
     switch (step) {
       case 1:
-        return formData.personalInfo.firstName && formData.personalInfo.lastName && 
+        return formData.personalInfo.firstName && 
                formData.personalInfo.email && formData.personalInfo.phone && 
                formData.personalInfo.dateOfBirth;
       case 2:
@@ -257,7 +259,8 @@ export default function DeliveryAgentSignup() {
           email: formData.personalInfo.email,
           phone: formData.personalInfo.phone,
           dateOfBirth: formData.personalInfo.dateOfBirth,
-          gender: formData.personalInfo.gender
+          gender: formData.personalInfo.gender,
+          profilePhoto: formData.personalInfo.profilePhoto || ''
         },
         address: {
           street: formData.address.street,
@@ -275,8 +278,7 @@ export default function DeliveryAgentSignup() {
           vehicleType: formData.vehicleInfo.vehicleType,
           vehicleNumber: formData.vehicleInfo.vehicleNumber,
           rcBook: formData.vehicleInfo.rcBook || '',
-          insurance: formData.vehicleInfo.insurance || '',
-          puc: formData.vehicleInfo.puc || ''
+          insurance: formData.vehicleInfo.insurance || ''
         },
         documents: {
           aadharFront: formData.documents.aadharFront || '',
@@ -325,7 +327,7 @@ export default function DeliveryAgentSignup() {
         address: { street: '', city: '', state: '', zipCode: '', landmark: '' },
         emergencyContact: { name: '', phone: '', relationship: '' },
         password: '', confirmPassword: '',
-        vehicleInfo: { vehicleType: '', vehicleNumber: '', rcBook: null, insurance: null, puc: null },
+        vehicleInfo: { vehicleType: '', vehicleNumber: '', rcBook: null, insurance: null },
         documents: { 
           aadharFront: null, aadharBack: null, panCard: null, drivingLicense: null, profilePhoto: null,
           bankAccount: { accountNumber: '', ifscCode: '', bankName: '', accountHolderName: '' }
@@ -347,9 +349,20 @@ export default function DeliveryAgentSignup() {
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-4xl mx-auto px-4">
         {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">Join as Delivery Agent</h1>
-          <p className="text-gray-600">Complete your application to start delivering with Grojet</p>
+        <div className="flex items-center justify-between mb-8">
+          <button
+            onClick={() => navigate('/delivery-agents')}
+            className="flex cursor-pointer items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
+          >
+            <BackIcon className="w-5 h-5" />
+          </button>
+          
+          <div className="text-center flex-1">
+            <h1 className="text-3xl font-bold text-gray-800 mb-2">Join as Delivery Agent</h1>
+            <p className="text-gray-600">Complete your application to start delivering with Grojet</p>
+          </div>
+          
+          <div className="w-32"></div> {/* Spacer for centering */}
         </div>
 
         {/* Progress Steps */}
@@ -410,11 +423,10 @@ export default function DeliveryAgentSignup() {
                 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Last Name *
+                    Last Name
                   </label>
                   <input
                     type="text"
-                    required
                     value={formData.personalInfo.lastName}
                     onChange={(e) => handleInputChange('personalInfo', 'lastName', e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
@@ -689,8 +701,7 @@ export default function DeliveryAgentSignup() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   {[
                     { key: 'rcBook', label: 'RC Book', required: true },
-                    { key: 'insurance', label: 'Insurance', required: true },
-                    { key: 'puc', label: 'PUC Certificate', required: false }
+                    { key: 'insurance', label: 'Insurance', required: true }
                   ].map(doc => (
                     <div key={doc.key} className="border border-gray-200 rounded-lg p-4">
                       <div className="flex items-center justify-between mb-2">

@@ -880,12 +880,6 @@ const MerchantDetails = () => {
               isVerified={documents.shopEstablishmentLicense}
               documentUrl={documents.shopEstablishmentLicense}
             />
-
-            <DocumentCard
-              title="Incorporation Certificate"
-              isVerified={documents.incorporationCertificate}
-              documentUrl={documents.incorporationCertificate}
-            />
           </div>
         </div>
 
@@ -944,12 +938,6 @@ const MerchantDetails = () => {
               title="Shop Establishment License"
               isVerified={documents.shopEstablishmentLicense}
               documentUrl={documents.shopEstablishmentLicense}
-            />
-
-            <DocumentCard
-              title="Incorporation Certificate"
-              isVerified={documents.incorporationCertificate}
-              documentUrl={documents.incorporationCertificate}
             />
 
             <DocumentCard

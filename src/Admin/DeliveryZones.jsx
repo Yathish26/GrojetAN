@@ -7,11 +7,275 @@ import {
   Search,
   Eye,
   X,
-  CircleCheck
+  CircleCheck,
+  Map
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import ChipInput from '../Components/ChipInput';
 import Layout from '../Components/Layout';
+import { GoogleMap, DrawingManager, AddressSearch, googleMapsApi } from '../Components/GoogleMapComponents';
+
+// Lightweight overlay to render a zone polygon on a GoogleMap
+const ZonePolygon = ({ map, zone }) => {
+  useEffect(() => {
+    if (!map || !zone || !zone.boundaries?.coordinates?.[0] || !window.google || !window.google.maps) return;
+
+    // Convert GeoJSON [lng, lat] to {lat, lng}
+    const path = zone.boundaries.coordinates[0].map(([lng, lat]) => ({ lat, lng }));
+
+    const polygon = new window.google.maps.Polygon({
+      paths: path,
+      fillColor: zone.isActive ? '#10B981' : '#EF4444', // green/red
+      fillOpacity: 0.25,
+      strokeColor: zone.isActive ? '#10B981' : '#EF4444',
+      strokeWeight: 2,
+      clickable: true,
+      map
+    });
+
+    // Label marker (black text) at first vertex
+    let labelMarker = null;
+    try {
+      if (path[0]) {
+        labelMarker = new window.google.maps.Marker({
+          position: path[0],
+          map,
+          label: {
+            text: String(zone.name || ''),
+            color: 'black',
+            fontSize: '12px',
+            fontWeight: '700'
+          },
+          icon: { path: window.google.maps.SymbolPath.CIRCLE, scale: 0 }
+        });
+      }
+    } catch {}
+
+    // Fit bounds to polygon
+    try {
+      const bounds = new window.google.maps.LatLngBounds();
+      path.forEach(p => bounds.extend(p));
+      if (!bounds.isEmpty()) {
+        map.fitBounds(bounds, 50);
+      }
+    } catch {}
+
+    // Optional info on click
+    const infoWindow = new window.google.maps.InfoWindow({
+      content: `
+        <div style="max-width:220px">
+          <div style="font-weight:600;margin-bottom:4px">${zone.name || 'Zone'}</div>
+          <div>Status: ${zone.isActive ? 'Active' : 'Inactive'}</div>
+          <div>Fee: ₹${zone.deliveryFee ?? 0}</div>
+          <div>ETA: ${zone.estimatedDeliveryTime ?? 0} min</div>
+          <div>Max Dist: ${zone.maxDeliveryDistance ?? 0} km</div>
+        </div>
+      `
+    });
+    const clickListener = polygon.addListener('click', (evt) => {
+      infoWindow.setPosition(evt.latLng);
+      infoWindow.open({ map });
+    });
+
+    return () => {
+      try { window.google.maps.event.removeListener(clickListener); } catch {}
+      try { infoWindow.close(); } catch {}
+      try { polygon.setMap(null); } catch {}
+      try { if (labelMarker) labelMarker.setMap(null); } catch {}
+    };
+  }, [map, zone]);
+
+  return null;
+};
+
+// Overlay to render all zones with labels and fit bounds to include all polygons
+const AllZonesPolygons = ({ map, zones = [] }) => {
+  useEffect(() => {
+    if (!map || !Array.isArray(zones) || !window.google?.maps) return;
+    const overlays = [];
+    const bounds = new window.google.maps.LatLngBounds();
+
+    try {
+      zones.forEach(zone => {
+        const ring = zone?.boundaries?.coordinates?.[0];
+        if (!ring || ring.length < 3) return;
+        const path = ring.map(([lng, lat]) => ({ lat, lng }));
+
+        const polygon = new window.google.maps.Polygon({
+          paths: path,
+          fillColor: zone.isActive ? '#10B981' : '#EF4444',
+          fillOpacity: 0.2,
+          strokeColor: zone.isActive ? '#10B981' : '#EF4444',
+          strokeWeight: 2,
+          map
+        });
+
+        // Extend bounds
+        path.forEach(p => bounds.extend(p));
+
+        // Label marker in black
+        let marker = null;
+        try {
+          marker = new window.google.maps.Marker({
+            position: path[0],
+            map,
+            label: { text: String(zone.name || ''), color: 'black', fontSize: '12px', fontWeight: '700' },
+            icon: { path: window.google.maps.SymbolPath.CIRCLE, scale: 0 }
+          });
+        } catch {}
+
+        overlays.push({ polygon, marker });
+      });
+
+      if (!bounds.isEmpty()) {
+        map.fitBounds(bounds, 60);
+      }
+    } catch (e) {
+      // noop
+    }
+
+    return () => {
+      overlays.forEach(({ polygon, marker }) => {
+        try { polygon?.setMap(null); } catch {}
+        try { marker?.setMap(null); } catch {}
+      });
+    };
+  }, [map, zones]);
+
+  return null;
+};
+
+// Editable polygon overlay used in Edit Map modal
+const EditablePolygon = ({ map, zone, onEdit }) => {
+  useEffect(() => {
+    if (!map || !zone?.boundaries?.coordinates?.[0] || !window.google?.maps) return;
+
+    const path = zone.boundaries.coordinates[0].map(([lng, lat]) => ({ lat, lng }));
+    const polygon = new window.google.maps.Polygon({
+      paths: path,
+      fillColor: zone.isActive ? '#10B981' : '#EF4444',
+      fillOpacity: 0.2,
+      strokeColor: zone.isActive ? '#10B981' : '#EF4444',
+      strokeWeight: 2,
+      clickable: true,
+      editable: true,
+      draggable: true,
+      map
+    });
+
+    const pushUpdate = () => {
+      const coords = [];
+      const p = polygon.getPath();
+      for (let i = 0; i < p.getLength(); i++) {
+        const pt = p.getAt(i);
+        coords.push([pt.lng(), pt.lat()]);
+      }
+      if (coords.length > 0) coords.push(coords[0]);
+      onEdit && onEdit(coords);
+    };
+
+    const listeners = [
+      window.google.maps.event.addListener(polygon.getPath(), 'set_at', pushUpdate),
+      window.google.maps.event.addListener(polygon.getPath(), 'insert_at', pushUpdate),
+      window.google.maps.event.addListener(polygon.getPath(), 'remove_at', pushUpdate),
+      window.google.maps.event.addListener(polygon, 'dragend', pushUpdate)
+    ];
+
+    // Fit bounds once when shown
+    try {
+      const bounds = new window.google.maps.LatLngBounds();
+      path.forEach(p => bounds.extend(p));
+      if (!bounds.isEmpty()) map.fitBounds(bounds, 50);
+    } catch {}
+
+    return () => {
+      try { listeners.forEach(l => window.google.maps.event.removeListener(l)); } catch {}
+      try { polygon.setMap(null); } catch {}
+    };
+  }, [map, zone, onEdit]);
+
+  return null;
+};
+
+// Render all zones on a single map and fit bounds to include all polygons (with black labels)
+const AllZonesView = ({ map, zones }) => {
+  useEffect(() => {
+    if (!map || !Array.isArray(zones) || zones.length === 0 || !window.google?.maps) return;
+
+  const overlayRefs = [];
+    const globalBounds = new window.google.maps.LatLngBounds();
+
+    try {
+      zones.forEach((zone) => {
+        const ring = zone?.boundaries?.coordinates?.[0];
+        if (!Array.isArray(ring) || ring.length < 3) return;
+
+        const path = ring.map(([lng, lat]) => ({ lat, lng }));
+        path.forEach(p => globalBounds.extend(p));
+
+        const polygon = new window.google.maps.Polygon({
+          paths: path,
+          fillColor: zone.isActive ? '#10B981' : '#EF4444',
+          fillOpacity: 0.22,
+          strokeColor: zone.isActive ? '#10B981' : '#EF4444',
+          strokeWeight: 2,
+          clickable: true,
+          map
+        });
+
+        const infoWindow = new window.google.maps.InfoWindow({
+          content: `
+            <div style="max-width:220px">
+              <div style="font-weight:600;margin-bottom:4px">${zone.name || 'Zone'}</div>
+              <div>Status: ${zone.isActive ? 'Active' : 'Inactive'}</div>
+              <div>Fee: ₹${zone.deliveryFee ?? 0}</div>
+              <div>ETA: ${zone.estimatedDeliveryTime ?? 0} min</div>
+              <div>Max Dist: ${zone.maxDeliveryDistance ?? 0} km</div>
+            </div>
+          `
+        });
+
+        const clickListener = polygon.addListener('click', (evt) => {
+          infoWindow.setPosition(evt.latLng);
+          infoWindow.open({ map });
+        });
+
+        // Black label marker for zone name at first vertex
+        let marker = null;
+        try {
+          if (path[0]) {
+            marker = new window.google.maps.Marker({
+              position: path[0],
+              map,
+              label: { text: String(zone.name || ''), color: 'black', fontSize: '12px', fontWeight: '700' },
+              icon: { path: window.google.maps.SymbolPath.CIRCLE, scale: 0 }
+            });
+          }
+        } catch {}
+
+        overlayRefs.push({ polygon, infoWindow, clickListener, marker });
+      });
+
+      // Fit once to include all polygons
+      if (!globalBounds.isEmpty()) {
+        map.fitBounds(globalBounds, 60);
+      }
+    } catch (e) {
+      // no-op
+    }
+
+    return () => {
+      overlayRefs.forEach(({ polygon, infoWindow, clickListener, marker }) => {
+        try { if (clickListener) window.google.maps.event.removeListener(clickListener); } catch {}
+        try { if (infoWindow) infoWindow.close(); } catch {}
+        try { if (polygon) polygon.setMap(null); } catch {}
+        try { if (marker) marker.setMap(null); } catch {}
+      });
+    };
+  }, [map, zones]);
+
+  return null;
+};
 
 export default function DeliveryZones() {
   const [zones, setZones] = useState([]);
@@ -21,6 +285,24 @@ export default function DeliveryZones() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingZone, setEditingZone] = useState(null);
+
+  // Google Maps state
+  const [showMapModal, setShowMapModal] = useState(false);
+  const [mapCoordinates, setMapCoordinates] = useState([]);
+  const [googleMapsLoaded, setGoogleMapsLoaded] = useState(false);
+  const [zoneStats, setZoneStats] = useState(null);
+  const [selectedLocation, setSelectedLocation] = useState(null);
+  const [showViewMapModal, setShowViewMapModal] = useState(false);
+  const [viewZone, setViewZone] = useState(null);
+  const [showAllZonesModal, setShowAllZonesModal] = useState(false);
+
+  // Edit Zone state
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editForm, setEditForm] = useState(null);
+  const [editCoordinates, setEditCoordinates] = useState([]);
+  const [editZoneStats, setEditZoneStats] = useState(null);
+  const [showEditMapModal, setShowEditMapModal] = useState(false);
+  const [editSelectedLocation, setEditSelectedLocation] = useState(null);
 
   const [createForm, setCreateForm] = useState({
     name: '',
@@ -50,6 +332,48 @@ export default function DeliveryZones() {
   useEffect(() => {
     fetchZones();
   }, []);
+
+  // Initialize edit form when a zone is selected for editing
+  useEffect(() => {
+    if (editingZone) {
+      const coords = editingZone.boundaries?.coordinates?.[0] || [];
+      setEditForm({
+        _id: editingZone._id,
+        name: editingZone.name || '',
+        description: editingZone.description || '',
+        isActive: !!editingZone.isActive,
+        deliveryFee: editingZone.deliveryFee ?? '',
+        minimumOrderValue: editingZone.minimumOrderValue ?? '',
+        estimatedDeliveryTime: editingZone.estimatedDeliveryTime ?? '',
+        maxDeliveryDistance: editingZone.maxDeliveryDistance ?? '',
+        peakHourMultiplier: editingZone.peakHourMultiplier ?? 1.2,
+        coverage: {
+          pinCodes: editingZone.coverage?.pinCodes || [],
+          areas: editingZone.coverage?.areas || [],
+          landmarks: editingZone.coverage?.landmarks || []
+        },
+        restrictions: {
+          cashOnDelivery: editingZone.restrictions?.cashOnDelivery ?? true,
+          maxOrderValue: editingZone.restrictions?.maxOrderValue ?? '',
+          blockedItems: editingZone.restrictions?.blockedItems || []
+        },
+        boundaries: {
+          type: 'Polygon',
+          coordinates: editingZone.boundaries?.coordinates || []
+        }
+      });
+      setEditCoordinates(coords);
+      setEditSelectedLocation(null);
+      setEditZoneStats(null);
+      setShowEditModal(true);
+    } else {
+      setShowEditModal(false);
+      setEditForm(null);
+      setEditCoordinates([]);
+      setEditZoneStats(null);
+      setShowEditMapModal(false);
+    }
+  }, [editingZone]);
 
   const fetchZones = async () => {
     try {
@@ -90,6 +414,7 @@ export default function DeliveryZones() {
     // Prepare payload
     const payload = {
       ...createForm,
+      description: createForm.description,
       deliveryFee: parseFloat(createForm.deliveryFee),
       minimumOrderValue: createForm.minimumOrderValue ? parseFloat(createForm.minimumOrderValue) : 0,
       estimatedDeliveryTime: parseInt(createForm.estimatedDeliveryTime),
@@ -200,6 +525,97 @@ export default function DeliveryZones() {
     await handleUpdateZone(zoneId, { isActive: newStatus });
   };
 
+  // Google Maps handlers
+  const handlePolygonComplete = async (coordinates) => {
+    setMapCoordinates(coordinates);
+    setCreateForm({
+      ...createForm,
+      boundaries: {
+        type: 'Polygon',
+        coordinates: [coordinates]
+      }
+    });
+
+    // Calculate zone statistics using backend
+    try {
+      const stats = await googleMapsApi.getZoneStats(coordinates);
+      setZoneStats(stats);
+      toast.success(`Zone drawn successfully! Area: ${stats.area.approximateSquareKm.toFixed(2)} km²`);
+    } catch (error) {
+      toast.success('Zone boundary drawn successfully!');
+    }
+
+    setShowMapModal(false);
+  };
+
+  const handlePolygonEdit = async (coordinates) => {
+    setMapCoordinates(coordinates);
+    setCreateForm({
+      ...createForm,
+      boundaries: {
+        type: 'Polygon',
+        coordinates: [coordinates]
+      }
+    });
+
+    // Recalculate zone statistics
+    try {
+      const stats = await googleMapsApi.getZoneStats(coordinates);
+      setZoneStats(stats);
+    } catch (error) {
+      // Silently fail for edits
+    }
+  };
+
+  // Edit Map handlers
+  const handleEditPolygonComplete = async (coordinates) => {
+    setEditCoordinates(coordinates);
+    setEditForm(prev => ({
+      ...prev,
+      boundaries: {
+        type: 'Polygon',
+        coordinates: [coordinates]
+      }
+    }));
+    try {
+      const stats = await googleMapsApi.getZoneStats(coordinates);
+      setEditZoneStats(stats);
+      toast.success('Updated boundary for editing');
+    } catch (e) {
+      // noop
+    }
+    setShowEditMapModal(false);
+  };
+
+  const handleEditPolygonEdit = async (coordinates) => {
+    setEditCoordinates(coordinates);
+    setEditForm(prev => ({
+      ...prev,
+      boundaries: {
+        type: 'Polygon',
+        coordinates: [coordinates]
+      }
+    }));
+    try {
+      const stats = await googleMapsApi.getZoneStats(coordinates);
+      setEditZoneStats(stats);
+    } catch {}
+  };
+
+  const handlePlaceSelect = (place) => {
+    setSelectedLocation(place);
+    toast.success(`Location selected: ${place.address}`);
+  };
+
+  const openMapDrawer = () => {
+    setShowMapModal(true);
+  };
+
+  const handleViewMap = (zone) => {
+    setViewZone(zone);
+    setShowViewMapModal(true);
+  };
+
   const filteredZones = zones.filter(zone => {
     const matchesSearch = zone.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       zone.description?.toLowerCase().includes(searchTerm.toLowerCase());
@@ -219,13 +635,22 @@ export default function DeliveryZones() {
           <h1 className="text-2xl font-bold text-gray-800">Delivery Zones</h1>
           <p className="text-gray-600">Manage delivery zones and coverage areas</p>
         </div>
-        <button
-          onClick={() => setShowCreateModal(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white  hover:bg-green-700 transition-colors"
-        >
-          <Plus className="w-4 h-4" />
-          Add New Zone
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowAllZonesModal(true)}
+            className="flex items-center gap-2 px-3 py-2 border border-blue-600 text-blue-600 hover:bg-blue-50 transition-colors"
+          >
+            <Map className="w-4 h-4" />
+            Zones Map
+          </button>
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white  hover:bg-green-700 transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+            Add New Zone
+          </button>
+        </div>
       </div>
 
       {/* Filters */}
@@ -338,6 +763,7 @@ export default function DeliveryZones() {
                     </button>
                   </div>
                   <button
+                    onClick={() => handleViewMap(zone)}
                     className="text-sm text-blue-600 hover:text-blue-700 flex items-center gap-1"
                   >
                     <Eye className="w-4 h-4" />
@@ -421,30 +847,62 @@ export default function DeliveryZones() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Boundaries (GeoJSON Polygon Coordinates) *
+                    Zone Boundaries *
                   </label>
-                  <textarea
-                    required
-                    value={JSON.stringify(createForm.boundaries.coordinates)}
-                    onChange={e => {
-                      let val = [];
-                      try {
-                        val = JSON.parse(e.target.value);
-                      } catch {
-                        toast.error('Invalid JSON for boundaries');
-                      }
-                      setCreateForm({
-                        ...createForm,
-                        boundaries: {
-                          ...createForm.boundaries,
-                          coordinates: val
-                        }
-                      });
-                    }}
-                    className="w-full px-3 py-2 border border-gray-300  focus:ring-2 focus:ring-green-500 focus:border-green-500 font-mono"
-                    rows="3"
-                    placeholder='Example: [[[77.5,12.9],[77.6,12.9],[77.6,13.0],[77.5,13.0],[77.5,12.9]]]'
-                  />
+                  <div className="border border-gray-300 rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-4">
+                        <span className="text-sm text-gray-600">
+                          {mapCoordinates.length > 0
+                            ? `${mapCoordinates.length} points selected`
+                            : 'No boundaries selected'
+                          }
+                        </span>
+                        {zoneStats && (
+                          <div className="text-sm text-blue-600 font-medium">
+                            Area: {zoneStats.area.approximateSquareKm.toFixed(2)} km²
+                          </div>
+                        )}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={openMapDrawer}
+                        className="flex items-center gap-2 px-3 py-1 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700"
+                      >
+                        <Map className="w-4 h-4" />
+                        Draw on Map
+                      </button>
+                    </div>
+
+                    {/* Zone Statistics */}
+                    {zoneStats && (
+                      <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                        <h4 className="text-sm font-medium text-blue-800 mb-2">Zone Statistics</h4>
+                        <div className="grid grid-cols-2 gap-4 text-sm">
+                          <div>
+                            <span className="text-gray-600">Area:</span>
+                            <span className="ml-2 font-medium text-blue-700">
+                              {zoneStats.area.approximateSquareKm.toFixed(2)} km²
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-gray-600">Points:</span>
+                            <span className="ml-2 font-medium text-blue-700">
+                              {zoneStats.points}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Coordinates Preview */}
+                    {mapCoordinates.length > 0 && (
+                      <div className="bg-gray-50 p-3 rounded text-xs font-mono text-gray-600 max-h-20 overflow-y-auto">
+                        <div className="text-gray-800 font-medium mb-1">GeoJSON Coordinates:</div>
+                        {JSON.stringify(mapCoordinates, null, 2)}
+                      </div>
+                    )}
+                  </div>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -607,6 +1065,428 @@ export default function DeliveryZones() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Map Modal */}
+      {showMapModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl shadow-xl max-w-6xl w-full h-[80vh]">
+            <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-gray-800">Draw Delivery Zone</h3>
+              <button
+                onClick={() => setShowMapModal(false)}
+                className="p-1 hover:bg-gray-100 rounded"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-4 h-full flex flex-col">
+              {/* Search and Controls */}
+              <div className="mb-4 space-y-3">
+                <AddressSearch
+                  onPlaceSelect={handlePlaceSelect}
+                  placeholder="Search for a location to center the map..."
+                />
+
+                <div className="flex items-center justify-between text-sm text-gray-600">
+                  <div className="flex items-center gap-4">
+                    <span><strong>Instructions:</strong></span>
+                    <span>1. Click polygon tool → 2. Draw zone → 3. Double-click to finish</span>
+                  </div>
+                  {zoneStats && (
+                    <div className="text-right">
+                      <div>Area: {zoneStats.area.approximateSquareKm.toFixed(2)} km²</div>
+                      <div>Points: {zoneStats.points}</div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Map Container */}
+              <div className="flex-1 relative">
+                <GoogleMap
+                  center={selectedLocation ? { lat: selectedLocation.lat, lng: selectedLocation.lng } : undefined}
+                  zoom={selectedLocation ? 15 : 12}
+                >
+                  <DrawingManager
+                    onPolygonComplete={handlePolygonComplete}
+                    onPolygonEdit={handlePolygonEdit}
+                    existingZones={zones}
+                  />
+                </GoogleMap>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="mt-4 flex justify-between items-center">
+                <div className="text-sm text-gray-600">
+                  {mapCoordinates.length > 0 && (
+                    <span>Zone boundary: {mapCoordinates.length} points defined</span>
+                  )}
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => {
+                      setMapCoordinates([]);
+                      setZoneStats(null);
+                      setSelectedLocation(null);
+                    }}
+                    className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
+                  >
+                    Clear
+                  </button>
+                  <button
+                    onClick={() => setShowMapModal(false)}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                  >
+                    Done
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* View Zone Map Modal */}
+      {showViewMapModal && viewZone && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl shadow-xl max-w-5xl w-full h-[75vh] overflow-hidden flex flex-col">
+            <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-800">View Zone Map</h3>
+                <p className="text-sm text-gray-600">{viewZone.name}</p>
+              </div>
+              <button onClick={() => setShowViewMapModal(false)} className="p-1 hover:bg-gray-100 rounded">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="flex-1 min-h-0">
+              <GoogleMap
+                center={(() => {
+                  const c = viewZone?.boundaries?.coordinates?.[0]?.[0];
+                  return c ? { lat: c[1], lng: c[0] } : { lat: 12.9716, lng: 77.5946 };
+                })()}
+                zoom={12}
+                style={{ height: '100%', width: '100%' }}
+              >
+                <ZonePolygon zone={viewZone} />
+              </GoogleMap>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* All Zones Map Modal */}
+      {showAllZonesModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl shadow-xl max-w-6xl w-full h-[80vh] overflow-hidden flex flex-col">
+            <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-gray-800">All Zones Map</h3>
+              <button onClick={() => setShowAllZonesModal(false)} className="p-1 hover:bg-gray-100 rounded">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="flex-1 min-h-0">
+              <GoogleMap
+                center={{ lat: 12.9716, lng: 77.5946 }}
+                zoom={11}
+                style={{ height: '100%', width: '100%' }}
+              >
+                <AllZonesView zones={zones} />
+              </GoogleMap>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Zone Modal */}
+      {showEditModal && editForm && (
+        <div className="fixed inset-0 bg-white bg-opacity-60 flex items-center justify-center p-4 z-50">
+          <div className="bg-white shadow-xl max-w-2xl w-full max-h-3/4 overflow-y-auto">
+            <div className="p-6 border-b border-gray-200 flex items-center justify-between">
+              <h2 className="text-xl font-semibold text-gray-800">Edit Zone</h2>
+              <button onClick={() => setEditingZone(null)} className="p-1 hover:bg-gray-100 rounded">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <form
+              onSubmit={async (e) => {
+                e.preventDefault();
+                const payload = {
+                  ...editForm,
+                  description: editForm.description,
+                  deliveryFee: parseFloat(editForm.deliveryFee),
+                  minimumOrderValue: editForm.minimumOrderValue ? parseFloat(editForm.minimumOrderValue) : 0,
+                  estimatedDeliveryTime: parseInt(editForm.estimatedDeliveryTime),
+                  maxDeliveryDistance: parseFloat(editForm.maxDeliveryDistance),
+                  peakHourMultiplier: editForm.peakHourMultiplier ? parseFloat(editForm.peakHourMultiplier) : 1.2,
+                  boundaries: {
+                    type: 'Polygon',
+                    coordinates: editForm.boundaries?.coordinates || []
+                  },
+                  coverage: {
+                    pinCodes: editForm.coverage?.pinCodes || [],
+                    areas: editForm.coverage?.areas || [],
+                    landmarks: editForm.coverage?.landmarks || []
+                  },
+                  restrictions: {
+                    cashOnDelivery: !!editForm.restrictions?.cashOnDelivery,
+                    maxOrderValue: editForm.restrictions?.maxOrderValue ? parseFloat(editForm.restrictions.maxOrderValue) : undefined,
+                    blockedItems: editForm.restrictions?.blockedItems || []
+                  }
+                };
+
+                try {
+                  await handleUpdateZone(editForm._id, payload);
+                  setEditingZone(null);
+                } catch {}
+              }}
+              className="p-6 space-y-4"
+            >
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Zone Name *</label>
+                  <input
+                    type="text"
+                    required
+                    value={editForm.name}
+                    onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                  <textarea
+                    value={editForm.description}
+                    onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    rows="3"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Delivery Fee (₹) *</label>
+                  <input
+                    type="number"
+                    required
+                    value={editForm.deliveryFee}
+                    onChange={(e) => setEditForm({ ...editForm, deliveryFee: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    min="0"
+                    step="0.01"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Zone Boundaries *</label>
+                  <div className="border border-gray-300 rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-4">
+                        <span className="text-sm text-gray-600">
+                          {editCoordinates.length > 0 ? `${editCoordinates.length} points selected` : 'Using existing boundary'}
+                        </span>
+                        {editZoneStats && (
+                          <div className="text-sm text-blue-600 font-medium">
+                            Area: {editZoneStats.area.approximateSquareKm.toFixed(2)} km²
+                          </div>
+                        )}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setShowEditMapModal(true)}
+                        className="flex items-center gap-2 px-3 py-1 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700"
+                      >
+                        <Map className="w-4 h-4" />
+                        Edit on Map
+                      </button>
+                    </div>
+                    {editCoordinates.length > 0 && (
+                      <div className="bg-gray-50 p-3 rounded text-xs font-mono text-gray-600 max-h-20 overflow-y-auto">
+                        <div className="text-gray-800 font-medium mb-1">GeoJSON Coordinates:</div>
+                        {JSON.stringify(editCoordinates, null, 2)}
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Estimated Delivery Time (minutes) *</label>
+                  <input
+                    type="number"
+                    required
+                    value={editForm.estimatedDeliveryTime}
+                    onChange={e => setEditForm({ ...editForm, estimatedDeliveryTime: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    min="1"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Max Delivery Distance (km) *</label>
+                  <input
+                    type="number"
+                    required
+                    value={editForm.maxDeliveryDistance}
+                    onChange={e => setEditForm({ ...editForm, maxDeliveryDistance: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    min="0.1"
+                    step="0.1"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Minimum Order Value (₹)</label>
+                  <input
+                    type="number"
+                    value={editForm.minimumOrderValue}
+                    onChange={e => setEditForm({ ...editForm, minimumOrderValue: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    min="0"
+                    step="0.01"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Peak Hour Multiplier</label>
+                  <input
+                    type="number"
+                    value={editForm.peakHourMultiplier}
+                    onChange={e => setEditForm({ ...editForm, peakHourMultiplier: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    min="1"
+                    step="0.01"
+                  />
+                </div>
+                <div>
+                  <ChipInput
+                    label="Pin Codes"
+                    values={editForm.coverage.pinCodes}
+                    setValues={vals => setEditForm({ ...editForm, coverage: { ...editForm.coverage, pinCodes: vals } })}
+                  />
+                  <ChipInput
+                    label="Areas"
+                    values={editForm.coverage.areas}
+                    setValues={vals => setEditForm({ ...editForm, coverage: { ...editForm.coverage, areas: vals } })}
+                  />
+                  <ChipInput
+                    label="Landmarks"
+                    values={editForm.coverage.landmarks}
+                    setValues={vals => setEditForm({ ...editForm, coverage: { ...editForm.coverage, landmarks: vals } })}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1 mt-2">Cash On Delivery Allowed</label>
+                  <input
+                    type="checkbox"
+                    checked={editForm.restrictions.cashOnDelivery}
+                    onChange={e => setEditForm({
+                      ...editForm,
+                      restrictions: { ...editForm.restrictions, cashOnDelivery: e.target.checked }
+                    })}
+                  />
+                  <label className="block text-sm font-medium text-gray-700 mb-1 mt-2">Max Order Value (₹)</label>
+                  <input
+                    type="number"
+                    value={editForm.restrictions.maxOrderValue}
+                    onChange={e => setEditForm({
+                      ...editForm,
+                      restrictions: { ...editForm.restrictions, maxOrderValue: e.target.value }
+                    })}
+                    className="w-full px-3 py-2 border border-gray-300"
+                    min="0"
+                    step="0.01"
+                  />
+                  <ChipInput
+                    label="Blocked Items"
+                    values={editForm.restrictions.blockedItems}
+                    setValues={vals => setEditForm({
+                      ...editForm,
+                      restrictions: { ...editForm.restrictions, blockedItems: vals }
+                    })}
+                  />
+                </div>
+                <div className="flex items-center gap-2 mt-2">
+                  <input
+                    type="checkbox"
+                    id="isActiveEdit"
+                    checked={editForm.isActive}
+                    onChange={(e) => setEditForm({ ...editForm, isActive: e.target.checked })}
+                    className="text-green-600 focus:ring-green-500"
+                  />
+                  <label htmlFor="isActiveEdit" className="text-sm text-gray-700">Active Zone</label>
+                </div>
+              </div>
+              <div className="flex justify-end gap-3 pt-4">
+                <button type="button" onClick={() => setEditingZone(null)} className="px-4 py-2 text-gray-700 border border-gray-300 hover:bg-gray-50 transition-colors">Cancel</button>
+                <button type="submit" className="px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 transition-colors">Save Changes</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Map Modal */}
+      {showEditMapModal && editForm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl shadow-xl max-w-6xl w-full h-[80vh]">
+            <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-gray-800">Edit Zone Boundary</h3>
+              <button onClick={() => setShowEditMapModal(false)} className="p-1 hover:bg-gray-100 rounded">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-4 h-full flex flex-col">
+              <div className="mb-4 space-y-3">
+                <AddressSearch
+                  onPlaceSelect={(place) => setEditSelectedLocation(place)}
+                  placeholder="Search for a location to center the map..."
+                />
+              </div>
+              <div className="flex-1 relative">
+                <GoogleMap
+                  center={editSelectedLocation ? { lat: editSelectedLocation.lat, lng: editSelectedLocation.lng } : (() => {
+                    const c = editForm?.boundaries?.coordinates?.[0]?.[0];
+                    return c ? { lat: c[1], lng: c[0] } : { lat: 12.9716, lng: 77.5946 };
+                  })()}
+                  zoom={editSelectedLocation ? 15 : 12}
+                >
+                    {/* Existing editable polygon overlay for current zone */}
+                    {Array.isArray(editForm?.boundaries?.coordinates?.[0]) && editForm.boundaries.coordinates[0].length >= 3 && (
+                      <EditablePolygon
+                        zone={{
+                          ...editForm,
+                          boundaries: { type: 'Polygon', coordinates: [editForm.boundaries.coordinates[0]] },
+                          isActive: editForm.isActive
+                        }}
+                        onEdit={handleEditPolygonEdit}
+                      />
+                    )}
+                    {/* Allow drawing a new polygon if needed; remove the temporary polygon immediately after completion to avoid duplicates */}
+                    <DrawingManager
+                      onPolygonComplete={handleEditPolygonComplete}
+                      onPolygonEdit={handleEditPolygonEdit}
+                      existingZones={[]}
+                      removePolygonAfterComplete
+                    />
+                </GoogleMap>
+              </div>
+              <div className="mt-4 flex justify-between items-center">
+                <div className="text-sm text-gray-600">
+                  {editCoordinates.length > 0 && (<span>Edited boundary: {editCoordinates.length} points defined</span>)}
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => { setEditCoordinates([]); setEditZoneStats(null); setEditSelectedLocation(null); }}
+                    className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
+                  >
+                    Clear
+                  </button>
+                  <button
+                    onClick={() => setShowEditMapModal(false)}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                  >
+                    Done
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       )}

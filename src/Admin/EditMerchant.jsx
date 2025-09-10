@@ -96,7 +96,6 @@ const EditMerchant = () => {
       },
       shopEstablishmentLicense: '',
       fssaiLicense: '',
-      incorporationCertificate: '',
       panCard: '',
       aadhaarCard: {
         frontUrl: '',
@@ -247,7 +246,6 @@ const EditMerchant = () => {
               },
               shopEstablishmentLicense: merchant.documents?.shopEstablishmentLicense || '',
               fssaiLicense: merchant.documents?.fssaiLicense || '',
-              incorporationCertificate: merchant.documents?.incorporationCertificate || '',
               panCard: merchant.documents?.panCard || '',
               aadhaarCard: {
                 frontUrl: merchant.documents?.aadhaarCard?.frontUrl || '',
@@ -1549,18 +1547,6 @@ const EditMerchant = () => {
                     onChange={(e) => handleNestedInputChange('documents', 'shopEstablishmentLicense', e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                     placeholder="Enter license number"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Incorporation Certificate
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.documents.incorporationCertificate}
-                    onChange={(e) => handleNestedInputChange('documents', 'incorporationCertificate', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                    placeholder="Enter certificate number"
                   />
                 </div>
               </div>

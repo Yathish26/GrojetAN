@@ -1,19 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { 
-  ArrowLeft, 
-  User, 
-  Phone, 
-  Mail, 
-  MapPin, 
-  Truck, 
-  Star, 
-  Clock, 
-  DollarSign, 
-  FileText, 
-  Camera, 
-  AlertCircle, 
-  CircleCheck, 
+import {
+  ArrowLeft,
+  User,
+  Phone,
+  Mail,
+  MapPin,
+  Truck,
+  Star,
+  Clock,
+  DollarSign,
+  FileText,
+  Camera,
+  AlertCircle,
+  CircleCheck,
   XCircle,
   Edit3,
   Save,
@@ -25,8 +25,8 @@ import {
   Navigation,
   Shield,
   Eye,
-  Download,
-  RefreshCw
+  RefreshCw,
+  CheckSquare
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -38,29 +38,87 @@ export default function DeliveryAgentDetails() {
   const [error, setError] = useState(null);
   const [editingField, setEditingField] = useState(null);
   const [editValue, setEditValue] = useState('');
-  const [updating, setUpdating] = useState(false);
   const [recentOrders, setRecentOrders] = useState([]);
   const [agentStats, setAgentStats] = useState(null);
   const [refreshingStats, setRefreshingStats] = useState(false);
 
+  // Emergency contact editing state
+  const [emergencyContactEdit, setEmergencyContactEdit] = useState({
+    name: '',
+    phone: '',
+    relationship: ''
+  });
+
+  // Address editing state
+  const [addressEdit, setAddressEdit] = useState({
+    street: '',
+    city: '',
+    state: '',
+    zipCode: '',
+    landmark: ''
+  });
+
+  // Full name editing state
+  const [fullNameEdit, setFullNameEdit] = useState({
+    firstName: '',
+    lastName: ''
+  });
+
+  // Verification status states
+  const [documentsVerified, setDocumentsVerified] = useState(false);
+  const [backgroundCheckCompleted, setBackgroundCheckCompleted] = useState(false);
+  const [trainingCompleted, setTrainingCompleted] = useState(false);
+
+  // Verification timestamps
+  const [documentsVerifiedAt, setDocumentsVerifiedAt] = useState(null);
+  const [backgroundCheckCompletedAt, setBackgroundCheckCompletedAt] = useState(null);
+  const [trainingCompletedAt, setTrainingCompletedAt] = useState(null);
+
+  // Handle keyboard events for editing
+  useEffect(() => {
+    const handleKeyPress = (e) => {
+      if (editingField) {
+        if (e.key === 'Enter') {
+          saveEditing();
+        } else if (e.key === 'Escape') {
+          cancelEditing();
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyPress);
+    return () => document.removeEventListener('keydown', handleKeyPress);
+  }, [editingField, editValue]);
+
+  // Fetch agent details on component mount
   useEffect(() => {
     fetchAgentDetails();
     fetchAgentOrders();
     fetchAgentStats();
-  }, [id]);
+  }, []);
 
   const fetchAgentDetails = async () => {
     try {
       const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/delivery-agents/${id}`, {
         credentials: 'include'
       });
-      
+
       if (!response.ok) {
         throw new Error('Failed to fetch agent details');
       }
-      
+
       const data = await response.json();
       setAgent(data.agent);
+
+      // Initialize verification states from agent data
+      setDocumentsVerified(data.agent?.verification?.documentsVerified || false);
+      setBackgroundCheckCompleted(data.agent?.verification?.backgroundCheckPassed || false);
+      setTrainingCompleted(data.agent?.verification?.trainingCompleted || false);
+
+      // Initialize timestamps from backend data
+      setDocumentsVerifiedAt(data.agent?.verification?.documentsVerifiedAt || null);
+      setBackgroundCheckCompletedAt(data.agent?.verification?.backgroundCheckCompletedAt || null);
+      setTrainingCompletedAt(data.agent?.verification?.trainingCompletedAt || null);
     } catch (err) {
       setError(err.message);
       toast.error('Failed to load agent details');
@@ -74,7 +132,7 @@ export default function DeliveryAgentDetails() {
       const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/delivery-agents/${id}/orders`, {
         credentials: 'include'
       });
-      
+
       if (response.ok) {
         const data = await response.json();
         setRecentOrders(data.orders || []);
@@ -90,7 +148,7 @@ export default function DeliveryAgentDetails() {
       const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/delivery-agents/${id}/stats`, {
         credentials: 'include'
       });
-      
+
       if (response.ok) {
         const data = await response.json();
         setAgentStats(data.stats);
@@ -103,7 +161,7 @@ export default function DeliveryAgentDetails() {
   };
 
   const updateAgentStatus = async (newStatus) => {
-    setUpdating(true);
+    const loadingToast = toast.loading('Updating agent status...');
     try {
       const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/delivery-agents/${id}/status`, {
         method: 'PUT',
@@ -124,12 +182,12 @@ export default function DeliveryAgentDetails() {
     } catch (err) {
       toast.error(err.message);
     } finally {
-      setUpdating(false);
+      toast.dismiss(loadingToast);
     }
   };
 
   const approveApplication = async () => {
-    setUpdating(true);
+    const loadingToast = toast.loading('Approving application...');
     try {
       const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/delivery-agents/${id}/approve`, {
         method: 'PUT',
@@ -142,20 +200,35 @@ export default function DeliveryAgentDetails() {
 
       const data = await response.json();
       setAgent(data.agent);
+
+      // Update local verification states with backend response
+      setDocumentsVerified(data.agent?.verification?.documentsVerified || false);
+      setBackgroundCheckCompleted(data.agent?.verification?.backgroundCheckPassed || false);
+      setTrainingCompleted(data.agent?.verification?.trainingCompleted || false);
+      setDocumentsVerifiedAt(data.agent?.verification?.documentsVerifiedAt || null);
+      setBackgroundCheckCompletedAt(data.agent?.verification?.backgroundCheckCompletedAt || null);
+      setTrainingCompletedAt(data.agent?.verification?.trainingCompletedAt || null);
+
       toast.success('Application approved successfully');
     } catch (err) {
       toast.error(err.message);
     } finally {
-      setUpdating(false);
+      toast.dismiss(loadingToast);
     }
   };
 
   const rejectApplication = async () => {
-    setUpdating(true);
+    const loadingToast = toast.loading('Rejecting application...');
     try {
       const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/delivery-agents/${id}/reject`, {
         method: 'PUT',
-        credentials: 'include'
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          rejectionReason: 'Application rejected by admin'
+        })
       });
 
       if (!response.ok) {
@@ -164,12 +237,278 @@ export default function DeliveryAgentDetails() {
 
       const data = await response.json();
       setAgent(data.agent);
-      toast.success('Application rejected');
+      toast.success('Application rejected successfully');
     } catch (err) {
       toast.error(err.message);
     } finally {
-      setUpdating(false);
+      toast.dismiss(loadingToast);
     }
+  };
+
+  const updateAgentDetails = async (updateData) => {
+    const loadingToast = toast.loading('Updating agent details...');
+    try {
+      const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/delivery-agents/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include',
+        body: JSON.stringify(updateData)
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update agent details');
+      }
+
+      const data = await response.json();
+      setAgent(data.agent);
+      toast.success('Agent details updated successfully');
+      setEditingField(null);
+      setEditValue('');
+      setEmergencyContactEdit({
+        name: '',
+        phone: '',
+        relationship: ''
+      });
+      setAddressEdit({
+        street: '',
+        city: '',
+        state: '',
+        zipCode: '',
+        landmark: ''
+      });
+      setFullNameEdit({
+        firstName: '',
+        lastName: ''
+      });
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      toast.dismiss(loadingToast);
+    }
+  };
+
+  // Verification status toggle functions
+  const toggleDocumentsVerified = async () => {
+    const newStatus = !documentsVerified;
+    setDocumentsVerified(newStatus);
+
+    try {
+      const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/delivery-agents/${id}/verification`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include',
+        body: JSON.stringify({ documentsVerified: newStatus })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update documents verification status');
+      }
+
+      const data = await response.json();
+      setAgent(data.agent);
+
+      // Update local state with backend response
+      setDocumentsVerified(data.agent?.verification?.documentsVerified || false);
+      setDocumentsVerifiedAt(data.agent?.verification?.documentsVerifiedAt || null);
+
+      toast.success(`Documents ${newStatus ? 'verified' : 'marked as pending'}`);
+    } catch (err) {
+      // Revert on error
+      setDocumentsVerified(!newStatus);
+      toast.error('Failed to update documents verification status');
+    }
+  };
+
+  const toggleBackgroundCheckCompleted = async () => {
+    const newStatus = !backgroundCheckCompleted;
+    setBackgroundCheckCompleted(newStatus);
+
+    try {
+      const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/delivery-agents/${id}/verification`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include',
+        body: JSON.stringify({ backgroundCheckPassed: newStatus })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update background check status');
+      }
+
+      const data = await response.json();
+      setAgent(data.agent);
+
+      // Update local state with backend response
+      setBackgroundCheckCompleted(data.agent?.verification?.backgroundCheckPassed || false);
+      setBackgroundCheckCompletedAt(data.agent?.verification?.backgroundCheckCompletedAt || null);
+
+      toast.success(`Background check ${newStatus ? 'completed' : 'marked as pending'}`);
+    } catch (err) {
+      // Revert on error
+      setBackgroundCheckCompleted(!newStatus);
+      toast.error('Failed to update background check status');
+    }
+  };
+
+  const toggleTrainingCompleted = async () => {
+    const newStatus = !trainingCompleted;
+    setTrainingCompleted(newStatus);
+
+    try {
+      const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/delivery-agents/${id}/verification`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include',
+        body: JSON.stringify({ trainingCompleted: newStatus })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update training status');
+      }
+
+      const data = await response.json();
+      setAgent(data.agent);
+
+      // Update local state with backend response
+      setTrainingCompleted(data.agent?.verification?.trainingCompleted || false);
+      setTrainingCompletedAt(data.agent?.verification?.trainingCompletedAt || null);
+
+      toast.success(`Training ${newStatus ? 'completed' : 'marked as pending'}`);
+    } catch (err) {
+      // Revert on error
+      setTrainingCompleted(!newStatus);
+      toast.error('Failed to update training status');
+    }
+  };
+
+  const startEditing = (field, value) => {
+    setEditingField(field);
+    setEditValue(value || '');
+
+    // Initialize emergency contact editing state
+    if (field === 'emergencyContact.edit') {
+      setEmergencyContactEdit({
+        name: agent.emergencyContact?.name || '',
+        phone: agent.emergencyContact?.phone || '',
+        relationship: agent.emergencyContact?.relationship || ''
+      });
+    }
+
+    // Initialize address editing state
+    if (field === 'address.edit') {
+      setAddressEdit({
+        street: agent.address?.street || '',
+        city: agent.address?.city || '',
+        state: agent.address?.state || '',
+        zipCode: agent.address?.zipCode || '',
+        landmark: agent.address?.landmark || ''
+      });
+    }
+
+    // Initialize full name editing state
+    if (field === 'personalInfo.firstName') {
+      setFullNameEdit({
+        firstName: agent.personalInfo?.firstName || '',
+        lastName: agent.personalInfo?.lastName || ''
+      });
+    }
+  };
+
+  const cancelEditing = () => {
+    setEditingField(null);
+    setEditValue('');
+    setEmergencyContactEdit({
+      name: '',
+      phone: '',
+      relationship: ''
+    });
+    setAddressEdit({
+      street: '',
+      city: '',
+      state: '',
+      zipCode: '',
+      landmark: ''
+    });
+    setFullNameEdit({
+      firstName: '',
+      lastName: ''
+    });
+  };
+
+  const saveEditing = () => {
+    if (!editingField) {
+      toast.error('Please select a field to edit');
+      return;
+    }
+
+    // Special validation for address editing
+    if (editingField === 'address.edit') {
+      if (!addressEdit.street.trim() || !addressEdit.city.trim() || !addressEdit.state.trim()) {
+        toast.error('Please fill in street, city, and state');
+        return;
+      }
+    } else if (editingField === 'emergencyContact.edit') {
+      if (!emergencyContactEdit.name.trim() || !emergencyContactEdit.phone.trim()) {
+        toast.error('Please fill in emergency contact name and phone');
+        return;
+      }
+    } else if (editingField === 'personalInfo.firstName') {
+      if (!fullNameEdit.firstName.trim()) {
+        toast.error('Please enter a first name');
+        return;
+      }
+    } else if (!editValue.trim()) {
+      toast.error('Please enter a value');
+      return;
+    }
+
+    const updateData = {};
+
+    if (editingField === 'personalInfo.firstName') {
+      // Handle full name editing
+      updateData.personalInfo = {
+        firstName: fullNameEdit.firstName.trim(),
+        lastName: fullNameEdit.lastName.trim()
+      };
+    } else if (editingField.startsWith('personalInfo.')) {
+      const field = editingField.split('.')[1];
+      updateData.personalInfo = { [field]: editValue.trim() };
+    } else if (editingField.startsWith('address.')) {
+      const field = editingField.split('.')[1];
+      updateData.address = { [field]: editValue.trim() };
+    } else if (editingField.startsWith('vehicleInfo.')) {
+      const field = editingField.split('.')[1];
+      updateData.vehicleInfo = { [field]: editValue.trim() };
+    } else if (editingField.startsWith('emergencyContact.')) {
+      const field = editingField.split('.')[1];
+      updateData.emergencyContact = { [field]: editValue.trim() };
+    } else if (editingField === 'address.edit') {
+      // Handle address editing
+      updateData.address = {
+        street: addressEdit.street.trim(),
+        city: addressEdit.city.trim(),
+        state: addressEdit.state.trim(),
+        zipCode: addressEdit.zipCode.trim(),
+        landmark: addressEdit.landmark.trim()
+      };
+    } else if (editingField === 'emergencyContact.edit') {
+      // Handle emergency contact editing
+      updateData.emergencyContact = {
+        name: emergencyContactEdit.name.trim(),
+        phone: emergencyContactEdit.phone.trim(),
+        relationship: emergencyContactEdit.relationship.trim()
+      };
+    }
+
+    updateAgentDetails(updateData);
   };
 
   const getStatusIcon = (status) => {
@@ -223,36 +562,46 @@ export default function DeliveryAgentDetails() {
 
   const formatTime = (hours) => {
     if (!hours || hours === 0) return '00:00:00';
-    
+
     const absHours = Math.abs(hours);
     const totalSeconds = Math.floor(absHours * 3600);
     const hrs = Math.floor(totalSeconds / 3600);
     const mins = Math.floor((totalSeconds % 3600) / 60);
     const secs = totalSeconds % 60;
-    
+
     return `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
   const formatISTTime = (dateString) => {
     if (!dateString) return 'Not available';
-    
-    const date = new Date(dateString);
-    // Convert to IST (UTC+5:30)
-    const istOffset = 5.5 * 60 * 60 * 1000; // 5.5 hours in milliseconds
-    const istDate = new Date(date.getTime() + istOffset);
-    
-    return istDate.toLocaleString('en-IN', {
-      timeZone: 'Asia/Kolkata',
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit'
-    });
-  };
 
-  if (loading) {
+    try {
+      // Parse the UTC timestamp as-is (don't convert to IST)
+      let utcString = dateString;
+      if (dateString.includes('+00:00')) {
+        utcString = dateString.replace('+00:00', 'Z');
+      }
+
+      const date = new Date(utcString);
+
+      // Format in UTC timezone (no conversion to IST)
+      const formatter = new Intl.DateTimeFormat('en-IN', {
+        timeZone: 'UTC',
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: true
+      });
+
+      return formatter.format(date);
+    } catch (error) {
+      console.error('Error formatting date:', error, dateString);
+      return 'Invalid date';
+    }
+  }; if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
@@ -291,22 +640,33 @@ export default function DeliveryAgentDetails() {
             <h1 className="text-2xl font-bold text-gray-800">
               {agent.personalInfo?.firstName} {agent.personalInfo?.lastName}
             </h1>
-            <p className="text-gray-600">Delivery Agent ID: {agent._id}</p>
+            <p className="text-gray-600">Delivery Agent ID: {agent.agentId}</p>
           </div>
         </div>
-        
+
         <div className="flex items-center gap-3">
           <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-sm ${getWorkingStatusColor(agent.status?.isOnline ? 'online' : 'offline')}`}>
-            <div className={`w-2 h-2 rounded-full ${
-              agent.status?.isOnline ? 'bg-green-500' : 'bg-gray-500'
-            }`}></div>
+            <div className={`w-2 h-2 rounded-full ${agent.status?.isOnline ? 'bg-green-500' : 'bg-gray-500'
+              }`}></div>
             <span className="capitalize">{agent.status?.isOnline ? 'online' : 'offline'}</span>
           </div>
-          
+
           <div className={`flex items-center gap-2 px-4 py-2 rounded-full border ${getStatusColor(agent.status?.applicationStatus)}`}>
             {getStatusIcon(agent.status?.applicationStatus)}
             <span className="font-medium capitalize">{agent.status?.applicationStatus}</span>
           </div>
+
+          {/* Edit Button */}
+          <button
+            onClick={() => {
+              // Toggle edit mode or show edit modal
+              toast('Click on individual fields to edit them');
+            }}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            <Edit3 className="w-4 h-4" />
+            Edit Details
+          </button>
         </div>
       </div>
 
@@ -323,19 +683,130 @@ export default function DeliveryAgentDetails() {
             </div>
             <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-4">
-                <div>
-                  <label className="text-sm text-gray-500">Full Name</label>
-                  <p className="font-medium text-gray-800">
-                    {agent.personalInfo?.firstName} {agent.personalInfo?.lastName}
-                  </p>
+                <div className="flex items-center justify-between">
+                  <div className="flex-1">
+                    <label className="text-sm text-gray-500">Full Name</label>
+                    {editingField === 'personalInfo.firstName' ? (
+                      <div className="flex items-center gap-2 mt-1">
+                        <div className="flex flex-col gap-2">
+                          <input
+                            type="text"
+                            value={fullNameEdit.firstName}
+                            onChange={(e) => setFullNameEdit(prev => ({ ...prev, firstName: e.target.value }))}
+                            className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                            placeholder="First Name"
+                          />
+                          <input
+                            type="text"
+                            value={fullNameEdit.lastName}
+                            onChange={(e) => setFullNameEdit(prev => ({ ...prev, lastName: e.target.value }))}
+                            className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                            placeholder="Last Name"
+                          />
+                        </div>
+                        <button
+                          onClick={saveEditing}
+                          className="p-2 text-green-600 hover:bg-green-50 rounded-lg"
+                        >
+                          <Save className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={cancelEditing}
+                          className="p-2 text-gray-600 hover:bg-gray-50 rounded-lg"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-between">
+                        <p className="font-medium text-gray-800">
+                          {agent.personalInfo?.firstName} {agent.personalInfo?.lastName}
+                        </p>
+                        <button
+                          onClick={() => startEditing('personalInfo.firstName', agent.personalInfo?.firstName)}
+                          className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded"
+                        >
+                          <Edit3 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
-                <div>
-                  <label className="text-sm text-gray-500">Email</label>
-                  <p className="font-medium text-gray-800">{agent.personalInfo?.email}</p>
+                <div className="flex items-center justify-between">
+                  <div className="flex-1">
+                    <label className="text-sm text-gray-500">Email</label>
+                    {editingField === 'personalInfo.email' ? (
+                      <div className="flex items-center gap-2 mt-1">
+                        <input
+                          type="email"
+                          value={editValue}
+                          onChange={(e) => setEditValue(e.target.value)}
+                          className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                          placeholder="Email"
+                        />
+                        <button
+                          onClick={saveEditing}
+                          className="p-2 text-green-600 hover:bg-green-50 rounded-lg"
+                        >
+                          <Save className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={cancelEditing}
+                          className="p-2 text-gray-600 hover:bg-gray-50 rounded-lg"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-between">
+                        <p className="font-medium text-gray-800">{agent.personalInfo?.email}</p>
+                        <button
+                          onClick={() => startEditing('personalInfo.email', agent.personalInfo?.email)}
+                          className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded"
+                        >
+                          <Edit3 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
-                <div>
-                  <label className="text-sm text-gray-500">Phone</label>
-                  <p className="font-medium text-gray-800">{agent.personalInfo?.phone}</p>
+                <div className="flex items-center justify-between">
+                  <div className="flex-1">
+                    <label className="text-sm text-gray-500">Phone</label>
+                    {editingField === 'personalInfo.phone' ? (
+                      <div className="flex items-center gap-2 mt-1">
+                        <input
+                          type="tel"
+                          value={editValue}
+                          onChange={(e) => setEditValue(e.target.value)}
+                          className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                          placeholder="Phone"
+                        />
+                        <button
+                          onClick={saveEditing}
+                          className="p-2 text-green-600 hover:bg-green-50 rounded-lg"
+                        >
+                          <Save className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={cancelEditing}
+                          className="p-2 text-gray-600 hover:bg-gray-50 rounded-lg"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-between">
+                        <p className="font-medium text-gray-800">{agent.personalInfo?.phone}</p>
+                        <button
+                          onClick={() => startEditing('personalInfo.phone', agent.personalInfo?.phone)}
+                          className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded"
+                        >
+                          <Edit3 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
                 <div>
                   <label className="text-sm text-gray-500">Date of Birth</label>
@@ -350,29 +821,185 @@ export default function DeliveryAgentDetails() {
                   </p>
                 </div>
               </div>
-              
+
               <div className="space-y-4">
-                <div>
-                  <label className="text-sm text-gray-500">Address</label>
-                  <p className="font-medium text-gray-800">
-                    {agent.address ? 
-                      `${agent.address.street}, ${agent.address.city}, ${agent.address.state} - ${agent.address.zipCode}` 
-                      : 'Not provided'
-                    }
-                  </p>
-                  {agent.address?.landmark && (
-                    <p className="text-sm text-gray-600">Landmark: {agent.address.landmark}</p>
-                  )}
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <label className="text-sm text-gray-500">Address</label>
+                    {editingField === 'address.edit' ? (
+                      <div className="space-y-3 mt-2">
+                        <input
+                          type="text"
+                          placeholder="Street Address"
+                          value={addressEdit.street}
+                          onChange={(e) => setAddressEdit(prev => ({ ...prev, street: e.target.value }))}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                        />
+                        <div className="grid grid-cols-2 gap-2">
+                          <input
+                            type="text"
+                            placeholder="City"
+                            value={addressEdit.city}
+                            onChange={(e) => setAddressEdit(prev => ({ ...prev, city: e.target.value }))}
+                            className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                          />
+                          <input
+                            type="text"
+                            placeholder="State"
+                            value={addressEdit.state}
+                            onChange={(e) => setAddressEdit(prev => ({ ...prev, state: e.target.value }))}
+                            className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                          />
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <input
+                            type="text"
+                            placeholder="ZIP Code"
+                            value={addressEdit.zipCode}
+                            onChange={(e) => setAddressEdit(prev => ({ ...prev, zipCode: e.target.value }))}
+                            className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                          />
+                          <input
+                            type="text"
+                            placeholder="Landmark (optional)"
+                            value={addressEdit.landmark}
+                            onChange={(e) => setAddressEdit(prev => ({ ...prev, landmark: e.target.value }))}
+                            className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                          />
+                        </div>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => {
+                              const updateData = {
+                                address: {
+                                  street: addressEdit.street.trim(),
+                                  city: addressEdit.city.trim(),
+                                  state: addressEdit.state.trim(),
+                                  zipCode: addressEdit.zipCode.trim(),
+                                  landmark: addressEdit.landmark.trim()
+                                }
+                              };
+                              updateAgentDetails(updateData);
+                            }}
+                            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                          >
+                            <Save className="w-4 h-4 inline mr-1" />
+                            Save
+                          </button>
+                          <button
+                            onClick={cancelEditing}
+                            className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
+                          >
+                            <X className="w-4 h-4 inline mr-1" />
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <p className="font-medium text-gray-800">
+                            {agent.address ?
+                              `${agent.address.street}, ${agent.address.city}, ${agent.address.state} - ${agent.address.zipCode}`
+                              : 'Not provided'
+                            }
+                          </p>
+                          {agent.address?.landmark && (
+                            <p className="text-sm text-gray-600">Landmark: {agent.address.landmark}</p>
+                          )}
+                        </div>
+                        <button
+                          onClick={() => startEditing('address.edit', agent.address ? `${agent.address.street},${agent.address.city},${agent.address.state}` : '')}
+                          className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded ml-2"
+                        >
+                          <Edit3 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
-                <div>
-                  <label className="text-sm text-gray-500">Emergency Contact</label>
-                  <p className="font-medium text-gray-800">{agent.emergencyContact?.name || 'Not provided'}</p>
-                  {agent.emergencyContact?.phone && (
-                    <p className="text-sm text-gray-600">{agent.emergencyContact.phone}</p>
-                  )}
-                  {agent.emergencyContact?.relationship && (
-                    <p className="text-sm text-gray-600 capitalize">Relationship: {agent.emergencyContact.relationship}</p>
-                  )}
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <label className="text-sm text-gray-500">Emergency Contact</label>
+                    {editingField === 'emergencyContact.edit' ? (
+                      <div className="space-y-3 mt-2">
+                        <input
+                          type="text"
+                          placeholder="Contact Name"
+                          value={emergencyContactEdit.name}
+                          onChange={(e) => setEmergencyContactEdit(prev => ({ ...prev, name: e.target.value }))}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                        />
+                        <input
+                          type="tel"
+                          placeholder="Contact Phone"
+                          value={emergencyContactEdit.phone}
+                          onChange={(e) => setEmergencyContactEdit(prev => ({ ...prev, phone: e.target.value }))}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                        />
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Relationship
+                          </label>
+                          <select
+                            value={emergencyContactEdit.relationship}
+                            onChange={(e) => setEmergencyContactEdit(prev => ({ ...prev, relationship: e.target.value }))}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                          >
+                            <option value="">Select</option>
+                            <option value="parent">Parent</option>
+                            <option value="spouse">Spouse</option>
+                            <option value="sibling">Sibling</option>
+                            <option value="friend">Friend</option>
+                            <option value="other">Other</option>
+                          </select>
+                        </div>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => {
+                              const updateData = {
+                                emergencyContact: {
+                                  name: emergencyContactEdit.name.trim(),
+                                  phone: emergencyContactEdit.phone.trim(),
+                                  relationship: emergencyContactEdit.relationship.trim()
+                                }
+                              };
+                              updateAgentDetails(updateData);
+                            }}
+                            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                          >
+                            <Save className="w-4 h-4 inline mr-1" />
+                            Save
+                          </button>
+                          <button
+                            onClick={cancelEditing}
+                            className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
+                          >
+                            <X className="w-4 h-4 inline mr-1" />
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <p className="font-medium text-gray-800">{agent.emergencyContact?.name || 'Not provided'}</p>
+                          {agent.emergencyContact?.phone && (
+                            <p className="text-sm text-gray-600">{agent.emergencyContact.phone}</p>
+                          )}
+                          {agent.emergencyContact?.relationship && (
+                            <p className="text-sm text-gray-600 capitalize">Relationship: {agent.emergencyContact.relationship}</p>
+                          )}
+                        </div>
+                        <button
+                          onClick={() => startEditing('emergencyContact.edit', '')}
+                          className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded ml-2"
+                        >
+                          <Edit3 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
                 <div>
                   <label className="text-sm text-gray-500">Joining Date</label>
@@ -394,16 +1021,88 @@ export default function DeliveryAgentDetails() {
             </div>
             <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-4">
-                <div>
-                  <label className="text-sm text-gray-500">Vehicle Type</label>
-                  <p className="font-medium text-gray-800 capitalize">{agent.vehicleInfo?.vehicleType || 'Not specified'}</p>
+                <div className="flex items-center justify-between">
+                  <div className="flex-1">
+                    <label className="text-sm text-gray-500">Vehicle Type</label>
+                    {editingField === 'vehicleInfo.vehicleType' ? (
+                      <div className="flex items-center gap-2 mt-1">
+                        <select
+                          value={editValue}
+                          onChange={(e) => setEditValue(e.target.value)}
+                          className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                        >
+                          <option value="">Select Type</option>
+                          <option value="bike">Bike</option>
+                          <option value="scooter">Scooter</option>
+                          <option value="car">Car</option>
+                          <option value="van">Van</option>
+                        </select>
+                        <button
+                          onClick={saveEditing}
+                          className="p-2 text-green-600 hover:bg-green-50 rounded-lg"
+                        >
+                          <Save className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={cancelEditing}
+                          className="p-2 text-gray-600 hover:bg-gray-50 rounded-lg"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-between">
+                        <p className="font-medium text-gray-800 capitalize">{agent.vehicleInfo?.vehicleType || 'Not specified'}</p>
+                        <button
+                          onClick={() => startEditing('vehicleInfo.vehicleType', agent.vehicleInfo?.vehicleType)}
+                          className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded"
+                        >
+                          <Edit3 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
-                <div>
-                  <label className="text-sm text-gray-500">Vehicle Number</label>
-                  <p className="font-medium text-gray-800">{agent.vehicleInfo?.vehicleNumber || 'Not provided'}</p>
+                <div className="flex items-center justify-between">
+                  <div className="flex-1">
+                    <label className="text-sm text-gray-500">Vehicle Number</label>
+                    {editingField === 'vehicleInfo.vehicleNumber' ? (
+                      <div className="flex items-center gap-2 mt-1">
+                        <input
+                          type="text"
+                          value={editValue}
+                          onChange={(e) => setEditValue(e.target.value)}
+                          className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                          placeholder="Vehicle Number"
+                        />
+                        <button
+                          onClick={saveEditing}
+                          className="p-2 text-green-600 hover:bg-green-50 rounded-lg"
+                        >
+                          <Save className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={cancelEditing}
+                          className="p-2 text-gray-600 hover:bg-gray-50 rounded-lg"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-between">
+                        <p className="font-medium text-gray-800">{agent.vehicleInfo?.vehicleNumber || 'Not provided'}</p>
+                        <button
+                          onClick={() => startEditing('vehicleInfo.vehicleNumber', agent.vehicleInfo?.vehicleNumber)}
+                          className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded"
+                        >
+                          <Edit3 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
-              
+
               <div className="space-y-4">
                 <div>
                   <label className="text-sm text-gray-500">RC Book</label>
@@ -412,6 +1111,13 @@ export default function DeliveryAgentDetails() {
                       <>
                         <CircleCheck className="w-4 h-4 text-green-500" />
                         <span className="text-sm text-green-600">Uploaded</span>
+                        <button
+                          onClick={() => window.open(agent.vehicleInfo.rcBook, '_blank')}
+                          className="text-blue-600 hover:text-blue-700 text-sm flex items-center gap-1 ml-2"
+                        >
+                          <Eye className="w-4 h-4" />
+                          View
+                        </button>
                       </>
                     ) : (
                       <>
@@ -428,27 +1134,18 @@ export default function DeliveryAgentDetails() {
                       <>
                         <CircleCheck className="w-4 h-4 text-green-500" />
                         <span className="text-sm text-green-600">Uploaded</span>
+                        <button
+                          onClick={() => window.open(agent.vehicleInfo.insurance, '_blank')}
+                          className="text-blue-600 hover:text-blue-700 text-sm flex items-center gap-1 ml-2"
+                        >
+                          <Eye className="w-4 h-4" />
+                          View
+                        </button>
                       </>
                     ) : (
                       <>
                         <XCircle className="w-4 h-4 text-red-500" />
                         <span className="text-sm text-red-600">Not uploaded</span>
-                      </>
-                    )}
-                  </div>
-                </div>
-                <div>
-                  <label className="text-sm text-gray-500">PUC Certificate</label>
-                  <div className="flex items-center gap-2">
-                    {agent.vehicleInfo?.puc ? (
-                      <>
-                        <CircleCheck className="w-4 h-4 text-green-500" />
-                        <span className="text-sm text-green-600">Uploaded</span>
-                      </>
-                    ) : (
-                      <>
-                        <XCircle className="w-4 h-4 text-orange-500" />
-                        <span className="text-sm text-orange-600">Optional - Not uploaded</span>
                       </>
                     )}
                   </div>
@@ -484,24 +1181,12 @@ export default function DeliveryAgentDetails() {
                     </div>
                     {agent.documents?.[doc.key] ? (
                       <div className="flex items-center gap-2">
-                        <button 
+                        <button
                           onClick={() => window.open(agent.documents[doc.key], '_blank')}
                           className="text-blue-600 hover:text-blue-700 text-sm flex items-center gap-1"
                         >
                           <Eye className="w-4 h-4" />
                           View
-                        </button>
-                        <button 
-                          onClick={() => {
-                            const link = document.createElement('a');
-                            link.href = agent.documents[doc.key];
-                            link.download = `${doc.label}_${agent.personalInfo?.firstName}_${agent.personalInfo?.lastName}`;
-                            link.click();
-                          }}
-                          className="text-green-600 hover:text-green-700 text-sm flex items-center gap-1"
-                        >
-                          <Download className="w-4 h-4" />
-                          Download
                         </button>
                       </div>
                     ) : (
@@ -509,7 +1194,7 @@ export default function DeliveryAgentDetails() {
                     )}
                   </div>
                 ))}
-                
+
                 {/* Profile Photo */}
                 <div className="border border-gray-200 rounded-lg p-4">
                   <div className="flex items-center justify-between mb-2">
@@ -522,7 +1207,7 @@ export default function DeliveryAgentDetails() {
                   </div>
                   {agent.personalInfo?.profilePhoto ? (
                     <div className="flex items-center gap-2">
-                      <button 
+                      <button
                         onClick={() => window.open(agent.personalInfo.profilePhoto, '_blank')}
                         className="text-blue-600 hover:text-blue-700 text-sm flex items-center gap-1"
                       >
@@ -611,7 +1296,7 @@ export default function DeliveryAgentDetails() {
                   </div>
                 </div>
               </div>
-              
+
               <div className="space-y-4">
                 <div>
                   <label className="text-sm text-gray-500">Availability Hours</label>
@@ -625,7 +1310,7 @@ export default function DeliveryAgentDetails() {
                 <div>
                   <label className="text-sm text-gray-500">Expected Salary</label>
                   <p className="font-medium text-gray-800">
-                    {agent.workInfo?.expectedSalary 
+                    {agent.workInfo?.expectedSalary
                       ? `₹${agent.workInfo.expectedSalary.toLocaleString()}/month`
                       : 'Not specified'
                     }
@@ -634,7 +1319,7 @@ export default function DeliveryAgentDetails() {
                 <div>
                   <label className="text-sm text-gray-500">Experience</label>
                   <p className="font-medium text-gray-800">
-                    {agent.workInfo?.experience 
+                    {agent.workInfo?.experience
                       ? `${agent.workInfo.experience} years`
                       : 'Not specified'
                     }
@@ -663,10 +1348,9 @@ export default function DeliveryAgentDetails() {
                       </div>
                       <div className="text-right">
                         <p className="font-medium text-gray-800">₹{order.totalAmount}</p>
-                        <p className={`text-sm capitalize ${
-                          order.status === 'delivered' ? 'text-green-600' : 
+                        <p className={`text-sm capitalize ${order.status === 'delivered' ? 'text-green-600' :
                           order.status === 'cancelled' ? 'text-red-600' : 'text-yellow-600'
-                        }`}>
+                          }`}>
                           {order.status}
                         </p>
                       </div>
@@ -698,21 +1382,21 @@ export default function DeliveryAgentDetails() {
                   <span className="font-medium">{agent.status?.rating || 5.0}</span>
                 </div>
               </div>
-              
+
               <div className="flex items-center justify-between">
                 <span className="text-gray-600">Total Deliveries</span>
                 <span className="font-medium">{agent.status?.totalDeliveries || 0}</span>
               </div>
-              
+
               <div className="flex items-center justify-between">
                 <span className="text-gray-600">Completed Deliveries</span>
                 <span className="font-medium">{agent.status?.completedDeliveries || 0}</span>
               </div>
-              
+
               <div className="flex items-center justify-between">
                 <span className="text-gray-600">Success Rate</span>
                 <span className="font-medium">
-                  {agent.status?.totalDeliveries > 0 
+                  {agent.status?.totalDeliveries > 0
                     ? Math.round((agent.status.completedDeliveries / agent.status.totalDeliveries) * 100)
                     : 0
                   }%
@@ -813,14 +1497,14 @@ export default function DeliveryAgentDetails() {
               </h2>
             </div>
             <div className="p-6 space-y-4">
-              <div>
-                <label className="text-sm text-gray-500">Application Status</label>
-                <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm mt-1 ${getStatusColor(agent.status?.applicationStatus)}`}>
+              <div className="flex justify-between items-center ">
+                <label className="text-md text-black">Application Status</label>
+                <div className={`inline-flex items-center gap-2 px-2 py-2 rounded-full text-sm mt-1 ${getStatusColor(agent.status?.applicationStatus)}`}>
                   {getStatusIcon(agent.status?.applicationStatus)}
                   <span className="font-medium capitalize">{agent.status?.applicationStatus}</span>
                 </div>
               </div>
-              
+
               <div>
                 <label className="text-sm text-gray-500">Documents Verified</label>
                 <div className="flex items-center gap-2 mt-1">
@@ -876,20 +1560,104 @@ export default function DeliveryAgentDetails() {
                 <div className="pt-4 space-y-2">
                   <button
                     onClick={approveApplication}
-                    disabled={updating}
-                    className="w-full bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
+                    className="w-full bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition-colors"
                   >
-                    {updating ? 'Processing...' : 'Approve Application'}
+                    Approve Application
                   </button>
                   <button
                     onClick={rejectApplication}
-                    disabled={updating}
-                    className="w-full bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
+                    className="w-full bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 transition-colors"
                   >
-                    {updating ? 'Processing...' : 'Reject Application'}
+                    Reject Application
                   </button>
                 </div>
               )}
+            </div>
+          </div>
+
+          {/* Verification Checklist */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+            <div className="p-6 border-b border-gray-200">
+              <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                <CheckSquare className="w-5 h-5" />
+                Verification Checklist
+              </h2>
+            </div>
+            <div className="p-6 space-y-4">
+              {/* Documents Verified */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <input
+                    type="checkbox"
+                    checked={documentsVerified}
+                    onChange={toggleDocumentsVerified}
+                    className="w-4 h-4 text-green-600 bg-gray-100 border-gray-300 rounded focus:ring-green-500 focus:ring-2"
+                  />
+                  <div>
+                    <label className="text-sm font-medium text-gray-800">Documents Verified</label>
+                    {documentsVerifiedAt && (
+                      <p className="text-xs text-gray-500">
+                        Completed: {formatISTTime(documentsVerifiedAt)}
+                      </p>
+                    )}
+                  </div>
+                </div>
+                {documentsVerified ? (
+                  <CircleCheck className="w-5 h-5 text-green-500" />
+                ) : (
+                  <XCircle className="w-5 h-5 text-red-500" />
+                )}
+              </div>
+
+              {/* Background Check Completed */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <input
+                    type="checkbox"
+                    checked={backgroundCheckCompleted}
+                    onChange={toggleBackgroundCheckCompleted}
+                    className="w-4 h-4 text-green-600 bg-gray-100 border-gray-300 rounded focus:ring-green-500 focus:ring-2"
+                  />
+                  <div>
+                    <label className="text-sm font-medium text-gray-800">Background Check Completed</label>
+                    {backgroundCheckCompletedAt && (
+                      <p className="text-xs text-gray-500">
+                        Completed: {formatISTTime(backgroundCheckCompletedAt)}
+                      </p>
+                    )}
+                  </div>
+                </div>
+                {backgroundCheckCompleted ? (
+                  <CircleCheck className="w-5 h-5 text-green-500" />
+                ) : (
+                  <XCircle className="w-5 h-5 text-red-500" />
+                )}
+              </div>
+
+              {/* Training Completed */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <input
+                    type="checkbox"
+                    checked={trainingCompleted}
+                    onChange={toggleTrainingCompleted}
+                    className="w-4 h-4 text-green-600 bg-gray-100 border-gray-300 rounded focus:ring-green-500 focus:ring-2"
+                  />
+                  <div>
+                    <label className="text-sm font-medium text-gray-800">Training Completed</label>
+                    {trainingCompletedAt && (
+                      <p className="text-xs text-gray-500">
+                        Completed: {formatISTTime(trainingCompletedAt)}
+                      </p>
+                    )}
+                  </div>
+                </div>
+                {trainingCompleted ? (
+                  <CircleCheck className="w-5 h-5 text-green-500" />
+                ) : (
+                  <XCircle className="w-5 h-5 text-red-500" />
+                )}
+              </div>
             </div>
           </div>
 

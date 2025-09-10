@@ -42,16 +42,89 @@ export default function AdminRegister() {
 
   // Check authorization status on component mount
   useEffect(() => {
-    const checkAuthorization = () => {
+    const checkAuthorization = async () => {
       const authToken = localStorage.getItem('adminRegAuthToken');
-      if (authToken) {
-        // Optionally verify the token with backend
-        setIsAuthorized(true);
+      
+      if (!authToken) {
+        setIsAuthorized(false);
+        setCheckingAuth(false);
+        return;
       }
-      setCheckingAuth(false);
+
+      try {
+        // Verify token with backend
+        const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/auth/verify-reg-token`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          credentials: 'include',
+          body: JSON.stringify({ token: authToken })
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.valid) {
+          setIsAuthorized(true);
+        } else {
+          // Token is invalid or expired, remove it
+          localStorage.removeItem('adminRegAuthToken');
+          setIsAuthorized(false);
+          
+          if (data.expired) {
+            toast.error('Authorization token has expired. Please verify PIN and OTP again.');
+          } else {
+            toast.error('Invalid authorization token. Please verify PIN and OTP again.');
+          }
+        }
+      } catch (error) {
+        console.error('Token verification error:', error);
+        // If backend verification fails, fall back to localStorage check
+        // This ensures the app still works even if backend is temporarily down
+        setIsAuthorized(true);
+        toast.error('Could not verify authorization with server. Using cached token.');
+      } finally {
+        setCheckingAuth(false);
+      }
     };
 
     checkAuthorization();
+
+    // Set up periodic token verification every 5 minutes
+    const tokenCheckInterval = setInterval(async () => {
+      const authToken = localStorage.getItem('adminRegAuthToken');
+      if (!authToken) return;
+
+      try {
+        const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/auth/verify-reg-token`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          credentials: 'include',
+          body: JSON.stringify({ token: authToken })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok || !data.valid) {
+          localStorage.removeItem('adminRegAuthToken');
+          setIsAuthorized(false);
+          
+          if (data.expired) {
+            toast.error('Authorization token has expired. Please verify PIN and OTP again.');
+          } else {
+            toast.error('Authorization token is no longer valid. Please verify PIN and OTP again.');
+          }
+        }
+      } catch (error) {
+        // Silently fail for periodic checks to avoid spam
+        console.error('Periodic token verification error:', error);
+      }
+    }, 5 * 60 * 1000); // Check every 5 minutes
+
+    // Cleanup interval on component unmount
+    return () => clearInterval(tokenCheckInterval);
   }, []);
 
   const handleAuthSuccess = () => {
@@ -121,6 +194,36 @@ export default function AdminRegister() {
       toast.error('Authorization expired. Please verify PIN and OTP again.');
       setIsAuthorized(false);
       return;
+    }
+
+    // Final token verification before submission
+    try {
+      const verifyResponse = await fetch(`${import.meta.env.VITE_SERVER}/admin/auth/verify-reg-token`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include',
+        body: JSON.stringify({ token: authToken })
+      });
+
+      const verifyData = await verifyResponse.json();
+
+      if (!verifyResponse.ok || !verifyData.valid) {
+        localStorage.removeItem('adminRegAuthToken');
+        setIsAuthorized(false);
+        
+        if (verifyData.expired) {
+          toast.error('Authorization token has expired. Please verify PIN and OTP again.');
+        } else {
+          toast.error('Authorization token is invalid. Please verify PIN and OTP again.');
+        }
+        return;
+      }
+    } catch (error) {
+      console.error('Final token verification error:', error);
+      // Continue with submission if verification fails but token exists
+      // This ensures registration can still proceed if backend is temporarily down
     }
 
     setLoading(true);
