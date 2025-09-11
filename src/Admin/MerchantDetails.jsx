@@ -80,10 +80,6 @@ const MerchantDetails = () => {
         return 'bg-green-100 text-green-800';
       case 'closed':
         return 'bg-red-100 text-red-800';
-      case 'busy':
-        return 'bg-orange-100 text-orange-800';
-      case 'temporarily_closed':
-        return 'bg-yellow-100 text-yellow-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
@@ -350,8 +346,6 @@ const MerchantDetails = () => {
                   <p className="text-sm">
                     {merchant.storeStatus === 'open' && 'Store is currently open'}
                     {merchant.storeStatus === 'closed' && 'Store is currently closed'}
-                    {merchant.storeStatus === 'busy' && 'Store is open but busy'}
-                    {merchant.storeStatus === 'temporarily_closed' && 'Store is temporarily closed'}
                   </p>
                 </div>
               </div>

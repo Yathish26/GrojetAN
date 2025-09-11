@@ -461,23 +461,13 @@ const Merchants = () => {
                                                             {formatCurrency(merchant.totalRevenue)}
                                                         </div>
                                                     </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                                        <div className="flex items-center space-x-2">
-                                                            <button
-                                                                onClick={() => navigate(`/merchants/${merchant.id}`)}
-                                                                className="text-green-600 hover:text-green-900"
-                                                                title="View Details"
-                                                            >
-                                                                <Eye size={16} />
-                                                            </button>
-                                                            <button
-                                                                onClick={() => navigate(`/merchants/${merchant.id}/edit`)}
-                                                                className="text-blue-600 hover:text-blue-900"
-                                                                title="Edit"
-                                                            >
-                                                                <Edit size={16} />
-                                                            </button>
-                                                        </div>
+                                                    <td className="px-6 py-4 whitespace-nowrap">
+                                                        <button
+                                                            onClick={() => navigate(`/merchants/${merchant.id}`)}
+                                                            className="text-green-600 cursor-pointer hover:text-green-900"
+                                                        >
+                                                            View Details
+                                                        </button>
                                                     </td>
                                                 </tr>
                                             ))
@@ -507,8 +497,8 @@ const Merchants = () => {
                                                     key={pageNum}
                                                     onClick={() => handlePageChange(pageNum)}
                                                     className={`px-3 py-1 border rounded-md text-sm ${pageNum === currentPage
-                                                            ? 'bg-green-600 text-white border-green-600'
-                                                            : 'border-gray-300 hover:bg-gray-50'
+                                                        ? 'bg-green-600 text-white border-green-600'
+                                                        : 'border-gray-300 hover:bg-gray-50'
                                                         }`}
                                                 >
                                                     {pageNum}

@@ -1397,8 +1397,6 @@ const EditMerchant = () => {
                 >
                   <option value="open">Open</option>
                   <option value="closed">Closed</option>
-                  <option value="temporarily_closed">Temporarily Closed</option>
-                  <option value="busy">Busy</option>
                 </select>
               </div>
               <div>

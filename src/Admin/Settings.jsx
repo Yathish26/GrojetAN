@@ -63,6 +63,12 @@ export default function Settings() {
       autoRefundEnabled: true,
       refundProcessingDays: 7
     },
+    faq: {
+      website: [],
+      mobileApp: [],
+      merchantApp: [],
+      deliveryAgentApp: []
+    },
     system: {
       maintenanceMode: false,
       debugMode: false,
@@ -164,6 +170,7 @@ export default function Settings() {
     fetchTerms();
     fetchPrivacy();
     fetchSupport();
+    fetchFaq();
   }, []);
 
   const fetchSettings = async () => {
@@ -250,6 +257,29 @@ export default function Settings() {
       }
     } catch (err) {
       console.error('Failed to fetch support settings:', err);
+    }
+  };
+
+  const fetchFaq = async () => {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/faq`, {
+        credentials: 'include'
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setSettings(prev => ({
+          ...prev,
+          faq: data.faq || {
+            website: [],
+            mobileApp: [],
+            merchantApp: [],
+            deliveryAgentApp: []
+          }
+        }));
+      }
+    } catch (err) {
+      console.error('Failed to fetch FAQ:', err);
     }
   };
 
@@ -424,6 +454,7 @@ export default function Settings() {
     { id: 'security', label: 'Security', icon: Shield },
     { id: 'delivery', label: 'Delivery', icon: Truck },
     { id: 'payment', label: 'Payment', icon: DollarSign },
+    { id: 'faq', label: 'FAQ Management', icon: Info },
     { id: 'terms', label: 'Terms & Conditions', icon: FileText },
     { id: 'privacy', label: 'Privacy Policy', icon: Shield },
     { id: 'system', label: 'System', icon: Database },
@@ -795,6 +826,86 @@ export default function Settings() {
                         max="30"
                       />
                     </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* FAQ Management */}
+            {activeTab === 'faq' && (
+              <div>
+                <div className="p-6 border-b border-gray-200">
+                  <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                    <Info className="w-5 h-5" />
+                    FAQ Management
+                  </h2>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Manage frequently asked questions for different applications
+                  </p>
+                </div>
+                <div className="p-6 space-y-6">
+                  {/* Website FAQ */}
+                  <div className="border border-gray-200 rounded-lg p-6">
+                    <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                      <Globe className="w-5 h-5 text-blue-600" />
+                      Website FAQ
+                    </h3>
+                    <FaqManager
+                      faqs={settings.faq.website}
+                      onUpdate={(faqs) => setSettings(prev => ({
+                        ...prev,
+                        faq: { ...prev.faq, website: faqs }
+                      }))}
+                      appType="website"
+                    />
+                  </div>
+
+                  {/* Mobile App FAQ */}
+                  <div className="border border-gray-200 rounded-lg p-6">
+                    <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                      <Smartphone className="w-5 h-5 text-green-600" />
+                      Mobile App FAQ
+                    </h3>
+                    <FaqManager
+                      faqs={settings.faq.mobileApp}
+                      onUpdate={(faqs) => setSettings(prev => ({
+                        ...prev,
+                        faq: { ...prev.faq, mobileApp: faqs }
+                      }))}
+                      appType="mobileApp"
+                    />
+                  </div>
+
+                  {/* Merchant App FAQ */}
+                  <div className="border border-gray-200 rounded-lg p-6">
+                    <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                      <Truck className="w-5 h-5 text-purple-600" />
+                      Merchant App FAQ
+                    </h3>
+                    <FaqManager
+                      faqs={settings.faq.merchantApp}
+                      onUpdate={(faqs) => setSettings(prev => ({
+                        ...prev,
+                        faq: { ...prev.faq, merchantApp: faqs }
+                      }))}
+                      appType="merchantApp"
+                    />
+                  </div>
+
+                  {/* Delivery Agent App FAQ */}
+                  <div className="border border-gray-200 rounded-lg p-6">
+                    <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                      <MapPin className="w-5 h-5 text-orange-600" />
+                      Delivery Agent App FAQ
+                    </h3>
+                    <FaqManager
+                      faqs={settings.faq.deliveryAgentApp}
+                      onUpdate={(faqs) => setSettings(prev => ({
+                        ...prev,
+                        faq: { ...prev.faq, deliveryAgentApp: faqs }
+                      }))}
+                      appType="deliveryAgentApp"
+                    />
                   </div>
                 </div>
               </div>
@@ -1577,6 +1688,201 @@ export default function Settings() {
             )}
           </div>
         </div>
+      </div>
+    </div>
+  );
+}
+
+function FaqManager({ faqs, onUpdate, appType }) {
+  const [editingIndex, setEditingIndex] = useState(-1);
+  const [newQuestion, setNewQuestion] = useState('');
+  const [newAnswer, setNewAnswer] = useState('');
+  const [editingQuestion, setEditingQuestion] = useState('');
+  const [editingAnswer, setEditingAnswer] = useState('');
+  const [saving, setSaving] = useState(false);
+
+  const handleAddFaq = () => {
+    if (!newQuestion.trim() || !newAnswer.trim()) {
+      toast.error('Please fill in both question and answer');
+      return;
+    }
+
+    const newFaq = {
+      id: Date.now(),
+      question: newQuestion.trim(),
+      answer: newAnswer.trim(),
+      createdAt: new Date().toISOString()
+    };
+
+    onUpdate([...faqs, newFaq]);
+    setNewQuestion('');
+    setNewAnswer('');
+    toast.success('FAQ added successfully');
+  };
+
+  const handleEditFaq = (index) => {
+    const faq = faqs[index];
+    setEditingQuestion(faq.question);
+    setEditingAnswer(faq.answer);
+    setEditingIndex(index);
+  };
+
+  const handleSaveEdit = (index) => {
+    if (!editingQuestion.trim() || !editingAnswer.trim()) {
+      toast.error('Please fill in both question and answer');
+      return;
+    }
+
+    const updatedFaqs = [...faqs];
+    updatedFaqs[index] = {
+      ...updatedFaqs[index],
+      question: editingQuestion.trim(),
+      answer: editingAnswer.trim(),
+      updatedAt: new Date().toISOString()
+    };
+    onUpdate(updatedFaqs);
+    setEditingIndex(-1);
+    setEditingQuestion('');
+    setEditingAnswer('');
+    toast.success('FAQ updated successfully');
+  };
+
+  const handleCancelEdit = () => {
+    setEditingIndex(-1);
+    setEditingQuestion('');
+    setEditingAnswer('');
+  };
+
+  const handleDeleteFaq = (index) => {
+    const updatedFaqs = faqs.filter((_, i) => i !== index);
+    onUpdate(updatedFaqs);
+    toast.success('FAQ deleted successfully');
+  };
+
+  const handleSaveFaqs = async () => {
+    setSaving(true);
+    try {
+      const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/faq/${appType}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include',
+        body: JSON.stringify({ faqs })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save FAQs');
+      }
+
+      toast.success(`${appType} FAQs saved successfully`);
+    } catch (err) {
+      toast.error(err.message || 'Failed to save FAQs');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* Existing FAQs */}
+      {faqs.map((faq, index) => (
+        <div key={faq.id} className="border border-gray-200 rounded-lg p-4">
+          {editingIndex === index ? (
+            <div className="space-y-3">
+              <input
+                type="text"
+                value={editingQuestion}
+                onChange={(e) => setEditingQuestion(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                placeholder="Question"
+              />
+              <textarea
+                value={editingAnswer}
+                onChange={(e) => setEditingAnswer(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                rows="3"
+                placeholder="Answer"
+              />
+              <div className="flex gap-2">
+                <button
+                  onClick={() => handleSaveEdit(index)}
+                  className="px-3 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700"
+                >
+                  Save
+                </button>
+                <button
+                  onClick={handleCancelEdit}
+                  className="px-3 py-1 text-sm bg-gray-500 text-white rounded hover:bg-gray-600"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div>
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <h4 className="font-medium text-gray-800 mb-2">{faq.question}</h4>
+                  <p className="text-sm text-gray-600">{faq.answer}</p>
+                </div>
+                <div className="flex gap-2 ml-4">
+                  <button
+                    onClick={() => handleEditFaq(index)}
+                    className="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => handleDeleteFaq(index)}
+                    className="px-2 py-1 text-xs bg-red-100 text-red-700 rounded hover:bg-red-200"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      ))}
+
+      {/* Add New FAQ */}
+      <div className="border-2 border-dashed border-gray-300 rounded-lg p-4">
+        <h4 className="font-medium text-gray-800 mb-3">Add New FAQ</h4>
+        <div className="space-y-3">
+          <input
+            type="text"
+            value={newQuestion}
+            onChange={(e) => setNewQuestion(e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+            placeholder="Enter question"
+          />
+          <textarea
+            value={newAnswer}
+            onChange={(e) => setNewAnswer(e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+            rows="3"
+            placeholder="Enter answer"
+          />
+          <button
+            onClick={handleAddFaq}
+            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+          >
+            Add FAQ
+          </button>
+        </div>
+      </div>
+
+      {/* Save Button */}
+      <div className="flex justify-end pt-4 border-t border-gray-200">
+        <button
+          onClick={handleSaveFaqs}
+          disabled={saving}
+          className="flex items-center gap-2 px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
+        >
+          {saving ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+          {saving ? 'Saving...' : 'Save FAQs'}
+        </button>
       </div>
     </div>
   );

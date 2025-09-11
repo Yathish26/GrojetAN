@@ -877,8 +877,6 @@ const AddMerchant = () => {
                       >
                         <option value="closed">Closed</option>
                         <option value="open">Open</option>
-                        <option value="temporarily_closed">Temporarily Closed</option>
-                        <option value="busy">Busy</option>
                       </select>
                       <p className="text-xs text-gray-500 mt-1">
                         This can be changed later by the merchant
