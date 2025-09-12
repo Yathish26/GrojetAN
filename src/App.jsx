@@ -27,6 +27,7 @@ import MerchantDetails from './Admin/MerchantDetails.jsx'
 import EditMerchant from './Admin/EditMerchant.jsx'
 import GoogleMapsTest from './Admin/GoogleMapsTest.jsx'
 import AppControls from './Admin/AppControls.jsx'
+import Careers from './Admin/Careers.jsx'
 
 function App() {
   return (
@@ -86,6 +87,9 @@ function App() {
           
           {/* Category Management */}
           <Route path="/categories" element={<Categories />} />
+          
+          {/* Careers Management */}
+          <Route path="/careers" element={<Careers />} />
           
           {/* Delivery Management */}
           <Route path="/delivery-agents" element={<DeliveryAgents />} />

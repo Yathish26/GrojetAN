@@ -4,7 +4,7 @@ import {
   Home, Package, Plus, Users, Store, ChartBarStacked,
   Truck, MapPin, BarChart3, Settings, LogOut, User,
   Menu, X, Shield, ShoppingCart, Bell,
-  TabletSmartphone
+  TabletSmartphone, Briefcase
 } from 'lucide-react';
 import { MdAdminPanelSettings } from 'react-icons/md';
 import toast from 'react-hot-toast';
@@ -118,6 +118,7 @@ const Layout = ({ children, title }) => {
     { name: 'Products', icon: Package, path: '/products', roles: ['super_admin', 'admin', 'inventory_manager'] },
     { name: 'Add Product', icon: Plus, path: '/products/add', roles: ['super_admin', 'admin', 'inventory_manager'] },
     { name: 'Categories', icon: ChartBarStacked, path: '/categories', roles: ['super_admin', 'admin', 'inventory_manager'] },
+    { name: 'Careers', icon: Briefcase, path: '/careers', roles: ['super_admin', 'admin'] },
     { name: 'Users', icon: Users, path: '/users', roles: ['super_admin', 'admin'] },
     { name: 'Merchant Enquiries', icon: Store, path: '/merchant-enquiries', roles: ['super_admin', 'admin'] },
     { name: 'Merchants', icon: Store, path: '/merchants', roles: ['super_admin', 'admin'] },
