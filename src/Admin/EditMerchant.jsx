@@ -367,7 +367,7 @@ const EditMerchant = () => {
       setUploadingFiles(prev => ({ ...prev, [fieldPath]: true }));
 
       const formDataUpload = new FormData();
-      formDataUpload.append('file', file);
+      formDataUpload.append('image', file);
 
       const response = await fetch(`${import.meta.env.VITE_SERVER}/image/upload`, {
         method: 'POST',
@@ -631,7 +631,7 @@ const EditMerchant = () => {
             </button>
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Edit Merchant</h1>
-              <p className="text-gray-600">Merchant ID: {merchant?.merchantId}</p>
+              <p className="text-gray-600">Merchant ID: {merchant?.businessInfo.merchantId}</p>
             </div>
           </div>
           <div className="flex gap-3">

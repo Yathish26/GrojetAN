@@ -38,8 +38,9 @@ export default function Products() {
   const [editProduct, setEditProduct] = useState(null);
   const [editModalIsOpen, setEditModalIsOpen] = useState(false);
   const [confirmDeleteVisible, setConfirmDeleteVisible] = useState(false);
-  const [productIdToDelete, setProductIdToDelete] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [productIdToDelete, setProductIdToDelete] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [categorylist, setCategorylist] = useState([]);
   const [filters, setFilters] = useState({ category: '', status: 'all' });
@@ -50,6 +51,13 @@ export default function Products() {
 
   // Controlled input for search box before search button is pressed
   const [pendingSearch, setPendingSearch] = useState('');
+
+  // File upload states for edit modal
+  const [selectedThumbnailFile, setSelectedThumbnailFile] = useState(null);
+  const [selectedImageFiles, setSelectedImageFiles] = useState([]);
+  const [originalThumbnailUrl, setOriginalThumbnailUrl] = useState(null);
+  const [originalImageUrls, setOriginalImageUrls] = useState([]);
+  const [uploadingImages, setUploadingImages] = useState(false);
 
   const navigate = useNavigate();
 
@@ -186,7 +194,52 @@ export default function Products() {
   // Delete product
   const handleDelete = async () => {
     if (!productIdToDelete) return;
+    
+    // Find the product to get image URLs
+    const productToDelete = products.find(p => p._id === productIdToDelete);
+    if (!productToDelete) return;
+    
+    setIsDeleting(true);
     try {
+      // Delete images from Cloudinary if they exist
+      const imagesToDelete = [];
+      
+      // Add thumbnail image
+      if (productToDelete.thumbnail) {
+        imagesToDelete.push(productToDelete.thumbnail);
+      }
+      
+      // Add images from images array
+      if (productToDelete.images && productToDelete.images.length > 0) {
+        imagesToDelete.push(...productToDelete.images);
+      }
+      
+      // Add variant images
+      if (productToDelete.variants && productToDelete.variants.length > 0) {
+        productToDelete.variants.forEach(variant => {
+          if (variant.image) {
+            imagesToDelete.push(variant.image);
+          }
+        });
+      }
+      
+      // Delete all images from Cloudinary
+      for (const imageUrl of imagesToDelete) {
+        try {
+          await fetch(`${import.meta.env.VITE_SERVER}/image/delete/cloudinary`, {
+            method: 'DELETE',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ imageUrl }),
+          });
+        } catch (deleteError) {
+          console.warn(`Failed to delete image from Cloudinary: ${imageUrl}`, deleteError);
+          // Continue with other deletions even if one fails
+        }
+      }
+      
+      // Now delete the product from backend
       const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/products/${productIdToDelete}`, {
         method: 'DELETE',
         credentials: 'include',
@@ -211,17 +264,27 @@ export default function Products() {
     } finally {
       setConfirmDeleteVisible(false);
       setProductIdToDelete(null);
+      setIsDeleting(false);
     }
   };
 
   // Edit modal handlers
   const openEditModal = (product) => {
     setEditProduct(JSON.parse(JSON.stringify(product)));
+    setOriginalThumbnailUrl(product.thumbnail || null);
+    setOriginalImageUrls([...(product.images || [])]);
+    setSelectedThumbnailFile(null);
+    setSelectedImageFiles([]);
     setEditModalIsOpen(true);
   };
   const closeEditModal = () => {
     setEditModalIsOpen(false);
     setEditProduct(null);
+    setSelectedThumbnailFile(null);
+    setSelectedImageFiles([]);
+    setOriginalThumbnailUrl(null);
+    setOriginalImageUrls([]);
+    setUploadingImages(false);
   };
 
   const modalContentRef = useRef(null);
@@ -278,18 +341,111 @@ export default function Products() {
     }));
   };
 
+  // File upload handlers for edit modal
+  const handleThumbnailFileSelect = (file) => {
+    setSelectedThumbnailFile(file);
+    // Clear URL if file is selected
+    if (file) {
+      setEditProduct(prev => ({ ...prev, thumbnail: '' }));
+    }
+  };
+
+  const handleImageFileSelect = (files) => {
+    setSelectedImageFiles(files);
+    // Clear URL inputs if files are selected
+    if (files && files.length > 0) {
+      setEditProduct(prev => ({ ...prev, images: [] }));
+    }
+  };
+
+  // Upload image to Cloudinary
+  const uploadImage = async (file, folder = 'products') => {
+    const formDataUpload = new FormData();
+    formDataUpload.append('image', file);
+
+    const response = await fetch(`${import.meta.env.VITE_SERVER}/image/upload/cloudinary`, {
+      method: 'POST',
+      body: formDataUpload,
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      return data.imageUrl;
+    } else {
+      throw new Error(data.error || 'Upload failed');
+    }
+  };
+
   // Save product
   const handleSave = async () => {
     if (!editProduct || !editProduct._id) return;
     setIsSaving(true);
+    setUploadingImages(true);
+    
     try {
+      let finalThumbnail = editProduct.thumbnail;
+      let finalImages = [...(editProduct.images || [])];
+
+      // Upload thumbnail if file selected
+      if (selectedThumbnailFile) {
+        const uploadedUrl = await uploadImage(selectedThumbnailFile, 'products');
+        
+        // Delete old thumbnail if it exists
+        if (originalThumbnailUrl) {
+          try {
+            await fetch(`${import.meta.env.VITE_SERVER}/image/delete/cloudinary`, {
+              method: 'DELETE',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ imageUrl: originalThumbnailUrl }),
+            });
+          } catch (deleteError) {
+            console.warn('Failed to delete old thumbnail:', deleteError);
+          }
+        }
+        
+        finalThumbnail = uploadedUrl;
+      }
+
+      // Upload additional images if files selected
+      if (selectedImageFiles && selectedImageFiles.length > 0) {
+        const uploadedUrls = await Promise.all(
+          selectedImageFiles.map(file => uploadImage(file, 'products'))
+        );
+        
+        // Delete old images if they exist
+        if (originalImageUrls && originalImageUrls.length > 0) {
+          for (const oldImageUrl of originalImageUrls) {
+            try {
+              await fetch(`${import.meta.env.VITE_SERVER}/image/delete/cloudinary`, {
+                method: 'DELETE',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ imageUrl: oldImageUrl }),
+              });
+            } catch (deleteError) {
+              console.warn('Failed to delete old image:', deleteError);
+            }
+          }
+        }
+        
+        finalImages = uploadedUrls;
+      }
+
       const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/products/${editProduct._id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
         credentials: 'include',
-        body: JSON.stringify(editProduct),
+        body: JSON.stringify({
+          ...editProduct,
+          thumbnail: finalThumbnail,
+          images: finalImages
+        }),
       });
       if (response.status === 401) {
         toast.error('Authentication error. Please login again.');
@@ -307,6 +463,7 @@ export default function Products() {
       toast.error(error.message);
     } finally {
       setIsSaving(false);
+      setUploadingImages(false);
     }
   };
 
@@ -358,7 +515,7 @@ export default function Products() {
         {/* Delete Modal */}
         <Modal
           isOpen={confirmDeleteVisible}
-          onRequestClose={() => setConfirmDeleteVisible(false)}
+          onRequestClose={() => !isDeleting && setConfirmDeleteVisible(false)}
           className="fixed inset-0 flex items-center justify-center p-4"
         >
           <div className="bg-red-50 border border-red-500 shadow-xl p-6 w-full max-w-sm">
@@ -370,14 +527,23 @@ export default function Products() {
               <button
                 onClick={() => setConfirmDeleteVisible(false)}
                 className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 transition-colors"
+                disabled={isDeleting}
               >
                 Cancel
               </button>
               <button
                 onClick={handleDelete}
                 className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold transition-colors"
+                disabled={isDeleting}
               >
-                Delete Permanently
+                {isDeleting ? (
+                  <span className="flex items-center">
+                    <Loader2 className="animate-spin mr-2" size={16} />
+                    Deleting...
+                  </span>
+                ) : (
+                  'Delete Permanently'
+                )}
               </button>
             </div>
           </div>
@@ -521,8 +687,9 @@ export default function Products() {
                           <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium space-x-2">
                             <button
                               onClick={() => openEditModal(product)}
-                              className="text-green-600 hover:text-green-900 p-1"
+                              className="text-green-600 hover:text-green-900 p-1 disabled:opacity-50 disabled:cursor-not-allowed"
                               title="Edit"
+                              disabled={confirmDeleteVisible}
                             >
                               <Edit size={18} />
                             </button>
@@ -531,8 +698,9 @@ export default function Products() {
                                 setProductIdToDelete(product._id);
                                 setConfirmDeleteVisible(true);
                               }}
-                              className="text-red-600 hover:text-red-900 p-1"
+                              className="text-red-600 hover:text-red-900 p-1 disabled:opacity-50 disabled:cursor-not-allowed"
                               title="Delete"
+                              disabled={confirmDeleteVisible}
                             >
                               <Trash2 size={18} />
                             </button>
@@ -823,29 +991,66 @@ export default function Products() {
                 <h3 className="text-lg font-medium text-gray-800 mb-4">Media</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-gray-700 text-sm font-medium mb-1">Thumbnail URL</label>
+                    <label className="block text-gray-700 text-sm font-medium mb-1">Thumbnail</label>
+                    
+                    {/* File Upload Option */}
+                    <div className="space-y-2 mb-2">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => handleThumbnailFileSelect(e.target.files[0])}
+                        className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                        disabled={isSaving || uploadingImages}
+                      />
+                      {selectedThumbnailFile && (
+                        <p className="text-sm text-green-600">Selected: {selectedThumbnailFile.name}</p>
+                      )}
+                      <p className="text-xs text-gray-500">Or enter URL below</p>
+                    </div>
+
+                    {/* URL Input Option */}
                     <input
                       type="url"
                       name="thumbnail"
                       value={editProduct.thumbnail}
                       onChange={handleEditChange}
-                      className="w-full px-3 py-2 border border-gray-300  focus:outline-none focus:ring-2 focus:ring-green-500"
-                      disabled={isSaving}
+                      className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500"
+                      disabled={isSaving || uploadingImages || selectedThumbnailFile}
                       placeholder="https://example.com/image.jpg"
                     />
-                    {editProduct.thumbnail && (
+                    {(editProduct.thumbnail || selectedThumbnailFile) && (
                       <div className="mt-2">
                         <img
-                          src={editProduct.thumbnail}
+                          src={selectedThumbnailFile ? URL.createObjectURL(selectedThumbnailFile) : editProduct.thumbnail}
                           alt="Thumbnail preview"
-                          className="h-20 object-contain border "
+                          className="h-20 object-contain border"
                           onError={(e) => { e.target.src = 'https://via.placeholder.com/100?text=Image+not+found'; }}
                         />
                       </div>
                     )}
                   </div>
                   <div>
-                    <label className="block text-gray-700 text-sm font-medium mb-1">Image URLs (comma separated)</label>
+                    <label className="block text-gray-700 text-sm font-medium mb-1">Additional Images</label>
+                    
+                    {/* File Upload Option */}
+                    <div className="space-y-2 mb-2">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        onChange={(e) => handleImageFileSelect(Array.from(e.target.files))}
+                        className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                        disabled={isSaving || uploadingImages}
+                      />
+                      {selectedImageFiles && selectedImageFiles.length > 0 && (
+                        <p className="text-sm text-green-600">
+                          Selected: {selectedImageFiles.length} file{selectedImageFiles.length > 1 ? 's' : ''}
+                        </p>
+                      )}
+                      <p className="text-xs text-gray-500">Or enter URLs below</p>
+                    </div>
+
+                    {/* URL Input Option */}
                     <textarea
                       name="images"
                       value={editProduct.images?.join(', ') || ''}
@@ -853,21 +1058,33 @@ export default function Products() {
                         ...editProduct,
                         images: e.target.value.split(',').map(url => url.trim()).filter(Boolean)
                       })}
-                      className="w-full px-3 py-2 border border-gray-300  focus:outline-none focus:ring-2 focus:ring-green-500"
-                      disabled={isSaving}
+                      className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500"
+                      disabled={isSaving || uploadingImages || selectedImageFiles.length > 0}
                       placeholder="https://example.com/image1.jpg, https://example.com/image2.jpg"
                       rows={3}
                     />
                     <div className="flex flex-wrap gap-2 mt-2">
-                      {editProduct.images?.map((img, index) => (
-                        <img
-                          key={index}
-                          src={img}
-                          alt={`Product ${index}`}
-                          className="h-12 object-contain border "
-                          onError={(e) => { e.target.src = 'https://via.placeholder.com/50?text=Image+not+found'; }}
-                        />
-                      ))}
+                      {selectedImageFiles && selectedImageFiles.length > 0 ? (
+                        selectedImageFiles.map((file, index) => (
+                          <img
+                            key={index}
+                            src={URL.createObjectURL(file)}
+                            alt={`Selected ${index}`}
+                            className="h-12 object-contain border"
+                            onError={(e) => { e.target.src = 'https://via.placeholder.com/50?text=Image+not+found'; }}
+                          />
+                        ))
+                      ) : (
+                        editProduct.images?.map((img, index) => (
+                          <img
+                            key={index}
+                            src={img}
+                            alt={`Product ${index}`}
+                            className="h-12 object-contain border"
+                            onError={(e) => { e.target.src = 'https://via.placeholder.com/50?text=Image+not+found'; }}
+                          />
+                        ))
+                      )}
                     </div>
                   </div>
                 </div>
@@ -1009,13 +1226,13 @@ export default function Products() {
             </button>
             <button
               onClick={handleSave}
-              className={`px-4 py-2  text-white ${isSaving ? 'bg-green-400' : 'bg-green-600 hover:bg-green-700'}`}
-              disabled={isSaving}
+              className={`px-4 py-2  text-white ${isSaving || uploadingImages ? 'bg-green-400' : 'bg-green-600 hover:bg-green-700'}`}
+              disabled={isSaving || uploadingImages}
             >
-              {isSaving ? (
+              {isSaving || uploadingImages ? (
                 <span className="flex items-center">
                   <Loader2 className="animate-spin mr-2" size={16} />
-                  Saving...
+                  {uploadingImages ? 'Uploading...' : 'Saving...'}
                 </span>
               ) : 'Save Changes'}
             </button>

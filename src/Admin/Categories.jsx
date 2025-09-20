@@ -62,6 +62,9 @@ export default function Categories() {
   const [filterMainCategory, setFilterMainCategory] = useState('');
   const [filterIsActive, setFilterIsActive] = useState('all'); // 'all', 'true', 'false'
   const [filterShowOnHome, setFilterShowOnHome] = useState('all'); // 'all', 'true', 'false'
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [originalImageUrl, setOriginalImageUrl] = useState(null);
 
   const mainCategories = [
     "Grocery & Kitchen",
@@ -134,6 +137,8 @@ export default function Categories() {
       showOnHome: category.showOnHome,
       order: category.order || 0
     });
+    setOriginalImageUrl(category.image || null); // Store original image URL
+    setSelectedFile(null); // Clear any previously selected file
     setIsModalOpen(true);
   };
 
@@ -149,6 +154,19 @@ export default function Categories() {
     setLoading(true);
 
     try {
+      let finalImageUrl = formData.image;
+
+      // Upload image if a file was selected
+      if (selectedFile) {
+        const uploadedUrl = await uploadImage();
+        if (!uploadedUrl) {
+          // Upload failed, stop submission
+          setLoading(false);
+          return;
+        }
+        finalImageUrl = uploadedUrl;
+      }
+
       const endpoint = `${import.meta.env.VITE_SERVER}/admin/categories`;
       const method = editingCategory ? 'PUT' : 'POST';
       const url = editingCategory ? `${endpoint}/${editingCategory}` : endpoint;
@@ -159,7 +177,7 @@ export default function Categories() {
           'Content-Type': 'application/json',
         },
         credentials: 'include', // <-- use cookie
-        body: JSON.stringify(formData),
+        body: JSON.stringify({ ...formData, image: finalImageUrl }),
       });
 
       if (response.status === 401) {
@@ -190,6 +208,8 @@ export default function Categories() {
         showOnHome: false,
         order: 0
       });
+      setSelectedFile(null); // Clear selected file
+      setOriginalImageUrl(null); // Clear original image URL
       fetchCategories();
     } catch (error) {
       console.error('Submission error:', error);
@@ -199,12 +219,84 @@ export default function Categories() {
     }
   };
 
+  // Handle file selection (store file for later upload)
+  const handleFileSelect = (file) => {
+    if (file) {
+      setSelectedFile(file);
+      // Create preview URL
+      const previewUrl = URL.createObjectURL(file);
+      setFormData(prev => ({ ...prev, image: previewUrl }));
+    }
+  };
+
+  // Handle image upload (called during form submission)
+  const uploadImage = async () => {
+    if (!selectedFile) return null;
+
+    const toastId = toast.loading('Uploading image...', { duration: 0 });
+
+    const formDataUpload = new FormData();
+    formDataUpload.append('image', selectedFile);
+
+    try {
+      const response = await fetch(`${import.meta.env.VITE_SERVER}/image/upload/cloudinary`, {
+        method: 'POST',
+        body: formDataUpload,
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // If editing and there's an original image, delete it
+        if (editingCategory && originalImageUrl) {
+          try {
+            await fetch(`${import.meta.env.VITE_SERVER}/image/delete/cloudinary`, {
+              method: 'DELETE',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ imageUrl: originalImageUrl }),
+            });
+            // We don't show error for delete failure, as the new image is already uploaded
+          } catch (deleteError) {
+            console.warn('Failed to delete old image:', deleteError);
+          }
+        }
+
+        toast.success('Image uploaded successfully!', { id: toastId });
+        return data.imageUrl;
+      } else {
+        toast.error(data.error || 'Upload failed', { id: toastId });
+        return null;
+      }
+    } catch (error) {
+      toast.error('Upload failed', { id: toastId });
+      return null;
+    }
+  };
+
   // Delete category
   const handleDelete = async () => {
     if (!categoryToDelete) return;
 
     try {
       setLoading(true);
+
+      // Delete the category image from Cloudinary if it exists
+      if (categoryToDelete.image) {
+        try {
+          await fetch(`${import.meta.env.VITE_SERVER}/image/delete/cloudinary`, {
+            method: 'DELETE',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ imageUrl: categoryToDelete.image }),
+          });
+          // We don't show error for delete failure, as the category deletion is more important
+        } catch (deleteError) {
+          console.warn('Failed to delete image:', deleteError);
+        }
+      }
 
       const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/categories/${categoryToDelete._id}`, {
         method: 'DELETE',
@@ -428,6 +520,7 @@ export default function Categories() {
                   showOnHome: false,
                   order: 0
                 });
+                setSelectedFile(null);
                 setIsModalOpen(true);
               }}
               className="flex items-center px-4 py-2 bg-green-600 text-white font-semibold hover:bg-green-700 shadow-sm"
@@ -585,29 +678,25 @@ export default function Categories() {
                 </div>
 
                 <div>
-                  <label htmlFor="image" className="block text-sm font-medium text-gray-700 mb-1">
-                    Image URL
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Category Image
                   </label>
                   <input
-                    type="url"
-                    id="image"
-                    name="image"
-                    value={formData.image}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-2 border border-gray-300  focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200"
-                    placeholder="https://example.com/image.jpg"
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => handleFileSelect(e.target.files[0])}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   />
-                  {formData.image && (
-                    <div className="mt-2 p-2 border border-gray-200  bg-gray-50 flex items-center">
-                      <span className="text-xs text-gray-500 mr-2">Preview:</span>
-                      <img
-                        src={formData.image}
-                        alt="Preview"
-                        className="max-h-20 max-w-full object-contain  shadow-sm"
-                        onError={(e) => {
-                          e.target.src = 'https://placehold.co/100x50/E0E0E0/888888?text=Image+Error';
-                        }}
-                      />
+                  {selectedFile && <p className="text-sm text-green-600 mt-1">Image selected: {selectedFile.name}</p>}
+                  {formData.image && !selectedFile && (
+                    <div className="mt-2">
+                      <img src={formData.image} alt="Current" className="w-20 h-20 object-cover rounded" />
+                    </div>
+                  )}
+                  {formData.image && selectedFile && (
+                    <div className="mt-2">
+                      <p className="text-sm text-blue-600">New image preview:</p>
+                      <img src={formData.image} alt="Preview" className="w-20 h-20 object-cover rounded" />
                     </div>
                   )}
                 </div>

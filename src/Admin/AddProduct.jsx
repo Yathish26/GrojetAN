@@ -87,6 +87,11 @@ export default function AddProduct() {
   const [loading, setLoading] = useState(false);
   const [loadingCategories, setLoadingCategories] = useState(true);
 
+  // File upload states
+  const [selectedThumbnailFile, setSelectedThumbnailFile] = useState(null);
+  const [selectedImageFiles, setSelectedImageFiles] = useState([]);
+  const [uploadingImages, setUploadingImages] = useState(false);
+
   const unitOptions = [
     { value: 'kg', label: 'Kilogram' },
     { value: 'liter', label: 'Liter' },
@@ -226,40 +231,95 @@ export default function AddProduct() {
     }
   };
 
+  // File upload handlers
+  const handleThumbnailFileSelect = (file) => {
+    setSelectedThumbnailFile(file);
+    // Clear URL if file is selected
+    if (file) {
+      setFormData(prev => ({ ...prev, thumbnail: '' }));
+    }
+  };
+
+  const handleImageFileSelect = (files) => {
+    setSelectedImageFiles(files);
+    // Clear URL inputs if files are selected
+    if (files && files.length > 0) {
+      setFormData(prev => ({ ...prev, images: [] }));
+    }
+  };
+
+  // Upload image to Cloudinary
+  const uploadImage = async (file, folder = 'products') => {
+    const formDataUpload = new FormData();
+    formDataUpload.append('image', file);
+
+    const response = await fetch(`${import.meta.env.VITE_SERVER}/image/upload/cloudinary`, {
+      method: 'POST',
+      body: formDataUpload,
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      return data.imageUrl;
+    } else {
+      throw new Error(data.error || 'Upload failed');
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-
-    // Prepare payload
-    const payload = {
-      ...formData,
-      pricing: {
-        ...formData.pricing,
-        mrp: parseFloat(formData.pricing.mrp),
-        sellingPrice: parseFloat(formData.pricing.sellingPrice),
-        discountPercent: parseFloat(formData.pricing.discountPercent)
-      },
-      stock: {
-        ...formData.stock,
-        quantity: parseInt(formData.stock.quantity)
-      },
-      variants: formData.variants.map(variant => ({
-        ...variant,
-        price: parseFloat(variant.price),
-        mrp: parseFloat(variant.mrp),
-        stock: parseInt(variant.stock)
-      })),
-      tags: formData.tags,
-      highlights: formData.highlights.filter(h => h.trim() !== ''),
-      images: formData.images.filter(img => img.trim() !== ''),
-      searchKeywords: formData.searchKeywords.filter(kw => kw.trim() !== ''),
-      delivery: {
-        ...formData.delivery,
-        zones: formData.delivery.zones.filter(zone => zone.trim() !== '')
-      }
-    };
+    setUploadingImages(true);
 
     try {
+      let finalThumbnail = formData.thumbnail;
+      let finalImages = [...formData.images];
+
+      // Upload thumbnail if file selected
+      if (selectedThumbnailFile) {
+        const uploadedUrl = await uploadImage(selectedThumbnailFile, 'products');
+        finalThumbnail = uploadedUrl;
+      }
+
+      // Upload additional images if files selected
+      if (selectedImageFiles && selectedImageFiles.length > 0) {
+        const uploadedUrls = await Promise.all(
+          selectedImageFiles.map(file => uploadImage(file, 'products'))
+        );
+        finalImages = uploadedUrls;
+      }
+
+      // Prepare payload
+      const payload = {
+        ...formData,
+        thumbnail: finalThumbnail,
+        pricing: {
+          ...formData.pricing,
+          mrp: parseFloat(formData.pricing.mrp),
+          sellingPrice: parseFloat(formData.pricing.sellingPrice),
+          discountPercent: parseFloat(formData.pricing.discountPercent)
+        },
+        stock: {
+          ...formData.stock,
+          quantity: parseInt(formData.stock.quantity)
+        },
+        variants: formData.variants.map(variant => ({
+          ...variant,
+          price: parseFloat(variant.price),
+          mrp: parseFloat(variant.mrp),
+          stock: parseInt(variant.stock)
+        })),
+        tags: formData.tags,
+        highlights: formData.highlights.filter(h => h.trim() !== ''),
+        images: finalImages.filter(img => img.trim() !== ''),
+        searchKeywords: formData.searchKeywords.filter(kw => kw.trim() !== ''),
+        delivery: {
+          ...formData.delivery,
+          zones: formData.delivery.zones.filter(zone => zone.trim() !== '')
+        }
+      };
+
       const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/products`, {
         method: 'POST',
         headers: {
@@ -332,6 +392,9 @@ export default function AddProduct() {
       console.error('Error:', error);
     } finally {
       setLoading(false);
+      setUploadingImages(false);
+      setSelectedThumbnailFile(null);
+      setSelectedImageFiles([]);
     }
   };
 
@@ -423,8 +486,25 @@ export default function AddProduct() {
 
               <div className="space-y-2">
                 <label className="block text-sm font-medium text-gray-700">
-                  Thumbnail Image URL *
+                  Thumbnail Image *
                 </label>
+                
+                {/* File Upload Option */}
+                <div className="space-y-2">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => handleThumbnailFileSelect(e.target.files[0])}
+                    className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    disabled={uploadingImages}
+                  />
+                  {selectedThumbnailFile && (
+                    <p className="text-sm text-green-600">Selected: {selectedThumbnailFile.name}</p>
+                  )}
+                  <p className="text-xs text-gray-500">Or enter URL below</p>
+                </div>
+
+                {/* URL Input Option */}
                 <div className="relative">
                   <input
                     type="text"
@@ -433,7 +513,7 @@ export default function AddProduct() {
                     value={formData.thumbnail}
                     onChange={handleChange}
                     placeholder="https://example.com/image.jpg"
-                    required
+                    disabled={uploadingImages || selectedThumbnailFile}
                   />
                   <Image className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
                 </div>
@@ -443,6 +523,26 @@ export default function AddProduct() {
                 <label className="block text-sm font-medium text-gray-700">
                   Additional Images
                 </label>
+                
+                {/* File Upload Option */}
+                <div className="space-y-2">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={(e) => handleImageFileSelect(Array.from(e.target.files))}
+                    className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    disabled={uploadingImages}
+                  />
+                  {selectedImageFiles && selectedImageFiles.length > 0 && (
+                    <p className="text-sm text-green-600">
+                      Selected: {selectedImageFiles.length} file{selectedImageFiles.length > 1 ? 's' : ''}
+                    </p>
+                  )}
+                  <p className="text-xs text-gray-500">Or enter URLs below</p>
+                </div>
+
+                {/* URL Input Options */}
                 {formData.images.map((image, index) => (
                   <div key={index} className="flex items-center space-x-2">
                     <div className="flex-1">
@@ -452,6 +552,7 @@ export default function AddProduct() {
                         value={image}
                         onChange={(e) => handleArrayChange('images', index, e.target.value)}
                         placeholder="Image URL"
+                        disabled={uploadingImages || selectedImageFiles.length > 0}
                       />
                     </div>
                     {formData.images.length > 1 && (
@@ -459,6 +560,7 @@ export default function AddProduct() {
                         type="button"
                         onClick={() => removeArrayItem('images', index)}
                         className="p-2 text-red-500 hover:bg-red-50 transition-colors"
+                        disabled={uploadingImages}
                       >
                         <XCircle size={18} />
                       </button>
@@ -469,6 +571,7 @@ export default function AddProduct() {
                   type="button"
                   onClick={() => addArrayItem('images')}
                   className="flex items-center text-sm text-green-600 hover:text-green-700 mt-2"
+                  disabled={uploadingImages || selectedImageFiles.length > 0}
                 >
                   <Plus size={16} className="mr-1" />
                   Add another image URL
@@ -508,6 +611,7 @@ export default function AddProduct() {
                     value={formData.category}
                     onChange={handleChange}
                     className="w-full px-4 py-2.5 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    required
                   >
                     <option value="">Select a category</option>
                     {categories.map(category => (
@@ -988,12 +1092,12 @@ export default function AddProduct() {
               <button
                 type="submit"
                 className="w-full md:w-auto flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white py-3 px-6 font-medium focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-70 disabled:cursor-not-allowed transition-colors shadow-sm rounded"
-                disabled={loading}
+                disabled={loading || uploadingImages}
               >
-                {loading ? (
+                {loading || uploadingImages ? (
                   <>
                     <Loader2 className="animate-spin w-5 h-5" />
-                    <span>Adding Product...</span>
+                    <span>{uploadingImages ? 'Uploading Images...' : 'Adding Product...'}</span>
                   </>
                 ) : (
                   <>
