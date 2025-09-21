@@ -645,7 +645,6 @@ export default function Products() {
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">SKU</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">HSN</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
-                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Stock</th>
                         <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
                         <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                         <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
@@ -671,9 +670,6 @@ export default function Products() {
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{product.hsnCode || '—'}</td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                             {product.category_string || product.category?.name || 'Uncategorized'}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
-                            {product.stock?.quantity ?? 0}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
                             ₹{product.pricing?.sellingPrice?.toFixed(2) ?? '0.00'}
@@ -932,34 +928,10 @@ export default function Products() {
                 </div>
               </div>
 
-              {/* Stock & Delivery Section */}
+              {/* Delivery Section */}
               <div className="bg-gray-50 p-4 ">
-                <h3 className="text-lg font-medium text-gray-800 mb-4">Stock & Delivery</h3>
+                <h3 className="text-lg font-medium text-gray-800 mb-4">Delivery</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <EditInput
-                    label="Stock Quantity*"
-                    name="stock.quantity"
-                    value={editProduct.stock?.quantity}
-                    onChange={handleEditChange}
-                    type="number"
-                    min="0"
-                    disabled={isSaving}
-                    required
-                  />
-                  <div>
-                    <label className="block text-gray-700 text-sm font-medium mb-1">Stock Status</label>
-                    <select
-                      name="stock.status"
-                      value={editProduct.stock?.status}
-                      onChange={handleEditChange}
-                      className="w-full px-3 py-2 border border-gray-300  focus:outline-none focus:ring-2 focus:ring-green-500"
-                      disabled={isSaving}
-                    >
-                      <option value="in_stock">In Stock</option>
-                      <option value="out_of_stock">Out of Stock</option>
-                      <option value="limited">Limited Stock</option>
-                    </select>
-                  </div>
                   <div className="flex items-center">
                     <input
                       type="checkbox"

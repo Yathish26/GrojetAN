@@ -68,10 +68,6 @@ export default function AddProduct() {
       gstRate: 0,
       includedInPrice: true
     },
-    stock: {
-      quantity: 0,
-      status: 'in_stock'
-    },
     delivery: {
       isInstant: true,
       deliveryTimeInMinutes: 0,
@@ -300,10 +296,6 @@ export default function AddProduct() {
           sellingPrice: parseFloat(formData.pricing.sellingPrice),
           discountPercent: parseFloat(formData.pricing.discountPercent)
         },
-        stock: {
-          ...formData.stock,
-          quantity: parseInt(formData.stock.quantity)
-        },
         variants: formData.variants.map(variant => ({
           ...variant,
           price: parseFloat(variant.price),
@@ -369,10 +361,6 @@ export default function AddProduct() {
           tax: {
             gstRate: 0,
             includedInPrice: true
-          },
-          stock: {
-            quantity: 0,
-            status: 'in_stock'
           },
           delivery: {
             isInstant: true,
@@ -674,38 +662,6 @@ export default function AddProduct() {
                 />
               </div>
 
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">
-                  Stock Status *
-                </label>
-                <select
-                  name="stock.status"
-                  className="w-full px-4 py-2.5 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                  value={formData.stock.status}
-                  onChange={(e) => handleNestedChange('stock', 'status', e.target.value)}
-                  required
-                >
-                  <option value="in_stock">In Stock</option>
-                  <option value="out_of_stock">Out of Stock</option>
-                  <option value="limited">Limited Stock</option>
-                </select>
-              </div>
-
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">
-                  Stock Quantity *
-                </label>
-                <input
-                  type="number"
-                  name="stock.quantity"
-                  className="w-full px-4 py-2.5 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                  value={formData.stock.quantity}
-                  onChange={(e) => handleNestedChange('stock', 'quantity', e.target.value)}
-                  placeholder="e.g. 100"
-                  required
-                  min="0"
-                />
-              </div>
             </div>
           </div>
 
