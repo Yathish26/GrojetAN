@@ -467,13 +467,13 @@ export default function Categories() {
                   >
                     <Edit size={16} />
                   </button>
-                  <button
+                  {/* <button
                     onClick={() => handleDeleteClick(category)}
                     className="text-red-600 cursor-pointer hover:text-red-900 flex items-center justify-center"
                     title="Delete Category"
                   >
                     <Trash2 size={16} />
-                  </button>
+                  </button> */}
                 </td>
               </tr>
             ))}
