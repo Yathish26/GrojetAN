@@ -54,7 +54,6 @@ export default function Users() {
       fetchUsers();
       fetchTotalUsers();
     }
-    // eslint-disable-next-line
   }, [currentPage, isAuthorized]);
 
   const fetchUsers = async () => {
