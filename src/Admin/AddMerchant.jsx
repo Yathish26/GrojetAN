@@ -11,7 +11,6 @@ import toast from 'react-hot-toast';
 const AddMerchant = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
-  const [uploadingDoc, setUploadingDoc] = useState({});
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     // Business Info
@@ -76,6 +75,8 @@ const AddMerchant = () => {
     // Branding Info
     tagline: '',
     storeDescription: '',
+    storeLogoUrl: '',
+    storeBannerUrl: '',
     socialMedia: {
       facebook: '',
       instagram: '',
@@ -91,19 +92,14 @@ const AddMerchant = () => {
     // Store Status
     storeStatus: 'closed',
 
-    // Documents (URLs)
+    // Documents (Text inputs)
     documents: {
       panCard: '',
-      aadhaarFront: '',
-      aadhaarBack: '',
-      gstinCertificate: '',
+      aadhaarNumber: '',
+      gstinNumber: '',
       shopEstablishmentLicense: '',
       fssaiLicense: '',
-      cancelledCheque: '',
-      bankPassbook: '',
-      storeLogo: '',
-      storeBanner: '',
-      storeImages: []
+      bankAccountNumber: '',
     }
   });
 
@@ -129,58 +125,6 @@ const AddMerchant = () => {
     }
   };
 
-  const handleImageUpload = async (documentType, file) => {
-    if (!file) return;
-
-    if (!file.type.startsWith('image/')) {
-      toast.error('Only image files are allowed!');
-      return;
-    }
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error('File size should be less than 5MB');
-      return;
-    }
-
-    // Set uploading state for this document
-    setUploadingDoc(prev => ({ ...prev, [documentType]: true }));
-
-    const formData = new FormData();
-    formData.append('image', file);
-
-    try {
-      const res = await fetch(`${import.meta.env.VITE_SERVER}/image/upload`, {
-        method: 'POST',
-        body: formData,
-      });
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error || 'Image upload failed');
-      }
-
-      // Update form data with the uploaded image URL
-      setFormData(prev => ({
-        ...prev,
-        documents: {
-          ...prev.documents,
-          [documentType]: data.imageUrl,
-        }
-      }));
-
-      toast.success(`${documentType} uploaded successfully!`);
-    } catch (err) {
-      toast.error(err.message);
-    } finally {
-      setUploadingDoc(prev => ({ ...prev, [documentType]: false }));
-    }
-  };
-
-  const handleFileUpload = (fieldName, file) => {
-    if (file) {
-      handleImageUpload(fieldName, file);
-    }
-  };
-
   const handleProductCategoryChange = (category) => {
     setFormData(prev => ({
       ...prev,
@@ -202,6 +146,8 @@ const AddMerchant = () => {
       }
     }));
   };
+
+  
 
   const validateStep = (step) => {
     switch (step) {
@@ -273,79 +219,27 @@ const AddMerchant = () => {
     }
   };
 
-  const renderFileUpload = (label, fieldName, accept = "image/*", required = false) => (
+  const renderTextInput = (label, fieldName, placeholder = "", required = false, type = "text") => (
     <div className="space-y-2">
       <label className="block text-sm font-medium text-gray-700">
         {label} {required && <span className="text-red-500">*</span>}
       </label>
-      <div className="flex items-center space-x-4">
-        <div className="flex-1">
-          <input
-            type="file"
-            accept={accept}
-            onChange={(e) => handleFileUpload(fieldName, e.target.files[0])}
-            className="hidden"
-            id={fieldName}
-            disabled={uploadingDoc[fieldName]}
-          />
-          <label
-            htmlFor={fieldName}
-            className={`flex items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer transition-colors ${
-              uploadingDoc[fieldName]
-                ? 'border-blue-300 bg-blue-50'
-                : formData.documents[fieldName]
-                ? 'border-green-300 bg-green-50'
-                : 'border-gray-300 hover:border-green-500'
-            }`}
-          >
-            <div className="text-center">
-              {uploadingDoc[fieldName] ? (
-                <>
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
-                  <p className="text-sm text-blue-600">Uploading...</p>
-                </>
-              ) : formData.documents[fieldName] ? (
-                <>
-                  <Upload className="w-8 h-8 text-green-600 mx-auto mb-2" />
-                  <p className="text-sm text-green-600">Uploaded ✓</p>
-                </>
-              ) : (
-                <>
-                  <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                  <p className="text-sm text-gray-600">Click to upload</p>
-                </>
-              )}
-            </div>
-          </label>
-        </div>
-        {formData.documents[fieldName] && (
-          <div className="flex items-center space-x-2">
-            <img
-              src={formData.documents[fieldName]}
-              alt={label}
-              className="w-16 h-16 object-cover rounded-lg border"
-            />
-            <button
-              type="button"
-              onClick={() => {
-                setFormData(prev => ({
-                  ...prev,
-                  documents: {
-                    ...prev.documents,
-                    [fieldName]: ''
-                  }
-                }));
-              }}
-              className="p-1 text-red-500 hover:text-red-700"
-            >
-              <X size={16} />
-            </button>
-          </div>
-        )}
-      </div>
-      {formData.documents[fieldName] && (
-        <p className="text-sm text-green-600">✓ {label} uploaded successfully</p>
-      )}
+      <input
+        type={type}
+        value={formData.documents[fieldName] || ''}
+        onChange={(e) => {
+          setFormData(prev => ({
+            ...prev,
+            documents: {
+              ...prev.documents,
+              [fieldName]: e.target.value
+            }
+          }));
+        }}
+        placeholder={placeholder}
+        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+        required={required}
+      />
     </div>
   );
 
@@ -668,16 +562,15 @@ const AddMerchant = () => {
 
                 {/* Document Uploads */}
                 <div>
-                  <h4 className="text-md font-semibold text-gray-900 mb-4">Document Uploads</h4>
+                  <h4 className="text-md font-semibold text-gray-900 mb-4">Document Information</h4>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {renderFileUpload('PAN Card Photo', 'panCard', 'image/*', true)}
-                    {renderFileUpload('Aadhaar Front', 'aadhaarFront', 'image/*', true)}
-                    {renderFileUpload('Aadhaar Back', 'aadhaarBack', 'image/*', true)}
-                    {renderFileUpload('GSTIN Certificate', 'gstinCertificate', 'image/*')}
-                    {renderFileUpload('Shop Establishment License', 'shopEstablishmentLicense', 'image/*')}
-                    {renderFileUpload('FSSAI License', 'fssaiLicense', 'image/*')}
-                    {renderFileUpload('Cancelled Cheque', 'cancelledCheque', 'image/*', true)}
+                    {renderTextInput('PAN Card Number', 'panCard', 'Enter PAN card number', true)}
+                    {renderTextInput('Aadhaar Number', 'aadhaarNumber', 'Enter 12-digit Aadhaar number', true)}
+                    {renderTextInput('GSTIN Number', 'gstinNumber', 'Enter GSTIN number')}
+                    {renderTextInput('Shop Establishment License', 'shopEstablishmentLicense', 'Enter license number')}
+                    {renderTextInput('FSSAI License Number', 'fssaiLicense', 'Enter FSSAI license number')}
+                    {renderTextInput('Bank Account Number', 'bankAccountNumber', 'Enter account number for verification', true)}
                   </div>
                 </div>
               </div>
@@ -955,8 +848,32 @@ const AddMerchant = () => {
                   <div className="mt-4">
                     <h5 className="text-sm font-medium text-gray-700 mb-2">Store Images</h5>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      {renderFileUpload('Store Logo', 'storeLogo', 'image/*')}
-                      {renderFileUpload('Store Banner', 'storeBanner', 'image/*')}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Store Logo URL
+                        </label>
+                        <input
+                          type="url"
+                          name="storeLogoUrl"
+                          value={formData.storeLogoUrl || ''}
+                          onChange={handleInputChange}
+                          placeholder="https://example.com/logo.png"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Store Banner URL
+                        </label>
+                        <input
+                          type="url"
+                          name="storeBannerUrl"
+                          value={formData.storeBannerUrl || ''}
+                          onChange={handleInputChange}
+                          placeholder="https://example.com/banner.png"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>

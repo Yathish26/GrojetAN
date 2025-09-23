@@ -87,25 +87,17 @@ const EditMerchant = () => {
     },
     productCategories: [],
 
-    // Documents
+    // Documents (Text inputs)
     documents: {
       gstin: {
         number: '',
-        certificateUrl: '',
         isRegistered: false
       },
       shopEstablishmentLicense: '',
       fssaiLicense: '',
       panCard: '',
-      aadhaarCard: {
-        frontUrl: '',
-        backUrl: ''
-      },
-      cancelledCheque: '',
-      bankPassbook: '',
-      storeLogo: '',
-      storeBanner: '',
-      storeImages: []
+      aadhaarNumber: '',
+      bankAccountNumber: '',
     },
 
     // Branding
@@ -202,8 +194,8 @@ const EditMerchant = () => {
               branchName: merchant.bankingInfo?.branchName || '',
               ifscCode: merchant.bankingInfo?.ifscCode || '',
               accountType: merchant.bankingInfo?.accountType || 'business',
-              cancelledChequeUrl: merchant.bankingInfo?.cancelledChequeUrl || '',
-              bankPassbookUrl: merchant.bankingInfo?.bankPassbookUrl || ''
+              cancelledChequeNumber: merchant.bankingInfo?.cancelledChequeNumber || '',
+              bankPassbookNumber: merchant.bankingInfo?.bankPassbookNumber || ''
             },
 
             // Operational Info
@@ -237,25 +229,20 @@ const EditMerchant = () => {
             },
             productCategories: merchant.operationalInfo?.productCategories || [],
 
-            // Documents
+            // Documents (Text inputs)
             documents: {
               gstin: {
                 number: merchant.documents?.gstin?.number || '',
-                certificateUrl: merchant.documents?.gstin?.certificateUrl || '',
-                isRegistered: merchant.documents?.gstin?.isRegistered || false
+                isRegistered: merchant.documents?.gstin?.isRegistered || false,
+                certificateNumber: merchant.documents?.gstin?.certificateNumber || ''
               },
               shopEstablishmentLicense: merchant.documents?.shopEstablishmentLicense || '',
               fssaiLicense: merchant.documents?.fssaiLicense || '',
               panCard: merchant.documents?.panCard || '',
-              aadhaarCard: {
-                frontUrl: merchant.documents?.aadhaarCard?.frontUrl || '',
-                backUrl: merchant.documents?.aadhaarCard?.backUrl || ''
-              },
-              cancelledCheque: merchant.documents?.cancelledCheque || '',
-              bankPassbook: merchant.documents?.bankPassbook || '',
-              storeLogo: merchant.documents?.storeLogo || '',
-              storeBanner: merchant.documents?.storeBanner || '',
-              storeImages: merchant.documents?.storeImages || []
+              aadhaarNumber: merchant.documents?.aadhaarNumber || '',
+              bankAccountNumber: merchant.documents?.bankAccountNumber || '',
+              cancelledChequeNumber: merchant.documents?.cancelledChequeNumber || '',
+              bankPassbookNumber: merchant.documents?.bankPassbookNumber || ''
             },
 
             // Branding
@@ -1043,75 +1030,27 @@ const EditMerchant = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Cancelled Cheque
+                    Cancelled Cheque Number
                   </label>
-                  <div className="flex items-center gap-3">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => handleFileChange(e, 'bankDetails.cancelledChequeUrl')}
-                      className="hidden"
-                      id="bank-cancelled-cheque"
-                      disabled={uploadingFiles['bankDetails.cancelledChequeUrl']}
-                    />
-                    <label
-                      htmlFor="bank-cancelled-cheque"
-                      className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 cursor-pointer disabled:opacity-50"
-                    >
-                      {uploadingFiles['bankDetails.cancelledChequeUrl'] ? (
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                      ) : (
-                        <Upload size={16} />
-                      )}
-                      Upload
-                    </label>
-                    {formData.bankDetails.cancelledChequeUrl && (
-                      <button
-                        type="button"
-                        onClick={() => window.open(formData.bankDetails.cancelledChequeUrl, '_blank')}
-                        className="flex items-center gap-1 px-3 py-1 text-sm bg-green-50 text-green-600 rounded hover:bg-green-100"
-                      >
-                        <Eye size={14} />
-                        View
-                      </button>
-                    )}
-                  </div>
+                  <input
+                    type="text"
+                    value={formData.bankDetails.cancelledChequeNumber || ''}
+                    onChange={(e) => handleNestedInputChange('bankDetails', 'cancelledChequeNumber', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    placeholder="Enter cancelled cheque number"
+                  />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Bank Passbook
+                    Bank Passbook Number
                   </label>
-                  <div className="flex items-center gap-3">
-                    <input
-                      type="file"
-                      accept="image/*,.pdf"
-                      onChange={(e) => handleFileChange(e, 'bankDetails.bankPassbookUrl')}
-                      className="hidden"
-                      id="bank-passbook-doc"
-                      disabled={uploadingFiles['bankDetails.bankPassbookUrl']}
-                    />
-                    <label
-                      htmlFor="bank-passbook-doc"
-                      className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 cursor-pointer disabled:opacity-50"
-                    >
-                      {uploadingFiles['bankDetails.bankPassbookUrl'] ? (
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                      ) : (
-                        <Upload size={16} />
-                      )}
-                      Upload
-                    </label>
-                    {formData.bankDetails.bankPassbookUrl && (
-                      <button
-                        type="button"
-                        onClick={() => window.open(formData.bankDetails.bankPassbookUrl, '_blank')}
-                        className="flex items-center gap-1 px-3 py-1 text-sm bg-green-50 text-green-600 rounded hover:bg-green-100"
-                      >
-                        <Eye size={14} />
-                        View
-                      </button>
-                    )}
-                  </div>
+                  <input
+                    type="text"
+                    value={formData.bankDetails.bankPassbookNumber || ''}
+                    onChange={(e) => handleNestedInputChange('bankDetails', 'bankPassbookNumber', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    placeholder="Enter bank passbook number"
+                  />
                 </div>
               </div>
             </div>
@@ -1468,41 +1407,15 @@ const EditMerchant = () => {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    GST Certificate
+                    GST Certificate Number
                   </label>
-                  <div className="flex items-center gap-3">
-                    <input
-                      type="file"
-                      accept="image/*,.pdf"
-                      onChange={(e) => handleFileChange(e, 'documents.gstin.certificateUrl')}
-                      className="hidden"
-                      id="gst-certificate"
-                      disabled={uploadingFiles['documents.gstin.certificateUrl']}
-                    />
-                    <label
-                      htmlFor="gst-certificate"
-                      className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 cursor-pointer disabled:opacity-50"
-                    >
-                      {uploadingFiles['documents.gstin.certificateUrl'] ? (
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                      ) : (
-                        <Upload size={16} />
-                      )}
-                      Upload
-                    </label>
-                    {formData.documents.gstin.certificateUrl && (
-                      <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => window.open(formData.documents.gstin.certificateUrl, '_blank')}
-                          className="flex items-center gap-1 px-3 py-1 text-sm bg-green-50 text-green-600 rounded hover:bg-green-100"
-                        >
-                          <Eye size={14} />
-                          View
-                        </button>
-                      </div>
-                    )}
-                  </div>
+                  <input
+                    type="text"
+                    value={formData.documents.gstin.certificateNumber || ''}
+                    onChange={(e) => handleDeepNestedInputChange('documents', 'gstin', 'certificateNumber', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    placeholder="Enter GST certificate number"
+                  />
                 </div>
               </div>
             </div>
@@ -1556,75 +1469,15 @@ const EditMerchant = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Front Side
+                    Aadhaar Number
                   </label>
-                  <div className="flex items-center gap-3">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => handleFileChange(e, 'documents.aadhaarCard.frontUrl')}
-                      className="hidden"
-                      id="aadhaar-front"
-                      disabled={uploadingFiles['documents.aadhaarCard.frontUrl']}
-                    />
-                    <label
-                      htmlFor="aadhaar-front"
-                      className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 cursor-pointer disabled:opacity-50"
-                    >
-                      {uploadingFiles['documents.aadhaarCard.frontUrl'] ? (
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                      ) : (
-                        <Upload size={16} />
-                      )}
-                      Upload Front
-                    </label>
-                    {formData.documents.aadhaarCard.frontUrl && (
-                      <button
-                        type="button"
-                        onClick={() => window.open(formData.documents.aadhaarCard.frontUrl, '_blank')}
-                        className="flex items-center gap-1 px-3 py-1 text-sm bg-green-50 text-green-600 rounded hover:bg-green-100"
-                      >
-                        <Eye size={14} />
-                        View
-                      </button>
-                    )}
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Back Side
-                  </label>
-                  <div className="flex items-center gap-3">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => handleFileChange(e, 'documents.aadhaarCard.backUrl')}
-                      className="hidden"
-                      id="aadhaar-back"
-                      disabled={uploadingFiles['documents.aadhaarCard.backUrl']}
-                    />
-                    <label
-                      htmlFor="aadhaar-back"
-                      className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 cursor-pointer disabled:opacity-50"
-                    >
-                      {uploadingFiles['documents.aadhaarCard.backUrl'] ? (
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                      ) : (
-                        <Upload size={16} />
-                      )}
-                      Upload Back
-                    </label>
-                    {formData.documents.aadhaarCard.backUrl && (
-                      <button
-                        type="button"
-                        onClick={() => window.open(formData.documents.aadhaarCard.backUrl, '_blank')}
-                        className="flex items-center gap-1 px-3 py-1 text-sm bg-green-50 text-green-600 rounded hover:bg-green-100"
-                      >
-                        <Eye size={14} />
-                        View
-                      </button>
-                    )}
-                  </div>
+                  <input
+                    type="text"
+                    value={formData.documents.aadhaarNumber}
+                    onChange={(e) => handleNestedInputChange('documents', 'aadhaarNumber', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    placeholder="Enter 12-digit Aadhaar number"
+                  />
                 </div>
               </div>
             </div>
@@ -1635,75 +1488,27 @@ const EditMerchant = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Cancelled Cheque
+                    Cancelled Cheque Number
                   </label>
-                  <div className="flex items-center gap-3">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => handleFileChange(e, 'documents.cancelledCheque')}
-                      className="hidden"
-                      id="cancelled-cheque"
-                      disabled={uploadingFiles['documents.cancelledCheque']}
-                    />
-                    <label
-                      htmlFor="cancelled-cheque"
-                      className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 cursor-pointer disabled:opacity-50"
-                    >
-                      {uploadingFiles['documents.cancelledCheque'] ? (
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                      ) : (
-                        <Upload size={16} />
-                      )}
-                      Upload
-                    </label>
-                    {formData.documents.cancelledCheque && (
-                      <button
-                        type="button"
-                        onClick={() => window.open(formData.documents.cancelledCheque, '_blank')}
-                        className="flex items-center gap-1 px-3 py-1 text-sm bg-green-50 text-green-600 rounded hover:bg-green-100"
-                      >
-                        <Eye size={14} />
-                        View
-                      </button>
-                    )}
-                  </div>
+                  <input
+                    type="text"
+                    value={formData.documents.cancelledChequeNumber || ''}
+                    onChange={(e) => handleNestedInputChange('documents', 'cancelledChequeNumber', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    placeholder="Enter cancelled cheque number"
+                  />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Bank Passbook
+                    Bank Passbook Number
                   </label>
-                  <div className="flex items-center gap-3">
-                    <input
-                      type="file"
-                      accept="image/*,.pdf"
-                      onChange={(e) => handleFileChange(e, 'documents.bankPassbook')}
-                      className="hidden"
-                      id="bank-passbook"
-                      disabled={uploadingFiles['documents.bankPassbook']}
-                    />
-                    <label
-                      htmlFor="bank-passbook"
-                      className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 cursor-pointer disabled:opacity-50"
-                    >
-                      {uploadingFiles['documents.bankPassbook'] ? (
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                      ) : (
-                        <Upload size={16} />
-                      )}
-                      Upload
-                    </label>
-                    {formData.documents.bankPassbook && (
-                      <button
-                        type="button"
-                        onClick={() => window.open(formData.documents.bankPassbook, '_blank')}
-                        className="flex items-center gap-1 px-3 py-1 text-sm bg-green-50 text-green-600 rounded hover:bg-green-100"
-                      >
-                        <Eye size={14} />
-                        View
-                      </button>
-                    )}
-                  </div>
+                  <input
+                    type="text"
+                    value={formData.documents.bankPassbookNumber || ''}
+                    onChange={(e) => handleNestedInputChange('documents', 'bankPassbookNumber', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    placeholder="Enter bank passbook number"
+                  />
                 </div>
               </div>
             </div>

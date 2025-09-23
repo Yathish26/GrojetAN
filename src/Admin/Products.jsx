@@ -43,7 +43,7 @@ export default function Products() {
   const [productIdToDelete, setProductIdToDelete] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [categorylist, setCategorylist] = useState([]);
-  const [filters, setFilters] = useState({ category: '', status: 'all' });
+  const [filters, setFilters] = useState({ category: '', status: 'all', sort: 'name_asc' });
   // Pagination
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -125,6 +125,13 @@ export default function Products() {
         query.append('status', filters.status);
       }
 
+      // sort filter
+      if (params.sort !== undefined) {
+        if (params.sort) query.append('sort', params.sort);
+      } else if (filters.sort) {
+        query.append('sort', filters.sort);
+      }
+
       const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/products?${query}`, {
         credentials: 'include',
       });
@@ -142,7 +149,7 @@ export default function Products() {
     } finally {
       setLoading(false);
     }
-  }, [navigate, page, searchTerm, filters.category, filters.status]);
+  }, [navigate, page, searchTerm, filters.category, filters.status, filters.sort]);
 
   // Fetch categories
   const fetchCategories = useCallback(async () => {
@@ -172,13 +179,13 @@ export default function Products() {
     // eslint-disable-next-line
   }, [isAuthorized]);
 
-  // Refetch whenever page, searchTerm, filters.category, filters.status change
+  // Refetch whenever page, searchTerm, filters.category, filters.status, filters.sort change
   useEffect(() => {
     if (isAuthorized) {
-      fetchProducts({ page, search: searchTerm, category: filters.category, status: filters.status });
+      fetchProducts({ page, search: searchTerm, category: filters.category, status: filters.status, sort: filters.sort });
     }
     // eslint-disable-next-line
-  }, [page, searchTerm, filters.category, filters.status, isAuthorized]);
+  }, [page, searchTerm, filters.category, filters.status, filters.sort, isAuthorized]);
 
   // Memoized categories for filter dropdown
   const categories = useMemo(() => {
@@ -254,7 +261,7 @@ export default function Products() {
         throw new Error(errorData.message || 'Failed to delete product');
       }
       toast.success('Product deleted successfully');
-      fetchProducts({ page, search: searchTerm, category: filters.category, status: filters.status });
+      fetchProducts({ page, search: searchTerm, category: filters.category, status: filters.status, sort: filters.sort });
       // If this was the last product on this page, go back one page
       if (products.length === 1 && page > 1) {
         setPage(page - 1);
@@ -457,7 +464,7 @@ export default function Products() {
         throw new Error(errorData.message || 'Failed to update product');
       }
       toast.success('Product updated successfully');
-      fetchProducts({ page, search: searchTerm, category: filters.category, status: filters.status });
+      fetchProducts({ page, search: searchTerm, category: filters.category, status: filters.status, sort: filters.sort });
       closeEditModal();
     } catch (error) {
       toast.error(error.message);
@@ -486,6 +493,10 @@ export default function Products() {
   };
   const handleStatusFilter = (e) => {
     setFilters(f => ({ ...f, status: e.target.value }));
+    setPage(1);
+  };
+  const handleSortFilter = (e) => {
+    setFilters(f => ({ ...f, sort: e.target.value }));
     setPage(1);
   };
 
@@ -610,6 +621,20 @@ export default function Products() {
                 <option value="inactive">Inactive</option>
               </select>
             </div>
+            <div className="relative">
+              <select
+                className="w-full p-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500"
+                value={filters.sort}
+                onChange={handleSortFilter}
+              >
+                <option value="name_asc">A - Z</option>
+                <option value="name_desc">Z - A</option>
+                <option value="price_asc">Price: Low to High</option>
+                <option value="price_desc">Price: High to Low</option>
+                <option value="created_desc">Newest First</option>
+                <option value="created_asc">Oldest First</option>
+              </select>
+            </div>
           </div>
         </div>
 
@@ -642,7 +667,6 @@ export default function Products() {
                     <thead className="bg-gray-50">
                       <tr>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">SKU</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">HSN</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
                         <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
@@ -666,7 +690,6 @@ export default function Products() {
                               </div>
                             </div>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{product.sku || 'N/A'}</td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{product.hsnCode || '—'}</td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                             {product.category_string || product.category?.name || 'Uncategorized'}
@@ -689,7 +712,7 @@ export default function Products() {
                             >
                               <Edit size={18} />
                             </button>
-                            <button
+                            {/* <button
                               onClick={() => {
                                 setProductIdToDelete(product._id);
                                 setConfirmDeleteVisible(true);
@@ -699,7 +722,7 @@ export default function Products() {
                               disabled={confirmDeleteVisible}
                             >
                               <Trash2 size={18} />
-                            </button>
+                            </button> */}
                           </td>
                         </tr>
                       ))}
@@ -762,14 +785,6 @@ export default function Products() {
                     label="Product Name*"
                     name="name"
                     value={editProduct.name}
-                    onChange={handleEditChange}
-                    disabled={isSaving}
-                    required
-                  />
-                  <EditInput
-                    label="SKU*"
-                    name="sku"
-                    value={editProduct.sku}
                     onChange={handleEditChange}
                     disabled={isSaving}
                     required

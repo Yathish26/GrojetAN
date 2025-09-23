@@ -46,7 +46,6 @@ export default function AddProduct() {
     thumbnail: '',
     brand: '',
     category: '',
-    sku: '',
   hsnCode: '',
     barcode: '',
     variants: [{
@@ -340,7 +339,6 @@ export default function AddProduct() {
           thumbnail: '',
           brand: '',
           category: '',
-          sku: '',
           hsnCode: '',
           barcode: '',
           variants: [{
@@ -614,24 +612,6 @@ export default function AddProduct() {
 
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-gray-800 border-b pb-2">Inventory</h3>
-
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">
-                  SKU (Stock Keeping Unit) *
-                </label>
-                <div className="relative">
-                  <input
-                    type="text"
-                    name="sku"
-                    className="w-full pl-10 pr-4 py-2.5 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                    value={formData.sku}
-                    onChange={handleChange}
-                    placeholder="e.g. PROD-12345"
-                    required
-                  />
-                  <Tag className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
-                </div>
-              </div>
 
             <div className="space-y-2">
               <label className="block text-sm font-medium text-gray-700">
