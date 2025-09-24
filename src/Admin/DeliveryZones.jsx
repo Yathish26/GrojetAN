@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Plus,
   Edit3,
@@ -8,7 +8,8 @@ import {
   Eye,
   X,
   CircleCheck,
-  Map
+  Map,
+  Ban
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import ChipInput from '../Components/ChipInput';
@@ -298,6 +299,9 @@ export default function DeliveryZones() {
 
   // Edit Zone state
   const [showEditModal, setShowEditModal] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
+  const [checkingUser, setCheckingUser] = useState(true);
+  const allowedRoles = ['super_admin', 'admin'];
   const [editForm, setEditForm] = useState(null);
   const [editCoordinates, setEditCoordinates] = useState([]);
   const [editZoneStats, setEditZoneStats] = useState(null);
@@ -328,10 +332,6 @@ export default function DeliveryZones() {
       blockedItems: []
     }
   });
-
-  useEffect(() => {
-    fetchZones();
-  }, []);
 
   // Initialize edit form when a zone is selected for editing
   useEffect(() => {
@@ -397,6 +397,7 @@ export default function DeliveryZones() {
   };
 
   const handleCreateZone = async (e) => {
+    if (!isAuthorized) return;
     e.preventDefault();
 
     // Validation
@@ -474,6 +475,7 @@ export default function DeliveryZones() {
   };
 
   const handleDeleteZone = async (zoneId) => {
+    if (!isAuthorized) return;
     if (!window.confirm('Are you sure you want to delete this delivery zone? This action cannot be undone.')) {
       return;
     }
@@ -496,6 +498,7 @@ export default function DeliveryZones() {
   };
 
   const handleUpdateZone = async (zoneId, updates) => {
+    if (!isAuthorized) return;
     try {
       const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/delivery-zones/${zoneId}`, {
         method: 'PUT',
@@ -625,6 +628,57 @@ export default function DeliveryZones() {
 
     return matchesSearch && matchesStatus;
   });
+
+  const fetchCurrentUser = useCallback(async () => {
+    try {
+      const local = localStorage.getItem('adminUser');
+      if (local) {
+        setCurrentUser(JSON.parse(local));
+      } else {
+        const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/auth/profile`, { credentials: 'include' });
+        const data = await response.json();
+        if (data.tokenValid === false) {
+          window.location.replace('/login');
+          return;
+        }
+        if (response.ok && data.admin) {
+          setCurrentUser(data.admin);
+          localStorage.setItem('adminUser', JSON.stringify(data.admin));
+        }
+      }
+    } catch (err) {
+      console.error('Failed to fetch current user', err);
+    } finally {
+      setCheckingUser(false);
+    }
+  }, []);
+
+  useEffect(() => { fetchCurrentUser(); }, [fetchCurrentUser]);
+  const isAuthorized = allowedRoles.includes(currentUser?.role);
+
+  useEffect(() => {
+    if (isAuthorized) {
+      fetchZones();
+    }
+  }, [isAuthorized]);
+
+  // Guard states
+  if (checkingUser) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+      </div>
+    );
+  }
+  if (!isAuthorized) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen">
+        <Ban className='w-16 h-16 text-red-500 mb-2'/>
+        <h2 className="text-xl font-semibold text-gray-800 mb-2">Access Denied</h2>
+        <p className="text-gray-600">Only Admins and Super Admins can view delivery zones.</p>
+      </div>
+    );
+  }
 
   return (
     <Layout title="Delivery Zones">

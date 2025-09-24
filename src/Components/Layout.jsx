@@ -117,6 +117,7 @@ const Layout = ({ children, title }) => {
     { name: 'Orders', icon: ShoppingCart, path: '/orders', roles: ['super_admin', 'admin', 'delivery_manager'] },
     { name: 'Products', icon: Package, path: '/products', roles: ['super_admin', 'admin', 'inventory_manager'] },
     { name: 'Add Product', icon: Plus, path: '/products/add', roles: ['super_admin', 'admin', 'inventory_manager'] },
+    { name: 'Requested Products', icon: Shield, path: '/products/requests', roles: ['super_admin', 'admin', 'inventory_manager'] },
     { name: 'Categories', icon: ChartBarStacked, path: '/categories', roles: ['super_admin', 'admin', 'inventory_manager'] },
     { name: 'Careers', icon: Briefcase, path: '/careers', roles: ['super_admin', 'admin'] },
     { name: 'Users', icon: Users, path: '/users', roles: ['super_admin', 'admin'] },

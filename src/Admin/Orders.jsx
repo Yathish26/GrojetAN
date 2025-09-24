@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../Components/Layout';
-import { 
-  ShoppingCart, Search, Filter, Eye, MapPin, 
-  Clock, User, Package, Truck, CircleCheck, 
+import {
+  ShoppingCart, Search, Filter, Eye, MapPin,
+  Clock, User, Package, Truck, CircleCheck,
   XCircle, AlertCircle, Calendar, DollarSign,
-  RefreshCw, Download
+  RefreshCw, Download,
+  Ban
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -27,12 +28,10 @@ const Orders = () => {
     totalPages: 1
   });
   const [stats, setStats] = useState({});
+  const [currentUser, setCurrentUser] = useState(null);
+  const [checkingUser, setCheckingUser] = useState(true);
+  const allowedRoles = ['super_admin', 'admin'];
   const navigate = useNavigate();
-
-  useEffect(() => {
-    fetchOrders();
-    fetchStats();
-  }, [pagination.page, filters]);
 
   const fetchOrders = async () => {
     try {
@@ -88,17 +87,20 @@ const Orders = () => {
   };
 
   const handleSearch = (e) => {
+    if (!isAuthorized) return;
     e.preventDefault();
     setPagination(prev => ({ ...prev, page: 1 }));
     fetchOrders();
   };
 
   const handleFilterChange = (key, value) => {
+    if (!isAuthorized) return;
     setFilters(prev => ({ ...prev, [key]: value }));
     setPagination(prev => ({ ...prev, page: 1 }));
   };
 
   const updateOrderStatus = async (orderId, newStatus) => {
+    if (!isAuthorized) return;
     try {
       const response = await fetch(
         `${import.meta.env.VITE_SERVER}/admin/orders/${orderId}/status`,
@@ -166,6 +168,58 @@ const Orders = () => {
       </div>
     </div>
   );
+
+  const fetchCurrentUser = useCallback(async () => {
+    try {
+      const local = localStorage.getItem('adminUser');
+      if (local) {
+        setCurrentUser(JSON.parse(local));
+      } else {
+        const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/auth/profile`, { credentials: 'include' });
+        const data = await response.json();
+        if (data.tokenValid === false) {
+          window.location.replace('/login');
+          return;
+        }
+        if (response.ok && data.admin) {
+          setCurrentUser(data.admin);
+          localStorage.setItem('adminUser', JSON.stringify(data.admin));
+        }
+      }
+    } catch (err) {
+      console.error('Failed to fetch current user', err);
+    } finally {
+      setCheckingUser(false);
+    }
+  }, []);
+
+  useEffect(() => { fetchCurrentUser(); }, [fetchCurrentUser]);
+  const isAuthorized = allowedRoles.includes(currentUser?.role);
+
+  useEffect(() => {
+    if (isAuthorized) {
+      fetchOrders();
+      fetchStats();
+    }
+  }, [pagination.page, filters, isAuthorized]);
+
+  // Guard states
+  if (checkingUser) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+      </div>
+    );
+  }
+  if (!isAuthorized) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen">
+        <Ban className='w-16 h-16 text-red-500 mb-2'/>
+        <h2 className="text-xl font-semibold text-gray-800 mb-2">Access Denied</h2>
+        <p className="text-gray-600">Only Admins and Super Admins can view orders.</p>
+      </div>
+    );
+  }
 
   return (
     <Layout title="Orders Management">

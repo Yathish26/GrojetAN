@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../Components/Layout';
-import { 
-  Truck, Search, Filter, Eye, MapPin, Star, 
+import {
+  Truck, Search, Filter, Eye, MapPin, Star,
   CircleCheck, XCircle, Clock, User, Phone,
-  Mail, Shield, AlertCircle, Plus, RefreshCw
+  Mail, Shield, AlertCircle, Plus, RefreshCw,
+  Ban
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -31,12 +32,10 @@ const DeliveryAgents = () => {
     rejectionReason: '',
     deliveryZone: ''
   });
+  const [currentUser, setCurrentUser] = useState(null);
+  const [checkingUser, setCheckingUser] = useState(true);
+  const allowedRoles = ['super_admin', 'admin'];
   const navigate = useNavigate();
-
-  useEffect(() => {
-    fetchAgents();
-    fetchStats();
-  }, [pagination.page, filters]);
 
   const fetchAgents = async () => {
     try {
@@ -92,17 +91,20 @@ const DeliveryAgents = () => {
   };
 
   const handleSearch = (e) => {
+    if (!isAuthorized) return;
     e.preventDefault();
     setPagination(prev => ({ ...prev, page: 1 }));
     fetchAgents();
   };
 
   const handleFilterChange = (key, value) => {
+    if (!isAuthorized) return;
     setFilters(prev => ({ ...prev, [key]: value }));
     setPagination(prev => ({ ...prev, page: 1 }));
   };
 
   const openStatusModal = (agent) => {
+    if (!isAuthorized) return;
     setSelectedAgent(agent);
     setStatusUpdate({
       applicationStatus: agent.status.applicationStatus,
@@ -113,6 +115,7 @@ const DeliveryAgents = () => {
   };
 
   const updateAgentStatus = async () => {
+    if (!isAuthorized) return;
     try {
       const response = await fetch(
         `${import.meta.env.VITE_SERVER}/admin/delivery-agents/${selectedAgent._id}/status`,
@@ -173,6 +176,58 @@ const DeliveryAgents = () => {
       </div>
     </div>
   );
+
+  const fetchCurrentUser = useCallback(async () => {
+    try {
+      const local = localStorage.getItem('adminUser');
+      if (local) {
+        setCurrentUser(JSON.parse(local));
+      } else {
+        const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/auth/profile`, { credentials: 'include' });
+        const data = await response.json();
+        if (data.tokenValid === false) {
+          window.location.replace('/login');
+          return;
+        }
+        if (response.ok && data.admin) {
+          setCurrentUser(data.admin);
+          localStorage.setItem('adminUser', JSON.stringify(data.admin));
+        }
+      }
+    } catch (err) {
+      console.error('Failed to fetch current user', err);
+    } finally {
+      setCheckingUser(false);
+    }
+  }, []);
+
+  useEffect(() => { fetchCurrentUser(); }, [fetchCurrentUser]);
+  const isAuthorized = allowedRoles.includes(currentUser?.role);
+
+  useEffect(() => {
+    if (isAuthorized) {
+      fetchAgents();
+      fetchStats();
+    }
+  }, [pagination.page, filters, isAuthorized]);
+
+  // Guard states
+  if (checkingUser) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+      </div>
+    );
+  }
+  if (!isAuthorized) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen">
+        <Ban className='w-16 h-16 text-red-500 mb-2' />
+        <h2 className="text-xl font-semibold text-gray-800 mb-2">Access Denied</h2>
+        <p className="text-gray-600">Only Admins and Super Admins can view delivery agents.</p>
+      </div>
+    );
+  }
 
   return (
     <Layout title="Delivery Agents">
@@ -457,7 +512,7 @@ const DeliveryAgents = () => {
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white  p-6 w-full max-w-md">
               <h3 className="text-lg font-semibold mb-4">Update Agent Status</h3>
-              
+
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">

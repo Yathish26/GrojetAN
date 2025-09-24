@@ -9,7 +9,6 @@ import Layout from '../Components/Layout';
 
 Modal.setAppElement('#root');
 
-const DEFAULT_VARIANT = { label: '', price: 0, mrp: 0, stock: 0, unit: '', image: '' };
 const PAGE_SIZE = 20;
 
 function EditInput({ label, name, value, onChange, type = 'text', disabled, required = false, step, min, max }) {
@@ -169,6 +168,31 @@ export default function Products() {
     }
   }, [navigate]);
 
+  // Update request status
+  const updateRequestStatus = async (requestId, status) => {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/products/requests/${requestId}/status`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({ status }),
+      });
+      if (response.status === 401) {
+        navigate('/login');
+        return;
+      }
+      if (!response.ok) throw new Error('Failed to update request status');
+      const data = await response.json();
+      toast.success(data.message);
+      // Refresh the requested products list
+      fetchRequestedProducts(requestPage);
+    } catch (error) {
+      toast.error(error.message);
+    }
+  };
+
   // First load
   useEffect(() => {
     if (isAuthorized) {
@@ -219,15 +243,6 @@ export default function Products() {
       // Add images from images array
       if (productToDelete.images && productToDelete.images.length > 0) {
         imagesToDelete.push(...productToDelete.images);
-      }
-      
-      // Add variant images
-      if (productToDelete.variants && productToDelete.variants.length > 0) {
-        productToDelete.variants.forEach(variant => {
-          if (variant.image) {
-            imagesToDelete.push(variant.image);
-          }
-        });
       }
       
       // Delete all images from Cloudinary
@@ -326,28 +341,6 @@ export default function Products() {
   };
 
   // Variant handlers
-  const handleVariantChange = (index, e) => {
-    const { name, value } = e.target;
-    const fieldName = name.replace(`variants[${index}].`, '');
-    setEditProduct(prev => {
-      const variants = prev.variants ? [...prev.variants] : [];
-      variants[index] = { ...variants[index], [fieldName]: value };
-      return { ...prev, variants };
-    });
-  };
-  const addVariant = () => {
-    setEditProduct(prev => ({
-      ...prev,
-      variants: [...(prev.variants || []), { ...DEFAULT_VARIANT }]
-    }));
-  };
-  const removeVariant = (index) => {
-    setEditProduct(prev => ({
-      ...prev,
-      variants: prev.variants.filter((_, i) => i !== index)
-    }));
-  };
-
   // File upload handlers for edit modal
   const handleThumbnailFileSelect = (file) => {
     setSelectedThumbnailFile(file);
@@ -564,13 +557,22 @@ export default function Products() {
         {/* Header */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
           <h1 className="text-2xl md:text-3xl font-bold text-green-700">Product Management</h1>
-          <button
-            onClick={() => navigate('/products/add')}
-            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 cursor-pointer shadow flex items-center gap-2 self-end md:self-auto"
-          >
-            <Plus size={18} />
-            <span>Add Product</span>
-          </button>
+          <div className="flex gap-3">
+            <button
+              onClick={() => navigate('/products/requests')}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 cursor-pointer shadow flex items-center gap-2"
+            >
+              <Shield size={18} />
+              <span>Requested Products</span>
+            </button>
+            <button
+              onClick={() => navigate('/products/add')}
+              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 cursor-pointer shadow flex items-center gap-2 self-end md:self-auto"
+            >
+              <Plus size={18} />
+              <span>Add Product</span>
+            </button>
+          </div>
         </div>
 
         {/* Filters */}
@@ -695,7 +697,7 @@ export default function Products() {
                             {product.category_string || product.category?.name || 'Uncategorized'}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
-                            ₹{product.pricing?.sellingPrice?.toFixed(2) ?? '0.00'}
+                            ₹{product.pricing?.mrp?.toFixed(2) ?? '0.00'}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-center">
                             <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
@@ -712,17 +714,19 @@ export default function Products() {
                             >
                               <Edit size={18} />
                             </button>
-                            {/* <button
-                              onClick={() => {
-                                setProductIdToDelete(product._id);
-                                setConfirmDeleteVisible(true);
-                              }}
-                              className="text-red-600 hover:text-red-900 p-1 disabled:opacity-50 disabled:cursor-not-allowed"
-                              title="Delete"
-                              disabled={confirmDeleteVisible}
-                            >
-                              <Trash2 size={18} />
-                            </button> */}
+                            {currentUser?.role === 'super_admin' && (
+                              <button
+                                onClick={() => {
+                                  setProductIdToDelete(product._id);
+                                  setConfirmDeleteVisible(true);
+                                }}
+                                className="text-red-600 hover:text-red-900 p-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                                title="Delete"
+                                disabled={confirmDeleteVisible}
+                              >
+                                <Trash2 size={18} />
+                              </button>
+                            )}
                           </td>
                         </tr>
                       ))}
@@ -828,13 +832,6 @@ export default function Products() {
                       ))}
                     </select>
                   </div>
-                  <EditInput
-                    label="Barcode"
-                    name="barcode"
-                    value={editProduct.barcode}
-                    onChange={handleEditChange}
-                    disabled={isSaving}
-                  />
                   <div className="flex items-center space-x-4">
                     <div className="flex items-center">
                       <input
@@ -883,34 +880,6 @@ export default function Products() {
                     disabled={isSaving}
                     required
                   />
-                  <EditInput
-                    label="Selling Price (₹)*"
-                    name="pricing.sellingPrice"
-                    value={editProduct.pricing?.sellingPrice}
-                    onChange={handleEditChange}
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    disabled={isSaving}
-                    required
-                  />
-                  <EditInput
-                    label="Discount Percent"
-                    name="pricing.discountPercent"
-                    value={editProduct.pricing?.discountPercent}
-                    onChange={handleEditChange}
-                    type="number"
-                    min="0"
-                    max="100"
-                    disabled={isSaving}
-                  />
-                  <EditInput
-                    label="Offer Tag"
-                    name="pricing.offerTag"
-                    value={editProduct.pricing?.offerTag}
-                    onChange={handleEditChange}
-                    disabled={isSaving}
-                  />
                   <div className="md:col-span-2">
                     <label className="block text-gray-700 text-sm font-medium mb-1">Tax</label>
                     <div className="grid grid-cols-2 gap-4">
@@ -940,36 +909,6 @@ export default function Products() {
                       </div>
                     </div>
                   </div>
-                </div>
-              </div>
-
-              {/* Delivery Section */}
-              <div className="bg-gray-50 p-4 ">
-                <h3 className="text-lg font-medium text-gray-800 mb-4">Delivery</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="flex items-center">
-                    <input
-                      type="checkbox"
-                      id="isInstant"
-                      name="delivery.isInstant"
-                      checked={!!editProduct.delivery?.isInstant}
-                      onChange={handleEditChange}
-                      className="h-4 w-4 text-blue-600 focus:ring-blue-500"
-                      disabled={isSaving}
-                    />
-                    <label htmlFor="isInstant" className="ml-2 text-sm text-gray-700">
-                      Instant Delivery
-                    </label>
-                  </div>
-                  <EditInput
-                    label="Delivery Time (minutes)"
-                    name="delivery.deliveryTimeInMinutes"
-                    value={editProduct.delivery?.deliveryTimeInMinutes}
-                    onChange={handleEditChange}
-                    type="number"
-                    min="0"
-                    disabled={isSaving}
-                  />
                 </div>
               </div>
 
@@ -1075,81 +1014,6 @@ export default function Products() {
                     </div>
                   </div>
                 </div>
-              </div>
-
-              {/* Variants Section */}
-              <div className="bg-gray-50 p-4 ">
-                <h3 className="text-lg font-medium text-gray-800 mb-4">Variants</h3>
-                {editProduct.variants?.map((variant, index) => (
-                  <div key={index} className="mb-4 p-3 border ">
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-                      <EditInput
-                        label="Label"
-                        name={`variants[${index}].label`}
-                        value={variant.label}
-                        onChange={(e) => handleVariantChange(index, e)}
-                        disabled={isSaving}
-                      />
-                      <EditInput
-                        label="Price (₹)"
-                        name={`variants[${index}].price`}
-                        value={variant.price}
-                        onChange={(e) => handleVariantChange(index, e)}
-                        type="number"
-                        step="0.01"
-                        disabled={isSaving}
-                      />
-                      <EditInput
-                        label="MRP (₹)"
-                        name={`variants[${index}].mrp`}
-                        value={variant.mrp}
-                        onChange={(e) => handleVariantChange(index, e)}
-                        type="number"
-                        step="0.01"
-                        disabled={isSaving}
-                      />
-                      <EditInput
-                        label="Stock"
-                        name={`variants[${index}].stock`}
-                        value={variant.stock}
-                        onChange={(e) => handleVariantChange(index, e)}
-                        type="number"
-                        disabled={isSaving}
-                      />
-                      <EditInput
-                        label="Unit"
-                        name={`variants[${index}].unit`}
-                        value={variant.unit}
-                        onChange={(e) => handleVariantChange(index, e)}
-                        disabled={isSaving}
-                      />
-                      <EditInput
-                        label="Image URL"
-                        name={`variants[${index}].image`}
-                        value={variant.image}
-                        onChange={(e) => handleVariantChange(index, e)}
-                        disabled={isSaving}
-                      />
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => removeVariant(index)}
-                      className="mt-2 text-red-500 text-sm hover:text-red-700"
-                      disabled={isSaving}
-                    >
-                      Remove Variant
-                    </button>
-                  </div>
-                ))}
-                <button
-                  type="button"
-                  onClick={addVariant}
-                  className="mt-2 text-green-600 hover:text-green-800 flex items-center text-sm"
-                  disabled={isSaving}
-                >
-                  <Plus size={16} className="mr-1" />
-                  Add Variant
-                </button>
               </div>
 
               {/* Content Section */}

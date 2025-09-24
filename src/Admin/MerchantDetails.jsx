@@ -484,35 +484,37 @@ const MerchantDetails = () => {
           </div>
         </div>
 
-        {/* Store Timings */}
-        {operationalInfo.storeTimings && (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-              <Clock className="w-5 h-5" />
-              Store Timings
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {Object.entries(operationalInfo.storeTimings).map(([day, timing]) => (
-                <div key={day} className="p-3 border border-gray-200 rounded-lg">
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium text-gray-900 capitalize">{day}</span>
-                    {timing.isOpen ? (
-                      <CheckCircle className="w-4 h-4 text-green-600" />
-                    ) : (
-                      <XCircle className="w-4 h-4 text-red-600" />
-                    )}
-                  </div>
-                  <p className="text-sm text-gray-600 mt-1">
-                    {timing.isOpen ? 
-                      `${formatTime(timing.openTime)} - ${formatTime(timing.closeTime)}` 
-                      : 'Closed'
-                    }
-                  </p>
-                </div>
-              ))}
+        {/* Operating Hours */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+            <Clock className="w-5 h-5" />
+            Operating Hours
+          </h2>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <Clock className="w-5 h-5 text-green-600" />
+              <div>
+                <p className="text-sm font-medium text-gray-500">Opening Time</p>
+                <p className="text-gray-900">{operationalInfo.openingTime || 'Not set'}</p>
+              </div>
+            </div>
+            <div className="text-gray-400">—</div>
+            <div className="flex items-center gap-2">
+              <Clock className="w-5 h-5 text-red-600" />
+              <div>
+                <p className="text-sm font-medium text-gray-500">Closing Time</p>
+                <p className="text-gray-900">{operationalInfo.closingTime || 'Not set'}</p>
+              </div>
             </div>
           </div>
-        )}
+          {(operationalInfo.openingTime && operationalInfo.closingTime) && (
+            <div className="mt-3 p-3 bg-gray-50 rounded-lg">
+              <p className="text-sm text-gray-600">
+                Store operates daily from {operationalInfo.openingTime} to {operationalInfo.closingTime}
+              </p>
+            </div>
+          )}
+        </div>
 
         {/* Operational Information */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">

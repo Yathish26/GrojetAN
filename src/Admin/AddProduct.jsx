@@ -47,30 +47,12 @@ export default function AddProduct() {
     brand: '',
     category: '',
   hsnCode: '',
-    barcode: '',
-    variants: [{
-      label: '',
-      price: 0,
-      mrp: 0,
-      stock: 0,
-      unit: 'kg',
-      image: '',
-      sellerId: ''
-    }],
     pricing: {
       mrp: 0,
-      sellingPrice: 0,
-      discountPercent: 0,
-      offerTag: ''
     },
     tax: {
       gstRate: 0,
       includedInPrice: true
-    },
-    delivery: {
-      isInstant: true,
-      deliveryTimeInMinutes: 0,
-      zones: ['']
     },
     isActive: true,
     isFeatured: false,
@@ -166,51 +148,6 @@ export default function AddProduct() {
     }));
   };
 
-  const handleVariantChange = (index, field, value) => {
-    setFormData(prev => {
-      const newVariants = [...prev.variants];
-      newVariants[index] = { ...newVariants[index], [field]: value };
-
-      // Auto-calculate discount if both MRP and price are set
-      if (field === 'price' && newVariants[index].mrp > 0) {
-        newVariants[index].discountPercent = Math.round(
-          ((newVariants[index].mrp - parseFloat(value)) / newVariants[index].mrp * 100)
-        );
-      } else if (field === 'mrp' && newVariants[index].price > 0) {
-        newVariants[index].discountPercent = Math.round(
-          ((parseFloat(value) - newVariants[index].price) / parseFloat(value) * 100)
-        );
-      }
-
-      return { ...prev, variants: newVariants };
-    });
-  };
-
-  const addVariant = () => {
-    setFormData(prev => ({
-      ...prev,
-      variants: [
-        ...prev.variants,
-        {
-          label: '',
-          price: 0,
-          mrp: 0,
-          stock: 0,
-          unit: 'kg',
-          image: '',
-          sellerId: ''
-        }
-      ]
-    }));
-  };
-
-  const removeVariant = (index) => {
-    setFormData(prev => ({
-      ...prev,
-      variants: prev.variants.filter((_, i) => i !== index)
-    }));
-  };
-
   const handleCategoryChange = (e) => {
     const selectedId = e.target.value;
     if (e.target.checked) {
@@ -292,23 +229,11 @@ export default function AddProduct() {
         pricing: {
           ...formData.pricing,
           mrp: parseFloat(formData.pricing.mrp),
-          sellingPrice: parseFloat(formData.pricing.sellingPrice),
-          discountPercent: parseFloat(formData.pricing.discountPercent)
         },
-        variants: formData.variants.map(variant => ({
-          ...variant,
-          price: parseFloat(variant.price),
-          mrp: parseFloat(variant.mrp),
-          stock: parseInt(variant.stock)
-        })),
         tags: formData.tags,
         highlights: formData.highlights.filter(h => h.trim() !== ''),
         images: finalImages.filter(img => img.trim() !== ''),
-        searchKeywords: formData.searchKeywords.filter(kw => kw.trim() !== ''),
-        delivery: {
-          ...formData.delivery,
-          zones: formData.delivery.zones.filter(zone => zone.trim() !== '')
-        }
+        searchKeywords: formData.searchKeywords.filter(kw => kw.trim() !== '')
       };
 
       const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/products`, {
@@ -340,30 +265,12 @@ export default function AddProduct() {
           brand: '',
           category: '',
           hsnCode: '',
-          barcode: '',
-          variants: [{
-            label: '',
-            price: 0,
-            mrp: 0,
-            stock: 0,
-            unit: 'kg',
-            image: '',
-            sellerId: ''
-          }],
           pricing: {
             mrp: 0,
-            sellingPrice: 0,
-            discountPercent: 0,
-            offerTag: ''
           },
           tax: {
             gstRate: 0,
             includedInPrice: true
-          },
-          delivery: {
-            isInstant: true,
-            deliveryTimeInMinutes: 0,
-            zones: ['']
           },
           isActive: true,
           isFeatured: false,
@@ -628,19 +535,7 @@ export default function AddProduct() {
                 }}
                 placeholder="e.g. 08081000"
               />
-            </div>              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">
-                  Barcode
-                </label>
-                <input
-                  type="text"
-                  name="barcode"
-                  className="w-full px-4 py-2.5 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                  value={formData.barcode}
-                  onChange={handleChange}
-                  placeholder="e.g. 123456789012"
-                />
-              </div>
+            </div>
 
             </div>
           </div>
@@ -669,60 +564,10 @@ export default function AddProduct() {
                   <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">₹</span>
                 </div>
               </div>
-
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">
-                  Selling Price *
-                </label>
-                <div className="relative">
-                  <input
-                    type="number"
-                    name="pricing.sellingPrice"
-                    className="w-full pl-10 pr-4 py-2.5 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                    value={formData.pricing.sellingPrice}
-                    onChange={(e) => handleNestedChange('pricing', 'sellingPrice', e.target.value)}
-                    placeholder="e.g. 249"
-                    required
-                    min="0"
-                    step="0.01"
-                  />
-                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">₹</span>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">
-                  Discount Percent
-                </label>
-                <input
-                  type="number"
-                  name="pricing.discountPercent"
-                  className="w-full px-4 py-2.5 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                  value={formData.pricing.discountPercent}
-                  onChange={(e) => handleNestedChange('pricing', 'discountPercent', e.target.value)}
-                  placeholder="e.g. 20"
-                  min="0"
-                  max="100"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">
-                  Offer Tag
-                </label>
-                <input
-                  type="text"
-                  name="pricing.offerTag"
-                  className="w-full px-4 py-2.5 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                  value={formData.pricing.offerTag}
-                  onChange={(e) => handleNestedChange('pricing', 'offerTag', e.target.value)}
-                  placeholder="e.g. Special Offer"
-                />
-              </div>
             </div>
 
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-800 border-b pb-2">Tax & Delivery</h3>
+              <h3 className="text-lg font-semibold text-gray-800 border-b pb-2">Tax</h3>
 
               <div className="space-y-2">
                 <label className="block text-sm font-medium text-gray-700">
@@ -753,210 +598,7 @@ export default function AddProduct() {
                   Tax included in price
                 </label>
               </div>
-
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">
-                  Delivery Time (minutes)
-                </label>
-                <input
-                  type="number"
-                  name="delivery.deliveryTimeInMinutes"
-                  className="w-full px-4 py-2.5 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                  value={formData.delivery.deliveryTimeInMinutes}
-                  onChange={(e) => handleNestedChange('delivery', 'deliveryTimeInMinutes', e.target.value)}
-                  placeholder="e.g. 120"
-                  min="0"
-                />
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  name="delivery.isInstant"
-                  id="isInstant"
-                  checked={formData.delivery.isInstant}
-                  onChange={(e) => handleNestedChange('delivery', 'isInstant', e.target.checked)}
-                  className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
-                />
-                <label htmlFor="isInstant" className="text-sm text-gray-700">
-                  Instant Delivery Available
-                </label>
-              </div>
-
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">
-                  Delivery Zones
-                </label>
-                {formData.delivery.zones.map((zone, index) => (
-                  <div key={index} className="flex items-center space-x-2">
-                    <div className="flex-1">
-                      <input
-                        type="text"
-                        className="w-full px-4 py-2.5 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                        value={zone}
-                        onChange={(e) => {
-                          const newZones = [...formData.delivery.zones];
-                          newZones[index] = e.target.value;
-                          handleNestedChange('delivery', 'zones', newZones);
-                        }}
-                        placeholder="e.g. North Delhi"
-                      />
-                    </div>
-                    {formData.delivery.zones.length > 1 && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const newZones = formData.delivery.zones.filter((_, i) => i !== index);
-                          handleNestedChange('delivery', 'zones', newZones);
-                        }}
-                        className="p-2 text-red-500 hover:bg-red-50 transition-colors"
-                      >
-                        <XCircle size={18} />
-                      </button>
-                    )}
-                  </div>
-                ))}
-                <button
-                  type="button"
-                  onClick={() => {
-                    const newZones = [...formData.delivery.zones, ''];
-                    handleNestedChange('delivery', 'zones', newZones);
-                  }}
-                  className="flex items-center text-sm text-green-600 hover:text-green-700 mt-2"
-                >
-                  <Plus size={16} className="mr-1" />
-                  Add another delivery zone
-                </button>
-              </div>
             </div>
-          </div>
-
-          {/* Variants */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-gray-800 border-b pb-2">Product Variants</h3>
-
-            {formData.variants.map((variant, index) => (
-              <div key={index} className="border border-gray-200 p-4 rounded-lg space-y-4">
-                <div className="flex justify-between items-center">
-                  <h4 className="font-medium text-gray-700">Variant {index + 1}</h4>
-                  {formData.variants.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => removeVariant(index)}
-                      className="text-red-500 hover:text-red-700 text-sm flex items-center"
-                    >
-                      <XCircle size={16} className="mr-1" />
-                      Remove
-                    </button>
-                  )}
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label className="block text-sm font-medium text-gray-700">
-                      Label *
-                    </label>
-                    <input
-                      type="text"
-                      className="w-full px-4 py-2.5 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                      value={variant.label}
-                      onChange={(e) => handleVariantChange(index, 'label', e.target.value)}
-                      placeholder="e.g. 1kg Pack"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="block text-sm font-medium text-gray-700">
-                      Unit *
-                    </label>
-                    <select
-                      className="w-full px-4 py-2.5 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                      value={variant.unit}
-                      onChange={(e) => handleVariantChange(index, 'unit', e.target.value)}
-                    >
-                      {unitOptions.map(option => (
-                        <option key={option.value} value={option.value}>{option.label}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="block text-sm font-medium text-gray-700">
-                      MRP *
-                    </label>
-                    <div className="relative">
-                      <input
-                        type="number"
-                        className="w-full pl-10 pr-4 py-2.5 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                        value={variant.mrp}
-                        onChange={(e) => handleVariantChange(index, 'mrp', e.target.value)}
-                        placeholder="e.g. 299"
-                        min="0"
-                        step="0.01"
-                      />
-                      <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">₹</span>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="block text-sm font-medium text-gray-700">
-                      Selling Price *
-                    </label>
-                    <div className="relative">
-                      <input
-                        type="number"
-                        className="w-full pl-10 pr-4 py-2.5 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                        value={variant.price}
-                        onChange={(e) => handleVariantChange(index, 'price', e.target.value)}
-                        placeholder="e.g. 249"
-                        min="0"
-                        step="0.01"
-                      />
-                      <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">₹</span>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="block text-sm font-medium text-gray-700">
-                      Stock *
-                    </label>
-                    <input
-                      type="number"
-                      className="w-full px-4 py-2.5 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                      value={variant.stock}
-                      onChange={(e) => handleVariantChange(index, 'stock', e.target.value)}
-                      placeholder="e.g. 100"
-                      min="0"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="block text-sm font-medium text-gray-700">
-                      Image URL
-                    </label>
-                    <div className="relative">
-                      <input
-                        type="text"
-                        className="w-full pl-10 pr-4 py-2.5 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                        value={variant.image}
-                        onChange={(e) => handleVariantChange(index, 'image', e.target.value)}
-                        placeholder="https://example.com/image.jpg"
-                      />
-                      <Image className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
-
-            <button
-              type="button"
-              onClick={addVariant}
-              className="flex items-center text-sm text-green-600 hover:text-green-700"
-            >
-              <Plus size={16} className="mr-1" />
-              Add another variant
-            </button>
           </div>
 
           {/* Additional Information */}

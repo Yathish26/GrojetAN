@@ -14,7 +14,8 @@ import {
   ArrowUp,
   ShoppingCart,
   Target,
-  MapPin
+  MapPin,
+  Ban
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Layout from '../Components/Layout';
@@ -312,7 +313,7 @@ export default function Analytics() {
   if (!isAuthorized) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen">
-        <svg xmlns="http://www.w3.org/2000/svg" className="w-16 h-16 text-red-500 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-.293-1.035l-6-10a2 2 0 00-3.414 0l-6 10A2 2 0 004 13v6a2 2 0 002 2z" /></svg>
+        <Ban className='w-16 h-16 text-red-500 mb-2'/>
         <h2 className="text-xl font-semibold text-gray-800 mb-2">Access Denied</h2>
         <p className="text-gray-600">Only Admins and Super Admins can view analytics.</p>
       </div>

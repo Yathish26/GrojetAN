@@ -67,27 +67,18 @@ const EditMerchant = () => {
     },
     deliveryPreferences: {
       deliveryType: 'platform_delivery',
-      deliveryRadius: 10,
-      minimumOrderValue: 0,
-      deliveryCharges: 0,
-      freeDeliveryAbove: 500
+    deliveryRadius: 10,
+    minimumOrderValue: 0,
+    deliveryCharges: 0,
+    freeDeliveryAbove: 500
     },
-    storeTimings: {
-      monday: { isOpen: true, openTime: '09:00', closeTime: '21:00' },
-      tuesday: { isOpen: true, openTime: '09:00', closeTime: '21:00' },
-      wednesday: { isOpen: true, openTime: '09:00', closeTime: '21:00' },
-      thursday: { isOpen: true, openTime: '09:00', closeTime: '21:00' },
-      friday: { isOpen: true, openTime: '09:00', closeTime: '21:00' },
-      saturday: { isOpen: true, openTime: '09:00', closeTime: '21:00' },
-      sunday: { isOpen: false, openTime: '09:00', closeTime: '21:00' }
-    },
+    openingTime: '09:00 AM',
+    closingTime: '09:00 PM',
     catalogInfo: {
       totalProducts: 0,
       catalogUrl: ''
     },
-    productCategories: [],
-
-    // Documents (Text inputs)
+    productCategories: [],    // Documents (Text inputs)
     documents: {
       gstin: {
         number: '',
@@ -214,15 +205,8 @@ const EditMerchant = () => {
               deliveryCharges: merchant.operationalInfo?.deliveryPreferences?.deliveryCharges || 0,
               freeDeliveryAbove: merchant.operationalInfo?.deliveryPreferences?.freeDeliveryAbove || 500
             },
-            storeTimings: merchant.operationalInfo?.storeTimings || {
-              monday: { isOpen: true, openTime: '09:00', closeTime: '21:00' },
-              tuesday: { isOpen: true, openTime: '09:00', closeTime: '21:00' },
-              wednesday: { isOpen: true, openTime: '09:00', closeTime: '21:00' },
-              thursday: { isOpen: true, openTime: '09:00', closeTime: '21:00' },
-              friday: { isOpen: true, openTime: '09:00', closeTime: '21:00' },
-              saturday: { isOpen: true, openTime: '09:00', closeTime: '21:00' },
-              sunday: { isOpen: false, openTime: '09:00', closeTime: '21:00' }
-            },
+            openingTime: merchant.operationalInfo?.openingTime || '09:00 AM',
+            closingTime: merchant.operationalInfo?.closingTime || '09:00 PM',
             catalogInfo: {
               totalProducts: merchant.operationalInfo?.catalogInfo?.totalProducts || 0,
               catalogUrl: merchant.operationalInfo?.catalogInfo?.catalogUrl || ''
@@ -506,7 +490,8 @@ const EditMerchant = () => {
         },
         operationalInfo: {
           storeAddress: formData.storeAddress,
-          storeTimings: formData.storeTimings,
+          openingTime: formData.openingTime,
+          closingTime: formData.closingTime,
           deliveryPreferences: {
             deliveryType: formData.deliveryPreferences.deliveryType,
             deliveryRadius: parseInt(formData.deliveryPreferences.deliveryRadius) || 10,
@@ -1208,61 +1193,38 @@ const EditMerchant = () => {
               </div>
             </div>
 
-            {/* Store Timings */}
+            {/* Operating Hours */}
             <div className="mb-6">
-              <h3 className="text-md font-medium text-gray-900 mb-4">Store Timings</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {Object.entries(formData.storeTimings).map(([day, timing]) => (
-                  <div key={day} className="border border-gray-200 rounded-lg p-4">
-                    <div className="flex items-center justify-between mb-3">
-                      <h4 className="font-medium text-gray-900 capitalize">{day}</h4>
-                      <label className="flex items-center">
-                        <input
-                          type="checkbox"
-                          checked={timing.isOpen}
-                          onChange={(e) => {
-                            const updatedTimings = { ...formData.storeTimings };
-                            updatedTimings[day] = { ...timing, isOpen: e.target.checked };
-                            setFormData(prev => ({ ...prev, storeTimings: updatedTimings }));
-                          }}
-                          className="mr-2"
-                        />
-                        Open
-                      </label>
-                    </div>
-                    {timing.isOpen && (
-                      <div className="space-y-2">
-                        <div>
-                          <label className="block text-xs text-gray-600 mb-1">Open Time</label>
-                          <input
-                            type="time"
-                            value={timing.openTime}
-                            onChange={(e) => {
-                              const updatedTimings = { ...formData.storeTimings };
-                              updatedTimings[day] = { ...timing, openTime: e.target.value };
-                              setFormData(prev => ({ ...prev, storeTimings: updatedTimings }));
-                            }}
-                            className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-green-500"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-xs text-gray-600 mb-1">Close Time</label>
-                          <input
-                            type="time"
-                            value={timing.closeTime}
-                            onChange={(e) => {
-                              const updatedTimings = { ...formData.storeTimings };
-                              updatedTimings[day] = { ...timing, closeTime: e.target.value };
-                              setFormData(prev => ({ ...prev, storeTimings: updatedTimings }));
-                            }}
-                            className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-green-500"
-                          />
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                ))}
+              <h3 className="text-md font-medium text-gray-900 mb-4">Operating Hours</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Opening Time *
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.openingTime}
+                    onChange={(e) => handleInputChange({ target: { name: 'openingTime', value: e.target.value } })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    placeholder="09:00 AM"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Closing Time *
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.closingTime}
+                    onChange={(e) => handleInputChange({ target: { name: 'closingTime', value: e.target.value } })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    placeholder="09:00 PM"
+                  />
+                </div>
               </div>
+              <p className="text-sm text-gray-500 mt-2">
+                Store operates daily from {formData.openingTime} to {formData.closingTime}
+              </p>
             </div>
 
             {/* Catalog Information */}

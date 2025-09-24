@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -41,6 +41,9 @@ export default function DeliveryAgentDetails() {
   const [recentOrders, setRecentOrders] = useState([]);
   const [agentStats, setAgentStats] = useState(null);
   const [refreshingStats, setRefreshingStats] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
+  const [checkingUser, setCheckingUser] = useState(true);
+  const allowedRoles = ['super_admin', 'admin'];
 
   // Emergency contact editing state
   const [emergencyContactEdit, setEmergencyContactEdit] = useState({
@@ -161,6 +164,7 @@ export default function DeliveryAgentDetails() {
   };
 
   const updateAgentStatus = async (newStatus) => {
+    if (!isAuthorized) return;
     const loadingToast = toast.loading('Updating agent status...');
     try {
       const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/delivery-agents/${id}/status`, {
@@ -187,6 +191,7 @@ export default function DeliveryAgentDetails() {
   };
 
   const approveApplication = async () => {
+    if (!isAuthorized) return;
     const loadingToast = toast.loading('Approving application...');
     try {
       const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/delivery-agents/${id}/approve`, {
@@ -246,6 +251,7 @@ export default function DeliveryAgentDetails() {
   };
 
   const updateAgentDetails = async (updateData) => {
+    if (!isAuthorized) return;
     const loadingToast = toast.loading('Updating agent details...');
     try {
       const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/delivery-agents/${id}`, {
@@ -291,6 +297,7 @@ export default function DeliveryAgentDetails() {
 
   // Verification status toggle functions
   const toggleDocumentsVerified = async () => {
+    if (!isAuthorized) return;
     const newStatus = !documentsVerified;
     setDocumentsVerified(newStatus);
 
@@ -324,6 +331,7 @@ export default function DeliveryAgentDetails() {
   };
 
   const toggleBackgroundCheckCompleted = async () => {
+    if (!isAuthorized) return;
     const newStatus = !backgroundCheckCompleted;
     setBackgroundCheckCompleted(newStatus);
 
@@ -357,6 +365,7 @@ export default function DeliveryAgentDetails() {
   };
 
   const toggleTrainingCompleted = async () => {
+    if (!isAuthorized) return;
     const newStatus = !trainingCompleted;
     setTrainingCompleted(newStatus);
 
@@ -601,7 +610,62 @@ export default function DeliveryAgentDetails() {
       console.error('Error formatting date:', error, dateString);
       return 'Invalid date';
     }
-  }; if (loading) {
+  };
+
+  const fetchCurrentUser = useCallback(async () => {
+    try {
+      const local = localStorage.getItem('adminUser');
+      if (local) {
+        setCurrentUser(JSON.parse(local));
+      } else {
+        const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/auth/profile`, { credentials: 'include' });
+        const data = await response.json();
+        if (data.tokenValid === false) {
+          window.location.replace('/login');
+          return;
+        }
+        if (response.ok && data.admin) {
+          setCurrentUser(data.admin);
+          localStorage.setItem('adminUser', JSON.stringify(data.admin));
+        }
+      }
+    } catch (err) {
+      console.error('Failed to fetch current user', err);
+    } finally {
+      setCheckingUser(false);
+    }
+  }, []);
+
+  useEffect(() => { fetchCurrentUser(); }, [fetchCurrentUser]);
+  const isAuthorized = allowedRoles.includes(currentUser?.role);
+
+  useEffect(() => {
+    if (isAuthorized && id) {
+      fetchAgentDetails();
+      fetchAgentOrders();
+      fetchAgentStats();
+    }
+  }, [id, isAuthorized]);
+
+  // Guard states
+  if (checkingUser) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+      </div>
+    );
+  }
+  if (!isAuthorized) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen">
+        <svg xmlns="http://www.w3.org/2000/svg" className="w-16 h-16 text-red-500 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-.293-1.035l-6-10a2 2 0 00-3.414 0l-6 10A2 2 0 004 13v6a2 2 0 002 2z" /></svg>
+        <h2 className="text-xl font-semibold text-gray-800 mb-2">Access Denied</h2>
+        <p className="text-gray-600">Only Admins and Super Admins can view delivery agent details.</p>
+      </div>
+    );
+  }
+
+  if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>

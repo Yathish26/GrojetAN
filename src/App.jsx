@@ -28,6 +28,7 @@ import EditMerchant from './Admin/EditMerchant.jsx'
 import GoogleMapsTest from './Admin/GoogleMapsTest.jsx'
 import AppControls from './Admin/AppControls.jsx'
 import Careers from './Admin/Careers.jsx'
+import RequestedProducts from './Admin/RequestedProducts.jsx'
 
 function App() {
   return (
@@ -69,6 +70,7 @@ function App() {
           {/* Product Management */}
           <Route path="/products" element={<Products />} />
           <Route path="/products/add" element={<AddProduct />} />
+          <Route path="/products/requests" element={<RequestedProducts />} />
           
           {/* Order Management */}
           <Route path="/orders" element={<Orders />} />
