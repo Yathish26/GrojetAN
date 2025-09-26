@@ -405,9 +405,16 @@ const AddMerchant = () => {
                         type="tel"
                         name="mobile"
                         value={formData.mobile}
-                        onChange={handleInputChange}
+                        onChange={(e) => {
+                          const value = e.target.value.replace(/\D/g, ''); // Only allow digits
+                          setFormData(prev => ({
+                            ...prev,
+                            mobile: value
+                          }));
+                        }}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                         placeholder="10-digit number"
+                        maxLength={10}
                         required
                       />
                     </div>
@@ -483,7 +490,7 @@ const AddMerchant = () => {
                         value={formData.governmentId}
                         onChange={handleInputChange}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                        placeholder="Enter ID number (e.g., PAN number)"
+                        placeholder="Enter ID number"
                       />
                     </div>
                   </div>

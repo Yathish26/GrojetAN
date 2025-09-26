@@ -530,7 +530,7 @@ export default function AddProduct() {
                 className="w-full px-4 py-2.5 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-green-500"
                 value={formData.hsnCode}
                 onChange={(e) => {
-                  const sanitizedValue = e.target.value.replace(/[^a-zA-Z0-9]/g, '');
+                  const sanitizedValue = e.target.value.replace(/[^0-9]/g, '');
                   setFormData(prev => ({ ...prev, hsnCode: sanitizedValue }));
                 }}
                 placeholder="e.g. 08081000"

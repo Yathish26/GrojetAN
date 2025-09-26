@@ -412,8 +412,8 @@ const MerchantDetails = () => {
               <p className="text-gray-900 capitalize">{businessInfo.businessType || merchant.businessType || 'N/A'}</p>
             </div>
             <div>
-              <label className="text-sm font-medium text-gray-500">Description</label>
-              <p className="text-gray-900">{businessInfo.description || 'No description available'}</p>
+              <label className="text-sm font-medium text-gray-500">Store Description</label>
+              <p className="text-gray-900">{merchant.brandingInfo?.storeDescription || 'No store description available'}</p>
             </div>
             <div>
               <label className="text-sm font-medium text-gray-500">Registration Date</label>

@@ -1546,7 +1546,10 @@ export default function Settings() {
                         <input
                           type="tel"
                           value={settings.support.app.number}
-                          onChange={(e) => updateSetting('support', 'app', { ...settings.support.app, number: e.target.value })}
+                          onChange={(e) => {
+                            const sanitizedValue = e.target.value.replace(/[^0-9+]/g, '');
+                            updateSetting('support', 'app', { ...settings.support.app, number: sanitizedValue });
+                          }}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                           placeholder="+91 9876543210"
                         />
@@ -1597,7 +1600,10 @@ export default function Settings() {
                         <input
                           type="tel"
                           value={settings.support.merchant.number}
-                          onChange={(e) => updateSetting('support', 'merchant', { ...settings.support.merchant, number: e.target.value })}
+                          onChange={(e) => {
+                            const sanitizedValue = e.target.value.replace(/[^0-9+]/g, '');
+                            updateSetting('support', 'merchant', { ...settings.support.merchant, number: sanitizedValue });
+                          }}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                           placeholder="+91 9876543210"
                         />
@@ -1648,7 +1654,10 @@ export default function Settings() {
                         <input
                           type="tel"
                           value={settings.support.delivery.number}
-                          onChange={(e) => updateSetting('support', 'delivery', { ...settings.support.delivery, number: e.target.value })}
+                          onChange={(e) => {
+                            const sanitizedValue = e.target.value.replace(/[^0-9+]/g, '');
+                            updateSetting('support', 'delivery', { ...settings.support.delivery, number: sanitizedValue });
+                          }}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                           placeholder="+91 9876543210"
                         />

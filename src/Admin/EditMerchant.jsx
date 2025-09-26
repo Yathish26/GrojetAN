@@ -25,7 +25,6 @@ const EditMerchant = () => {
     legalName: '',
     displayName: '',
     businessType: '',
-    description: '',
     website: '',
     establishedYear: '',
 
@@ -97,7 +96,7 @@ const EditMerchant = () => {
       bannerUrl: '',
       storeImages: [],
       tagline: '',
-      description: '',
+      storeDescription: '',
       socialMedia: {
         facebook: '',
         instagram: '',
@@ -158,7 +157,6 @@ const EditMerchant = () => {
             legalName: merchant.businessInfo?.legalName || '',
             displayName: merchant.businessInfo?.displayName || '',
             businessType: merchant.businessInfo?.businessType || '',
-            description: merchant.businessInfo?.description || '',
             website: merchant.businessInfo?.website || '',
             establishedYear: merchant.businessInfo?.establishedYear || '',
 
@@ -235,7 +233,7 @@ const EditMerchant = () => {
               bannerUrl: merchant.brandingInfo?.bannerUrl || '',
               storeImages: merchant.brandingInfo?.storeImages || [],
               tagline: merchant.brandingInfo?.tagline || '',
-              description: merchant.brandingInfo?.description || '',
+              storeDescription: merchant.brandingInfo?.storeDescription || '',
               socialMedia: {
                 facebook: merchant.brandingInfo?.socialMedia?.facebook || '',
                 instagram: merchant.brandingInfo?.socialMedia?.instagram || '',
@@ -464,7 +462,6 @@ const EditMerchant = () => {
           legalName: formData.legalName,
           displayName: formData.displayName,
           businessType: formData.businessType,
-          description: formData.description,
           website: formData.website,
           establishedYear: formData.establishedYear ? parseInt(formData.establishedYear) : null
         },
@@ -511,7 +508,7 @@ const EditMerchant = () => {
           bannerUrl: formData.brandingInfo.bannerUrl,
           storeImages: formData.brandingInfo.storeImages,
           tagline: formData.brandingInfo.tagline,
-          description: formData.brandingInfo.description,
+          storeDescription: formData.brandingInfo.storeDescription,
           socialMedia: formData.brandingInfo.socialMedia
         },
         complianceInfo: {
@@ -735,19 +732,6 @@ const EditMerchant = () => {
                   placeholder="2020"
                 />
               </div>
-            </div>
-            <div className="mt-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Business Description
-              </label>
-              <textarea
-                name="description"
-                value={formData.description}
-                onChange={handleInputChange}
-                rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                placeholder="Enter business description"
-              />
             </div>
           </div>
 
@@ -1660,11 +1644,11 @@ const EditMerchant = () => {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Description
+                  Store Description
                 </label>
                 <textarea
-                  value={formData.brandingInfo.description}
-                  onChange={(e) => handleNestedInputChange('brandingInfo', 'description', e.target.value)}
+                  value={formData.brandingInfo.storeDescription}
+                  onChange={(e) => handleNestedInputChange('brandingInfo', 'storeDescription', e.target.value)}
                   rows={3}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   placeholder="Enter store description"
