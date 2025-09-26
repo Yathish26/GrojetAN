@@ -173,6 +173,9 @@ const AddMerchant = () => {
           return false;
         }
         break;
+      case 4: // Branding & Review
+        // No required fields in step 4, but ensure user can review
+        break;
       default:
         return true;
     }
@@ -189,8 +192,9 @@ const AddMerchant = () => {
     setCurrentStep(prev => Math.max(prev - 1, 1));
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = async () => {
+    if (currentStep < totalSteps) return; // Prevent submission if not on the last step
+
     if (!validateStep(currentStep)) return;
 
     setLoading(true);
@@ -295,7 +299,7 @@ const AddMerchant = () => {
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-sm border border-gray-200">
+        <form className="bg-white rounded-xl shadow-sm border border-gray-200">
           <div className="p-6">
             {/* Step 1: Business & Owner Info */}
             {currentStep === 1 && (
@@ -959,7 +963,8 @@ const AddMerchant = () => {
                 </button>
               ) : (
                 <button
-                  type="submit"
+                  type="button"
+                  onClick={handleSubmit}
                   disabled={loading}
                   className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
                 >

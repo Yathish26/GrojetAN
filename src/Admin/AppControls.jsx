@@ -5,6 +5,7 @@ import Layout from '../Components/Layout';
 export default function AppControls() {
   const [notificationText, setNotificationText] = useState('');
   const [selectedApps, setSelectedApps] = useState([]);
+  const [pushToken, setPushToken] = useState('');
 
   const handleAppSelection = (app) => {
     setSelectedApps(prev =>
@@ -12,7 +13,7 @@ export default function AppControls() {
     );
   };
 
-  const handleSendNotification = () => {
+  const handleSendNotification = async () => {
     if (!notificationText.trim()) {
       toast.error('Please enter notification text');
       return;
@@ -21,11 +22,38 @@ export default function AppControls() {
       toast.error('Please select at least one app to send to');
       return;
     }
+    if (!pushToken.trim()) {
+      toast.error('Please enter push token for testing');
+      return;
+    }
 
-    // Frontend only: Simulate sending
-    toast.success(`Notification sent to ${selectedApps.join(', ')}: "${notificationText}"`);
-    setNotificationText('');
-    setSelectedApps([]);
+    try {
+      const response = await fetch('/admin/notifications/send-notification', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message: notificationText,
+          appType: selectedApps.join(', '), // or handle multiple
+          pushToken: pushToken,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        toast.success(`Notification sent to ${selectedApps.join(', ')}: "${notificationText}"`);
+        setNotificationText('');
+        setSelectedApps([]);
+        setPushToken('');
+      } else {
+        toast.error(result.message || 'Failed to send notification');
+      }
+    } catch (error) {
+      console.error('Error sending notification:', error);
+      toast.error('Failed to send notification');
+    }
   };
 
   return (
@@ -54,6 +82,20 @@ export default function AppControls() {
                 placeholder="Enter the notification message..."
                 rows="4"
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 resize-none"
+              />
+            </div>
+
+            {/* Push Token for Testing */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Push Token (for testing)
+              </label>
+              <input
+                type="text"
+                value={pushToken}
+                onChange={(e) => setPushToken(e.target.value)}
+                placeholder="Enter the Expo push token from the merchant app"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
               />
             </div>
 

@@ -144,6 +144,38 @@ const MerchantDetails = () => {
     navigate(`/merchants/${id}/edit`);
   };
 
+  const handleClearDeviceLogin = async () => {
+    if (!window.confirm('Are you sure you want to clear this merchant\'s device login? This will log them out from their current device and allow them to login on a new device.')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/merchant-stores/${id}/clear-device-login`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          toast.success('Device login cleared successfully. Merchant can now login on a new device.');
+          // Refresh merchant details to show updated device info
+          fetchMerchantDetails();
+        } else {
+          throw new Error(data.message || 'Failed to clear device login');
+        }
+      } else {
+        throw new Error('Failed to clear device login');
+      }
+    } catch (error) {
+      console.error('Error clearing device login:', error);
+      toast.error(error.message || 'Failed to clear device login');
+    }
+  };
+
   const handleViewDocument = (url, title) => {
     if (!url) {
       toast.error('Document URL not available');
@@ -306,6 +338,13 @@ const MerchantDetails = () => {
           </div>
           <div className="flex gap-3">
             <button
+              onClick={handleClearDeviceLogin}
+              className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+            >
+              <Settings size={16} />
+              Clear Device Login
+            </button>
+            <button
               onClick={handleEdit}
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
             >
@@ -387,6 +426,22 @@ const MerchantDetails = () => {
             <div>
               <label className="text-sm font-medium text-gray-500">Last Updated</label>
               <p className="text-gray-900">{formatDate(merchant.updatedAt)}</p>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-gray-500">Device ID</label>
+              <p className="text-gray-900">{merchant.deviceId || 'Not logged in'}</p>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-gray-500">Device Platform</label>
+              <p className="text-gray-900">{merchant.deviceInfo?.platform || 'N/A'}</p>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-gray-500">Device Name</label>
+              <p className="text-gray-900">{merchant.deviceInfo?.deviceName || 'N/A'}</p>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-gray-500">Device Last Login</label>
+              <p className="text-gray-900">{merchant.deviceInfo?.lastLogin ? formatDate(merchant.deviceInfo.lastLogin) : 'N/A'}</p>
             </div>
             {businessInfo.website && (
               <div>

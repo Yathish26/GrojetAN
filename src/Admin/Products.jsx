@@ -621,6 +621,7 @@ export default function Products() {
                 <option value="all">All Statuses</option>
                 <option value="active">Active</option>
                 <option value="inactive">Inactive</option>
+                <option value="no_photos">No Photos</option>
               </select>
             </div>
             <div className="relative">
