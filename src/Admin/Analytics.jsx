@@ -305,18 +305,22 @@ export default function Analytics() {
   // Guard states
   if (checkingUser) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
-      </div>
+      <Layout title="Analytics">
+        <div className="flex items-center justify-center py-12">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+        </div>
+      </Layout>
     );
   }
   if (!isAuthorized) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen">
-        <Ban className='w-16 h-16 text-red-500 mb-2'/>
-        <h2 className="text-xl font-semibold text-gray-800 mb-2">Access Denied</h2>
-        <p className="text-gray-600">Only Admins and Super Admins can view analytics.</p>
-      </div>
+      <Layout title="Analytics">
+        <div className="flex flex-col items-center justify-center py-12">
+          <Ban className='w-16 h-16 text-red-500 mb-2'/>
+          <h2 className="text-xl font-semibold text-gray-800 mb-2">Access Denied</h2>
+          <p className="text-gray-600">Only Admins and Super Admins can view analytics.</p>
+        </div>
+      </Layout>
     );
   }
 
@@ -417,25 +421,29 @@ export default function Analytics() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
-      </div>
+      <Layout title="Analytics">
+        <div className="flex items-center justify-center py-12">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+        </div>
+      </Layout>
     );
   }
 
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen">
-        <BarChart3 className="w-16 h-16 text-gray-400 mb-4" />
-        <h2 className="text-xl font-semibold text-gray-800 mb-2">Analytics Unavailable</h2>
-        <p className="text-gray-600 mb-4">{error}</p>
-        <button
-          onClick={fetchAnalytics}
-          className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
-        >
-          Retry
-        </button>
-      </div>
+      <Layout title="Analytics">
+        <div className="flex flex-col items-center justify-center py-12">
+          <BarChart3 className="w-16 h-16 text-gray-400 mb-4" />
+          <h2 className="text-xl font-semibold text-gray-800 mb-2">Analytics Unavailable</h2>
+          <p className="text-gray-600 mb-4">{error}</p>
+          <button
+            onClick={fetchAnalytics}
+            className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
+          >
+            Retry
+          </button>
+        </div>
+      </Layout>
     );
   }
 
@@ -462,12 +470,14 @@ export default function Analytics() {
           <button
             onClick={refreshAnalytics}
             disabled={refreshing}
+            type="button"
             className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
           >
             <RefreshCw className={`w-5 h-5 ${refreshing ? 'animate-spin' : ''}`} />
           </button>
           <button
             onClick={exportAnalytics}
+            type="button"
             className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
           >
             <Download className="w-4 h-4" />
