@@ -811,7 +811,7 @@ export default function Products() {
                     name="name"
                     value={editProduct.name}
                     onChange={handleEditChange}
-                    disabled={isSaving}
+                    disabled={isSaving || currentUser?.role === 'inventory_manager'}
                     required
                   />
                   <div>
@@ -825,7 +825,7 @@ export default function Products() {
                         const sanitizedValue = e.target.value.replace(/[^a-zA-Z0-9]/g, '');
                         setEditProduct(prev => ({ ...prev, hsnCode: sanitizedValue }));
                       }}
-                      disabled={isSaving}
+                      disabled={isSaving || currentUser?.role === 'inventory_manager'}
                       placeholder="e.g. 08081000"
                     />
                   </div>
@@ -834,7 +834,7 @@ export default function Products() {
                     name="brand"
                     value={editProduct.brand}
                     onChange={handleEditChange}
-                    disabled={isSaving}
+                    disabled={isSaving || currentUser?.role === 'inventory_manager'}
                   />
                   <div>
                     <label className="block text-gray-700 text-sm font-medium mb-1">Category</label>
@@ -843,7 +843,7 @@ export default function Products() {
                       value={editProduct.category?._id || ''}
                       onChange={handleEditChange}
                       className="w-full px-3 py-2 border border-gray-300  focus:outline-none focus:ring-2 focus:ring-green-500"
-                      disabled={isSaving}
+                      disabled={isSaving || currentUser?.role === 'inventory_manager'}
                     >
                       <option value="">Select Category</option>
                       {categorylist.map((category) => (
@@ -862,7 +862,7 @@ export default function Products() {
                         checked={!!editProduct.isActive}
                         onChange={handleEditChange}
                         className="h-4 w-4 text-blue-600 focus:ring-blue-500"
-                        disabled={isSaving}
+                        disabled={isSaving || currentUser?.role === 'inventory_manager'}
                       />
                       <label htmlFor="isActive" className="ml-2 text-sm text-gray-700">
                         Active
@@ -876,7 +876,7 @@ export default function Products() {
                         checked={!!editProduct.isFeatured}
                         onChange={handleEditChange}
                         className="h-4 w-4 text-blue-600 focus:ring-blue-500"
-                        disabled={isSaving}
+                        disabled={isSaving || currentUser?.role === 'inventory_manager'}
                       />
                       <label htmlFor="isFeatured" className="ml-2 text-sm text-gray-700">
                         Featured
@@ -898,7 +898,7 @@ export default function Products() {
                     type="number"
                     step="0.01"
                     min="0"
-                    disabled={isSaving}
+                    disabled={isSaving || currentUser?.role === 'inventory_manager'}
                     required
                   />
                   <div className="md:col-span-2">
@@ -912,7 +912,7 @@ export default function Products() {
                         type="number"
                         min="0"
                         max="100"
-                        disabled={isSaving}
+                        disabled={isSaving || currentUser?.role === 'inventory_manager'}
                       />
                       <div className="flex items-center">
                         <input
@@ -922,7 +922,7 @@ export default function Products() {
                           checked={!!editProduct.tax?.includedInPrice}
                           onChange={handleEditChange}
                           className="h-4 w-4 text-blue-600 focus:ring-blue-500"
-                          disabled={isSaving}
+                          disabled={isSaving || currentUser?.role === 'inventory_manager'}
                         />
                         <label htmlFor="includedInPrice" className="ml-2 text-sm text-gray-700">
                           Included in Price
@@ -1053,7 +1053,7 @@ export default function Products() {
                       value={editProduct.description || ''}
                       onChange={handleEditChange}
                       className="w-full px-3 py-2 border border-gray-300  focus:outline-none focus:ring-2 focus:ring-green-500"
-                      disabled={isSaving}
+                      disabled={isSaving || currentUser?.role === 'inventory_manager'}
                       rows={4}
                       maxLength={100}
                     />
@@ -1063,7 +1063,7 @@ export default function Products() {
                     label="Tags"
                     values={editProduct.tags || []}
                     setValues={vals => setEditProduct({ ...editProduct, tags: vals })}
-                    disabled={isSaving}
+                    disabled={isSaving || currentUser?.role === 'inventory_manager'}
                     maxTags={10}
                     placeholder="Add tag and press Enter or comma"
                   />
@@ -1071,7 +1071,7 @@ export default function Products() {
                     label="Highlights"
                     values={editProduct.highlights || []}
                     setValues={vals => setEditProduct({ ...editProduct, highlights: vals })}
-                    disabled={isSaving}
+                    disabled={isSaving || currentUser?.role === 'inventory_manager'}
                     maxTags={3}
                     placeholder="Add highlight and press Enter or comma"
                   />
@@ -1079,7 +1079,7 @@ export default function Products() {
                     label="Search Keywords"
                     values={editProduct.searchKeywords || []}
                     setValues={vals => setEditProduct({ ...editProduct, searchKeywords: vals })}
-                    disabled={isSaving}
+                    disabled={isSaving || currentUser?.role === 'inventory_manager'}
                     maxTags={10}
                     placeholder="Add keyword and press Enter or comma"
                   />
