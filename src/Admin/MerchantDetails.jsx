@@ -403,6 +403,21 @@ const MerchantDetails = () => {
               <label className="text-sm font-medium text-gray-500">Display Name</label>
               <p className="text-gray-900">{businessInfo.displayName || merchant.displayName || 'N/A'}</p>
             </div>
+            {brandingInfo.logoUrl && (
+              <div>
+                <label className="text-sm font-medium text-gray-500">Store Logo</label>
+                <div className="mt-2">
+                  <img
+                    src={brandingInfo.logoUrl}
+                    alt="Store Logo"
+                    className="w-16 h-16 object-cover rounded-lg border border-gray-200"
+                    onError={(e) => {
+                      e.target.style.display = 'none';
+                    }}
+                  />
+                </div>
+              </div>
+            )}
             <div>
               <label className="text-sm font-medium text-gray-500">Merchant ID</label>
               <p className="text-gray-900">{businessInfo.merchantId || merchant.merchantId || 'N/A'}</p>
@@ -738,6 +753,13 @@ const MerchantDetails = () => {
                          className="flex items-center gap-2 text-blue-400 hover:text-blue-600">
                         <Twitter className="w-4 h-4" />
                         Twitter
+                      </a>
+                    )}
+                    {brandingInfo.socialMedia.googleBusiness && (
+                      <a href={brandingInfo.socialMedia.googleBusiness} target="_blank" rel="noopener noreferrer"
+                         className="flex items-center gap-2 text-green-600 hover:text-green-800">
+                        <Globe className="w-4 h-4" />
+                        Google Business
                       </a>
                     )}
                   </div>

@@ -77,7 +77,8 @@ const EditMerchant = () => {
       totalProducts: 0,
       catalogUrl: ''
     },
-    productCategories: [],    // Documents (Text inputs)
+    productCategories: [],
+    storeType: '',    // Documents (Text inputs)
     documents: {
       gstin: {
         number: '',
@@ -101,7 +102,8 @@ const EditMerchant = () => {
         facebook: '',
         instagram: '',
         twitter: '',
-        whatsapp: ''
+        whatsapp: '',
+        googleBusiness: ''
       }
     },
 
@@ -209,6 +211,7 @@ const EditMerchant = () => {
               totalProducts: merchant.operationalInfo?.catalogInfo?.totalProducts || 0,
               catalogUrl: merchant.operationalInfo?.catalogInfo?.catalogUrl || ''
             },
+            storeType: merchant.operationalInfo?.storeType || '',
             productCategories: merchant.operationalInfo?.productCategories || [],
 
             // Documents (Text inputs)
@@ -238,7 +241,8 @@ const EditMerchant = () => {
                 facebook: merchant.brandingInfo?.socialMedia?.facebook || '',
                 instagram: merchant.brandingInfo?.socialMedia?.instagram || '',
                 twitter: merchant.brandingInfo?.socialMedia?.twitter || '',
-                whatsapp: merchant.brandingInfo?.socialMedia?.whatsapp || ''
+                whatsapp: merchant.brandingInfo?.socialMedia?.whatsapp || '',
+                googleBusiness: merchant.brandingInfo?.socialMedia?.googleBusiness || ''
               }
             },
 
@@ -500,6 +504,7 @@ const EditMerchant = () => {
             totalProducts: parseInt(formData.catalogInfo.totalProducts) || 0,
             catalogUrl: formData.catalogInfo.catalogUrl
           },
+          storeType: formData.storeType,
           productCategories: formData.productCategories
         },
         documents: formData.documents,
@@ -695,13 +700,13 @@ const EditMerchant = () => {
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 >
                   <option value="">Select business type</option>
-                  <option value="sole_proprietor">Sole Proprietor</option>
-                  <option value="partnership">Partnership</option>
-                  <option value="pvt_ltd">Private Limited</option>
-                  <option value="llp">LLP</option>
-                  <option value="trust">Trust</option>
-                  <option value="society">Society</option>
-                  <option value="other">Other</option>
+                  <option value="Sole Proprietor">Sole Proprietor</option>
+                  <option value="Partnership">Partnership</option>
+                  <option value="Private Limited">Private Limited</option>
+                  <option value="LLP">LLP</option>
+                  <option value="Trust">Trust</option>
+                  <option value="Society">Society</option>
+                  <option value="Other">Other</option>
                 </select>
               </div>
               <div>
@@ -1242,6 +1247,35 @@ const EditMerchant = () => {
                 </div>
               </div>
             </div>
+
+            {/* Store Type */}
+            <div className="mb-6">
+              <h3 className="text-md font-medium text-gray-900 mb-4">Store Type</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Store Type *
+                  </label>
+                  <select
+                    value={formData.storeType}
+                    onChange={(e) => handleInputChange({ target: { name: 'storeType', value: e.target.value } })}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  >
+                    <option value="">Select Store Type</option>
+                    <option value="Grocery Store">Grocery Store</option>
+                    <option value="Restaurant">Restaurant</option>
+                    <option value="Pharmacy">Pharmacy</option>
+                    <option value="Bakery">Bakery</option>
+                    <option value="Butcher Shop">Butcher Shop</option>
+                    <option value="Dairy">Dairy</option>
+                    <option value="Convenience Store">Convenience Store</option>
+                    <option value="Supermarket">Supermarket</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Status & Compliance */}
@@ -1706,6 +1740,18 @@ const EditMerchant = () => {
                     onChange={(e) => handleDeepNestedInputChange('brandingInfo', 'socialMedia', 'whatsapp', e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                     placeholder="https://wa.me/yournumber"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Google Business
+                  </label>
+                  <input
+                    type="url"
+                    value={formData.brandingInfo.socialMedia.googleBusiness}
+                    onChange={(e) => handleDeepNestedInputChange('brandingInfo', 'socialMedia', 'googleBusiness', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    placeholder="https://g.page/yourbusiness"
                   />
                 </div>
               </div>

@@ -36,7 +36,7 @@ export default function AppControls() {
     }
 
     try {
-      const response = await fetch('/admin/notifications/send-notification', {
+      const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/notifications/send-notification`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

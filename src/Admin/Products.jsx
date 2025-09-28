@@ -42,7 +42,7 @@ export default function Products() {
   const [productIdToDelete, setProductIdToDelete] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [categorylist, setCategorylist] = useState([]);
-  const [filters, setFilters] = useState({ category: '', status: 'all', sort: 'name_asc' });
+  const [filters, setFilters] = useState({ category: '', status: 'all', sort: 'name_asc', startsWith: 'all' });
   // Pagination
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -124,11 +124,11 @@ export default function Products() {
         query.append('status', filters.status);
       }
 
-      // sort filter
-      if (params.sort !== undefined) {
-        if (params.sort) query.append('sort', params.sort);
-      } else if (filters.sort) {
-        query.append('sort', filters.sort);
+      // startsWith filter
+      if (params.startsWith !== undefined) {
+        if (params.startsWith && params.startsWith !== 'all') query.append('startsWith', params.startsWith);
+      } else if (filters.startsWith && filters.startsWith !== 'all') {
+        query.append('startsWith', filters.startsWith);
       }
 
       const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/products?${query}`, {
@@ -203,13 +203,13 @@ export default function Products() {
     // eslint-disable-next-line
   }, [isAuthorized]);
 
-  // Refetch whenever page, searchTerm, filters.category, filters.status, filters.sort change
+  // Refetch whenever page, searchTerm, filters.category, filters.status, filters.sort, filters.startsWith change
   useEffect(() => {
     if (isAuthorized) {
-      fetchProducts({ page, search: searchTerm, category: filters.category, status: filters.status, sort: filters.sort });
+      fetchProducts({ page, search: searchTerm, category: filters.category, status: filters.status, sort: filters.sort, startsWith: filters.startsWith });
     }
     // eslint-disable-next-line
-  }, [page, searchTerm, filters.category, filters.status, filters.sort, isAuthorized]);
+  }, [page, searchTerm, filters.category, filters.status, filters.sort, filters.startsWith, isAuthorized]);
 
   // Memoized categories for filter dropdown
   const categories = useMemo(() => {
@@ -276,7 +276,7 @@ export default function Products() {
         throw new Error(errorData.message || 'Failed to delete product');
       }
       toast.success('Product deleted successfully');
-      fetchProducts({ page, search: searchTerm, category: filters.category, status: filters.status, sort: filters.sort });
+      fetchProducts({ page, search: searchTerm, category: filters.category, status: filters.status, sort: filters.sort, startsWith: filters.startsWith });
       // If this was the last product on this page, go back one page
       if (products.length === 1 && page > 1) {
         setPage(page - 1);
@@ -457,7 +457,7 @@ export default function Products() {
         throw new Error(errorData.message || 'Failed to update product');
       }
       toast.success('Product updated successfully');
-      fetchProducts({ page, search: searchTerm, category: filters.category, status: filters.status, sort: filters.sort });
+      fetchProducts({ page, search: searchTerm, category: filters.category, status: filters.status, sort: filters.sort, startsWith: filters.startsWith });
       closeEditModal();
     } catch (error) {
       toast.error(error.message);
@@ -486,6 +486,10 @@ export default function Products() {
   };
   const handleStatusFilter = (e) => {
     setFilters(f => ({ ...f, status: e.target.value }));
+    setPage(1);
+  };
+  const handleStartsWithFilter = (e) => {
+    setFilters(f => ({ ...f, startsWith: e.target.value }));
     setPage(1);
   };
   const handleSortFilter = (e) => {
@@ -557,20 +561,22 @@ export default function Products() {
         {/* Header */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
           <h1 className="text-2xl md:text-3xl font-bold text-green-700">Product Management</h1>
-          <div className="flex gap-3">
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
             <button
               onClick={() => navigate('/products/requests')}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 cursor-pointer shadow flex items-center gap-2"
+              className="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1.5 sm:px-4 sm:py-2 cursor-pointer shadow flex items-center justify-center gap-1 sm:gap-2 text-sm sm:text-base"
             >
-              <Shield size={18} />
-              <span>Requested Products</span>
+              <Shield size={16} className="sm:w-[18px] sm:h-[18px]" />
+              <span className="hidden xs:inline">Requested Products</span>
+              <span className="xs:hidden">Requests</span>
             </button>
             <button
               onClick={() => navigate('/products/add')}
-              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 cursor-pointer shadow flex items-center gap-2 self-end md:self-auto"
+              className="bg-green-600 hover:bg-green-700 text-white px-2 py-1.5 sm:px-4 sm:py-2 cursor-pointer shadow flex items-center justify-center gap-1 sm:gap-2 text-sm sm:text-base"
             >
-              <Plus size={18} />
-              <span>Add Product</span>
+              <Plus size={16} className="sm:w-[18px] sm:h-[18px]" />
+              <span className="hidden xs:inline">Add Product</span>
+              <span className="xs:hidden">Add</span>
             </button>
           </div>
         </div>
@@ -622,6 +628,20 @@ export default function Products() {
                 <option value="active">Active</option>
                 <option value="inactive">Inactive</option>
                 <option value="no_photos">No Photos</option>
+              </select>
+            </div>
+            <div className="relative">
+              <select
+                className="w-full p-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500"
+                value={filters.startsWith}
+                onChange={handleStartsWithFilter}
+              >
+                <option value="all">All Letters</option>
+                {Array.from({ length: 26 }, (_, i) => String.fromCharCode(65 + i)).map(letter => (
+                  <option key={letter} value={letter}>
+                    {letter}
+                  </option>
+                ))}
               </select>
             </div>
             <div className="relative">

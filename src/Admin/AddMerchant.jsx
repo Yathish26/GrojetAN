@@ -17,7 +17,7 @@ const AddMerchant = () => {
     merchantId: '',
     legalName: '',
     displayName: '',
-    businessType: 'sole_proprietor',
+    businessType: 'Sole Proprietor',
     description: '',
     website: '',
     establishedYear: '',
@@ -66,6 +66,7 @@ const AddMerchant = () => {
       sunday: { isOpen: false, openTime: '09:00', closeTime: '21:00' }
     },
     productCategories: [],
+    storeType: '',
     deliveryType: 'platform_delivery',
     deliveryRadius: 10,
     minimumOrderValue: 0,
@@ -81,7 +82,8 @@ const AddMerchant = () => {
       facebook: '',
       instagram: '',
       twitter: '',
-      whatsapp: ''
+      whatsapp: '',
+      googleBusiness: ''
     },
 
     // Commission
@@ -365,13 +367,13 @@ const AddMerchant = () => {
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                       required
                     >
-                      <option value="sole_proprietor">Sole Proprietor</option>
-                      <option value="partnership">Partnership</option>
-                      <option value="pvt_ltd">Private Limited</option>
-                      <option value="llp">LLP</option>
-                      <option value="trust">Trust</option>
-                      <option value="society">Society</option>
-                      <option value="other">Other</option>
+                      <option value="Sole Proprietor">Sole Proprietor</option>
+                      <option value="Partnership">Partnership</option>
+                      <option value="Private Limited">Private Limited</option>
+                      <option value="LLP">LLP</option>
+                      <option value="Trust">Trust</option>
+                      <option value="Society">Society</option>
+                      <option value="Other">Other</option>
                     </select>
                   </div>
                 </div>
@@ -674,6 +676,35 @@ const AddMerchant = () => {
                   </div>
                 </div>
 
+                {/* Store Type */}
+                <div className="border-b pb-6">
+                  <h4 className="text-md font-semibold text-gray-900 mb-4">Store Type</h4>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Store Type *
+                    </label>
+                    <select
+                      name="storeType"
+                      value={formData.storeType}
+                      onChange={handleInputChange}
+                      required
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    >
+                      <option value="">Select Store Type</option>
+                      <option value="Grocery Store">Grocery Store</option>
+                      <option value="Restaurant">Restaurant</option>
+                      <option value="Pharmacy">Pharmacy</option>
+                      <option value="Bakery">Bakery</option>
+                      <option value="Butcher Shop">Butcher Shop</option>
+                      <option value="Dairy">Dairy</option>
+                      <option value="Convenience Store">Convenience Store</option>
+                      <option value="Supermarket">Supermarket</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+                </div>
+
                 {/* Product Categories */}
                 <div className="border-b pb-6">
                   <h4 className="text-md font-semibold text-gray-900 mb-4">Product Categories</h4>
@@ -850,6 +881,14 @@ const AddMerchant = () => {
                         value={formData.socialMedia.instagram}
                         onChange={handleInputChange}
                         placeholder="Instagram URL"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                      />
+                      <input
+                        type="url"
+                        name="socialMedia.googleBusiness"
+                        value={formData.socialMedia.googleBusiness}
+                        onChange={handleInputChange}
+                        placeholder="Google Business URL"
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                       />
                     </div>
