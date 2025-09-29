@@ -549,6 +549,75 @@ export const AddressSearch = ({ onPlaceSelect, placeholder = "Search for a locat
 };
 
 // Backend integration utilities
+
+export const Marker = ({
+  position,
+  title = '',
+  icon = null,
+  infoContent = null,
+  onClick = null,
+  map = null
+}) => {
+  const markerRef = useRef(null);
+  const infoWindowRef = useRef(null);
+
+  useEffect(() => {
+    if (!map || !window.google || !window.google.maps) return;
+
+    // Create marker
+    const marker = new window.google.maps.Marker({
+      position,
+      map,
+      title,
+      icon: icon || {
+        url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
+          <svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="20" cy="20" r="18" fill="#059669" stroke="white" stroke-width="3"/>
+            <circle cx="20" cy="20" r="8" fill="white"/>
+            <circle cx="20" cy="20" r="4" fill="#059669"/>
+          </svg>
+        `),
+        scaledSize: new window.google.maps.Size(40, 40),
+        anchor: new window.google.maps.Point(20, 40)
+      }
+    });
+
+    markerRef.current = marker;
+
+    // Create info window if content provided
+    if (infoContent) {
+      const infoWindow = new window.google.maps.InfoWindow({
+        content: infoContent
+      });
+      infoWindowRef.current = infoWindow;
+
+      // Add click listener to marker
+      marker.addListener('click', () => {
+        infoWindow.open(map, marker);
+        if (onClick) onClick(marker);
+      });
+    }
+
+    return () => {
+      if (markerRef.current) {
+        markerRef.current.setMap(null);
+      }
+      if (infoWindowRef.current) {
+        infoWindowRef.current.close();
+      }
+    };
+  }, [map, position, title, icon, infoContent, onClick]);
+
+  // Update marker position if it changes
+  useEffect(() => {
+    if (markerRef.current && position) {
+      markerRef.current.setPosition(position);
+    }
+  }, [position]);
+
+  return null; // This component doesn't render anything visible
+};
+
 export const googleMapsApi = {
   // Geocode an address using backend
   async geocodeAddress(address) {

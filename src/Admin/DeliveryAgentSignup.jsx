@@ -82,9 +82,9 @@ export default function DeliveryAgentSignup() {
     
     // Work Information
     workInfo: {
-      preferredAreas: '',
       expectedSalary: '',
-      experience: ''
+      experience: '',
+      assignedZone: ''
     },
     
     // Terms and Conditions
@@ -151,16 +151,6 @@ export default function DeliveryAgentSignup() {
     }
   };
 
-  const handleZoneToggle = (zone) => {
-    setFormData(prev => ({
-      ...prev,
-      workInfo: {
-        ...prev.workInfo,
-        preferredAreas: zone
-      }
-    }));
-  };
-
   const validateStep = (step) => {
     switch (step) {
       case 1:
@@ -182,7 +172,7 @@ export default function DeliveryAgentSignup() {
                formData.documents.panCard && bank.accountNumber && bank.ifscCode &&
                bank.bankName && bank.accountHolderName;
       case 5:
-        return formData.workInfo.preferredAreas && formData.agreedToTerms && formData.agreedToPrivacy;
+        return formData.agreedToTerms && formData.agreedToPrivacy;
       default:
         return true;
     }
@@ -251,9 +241,9 @@ export default function DeliveryAgentSignup() {
           }
         },
         workInfo: {
-          preferredAreas: formData.workInfo.preferredAreas,
           expectedSalary: parseInt(formData.workInfo.expectedSalary) || 0,
-          experience: formData.workInfo.experience || ''
+          experience: formData.workInfo.experience || '',
+          assignedZone: formData.workInfo.assignedZone || null
         },
         password: formData.password
       };
@@ -286,7 +276,7 @@ export default function DeliveryAgentSignup() {
           bankAccount: { accountNumber: '', ifscCode: '', bankName: '', accountHolderName: '' }
         },
         workInfo: { 
-          preferredAreas: '', expectedSalary: '', experience: '' 
+          expectedSalary: '', experience: '', assignedZone: '' 
         },
         agreedToTerms: false, agreedToPrivacy: false
       });
@@ -1016,28 +1006,6 @@ export default function DeliveryAgentSignup() {
               <h2 className="text-xl font-semibold text-gray-800 mb-6">Work Preferences</h2>
 
               <div className="space-y-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Preferred Delivery Area *
-                  </label>
-                  <select
-                    required
-                    value={formData.workInfo.preferredAreas}
-                    onChange={(e) => handleZoneToggle(e.target.value)}
-                    disabled={zonesLoading}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
-                  >
-                    <option value="">
-                      {zonesLoading ? 'Loading zones...' : 'Select a delivery area'}
-                    </option>
-                    {availableZones.map(zone => (
-                      <option key={zone._id} value={zone.name}>
-                        {zone.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -1067,6 +1035,30 @@ export default function DeliveryAgentSignup() {
                       step="0.5"
                     />
                   </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Assigned Zone
+                  </label>
+                  <select
+                    value={formData.workInfo.assignedZone}
+                    onChange={(e) => handleInputChange('workInfo', 'assignedZone', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    disabled={zonesLoading}
+                  >
+                    <option value="">
+                      {zonesLoading ? 'Loading zones...' : 'Select a zone'}
+                    </option>
+                    {availableZones.map((zone) => (
+                      <option key={zone._id} value={zone._id}>
+                        {zone.name}
+                      </option>
+                    ))}
+                  </select>
+                  {!zonesLoading && availableZones.length === 0 && (
+                    <p className="text-sm text-gray-500 mt-1">No delivery zones available</p>
+                  )}
                 </div>
 
                 <div className="space-y-4 pt-6 border-t border-gray-200">

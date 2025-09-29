@@ -29,6 +29,7 @@ import {
   CheckSquare
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { GoogleMap, Marker } from '../Components/GoogleMapComponents';
 
 export default function DeliveryAgentDetails() {
   const { id } = useParams();
@@ -44,6 +45,9 @@ export default function DeliveryAgentDetails() {
   const [currentUser, setCurrentUser] = useState(null);
   const [checkingUser, setCheckingUser] = useState(true);
   const allowedRoles = ['super_admin', 'admin'];
+  const [availableZones, setAvailableZones] = useState([]);
+  const [zonesLoading, setZonesLoading] = useState(true);
+  const [zoneNames, setZoneNames] = useState({});
 
   // Emergency contact editing state
   const [emergencyContactEdit, setEmergencyContactEdit] = useState({
@@ -98,6 +102,7 @@ export default function DeliveryAgentDetails() {
     fetchAgentDetails();
     fetchAgentOrders();
     fetchAgentStats();
+    fetchDeliveryZones();
   }, []);
 
   const fetchAgentDetails = async () => {
@@ -112,6 +117,11 @@ export default function DeliveryAgentDetails() {
 
       const data = await response.json();
       setAgent(data.agent);
+
+      // Fetch zone name if delivery zone exists
+      if (data.agent?.status?.deliveryZone) {
+        await fetchZoneName(data.agent.status.deliveryZone);
+      }
 
       // Initialize verification states from agent data
       setDocumentsVerified(data.agent?.verification?.documentsVerified || false);
@@ -161,6 +171,46 @@ export default function DeliveryAgentDetails() {
     } finally {
       setRefreshingStats(false);
     }
+  };
+
+  const fetchDeliveryZones = async () => {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/delivery-zones`, {
+        credentials: 'include'
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setAvailableZones(data.zones || []);
+      } else {
+        console.error('Failed to fetch delivery zones');
+        setAvailableZones([]);
+      }
+    } catch (error) {
+      console.error('Error fetching delivery zones:', error);
+      setAvailableZones([]);
+    } finally {
+      setZonesLoading(false);
+    }
+  };
+
+  const fetchZoneName = async (zoneId) => {
+    if (!zoneId || zoneNames[zoneId]) return zoneNames[zoneId];
+
+    try {
+      const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/delivery-zones/${zoneId}/name`, {
+        credentials: 'include'
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setZoneNames(prev => ({ ...prev, [zoneId]: data.name }));
+        return data.name;
+      }
+    } catch (error) {
+      console.error('Error fetching zone name:', error);
+    }
+    return null;
   };
 
   const updateAgentStatus = async (newStatus) => {
@@ -515,6 +565,9 @@ export default function DeliveryAgentDetails() {
         phone: emergencyContactEdit.phone.trim(),
         relationship: emergencyContactEdit.relationship.trim()
       };
+    } else if (editingField === 'status.deliveryZone') {
+      // Handle delivery zone editing
+      updateData.status = { deliveryZone: editValue || null };
     }
 
     updateAgentDetails(updateData);
@@ -1075,6 +1128,113 @@ export default function DeliveryAgentDetails() {
             </div>
           </div>
 
+          {/* Current Location - Always visible for monitoring */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+            <div className="p-6 border-b border-gray-200">
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                  <Navigation className="w-5 h-5" />
+                  Current Location
+                </h2>
+                <button
+                  onClick={fetchAgentDetails}
+                  className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-lg transition-colors"
+                  title="Refresh location data"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+            <div className="p-6">
+              {agent.status?.currentLocation?.latitude ? (
+                <div className="space-y-4">
+                  {/* Location Info */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <MapPin className="w-4 h-4 text-green-500" />
+                      <div>
+                        <span className="text-sm font-medium text-gray-800">
+                          Lat: {agent.status.currentLocation.latitude.toFixed(6)}, Lng: {agent.status.currentLocation.longitude.toFixed(6)}
+                        </span>
+                        <div className="flex items-center gap-2 mt-1">
+                          {agent.status.currentLocation.lastUpdated && (
+                            <p className="text-xs text-gray-500">
+                              Last updated: {formatISTTime(agent.status.currentLocation.lastUpdated)}
+                            </p>
+                          )}
+                          {agent.status.currentLocation.lastUpdated && (
+                            (() => {
+                              const now = new Date();
+                              const lastUpdate = new Date(agent.status.currentLocation.lastUpdated);
+                              const hoursDiff = (now - lastUpdate) / (1000 * 60 * 60);
+
+                              if (hoursDiff < 1) {
+                                return <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Live</span>;
+                              } else if (hoursDiff < 24) {
+                                return <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">Recent</span>;
+                              } else {
+                                return <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">Old</span>;
+                              }
+                            })()
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    {agent.status.deliveryZone && (
+                      <div className="flex items-center gap-2">
+                        <MapPin className="w-4 h-4 text-blue-500" />
+                        <span className="text-sm text-blue-600">Zone: {zoneNames[agent.status.deliveryZone] || 'Loading...'}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Map View */}
+                  <div className="h-64 border border-gray-200 rounded-lg overflow-hidden">
+                    <GoogleMap
+                      center={{
+                        lat: agent.status.currentLocation.latitude,
+                        lng: agent.status.currentLocation.longitude
+                      }}
+                      zoom={15}
+                      style={{ height: '100%', width: '100%' }}
+                    >
+                      <Marker
+                        position={{
+                          lat: agent.status.currentLocation.latitude,
+                          lng: agent.status.currentLocation.longitude
+                        }}
+                        title={`${agent.name || 'Delivery Agent'} - ${agent.agentId || ''}`}
+                        infoContent={`
+                          <div style="max-width: 200px;">
+                            <h4 style="margin: 0 0 8px 0; font-weight: bold;">${agent.name || 'Delivery Agent'}</h4>
+                            <p style="margin: 0 0 4px 0;">ID: ${agent.agentId || 'N/A'}</p>
+                            <p style="margin: 0 0 4px 0;">Lat: ${agent.status.currentLocation.latitude.toFixed(6)}</p>
+                            <p style="margin: 0 0 4px 0;">Lng: ${agent.status.currentLocation.longitude.toFixed(6)}</p>
+                            <p style="margin: 0; font-size: 12px; color: #666;">
+                              Updated: ${formatISTTime(agent.status.currentLocation.lastUpdated)}
+                            </p>
+                          </div>
+                        `}
+                      />
+                    </GoogleMap>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <MapPin className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                  <p className="text-sm text-gray-500 mb-2">No location data available</p>
+                  <p className="text-xs text-gray-400">
+                    Location will be updated when the delivery agent logs in and grants location permissions
+                  </p>
+                  {/* Empty map placeholder */}
+                  <div className="h-32 border border-gray-200 rounded-lg mt-4 flex items-center justify-center bg-gray-50">
+                    <p className="text-xs text-gray-400">Map will show location when available</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
           {/* Vehicle Information */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200">
             <div className="p-6 border-b border-gray-200">
@@ -1343,21 +1503,6 @@ export default function DeliveryAgentDetails() {
             <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-4">
                 <div>
-                  <label className="text-sm text-gray-500">Preferred Area</label>
-                  <div className="mt-1">
-                    {agent.workInfo?.preferredAreas ? (
-                      <span className="px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full">
-                        {agent.workInfo.preferredAreas}
-                      </span>
-                    ) : (
-                      <span className="text-gray-500 text-sm">No preference set</span>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <div>
                   <label className="text-sm text-gray-500">Expected Salary</label>
                   <p className="font-medium text-gray-800">
                     {agent.workInfo?.expectedSalary
@@ -1374,6 +1519,55 @@ export default function DeliveryAgentDetails() {
                       : 'Not specified'
                     }
                   </p>
+                </div>
+                <div>
+                  <label className="text-sm text-gray-500">Assigned Zone</label>
+                  {editingField === 'status.deliveryZone' ? (
+                    <div className="flex items-center gap-2 mt-1">
+                      <select
+                        value={editValue}
+                        onChange={(e) => setEditValue(e.target.value)}
+                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                        disabled={zonesLoading}
+                      >
+                        <option value="">
+                          {zonesLoading ? 'Loading zones...' : 'Select a zone'}
+                        </option>
+                        {availableZones.map((zone) => (
+                          <option key={zone._id} value={zone._id}>
+                            {zone.name}
+                          </option>
+                        ))}
+                      </select>
+                      <button
+                        onClick={saveEditing}
+                        className="p-2 text-green-600 hover:bg-green-50 rounded-lg"
+                      >
+                        <Save className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={cancelEditing}
+                        className="p-2 text-gray-600 hover:bg-gray-50 rounded-lg"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-between">
+                      <p className="font-medium text-gray-800">
+                        {agent.status?.deliveryZone
+                          ? availableZones.find(z => z._id === agent.status.deliveryZone)?.name || 'Zone assigned'
+                          : 'Not assigned'
+                        }
+                      </p>
+                      <button
+                        onClick={() => startEditing('status.deliveryZone', agent.status?.deliveryZone || '')}
+                        className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded"
+                      >
+                        <Edit3 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -1710,39 +1904,6 @@ export default function DeliveryAgentDetails() {
               </div>
             </div>
           </div>
-
-          {/* Current Location */}
-          {agent.status?.currentLocation?.latitude && (
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-              <div className="p-6 border-b border-gray-200">
-                <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-                  <Navigation className="w-5 h-5" />
-                  Current Location
-                </h2>
-              </div>
-              <div className="p-6">
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <MapPin className="w-4 h-4 text-gray-500" />
-                    <span className="text-sm text-gray-600">
-                      Lat: {agent.status.currentLocation.latitude}, Lng: {agent.status.currentLocation.longitude}
-                    </span>
-                  </div>
-                  {agent.status.currentLocation.lastUpdated && (
-                    <p className="text-xs text-gray-500">
-                      Last updated: {formatISTTime(agent.status.currentLocation.lastUpdated)}
-                    </p>
-                  )}
-                  {agent.status.deliveryZone && (
-                    <div className="flex items-center gap-2">
-                      <MapPin className="w-4 h-4 text-blue-500" />
-                      <span className="text-sm text-blue-600">Zone: {agent.status.deliveryZone}</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       </div>
     </div>
