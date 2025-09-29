@@ -131,6 +131,13 @@ export default function Products() {
         query.append('startsWith', filters.startsWith);
       }
 
+      // sort filter
+      if (params.sort !== undefined) {
+        if (params.sort) query.append('sort', params.sort);
+      } else if (filters.sort) {
+        query.append('sort', filters.sort);
+      }
+
       const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/products?${query}`, {
         credentials: 'include',
       });

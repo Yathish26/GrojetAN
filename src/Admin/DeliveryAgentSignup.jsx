@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   User,
@@ -6,17 +6,15 @@ import {
   Phone,
   MapPin,
   Truck,
-  Upload,
   Eye,
   EyeOff,
-  Camera,
-  FileText,
   CircleCheck,
   AlertCircle,
   ArrowRight,
   ArrowLeft,
   Save,
-  ArrowLeft as BackIcon
+  ArrowLeft as BackIcon,
+  FileText
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -24,8 +22,9 @@ export default function DeliveryAgentSignup() {
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(false);
-  const [uploadingDoc, setUploadingDoc] = useState({});
   const [showPassword, setShowPassword] = useState(false);
+  const [availableZones, setAvailableZones] = useState([]);
+  const [zonesLoading, setZonesLoading] = useState(true);
   const [formData, setFormData] = useState({
     // Personal Information
     personalInfo: {
@@ -61,17 +60,18 @@ export default function DeliveryAgentSignup() {
     vehicleInfo: {
       vehicleType: '',
       vehicleNumber: '',
-      rcBook: null,
-      insurance: null
+      rcBook: false,
+      insurance: false
     },
     
     // Documents
     documents: {
-      aadharFront: null,
-      aadharBack: null,
-      panCard: null,
-      drivingLicense: null,
-      profilePhoto: null,
+      aadharFront: false,
+      aadharBack: false,
+      panCard: false,
+      drivingLicense: false,
+      profilePhoto: false,
+      documentsLink: '',
       bankAccount: {
         accountNumber: '',
         ifscCode: '',
@@ -82,12 +82,7 @@ export default function DeliveryAgentSignup() {
     
     // Work Information
     workInfo: {
-      preferredAreas: [],
-      availabilityHours: {
-        start: '09:00',
-        end: '18:00'
-      },
-      workingDays: [],
+      preferredAreas: '',
       expectedSalary: '',
       experience: ''
     },
@@ -112,16 +107,32 @@ export default function DeliveryAgentSignup() {
     'car'
   ];
 
-  const availableZones = [
-    'Downtown',
-    'North Side',
-    'South Side',
-    'East End',
-    'West End',
-    'Suburbs',
-    'Business District',
-    'University Area'
-  ];
+  // Fetch delivery zones on component mount
+  useEffect(() => {
+    const fetchDeliveryZones = async () => {
+      try {
+        const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/delivery-zones`, {
+          credentials: 'include'
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setAvailableZones(data.zones || []);
+        } else {
+          console.error('Failed to fetch delivery zones');
+          // Fallback to empty array
+          setAvailableZones([]);
+        }
+      } catch (error) {
+        console.error('Error fetching delivery zones:', error);
+        setAvailableZones([]);
+      } finally {
+        setZonesLoading(false);
+      }
+    };
+
+    fetchDeliveryZones();
+  }, []);
 
   const handleInputChange = (section, field, value) => {
     if (section) {
@@ -140,69 +151,12 @@ export default function DeliveryAgentSignup() {
     }
   };
 
-  const handleImageUpload = async (documentType, file) => {
-    if (!file) return;
-
-    if (!file.type.startsWith('image/')) {
-      toast.error('Only image files are allowed!');
-      return;
-    }
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error('File size should be less than 5MB');
-      return;
-    }
-
-    // Set uploading state for this document
-    setUploadingDoc(prev => ({ ...prev, [documentType]: true }));
-
-    const formData = new FormData();
-    formData.append('image', file);
-
-    try {
-      const res = await fetch(`${import.meta.env.VITE_SERVER}/image/upload`, {
-        method: 'POST',
-        body: formData,
-      });
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error || 'Image upload failed');
-      }
-
-      // Handle vehicle documents vs regular documents
-      if (['rcBook', 'insurance'].includes(documentType)) {
-        setFormData(prev => ({
-          ...prev,
-          vehicleInfo: {
-            ...prev.vehicleInfo,
-            [documentType]: data.imageUrl,
-          }
-        }));
-      } else {
-        setFormData(prev => ({
-          ...prev,
-          documents: {
-            ...prev.documents,
-            [documentType]: data.imageUrl,
-          }
-        }));
-      }
-      toast.success(`${documentType} uploaded successfully!`);
-    } catch (err) {
-      toast.error(err.message);
-    } finally {
-      setUploadingDoc(prev => ({ ...prev, [documentType]: false }));
-    }
-  };
-
   const handleZoneToggle = (zone) => {
     setFormData(prev => ({
       ...prev,
       workInfo: {
         ...prev.workInfo,
-        preferredAreas: prev.workInfo.preferredAreas.includes(zone)
-          ? prev.workInfo.preferredAreas.filter(z => z !== zone)
-          : [...prev.workInfo.preferredAreas, zone]
+        preferredAreas: zone
       }
     }));
   };
@@ -216,16 +170,19 @@ export default function DeliveryAgentSignup() {
       case 2:
         return formData.password && formData.confirmPassword &&
                formData.password === formData.confirmPassword &&
-               formData.password.length >= 6;
+               formData.password.length >= 6 &&
+               formData.emergencyContact.name && formData.emergencyContact.phone &&
+               formData.emergencyContact.relationship;
       case 3:
-        return formData.vehicleInfo.vehicleType && formData.vehicleInfo.vehicleNumber;
+        return formData.vehicleInfo.vehicleType && formData.vehicleInfo.vehicleNumber &&
+               formData.vehicleInfo.rcBook && formData.vehicleInfo.insurance;
       case 4:
         const bank = formData.documents.bankAccount;
         return formData.documents.aadharFront && formData.documents.aadharBack &&
                formData.documents.panCard && bank.accountNumber && bank.ifscCode &&
                bank.bankName && bank.accountHolderName;
       case 5:
-        return formData.agreedToTerms && formData.agreedToPrivacy;
+        return formData.workInfo.preferredAreas && formData.agreedToTerms && formData.agreedToPrivacy;
       default:
         return true;
     }
@@ -277,14 +234,15 @@ export default function DeliveryAgentSignup() {
         vehicleInfo: {
           vehicleType: formData.vehicleInfo.vehicleType,
           vehicleNumber: formData.vehicleInfo.vehicleNumber,
-          rcBook: formData.vehicleInfo.rcBook || '',
-          insurance: formData.vehicleInfo.insurance || ''
+          rcBook: formData.vehicleInfo.rcBook,
+          insurance: formData.vehicleInfo.insurance
         },
         documents: {
-          aadharFront: formData.documents.aadharFront || '',
-          aadharBack: formData.documents.aadharBack || '',
-          panCard: formData.documents.panCard || '',
-          drivingLicense: formData.documents.drivingLicense || '',
+          aadharFront: formData.documents.aadharFront,
+          aadharBack: formData.documents.aadharBack,
+          panCard: formData.documents.panCard,
+          drivingLicense: formData.documents.drivingLicense,
+          documentsLink: formData.documents.documentsLink,
           bankAccount: {
             accountNumber: formData.documents.bankAccount.accountNumber,
             ifscCode: formData.documents.bankAccount.ifscCode,
@@ -293,12 +251,7 @@ export default function DeliveryAgentSignup() {
           }
         },
         workInfo: {
-          preferredAreas: formData.workInfo.preferredAreas || [],
-          availabilityHours: {
-            start: formData.workInfo.availabilityHours.start,
-            end: formData.workInfo.availabilityHours.end
-          },
-          workingDays: (formData.workInfo.workingDays || []).map(day => day.toLowerCase()),
+          preferredAreas: formData.workInfo.preferredAreas,
           expectedSalary: parseInt(formData.workInfo.expectedSalary) || 0,
           experience: formData.workInfo.experience || ''
         },
@@ -327,14 +280,13 @@ export default function DeliveryAgentSignup() {
         address: { street: '', city: '', state: '', zipCode: '', landmark: '' },
         emergencyContact: { name: '', phone: '', relationship: '' },
         password: '', confirmPassword: '',
-        vehicleInfo: { vehicleType: '', vehicleNumber: '', rcBook: null, insurance: null },
+        vehicleInfo: { vehicleType: '', vehicleNumber: '', rcBook: false, insurance: false },
         documents: { 
-          aadharFront: null, aadharBack: null, panCard: null, drivingLicense: null, profilePhoto: null,
+          aadharFront: false, aadharBack: false, panCard: false, drivingLicense: false, profilePhoto: false, documentsLink: '',
           bankAccount: { accountNumber: '', ifscCode: '', bankName: '', accountHolderName: '' }
         },
         workInfo: { 
-          preferredAreas: [], availabilityHours: { start: '09:00', end: '18:00' }, 
-          workingDays: [], expectedSalary: '', experience: '' 
+          preferredAreas: '', expectedSalary: '', experience: '' 
         },
         agreedToTerms: false, agreedToPrivacy: false
       });
@@ -611,10 +563,11 @@ export default function DeliveryAgentSignup() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Contact Name
+                      Contact Name *
                     </label>
                     <input
                       type="text"
+                      required
                       value={formData.emergencyContact.name}
                       onChange={(e) => handleInputChange('emergencyContact', 'name', e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
@@ -623,10 +576,11 @@ export default function DeliveryAgentSignup() {
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Contact Phone
+                      Contact Phone *
                     </label>
                     <input
                       type="tel"
+                      required
                       value={formData.emergencyContact.phone}
                       onChange={(e) => handleInputChange('emergencyContact', 'phone', e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
@@ -635,9 +589,10 @@ export default function DeliveryAgentSignup() {
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Relationship
+                      Relationship *
                     </label>
                     <select
+                      required
                       value={formData.emergencyContact.relationship}
                       onChange={(e) => handleInputChange('emergencyContact', 'relationship', e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
@@ -698,73 +653,38 @@ export default function DeliveryAgentSignup() {
               {/* Vehicle Documents */}
               <div className="space-y-4">
                 <h3 className="text-lg font-medium text-gray-800">Vehicle Documents</h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  {[
-                    { key: 'rcBook', label: 'RC Book', required: true },
-                    { key: 'insurance', label: 'Insurance', required: true }
-                  ].map(doc => (
-                    <div key={doc.key} className="border border-gray-200 rounded-lg p-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="font-medium text-gray-800">
-                          {doc.label} {doc.required && <span className="text-red-500">*</span>}
-                        </span>
-                        {formData.vehicleInfo[doc.key] && (
-                          <CircleCheck className="w-5 h-5 text-green-500" />
-                        )}
-                      </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="flex items-center space-x-3">
+                    <input
+                      type="checkbox"
+                      id="rcBook"
+                      checked={formData.vehicleInfo.rcBook}
+                      onChange={(e) => handleInputChange('vehicleInfo', 'rcBook', e.target.checked)}
+                      className="w-4 h-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                    />
+                    <label htmlFor="rcBook" className="text-sm font-medium text-gray-700">
+                      RC Book <span className="text-red-500">*</span>
+                    </label>
+                    {formData.vehicleInfo.rcBook && (
+                      <CircleCheck className="w-5 h-5 text-green-500" />
+                    )}
+                  </div>
 
-                      <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
-                        {uploadingDoc[doc.key] ? (
-                          <div className="flex flex-col items-center justify-center h-20">
-                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-2"></div>
-                            <span className="text-blue-600 text-sm">Uploading...</span>
-                          </div>
-                        ) : typeof formData.vehicleInfo[doc.key] === 'string' && formData.vehicleInfo[doc.key].startsWith('http') ? (
-                          <div>
-                            <img
-                              src={formData.vehicleInfo[doc.key]}
-                              alt={doc.label}
-                              className="h-20 mx-auto mb-2 object-contain"
-                            />
-                            <input
-                              type="file"
-                              accept="image/*"
-                              onChange={(e) => handleImageUpload(doc.key, e.target.files[0])}
-                              className="hidden"
-                              id={`file-${doc.key}`}
-                            />
-                            <button
-                              type="button"
-                              onClick={() => document.getElementById(`file-${doc.key}`).click()}
-                              className="text-blue-600 hover:text-blue-700 text-sm"
-                            >
-                              Replace File
-                            </button>
-                          </div>
-                        ) : (
-                          <div>
-                            <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                            <p className="text-sm text-gray-600 mb-2">
-                              Click to upload or drag and drop
-                            </p>
-                            <input
-                              type="file"
-                              accept="image/*"
-                              onChange={(e) => handleImageUpload(doc.key, e.target.files[0])}
-                              className="hidden"
-                              id={`file-${doc.key}`}
-                            />
-                            <label
-                              htmlFor={`file-${doc.key}`}
-                              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 cursor-pointer inline-block"
-                            >
-                              Choose File
-                            </label>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ))}
+                  <div className="flex items-center space-x-3">
+                    <input
+                      type="checkbox"
+                      id="insurance"
+                      checked={formData.vehicleInfo.insurance}
+                      onChange={(e) => handleInputChange('vehicleInfo', 'insurance', e.target.checked)}
+                      className="w-4 h-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                    />
+                    <label htmlFor="insurance" className="text-sm font-medium text-gray-700">
+                      Insurance <span className="text-red-500">*</span>
+                    </label>
+                    {formData.vehicleInfo.insurance && (
+                      <CircleCheck className="w-5 h-5 text-green-500" />
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
@@ -776,76 +696,111 @@ export default function DeliveryAgentSignup() {
               <h2 className="text-xl font-semibold text-gray-800 mb-6">Document Upload</h2>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {[
-                  { key: 'aadharFront', label: 'Aadhar Front', required: true },
-                  { key: 'aadharBack', label: 'Aadhar Back', required: true },
-                  { key: 'panCard', label: 'PAN Card', required: false },
-                  { key: 'drivingLicense', label: 'Driving License', required: true },
-                  { key: 'vehicleRC', label: 'Vehicle RC', required: false },
-                  { key: 'profilePhoto', label: 'Profile Photo', required: false }
-                ].map(doc => (
-                  <div key={doc.key} className="border border-gray-200 rounded-lg p-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="font-medium text-gray-800">
-                        {doc.label} {doc.required && <span className="text-red-500">*</span>}
-                      </span>
-                      {formData.documents[doc.key] && (
+                <div className="space-y-4">
+                  <h3 className="text-lg font-medium text-gray-800">Document Verification</h3>
+                  
+                  <div className="space-y-3">
+                    <div className="flex items-center space-x-3">
+                      <input
+                        type="checkbox"
+                        id="aadharFront"
+                        checked={formData.documents.aadharFront}
+                        onChange={(e) => handleInputChange('documents', 'aadharFront', e.target.checked)}
+                        className="w-4 h-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                      />
+                      <label htmlFor="aadharFront" className="text-sm font-medium text-gray-700">
+                        Aadhar Front <span className="text-red-500">*</span>
+                      </label>
+                      {formData.documents.aadharFront && (
                         <CircleCheck className="w-5 h-5 text-green-500" />
                       )}
                     </div>
 
-                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
-                      {uploadingDoc[doc.key] ? (
-                        <div className="flex flex-col items-center justify-center h-20">
-                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-2"></div>
-                          <span className="text-blue-600 text-sm">Uploading...</span>
-                        </div>
-                      ) : typeof formData.documents[doc.key] === 'string' && formData.documents[doc.key].startsWith('http') ? (
-                        <div>
-                          <img
-                            src={formData.documents[doc.key]}
-                            alt={doc.label}
-                            className="h-20 mx-auto mb-2 object-contain"
-                          />
-                          <input
-                            type="file"
-                            accept="image/*"
-                            onChange={(e) => handleImageUpload(doc.key, e.target.files[0])}
-                            className="hidden"
-                            id={`file-${doc.key}`}
-                          />
-                          <button
-                            type="button"
-                            onClick={() => document.getElementById(`file-${doc.key}`).click()}
-                            className="text-blue-600 hover:text-blue-700 text-sm"
-                          >
-                            Replace File
-                          </button>
-                        </div>
-                      ) : (
-                        <div>
-                          <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                          <p className="text-sm text-gray-600 mb-2">
-                            Click to upload or drag and drop
-                          </p>
-                          <input
-                            type="file"
-                            accept="image/*"
-                            onChange={(e) => handleImageUpload(doc.key, e.target.files[0])}
-                            className="hidden"
-                            id={`file-${doc.key}`}
-                          />
-                          <label
-                            htmlFor={`file-${doc.key}`}
-                            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 cursor-pointer inline-block"
-                          >
-                            Choose File
-                          </label>
-                        </div>
+                    <div className="flex items-center space-x-3">
+                      <input
+                        type="checkbox"
+                        id="aadharBack"
+                        checked={formData.documents.aadharBack}
+                        onChange={(e) => handleInputChange('documents', 'aadharBack', e.target.checked)}
+                        className="w-4 h-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                      />
+                      <label htmlFor="aadharBack" className="text-sm font-medium text-gray-700">
+                        Aadhar Back <span className="text-red-500">*</span>
+                      </label>
+                      {formData.documents.aadharBack && (
+                        <CircleCheck className="w-5 h-5 text-green-500" />
+                      )}
+                    </div>
+
+                    <div className="flex items-center space-x-3">
+                      <input
+                        type="checkbox"
+                        id="panCard"
+                        checked={formData.documents.panCard}
+                        onChange={(e) => handleInputChange('documents', 'panCard', e.target.checked)}
+                        className="w-4 h-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                      />
+                      <label htmlFor="panCard" className="text-sm font-medium text-gray-700">
+                        PAN Card
+                      </label>
+                      {formData.documents.panCard && (
+                        <CircleCheck className="w-5 h-5 text-green-500" />
+                      )}
+                    </div>
+
+                    <div className="flex items-center space-x-3">
+                      <input
+                        type="checkbox"
+                        id="drivingLicense"
+                        checked={formData.documents.drivingLicense}
+                        onChange={(e) => handleInputChange('documents', 'drivingLicense', e.target.checked)}
+                        className="w-4 h-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                      />
+                      <label htmlFor="drivingLicense" className="text-sm font-medium text-gray-700">
+                        Driving License <span className="text-red-500">*</span>
+                      </label>
+                      {formData.documents.drivingLicense && (
+                        <CircleCheck className="w-5 h-5 text-green-500" />
+                      )}
+                    </div>
+
+                    <div className="flex items-center space-x-3">
+                      <input
+                        type="checkbox"
+                        id="profilePhoto"
+                        checked={formData.documents.profilePhoto}
+                        onChange={(e) => handleInputChange('documents', 'profilePhoto', e.target.checked)}
+                        className="w-4 h-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                      />
+                      <label htmlFor="profilePhoto" className="text-sm font-medium text-gray-700">
+                        Profile Photo
+                      </label>
+                      {formData.documents.profilePhoto && (
+                        <CircleCheck className="w-5 h-5 text-green-500" />
                       )}
                     </div>
                   </div>
-                ))}
+                </div>
+
+                <div className="space-y-4">
+                  <h3 className="text-lg font-medium text-gray-800">Documents Link</h3>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Google Drive / Document Link
+                    </label>
+                    <input
+                      type="url"
+                      value={formData.documents.documentsLink}
+                      onChange={(e) => handleInputChange('documents', 'documentsLink', e.target.value)}
+                      placeholder="https://drive.google.com/..."
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Paste the link to your documents folder (Google Drive, Dropbox, etc.)
+                    </p>
+                  </div>
+                </div>
               </div>
               {/* Bank Details Section */}
               <div className="mt-8">
@@ -877,10 +832,8 @@ export default function DeliveryAgentSignup() {
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Bank Name *
                     </label>
-                    <input
-                      type="text"
+                    <select
                       required
-                      maxLength={100}
                       value={formData.documents.bankAccount.bankName}
                       onChange={e => setFormData(prev => ({
                         ...prev,
@@ -893,7 +846,120 @@ export default function DeliveryAgentSignup() {
                         }
                       }))}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                    />
+                    >
+                      <option value="">Select Bank</option>
+                      {/* Public Sector Banks */}
+                      <optgroup label="Public Sector Banks">
+                        <option value="Bank of Baroda">Bank of Baroda</option>
+                        <option value="Bank of India">Bank of India</option>
+                        <option value="Bank of Maharashtra">Bank of Maharashtra</option>
+                        <option value="Canara Bank">Canara Bank</option>
+                        <option value="Central Bank of India">Central Bank of India</option>
+                        <option value="Indian Bank">Indian Bank</option>
+                        <option value="Indian Overseas Bank">Indian Overseas Bank</option>
+                        <option value="Punjab & Sind Bank">Punjab & Sind Bank</option>
+                        <option value="Punjab National Bank">Punjab National Bank</option>
+                        <option value="State Bank of India">State Bank of India</option>
+                        <option value="UCO Bank">UCO Bank</option>
+                        <option value="Union Bank of India">Union Bank of India</option>
+                      </optgroup>
+                      {/* Private Sector Banks */}
+                      <optgroup label="Private Sector Banks">
+                        <option value="Axis Bank Ltd.">Axis Bank Ltd.</option>
+                        <option value="Bandhan Bank Ltd.">Bandhan Bank Ltd.</option>
+                        <option value="CSB Bank Ltd.">CSB Bank Ltd.</option>
+                        <option value="City Union Bank Ltd.">City Union Bank Ltd.</option>
+                        <option value="DCB Bank Ltd.">DCB Bank Ltd.</option>
+                        <option value="Dhanlaxmi Bank Ltd.">Dhanlaxmi Bank Ltd.</option>
+                        <option value="Federal Bank Ltd.">Federal Bank Ltd.</option>
+                        <option value="HDFC Bank Ltd.">HDFC Bank Ltd.</option>
+                        <option value="ICICI Bank Ltd.">ICICI Bank Ltd.</option>
+                        <option value="Induslnd Bank Ltd.">Induslnd Bank Ltd.</option>
+                        <option value="IDFC First Bank Ltd.">IDFC First Bank Ltd.</option>
+                        <option value="Jammu & Kashmir Bank Ltd.">Jammu & Kashmir Bank Ltd.</option>
+                        <option value="Karnataka Bank Ltd.">Karnataka Bank Ltd.</option>
+                        <option value="Karur Vysya Bank Ltd.">Karur Vysya Bank Ltd.</option>
+                        <option value="Kotak Mahindra Bank Ltd.">Kotak Mahindra Bank Ltd.</option>
+                        <option value="Nainital Bank Ltd.">Nainital Bank Ltd.</option>
+                        <option value="RBL Bank Ltd.">RBL Bank Ltd.</option>
+                        <option value="South Indian Bank Ltd.">South Indian Bank Ltd.</option>
+                        <option value="Tamilnad Mercantile Bank Ltd.">Tamilnad Mercantile Bank Ltd.</option>
+                        <option value="YES Bank Ltd.">YES Bank Ltd.</option>
+                        <option value="IDBI Bank Ltd.">IDBI Bank Ltd.</option>
+                      </optgroup>
+                      {/* Small Finance Banks */}
+                      <optgroup label="Small Finance Banks">
+                        <option value="Au Small Finance Bank Limited">Au Small Finance Bank Limited</option>
+                        <option value="Capital Small Finance Bank Limited">Capital Small Finance Bank Limited</option>
+                        <option value="Equitas Small Finance Bank Limited">Equitas Small Finance Bank Limited</option>
+                        <option value="Suryoday Small Finance Bank Limited">Suryoday Small Finance Bank Limited</option>
+                        <option value="Ujjivan Small Finance Bank Limited">Ujjivan Small Finance Bank Limited</option>
+                        <option value="Utkarsh Small Finance Bank Limited">Utkarsh Small Finance Bank Limited</option>
+                        <option value="ESAF Small Finance Bank Limited">ESAF Small Finance Bank Limited</option>
+                        <option value="Fincare Small Finance Bank Limited">Fincare Small Finance Bank Limited</option>
+                        <option value="Jana Small Finance Bank Limited">Jana Small Finance Bank Limited</option>
+                        <option value="North East Small Finance Bank Limited">North East Small Finance Bank Limited</option>
+                        <option value="Shivalik Small Finance Bank Limited">Shivalik Small Finance Bank Limited</option>
+                        <option value="Unity Small Finance Bank Limited">Unity Small Finance Bank Limited</option>
+                      </optgroup>
+                      {/* Payments Banks */}
+                      <optgroup label="Payments Banks">
+                        <option value="India Post Payments Bank Limited">India Post Payments Bank Limited</option>
+                        <option value="Fino Payments Bank Limited">Fino Payments Bank Limited</option>
+                        <option value="Paytm Payments Bank Limited">Paytm Payments Bank Limited</option>
+                        <option value="Airtel Payments Bank Limited">Airtel Payments Bank Limited</option>
+                      </optgroup>
+                      {/* Regional Rural Banks */}
+                      <optgroup label="Regional Rural Banks">
+                        <option value="Andhra Pragathi Grameena Bank">Andhra Pragathi Grameena Bank</option>
+                        <option value="Andhra Pradesh Grameena Vikas Bank">Andhra Pradesh Grameena Vikas Bank</option>
+                        <option value="Arunachal Pradesh Rural Bank">Arunachal Pradesh Rural Bank</option>
+                        <option value="Aryavart Bank">Aryavart Bank</option>
+                        <option value="Assam Gramin Vikash Bank">Assam Gramin Vikash Bank</option>
+                        <option value="Bangiya Gramin Vikas Bank">Bangiya Gramin Vikas Bank</option>
+                        <option value="Baroda Gujarat Gramin Bank">Baroda Gujarat Gramin Bank</option>
+                        <option value="Baroda Rajasthan Kshetriya Gramin Bank">Baroda Rajasthan Kshetriya Gramin Bank</option>
+                        <option value="Baroda UP Bank">Baroda UP Bank</option>
+                        <option value="Chaitanya Godavari Grameena Bank">Chaitanya Godavari Grameena Bank</option>
+                        <option value="Chhattisgarh Rajya Gramin Bank">Chhattisgarh Rajya Gramin Bank</option>
+                        <option value="Dakshin Bihar Gramin Bank">Dakshin Bihar Gramin Bank</option>
+                        <option value="Ellaquai Dehati Bank">Ellaquai Dehati Bank</option>
+                        <option value="Himachal Pradesh Gramin Bank">Himachal Pradesh Gramin Bank</option>
+                        <option value="J&K Grameen Bank">J&K Grameen Bank</option>
+                        <option value="Jharkhand Rajya Gramin Bank">Jharkhand Rajya Gramin Bank</option>
+                        <option value="Karnataka Gramin Bank">Karnataka Gramin Bank</option>
+                        <option value="Karnataka Vikas Grameena Bank">Karnataka Vikas Grameena Bank</option>
+                        <option value="Kerala Gramin Bank">Kerala Gramin Bank</option>
+                        <option value="Madhya Pradesh Gramin Bank">Madhya Pradesh Gramin Bank</option>
+                        <option value="Madhyanchal Gramin Bank">Madhyanchal Gramin Bank</option>
+                        <option value="Maharashtra Gramin Bank">Maharashtra Gramin Bank</option>
+                        <option value="Manipur Rural Bank">Manipur Rural Bank</option>
+                        <option value="Meghalaya Rural Bank">Meghalaya Rural Bank</option>
+                        <option value="Mizoram Rural Bank">Mizoram Rural Bank</option>
+                        <option value="Nagaland Rural Bank">Nagaland Rural Bank</option>
+                        <option value="Odisha Gramya Bank">Odisha Gramya Bank</option>
+                        <option value="Paschim Banga Gramin Bank">Paschim Banga Gramin Bank</option>
+                        <option value="Prathama UP Gramin Bank">Prathama UP Gramin Bank</option>
+                        <option value="Puduvai Bharathiar Grama Bank">Puduvai Bharathiar Grama Bank</option>
+                        <option value="Punjab Gramin Bank">Punjab Gramin Bank</option>
+                        <option value="Rajasthan Marudhara Gramin Bank">Rajasthan Marudhara Gramin Bank</option>
+                        <option value="Saptagiri Grameena Bank">Saptagiri Grameena Bank</option>
+                        <option value="Sarva Haryana Gramin Bank">Sarva Haryana Gramin Bank</option>
+                        <option value="Saurashtra Gramin Bank">Saurashtra Gramin Bank</option>
+                        <option value="Tamil Nadu Grama Bank">Tamil Nadu Grama Bank</option>
+                        <option value="Telangana Grameena Bank">Telangana Grameena Bank</option>
+                        <option value="Tripura Gramin Bank">Tripura Gramin Bank</option>
+                        <option value="Utkal Grameen Bank">Utkal Grameen Bank</option>
+                        <option value="Uttar Bihar Gramin Bank">Uttar Bihar Gramin Bank</option>
+                        <option value="Uttarakhand Gramin Bank">Uttarakhand Gramin Bank</option>
+                        <option value="Uttarbanga Kshetriya Gramin Bank">Uttarbanga Kshetriya Gramin Bank</option>
+                        <option value="Vidharbha Konkan Gramin Bank">Vidharbha Konkan Gramin Bank</option>
+                      </optgroup>
+                      {/* Other */}
+                      <optgroup label="Other">
+                        <option value="Other">Other Bank</option>
+                      </optgroup>
+                    </select>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -952,53 +1018,24 @@ export default function DeliveryAgentSignup() {
               <div className="space-y-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Preferred Delivery Areas
+                    Preferred Delivery Area *
                   </label>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                  <select
+                    required
+                    value={formData.workInfo.preferredAreas}
+                    onChange={(e) => handleZoneToggle(e.target.value)}
+                    disabled={zonesLoading}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                  >
+                    <option value="">
+                      {zonesLoading ? 'Loading zones...' : 'Select a delivery area'}
+                    </option>
                     {availableZones.map(zone => (
-                      <label key={zone} className="flex items-center gap-2">
-                        <input
-                          type="checkbox"
-                          checked={formData.workInfo.preferredAreas.includes(zone)}
-                          onChange={() => handleZoneToggle(zone)}
-                          className="text-green-600 focus:ring-green-500"
-                        />
-                        <span className="text-sm text-gray-700">{zone}</span>
-                      </label>
+                      <option key={zone._id} value={zone.name}>
+                        {zone.name}
+                      </option>
                     ))}
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Working Hours - Start
-                    </label>
-                    <input
-                      type="time"
-                      value={formData.workInfo.availabilityHours.start}
-                      onChange={(e) => handleInputChange('workInfo', 'availabilityHours', {
-                        ...formData.workInfo.availabilityHours,
-                        start: e.target.value
-                      })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Working Hours - End
-                    </label>
-                    <input
-                      type="time"
-                      value={formData.workInfo.availabilityHours.end}
-                      onChange={(e) => handleInputChange('workInfo', 'availabilityHours', {
-                        ...formData.workInfo.availabilityHours,
-                        end: e.target.value
-                      })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                    />
-                  </div>
+                  </select>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1029,37 +1066,6 @@ export default function DeliveryAgentSignup() {
                       max="20"
                       step="0.5"
                     />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Working Days
-                  </label>
-                  <div className="grid grid-cols-7 gap-2">
-                    {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map(day => (
-                      <label key={day} className="flex flex-col items-center gap-1">
-                        <input
-                          type="checkbox"
-                          checked={formData.workInfo.workingDays.includes(day.toLowerCase())}
-                          onChange={(e) => {
-                            const checked = e.target.checked;
-                            const dayLower = day.toLowerCase();
-                            setFormData(prev => ({
-                              ...prev,
-                              workInfo: {
-                                ...prev.workInfo,
-                                workingDays: checked
-                                  ? [...prev.workInfo.workingDays, dayLower]
-                                  : prev.workInfo.workingDays.filter(d => d !== dayLower)
-                              }
-                            }));
-                          }}
-                          className="text-green-600 focus:ring-green-500"
-                        />
-                        <span className="text-xs text-gray-700">{day.substring(0, 3)}</span>
-                      </label>
-                    ))}
                   </div>
                 </div>
 

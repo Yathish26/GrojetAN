@@ -72,6 +72,7 @@ const Merchants = () => {
                         totalRevenue: merchant.totalRevenue,
                         joinDate: merchant.registrationDate ? new Date(merchant.registrationDate).toISOString().split('T')[0] : 'N/A',
                         profileImage: null,
+                        brandingInfo: merchant.brandingInfo || null,
                         documents: {
                             gst: null,
                             fssai: null,
@@ -422,8 +423,19 @@ const Merchants = () => {
                                                 <tr key={merchant.id} className="hover:bg-gray-50">
                                                     <td className="px-6 py-4 whitespace-nowrap">
                                                         <div className="flex items-center">
-                                                            <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                                                                <Store className="w-5 h-5 text-green-600" />
+                                                            <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center overflow-hidden">
+                                                                {merchant.brandingInfo?.logoUrl ? (
+                                                                    <img
+                                                                        src={merchant.brandingInfo.logoUrl}
+                                                                        alt={`${merchant.name} logo`}
+                                                                        className="w-full h-full object-cover rounded-full"
+                                                                        onError={(e) => {
+                                                                            e.target.style.display = 'none';
+                                                                            e.target.nextSibling.style.display = 'block';
+                                                                        }}
+                                                                    />
+                                                                ) : null}
+                                                                <Store className="w-5 h-5 text-green-600" style={{ display: merchant.brandingInfo?.logoUrl ? 'none' : 'block' }} />
                                                             </div>
                                                             <div className="ml-4">
                                                                 <div className="text-sm font-medium text-gray-900">

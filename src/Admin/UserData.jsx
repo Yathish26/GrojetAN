@@ -30,6 +30,9 @@ export default function UserData() {
   const [showSuspendModal, setShowSuspendModal] = useState(false);
   const [suspensionReason, setSuspensionReason] = useState('');
   const [updatingStatus, setUpdatingStatus] = useState(false);
+  const [showStatusModal, setShowStatusModal] = useState(false);
+  const [selectedStatus, setSelectedStatus] = useState('');
+  const [statusReason, setStatusReason] = useState('');
 
   useEffect(() => {
     fetchUserDetails();
@@ -190,6 +193,52 @@ export default function UserData() {
     }
   };
 
+  const handleUpdateUserStatus = async () => {
+    if (!selectedStatus) {
+      toast.error('Please select a status');
+      return;
+    }
+
+    if ((selectedStatus === 'suspended' || selectedStatus === 'banned') && !statusReason.trim()) {
+      toast.error('Please provide a reason for suspension/ban');
+      return;
+    }
+
+    try {
+      setUpdatingStatus(true);
+      const response = await fetch(
+        `${import.meta.env.VITE_SERVER}/admin/users/${id}/status`,
+        {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+          body: JSON.stringify({ 
+            status: selectedStatus,
+            reason: statusReason
+          }),
+        }
+      );
+
+      if (response.ok) {
+        toast.success(`User status updated to ${selectedStatus}`);
+        setShowStatusModal(false);
+        setSelectedStatus('');
+        setStatusReason('');
+        fetchUserDetails(); // Refresh user details
+      } else {
+        const data = await response.json();
+        toast.error(data.message || 'Failed to update user status');
+      }
+    } catch (error) {
+      console.error('Error updating user status:', error);
+      toast.error('Failed to update user status');
+    } finally {
+      setUpdatingStatus(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -265,11 +314,13 @@ export default function UserData() {
                 <p className="text-green-100">{user.personalInfo?.email || user.email}</p>
                 <div className="flex items-center gap-4 mt-2">
                   <span className={`px-3 py-1 text-xs font-semibold ${
-                    user.status?.isActive || user.status
-                      ? 'bg-green-100 text-green-800'
-                      : 'bg-red-100 text-red-800'
+                    user.status?.accountStatus === 'active' ? 'bg-green-100 text-green-800' :
+                    user.status?.accountStatus === 'inactive' ? 'bg-gray-100 text-gray-800' :
+                    user.status?.accountStatus === 'suspended' ? 'bg-red-100 text-red-800' :
+                    user.status?.accountStatus === 'banned' ? 'bg-red-100 text-red-800' :
+                    'bg-gray-100 text-gray-800'
                   }`}>
-                    {user.status?.isActive || user.status ? 'Active' : 'Inactive'}
+                    {user.status?.accountStatus ? user.status.accountStatus.charAt(0).toUpperCase() + user.status.accountStatus.slice(1) : 'Unknown'}
                   </span>
                   <span className="text-green-100 text-sm">
                     Joined {new Date(user.createdAt).toLocaleDateString()}
@@ -281,7 +332,7 @@ export default function UserData() {
 
           {/* Action Buttons */}
           <div className="px-6 py-4 bg-gray-50 border-b">
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap">
               <button
                 onClick={() => setShowWarnModal(true)}
                 className="flex items-center gap-2 px-4 py-2 bg-yellow-600 text-white hover:bg-yellow-700 transition disabled:opacity-50"
@@ -290,6 +341,16 @@ export default function UserData() {
                 <FiAlertTriangle className="text-sm" />
                 Issue Warning
               </button>
+              
+              <button
+                onClick={() => setShowStatusModal(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 transition disabled:opacity-50"
+                disabled={updatingStatus}
+              >
+                <FiEdit3 className="text-sm" />
+                Update Status
+              </button>
+              
               {user.status?.accountStatus !== 'suspended' ? (
                 <button 
                   onClick={() => setShowSuspendModal(true)}
@@ -568,6 +629,75 @@ export default function UserData() {
                 className="px-4 py-2 bg-red-600 text-white hover:bg-red-700 transition disabled:opacity-50"
               >
                 {updatingStatus ? 'Suspending...' : 'Suspend User'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Status Update Modal */}
+      {showStatusModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white max-w-md w-full">
+            <div className="px-6 py-4 border-b">
+              <h3 className="text-lg font-semibold text-gray-800">Update User Status</h3>
+            </div>
+            <div className="p-6">
+              <p className="text-gray-600 mb-4">
+                Select the new status for this user:
+              </p>
+              
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Status
+                </label>
+                <select
+                  value={selectedStatus}
+                  onChange={(e) => setSelectedStatus(e.target.value)}
+                  className="w-full p-3 border focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  disabled={updatingStatus}
+                >
+                  <option value="">Select Status</option>
+                  <option value="active">Active</option>
+                  <option value="inactive">Inactive</option>
+                  <option value="suspended">Suspended</option>
+                  <option value="banned">Banned</option>
+                </select>
+              </div>
+
+              {(selectedStatus === 'suspended' || selectedStatus === 'banned') && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Reason (Required)
+                  </label>
+                  <textarea
+                    value={statusReason}
+                    onChange={(e) => setStatusReason(e.target.value)}
+                    placeholder="Enter reason..."
+                    className="w-full h-24 p-3 border focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    disabled={updatingStatus}
+                  />
+                </div>
+              )}
+            </div>
+            <div className="px-6 py-4 border-t flex justify-end gap-2">
+              <button
+                onClick={() => {
+                  setShowStatusModal(false);
+                  setSelectedStatus('');
+                  setStatusReason('');
+                }}
+                className="px-4 py-2 text-gray-600 hover:text-gray-800 transition"
+                disabled={updatingStatus}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleUpdateUserStatus}
+                disabled={updatingStatus || !selectedStatus}
+                className="px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 transition disabled:opacity-50"
+              >
+                {updatingStatus ? 'Updating...' : 'Update Status'}
               </button>
             </div>
           </div>

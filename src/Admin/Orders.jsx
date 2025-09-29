@@ -368,10 +368,10 @@ const Orders = () => {
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div>
                             <div className="text-sm font-medium text-gray-900">
-                              {order.customer.name}
+                              {order.customer.name || order.customer.phone || 'Customer'}
                             </div>
                             <div className="text-sm text-gray-500">
-                              {order.customer.phone}
+                              {order.customer.phone || 'N/A'}
                             </div>
                           </div>
                         </td>
@@ -393,13 +393,13 @@ const Orders = () => {
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          {order.delivery.agentName ? (
+                          {order.delivery && order.delivery.agentName ? (
                             <div>
                               <div className="text-sm font-medium text-gray-900">
                                 {order.delivery.agentName}
                               </div>
                               <div className="text-sm text-gray-500">
-                                {order.delivery.agentPhone}
+                                {order.delivery.agentPhone || 'N/A'}
                               </div>
                             </div>
                           ) : (

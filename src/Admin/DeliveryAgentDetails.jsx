@@ -1168,50 +1168,30 @@ export default function DeliveryAgentDetails() {
               </div>
 
               <div className="space-y-4">
-                <div>
-                  <label className="text-sm text-gray-500">RC Book</label>
-                  <div className="flex items-center gap-2">
-                    {agent.vehicleInfo?.rcBook ? (
-                      <>
-                        <CircleCheck className="w-4 h-4 text-green-500" />
-                        <span className="text-sm text-green-600">Uploaded</span>
-                        <button
-                          onClick={() => window.open(agent.vehicleInfo.rcBook, '_blank')}
-                          className="text-blue-600 hover:text-blue-700 text-sm flex items-center gap-1 ml-2"
-                        >
-                          <Eye className="w-4 h-4" />
-                          View
-                        </button>
-                      </>
-                    ) : (
-                      <>
-                        <XCircle className="w-4 h-4 text-red-500" />
-                        <span className="text-sm text-red-600">Not uploaded</span>
-                      </>
-                    )}
+                <h3 className="font-medium text-gray-800">Vehicle Documents</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="flex items-center space-x-3">
+                    <input
+                      type="checkbox"
+                      checked={agent.vehicleInfo?.rcBook || false}
+                      readOnly
+                      className="w-4 h-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                    />
+                    <label className="text-sm font-medium text-gray-700">
+                      RC Book {agent.vehicleInfo?.rcBook && <CircleCheck className="w-4 h-4 text-green-500 inline ml-1" />}
+                    </label>
                   </div>
-                </div>
-                <div>
-                  <label className="text-sm text-gray-500">Insurance</label>
-                  <div className="flex items-center gap-2">
-                    {agent.vehicleInfo?.insurance ? (
-                      <>
-                        <CircleCheck className="w-4 h-4 text-green-500" />
-                        <span className="text-sm text-green-600">Uploaded</span>
-                        <button
-                          onClick={() => window.open(agent.vehicleInfo.insurance, '_blank')}
-                          className="text-blue-600 hover:text-blue-700 text-sm flex items-center gap-1 ml-2"
-                        >
-                          <Eye className="w-4 h-4" />
-                          View
-                        </button>
-                      </>
-                    ) : (
-                      <>
-                        <XCircle className="w-4 h-4 text-red-500" />
-                        <span className="text-sm text-red-600">Not uploaded</span>
-                      </>
-                    )}
+
+                  <div className="flex items-center space-x-3">
+                    <input
+                      type="checkbox"
+                      checked={agent.vehicleInfo?.insurance || false}
+                      readOnly
+                      className="w-4 h-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                    />
+                    <label className="text-sm font-medium text-gray-700">
+                      Insurance {agent.vehicleInfo?.insurance && <CircleCheck className="w-4 h-4 text-green-500 inline ml-1" />}
+                    </label>
                   </div>
                 </div>
               </div>
@@ -1228,59 +1208,90 @@ export default function DeliveryAgentDetails() {
             </div>
             <div className="p-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {[
-                  { key: 'aadharFront', label: 'Aadhar Card (Front)' },
-                  { key: 'aadharBack', label: 'Aadhar Card (Back)' },
-                  { key: 'panCard', label: 'PAN Card' },
-                  { key: 'drivingLicense', label: 'Driving License' }
-                ].map(doc => (
-                  <div key={doc.key} className="border border-gray-200 rounded-lg p-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="font-medium text-gray-800">{doc.label}</span>
-                      {agent.documents?.[doc.key] ? (
-                        <CircleCheck className="w-5 h-5 text-green-500" />
-                      ) : (
-                        <XCircle className="w-5 h-5 text-red-500" />
-                      )}
+                {/* Document Verification Status */}
+                <div className="md:col-span-2 border border-gray-200 rounded-lg p-4">
+                  <h3 className="font-medium text-gray-800 mb-3">Document Verification Status</h3>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    <div className="flex items-center space-x-3">
+                      <input
+                        type="checkbox"
+                        checked={agent.documents?.aadharFront || false}
+                        readOnly
+                        className="w-4 h-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                      />
+                      <label className="text-sm font-medium text-gray-700">
+                        Aadhar Front {agent.documents?.aadharFront && <CircleCheck className="w-4 h-4 text-green-500 inline ml-1" />}
+                      </label>
                     </div>
-                    {agent.documents?.[doc.key] ? (
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => window.open(agent.documents[doc.key], '_blank')}
-                          className="text-blue-600 hover:text-blue-700 text-sm flex items-center gap-1"
-                        >
-                          <Eye className="w-4 h-4" />
-                          View
-                        </button>
-                      </div>
-                    ) : (
-                      <span className="text-sm text-red-600">Not uploaded</span>
-                    )}
-                  </div>
-                ))}
 
-                {/* Profile Photo */}
-                <div className="border border-gray-200 rounded-lg p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="font-medium text-gray-800">Profile Photo</span>
-                    {agent.personalInfo?.profilePhoto ? (
-                      <CircleCheck className="w-5 h-5 text-green-500" />
-                    ) : (
-                      <XCircle className="w-5 h-5 text-red-500" />
-                    )}
+                    <div className="flex items-center space-x-3">
+                      <input
+                        type="checkbox"
+                        checked={agent.documents?.aadharBack || false}
+                        readOnly
+                        className="w-4 h-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                      />
+                      <label className="text-sm font-medium text-gray-700">
+                        Aadhar Back {agent.documents?.aadharBack && <CircleCheck className="w-4 h-4 text-green-500 inline ml-1" />}
+                      </label>
+                    </div>
+
+                    <div className="flex items-center space-x-3">
+                      <input
+                        type="checkbox"
+                        checked={agent.documents?.panCard || false}
+                        readOnly
+                        className="w-4 h-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                      />
+                      <label className="text-sm font-medium text-gray-700">
+                        PAN Card {agent.documents?.panCard && <CircleCheck className="w-4 h-4 text-green-500 inline ml-1" />}
+                      </label>
+                    </div>
+
+                    <div className="flex items-center space-x-3">
+                      <input
+                        type="checkbox"
+                        checked={agent.documents?.drivingLicense || false}
+                        readOnly
+                        className="w-4 h-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                      />
+                      <label className="text-sm font-medium text-gray-700">
+                        Driving License {agent.documents?.drivingLicense && <CircleCheck className="w-4 h-4 text-green-500 inline ml-1" />}
+                      </label>
+                    </div>
+
+                    <div className="flex items-center space-x-3">
+                      <input
+                        type="checkbox"
+                        checked={agent.personalInfo?.profilePhoto || false}
+                        readOnly
+                        className="w-4 h-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                      />
+                      <label className="text-sm font-medium text-gray-700">
+                        Profile Photo {agent.personalInfo?.profilePhoto && <CircleCheck className="w-4 h-4 text-green-500 inline ml-1" />}
+                      </label>
+                    </div>
                   </div>
-                  {agent.personalInfo?.profilePhoto ? (
+                </div>
+
+                {/* Documents Link */}
+                <div className="md:col-span-2 border border-gray-200 rounded-lg p-4">
+                  <h3 className="font-medium text-gray-800 mb-3">Documents Link</h3>
+                  {agent.documents?.documentsLink ? (
                     <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => window.open(agent.personalInfo.profilePhoto, '_blank')}
+                      <a
+                        href={agent.documents.documentsLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
                         className="text-blue-600 hover:text-blue-700 text-sm flex items-center gap-1"
                       >
                         <Eye className="w-4 h-4" />
-                        View
-                      </button>
+                        View Documents Folder
+                      </a>
+                      <CircleCheck className="w-5 h-5 text-green-500" />
                     </div>
                   ) : (
-                    <span className="text-sm text-red-600">Not uploaded</span>
+                    <span className="text-sm text-red-600">No documents link provided</span>
                   )}
                 </div>
 
@@ -1332,45 +1343,20 @@ export default function DeliveryAgentDetails() {
             <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-4">
                 <div>
-                  <label className="text-sm text-gray-500">Preferred Areas</label>
-                  <div className="flex flex-wrap gap-2 mt-1">
-                    {agent.workInfo?.preferredAreas?.length > 0 ? (
-                      agent.workInfo.preferredAreas.map((area, index) => (
-                        <span key={index} className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
-                          {area}
-                        </span>
-                      ))
+                  <label className="text-sm text-gray-500">Preferred Area</label>
+                  <div className="mt-1">
+                    {agent.workInfo?.preferredAreas ? (
+                      <span className="px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full">
+                        {agent.workInfo.preferredAreas}
+                      </span>
                     ) : (
-                      <span className="text-gray-500 text-sm">No preferences set</span>
-                    )}
-                  </div>
-                </div>
-                <div>
-                  <label className="text-sm text-gray-500">Working Days</label>
-                  <div className="flex flex-wrap gap-2 mt-1">
-                    {agent.workInfo?.workingDays?.length > 0 ? (
-                      agent.workInfo.workingDays.map((day, index) => (
-                        <span key={index} className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full capitalize">
-                          {day}
-                        </span>
-                      ))
-                    ) : (
-                      <span className="text-gray-500 text-sm">Not specified</span>
+                      <span className="text-gray-500 text-sm">No preference set</span>
                     )}
                   </div>
                 </div>
               </div>
 
               <div className="space-y-4">
-                <div>
-                  <label className="text-sm text-gray-500">Availability Hours</label>
-                  <p className="font-medium text-gray-800">
-                    {agent.workInfo?.availabilityHours?.start && agent.workInfo?.availabilityHours?.end
-                      ? `${agent.workInfo.availabilityHours.start} - ${agent.workInfo.availabilityHours.end}`
-                      : 'Not specified'
-                    }
-                  </p>
-                </div>
                 <div>
                   <label className="text-sm text-gray-500">Expected Salary</label>
                   <p className="font-medium text-gray-800">
