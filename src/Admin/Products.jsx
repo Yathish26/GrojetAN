@@ -40,6 +40,8 @@ export default function Products() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [productIdToDelete, setProductIdToDelete] = useState(null);
+  const [imageViewerVisible, setImageViewerVisible] = useState(false);
+  const [selectedImageUrl, setSelectedImageUrl] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [categorylist, setCategorylist] = useState([]);
   const [filters, setFilters] = useState({ category: '', status: 'all', sort: 'name_asc', startsWith: 'all' });
@@ -314,6 +316,16 @@ export default function Products() {
     setOriginalThumbnailUrl(null);
     setOriginalImageUrls([]);
     setUploadingImages(false);
+  };
+
+  const openImageViewer = (imageUrl) => {
+    setSelectedImageUrl(imageUrl);
+    setImageViewerVisible(true);
+  };
+
+  const closeImageViewer = () => {
+    setImageViewerVisible(false);
+    setSelectedImageUrl(null);
   };
 
   const modalContentRef = useRef(null);
@@ -711,7 +723,12 @@ export default function Products() {
                             <div className="flex items-center">
                               {product.thumbnail && (
                                 <div className="flex-shrink-0 h-10 w-10">
-                                  <img className="h-10 w-10 " src={product.thumbnail} alt={product.name} />
+                                  <img 
+                                    className="h-10 w-10 rounded cursor-pointer hover:opacity-80 transition-opacity" 
+                                    src={product.thumbnail} 
+                                    alt={product.name}
+                                    onClick={() => openImageViewer(product.thumbnail)}
+                                  />
                                 </div>
                               )}
                               <div className="ml-4">
@@ -1118,6 +1135,37 @@ export default function Products() {
           </div>
         </Modal>
       </div >
+
+      {/* Image Viewer Modal */}
+      <Modal
+        isOpen={imageViewerVisible}
+        onRequestClose={closeImageViewer}
+        className="fixed inset-0 flex items-center justify-center p-4 z-50"
+        overlayClassName="fixed inset-0 bg-black bg-opacity-75 z-40"
+        contentLabel="Product Image Viewer"
+      >
+        <div className="relative max-w-4xl max-h-full bg-white rounded-lg overflow-hidden">
+          <div className="flex justify-end p-2">
+            <button
+              onClick={closeImageViewer}
+              className="text-gray-500 hover:text-gray-700 p-1"
+              title="Close"
+            >
+              <X size={24} />
+            </button>
+          </div>
+          <div className="p-4">
+            {selectedImageUrl && (
+              <img
+                src={selectedImageUrl}
+                alt="Product"
+                className="max-w-full max-h-96 object-contain mx-auto"
+                style={{ maxHeight: '70vh' }}
+              />
+            )}
+          </div>
+        </div>
+      </Modal>
     </Layout>
   );
 }
