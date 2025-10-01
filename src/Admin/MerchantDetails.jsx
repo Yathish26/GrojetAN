@@ -32,6 +32,13 @@ const MerchantDetails = () => {
         },
       });
 
+      if (response.status === 401) {
+        // Token expired or invalid, clear local storage and redirect to login
+        localStorage.removeItem('adminUser');
+        navigate('/login');
+        return;
+      }
+
       if (response.ok) {
         const data = await response.json();
         if (data.success) {
@@ -157,6 +164,13 @@ const MerchantDetails = () => {
           'Content-Type': 'application/json',
         },
       });
+
+      if (response.status === 401) {
+        // Token expired or invalid, clear local storage and redirect to login
+        localStorage.removeItem('adminUser');
+        navigate('/login');
+        return;
+      }
 
       if (response.ok) {
         const data = await response.json();
