@@ -3,9 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import {
     Search, Filter, Plus, Eye, Edit, Trash2, Store,
     Phone, Mail, MapPin, Star, Package, DollarSign,
-    Calendar, User, MoreVertical, Download
+    Calendar, User, MoreVertical, Download, Map, X
 } from 'lucide-react';
 import Layout from '../Components/Layout';
+import { GoogleMap, Marker } from '../Components/GoogleMapComponents';
 import toast from 'react-hot-toast';
 
 const Merchants = () => {
@@ -21,6 +22,72 @@ const Merchants = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [totalMerchants, setTotalMerchants] = useState(0);
+    const [showMapModal, setShowMapModal] = useState(false);
+
+    // Calculate map center and zoom based on merchant locations
+    const getMapCenterAndZoom = () => {
+        const merchantsWithCoords = filteredMerchants.filter(merchant =>
+            merchant.operationalInfo?.storeAddress?.coordinates?.latitude &&
+            merchant.operationalInfo?.storeAddress?.coordinates?.longitude
+        );
+
+        if (merchantsWithCoords.length === 0) {
+            // No merchants with coordinates, use Bangalore center
+            return {
+                center: { lat: 12.9716, lng: 77.5946 },
+                zoom: 10
+            };
+        }
+
+        if (merchantsWithCoords.length === 1) {
+            // Single merchant, center on it with closer zoom
+            const merchant = merchantsWithCoords[0];
+            return {
+                center: {
+                    lat: parseFloat(merchant.operationalInfo.storeAddress.coordinates.latitude),
+                    lng: parseFloat(merchant.operationalInfo.storeAddress.coordinates.longitude)
+                },
+                zoom: 15
+            };
+        }
+
+        // Multiple merchants, calculate bounds and center
+        let minLat = Infinity, maxLat = -Infinity;
+        let minLng = Infinity, maxLng = -Infinity;
+
+        merchantsWithCoords.forEach(merchant => {
+            const lat = parseFloat(merchant.operationalInfo.storeAddress.coordinates.latitude);
+            const lng = parseFloat(merchant.operationalInfo.storeAddress.coordinates.longitude);
+
+            minLat = Math.min(minLat, lat);
+            maxLat = Math.max(maxLat, lat);
+            minLng = Math.min(minLng, lng);
+            maxLng = Math.max(maxLng, lng);
+        });
+
+        // Calculate center
+        const centerLat = (minLat + maxLat) / 2;
+        const centerLng = (minLng + maxLng) / 2;
+
+        // Calculate zoom based on bounds
+        const latDiff = maxLat - minLat;
+        const lngDiff = maxLng - minLng;
+
+        // Simple zoom calculation based on the larger dimension
+        const maxDiff = Math.max(latDiff, lngDiff);
+        let zoom = 10; // default
+
+        if (maxDiff < 0.01) zoom = 16; // Very close together
+        else if (maxDiff < 0.05) zoom = 14; // Close together
+        else if (maxDiff < 0.1) zoom = 12; // Medium spread
+        else if (maxDiff < 0.5) zoom = 10; // Large spread
+        else zoom = 8; // Very spread out
+
+        return {
+            center: { lat: centerLat, lng: centerLng },
+            zoom: zoom
+        };
+    };
 
     // Fetch merchants from API with search and filters
     const fetchMerchants = async (page = 1, search = '', status = 'all', businessType = 'all') => {
@@ -73,6 +140,7 @@ const Merchants = () => {
                         joinDate: merchant.registrationDate ? new Date(merchant.registrationDate).toISOString().split('T')[0] : 'N/A',
                         profileImage: null,
                         brandingInfo: merchant.brandingInfo || null,
+                        operationalInfo: merchant.operationalInfo || null,
                         documents: {
                             gst: null,
                             fssai: null,
@@ -149,14 +217,10 @@ const Merchants = () => {
         switch (status) {
             case 'active':
                 return 'bg-green-100 text-green-800';
-            case 'inactive':
-                return 'bg-red-100 text-red-800';
-            case 'pending_verification':
+            case 'hold':
                 return 'bg-yellow-100 text-yellow-800';
-            case 'suspended':
-                return 'bg-orange-100 text-orange-800';
-            case 'closed':
-                return 'bg-gray-100 text-gray-800';
+            case 'banned':
+                return 'bg-red-100 text-red-800';
             default:
                 return 'bg-blue-100 text-blue-800';
         }
@@ -166,14 +230,10 @@ const Merchants = () => {
         switch (status) {
             case 'active':
                 return '🟢';
-            case 'inactive':
-                return '🔴';
-            case 'pending_verification':
-                return '🟡';
-            case 'suspended':
-                return '🟠';
-            case 'closed':
-                return '⚫';
+            case 'hold':
+                return '�';
+            case 'banned':
+                return '�';
             default:
                 return '⚪';
         }
@@ -227,6 +287,13 @@ const Merchants = () => {
                         <p className="text-gray-600">Manage and monitor all merchant accounts</p>
                     </div>
                     <div className="flex gap-3">
+                        <button
+                            onClick={() => setShowMapModal(true)}
+                            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                        >
+                            <Map size={16} />
+                            Merchants Map
+                        </button>
                         <button
                             onClick={exportMerchants}
                             className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
@@ -294,10 +361,8 @@ const Merchants = () => {
                                     >
                                         <option value="all">All Status</option>
                                         <option value="active">Active</option>
-                                        <option value="inactive">Inactive</option>
-                                        <option value="pending_verification">Pending Verification</option>
-                                        <option value="suspended">Suspended</option>
-                                        <option value="closed">Closed</option>
+                                        <option value="hold">Hold</option>
+                                        <option value="banned">Banned</option>
                                     </select>
                                 </div>
                                 <div>
@@ -349,13 +414,13 @@ const Merchants = () => {
                     <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-sm font-medium text-gray-600">Pending Verification</p>
+                                <p className="text-sm font-medium text-gray-600">On Hold</p>
                                 <p className="text-2xl font-bold text-yellow-600">
-                                    {merchants.filter(m => m.status === 'pending_verification').length}
+                                    {merchants.filter(m => m.status === 'hold').length}
                                 </p>
                             </div>
                             <div className="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center">
-                                <span className="text-yellow-600 font-bold">P</span>
+                                <span className="text-yellow-600 font-bold">H</span>
                             </div>
                         </div>
                     </div>
@@ -531,6 +596,147 @@ const Merchants = () => {
                     )}
                 </div>
             </div>
+
+            {/* Merchants Map Modal */}
+            {showMapModal && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-xl shadow-xl max-w-6xl w-full mx-4 max-h-[90vh] overflow-hidden">
+                        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+                            <div>
+                                <h2 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
+                                    <Map size={20} />
+                                    Grojet Merchants Map View
+                                </h2>
+                                <p className="text-sm text-gray-600 mt-1">
+                                    🟢 Green markers: Merchants with coordinates | 🔴 Red markers: Location not set (edit to add coordinates)
+                                </p>
+                            </div>
+                            <button
+                                onClick={() => setShowMapModal(false)}
+                                className="p-2 hover:bg-gray-100 rounded-lg"
+                            >
+                                <X size={20} />
+                            </button>
+                        </div>
+                        <div className="p-6">
+                            <div className="h-[600px] w-full rounded-lg overflow-hidden border border-gray-200">
+                                <GoogleMap
+                                    center={getMapCenterAndZoom().center}
+                                    zoom={getMapCenterAndZoom().zoom}
+                                    style={{ height: '100%', width: '100%' }}
+                                >
+                                    {filteredMerchants.map((merchant) => {
+                                        const hasCoordinates = merchant.operationalInfo?.storeAddress?.coordinates?.latitude && 
+                                                              merchant.operationalInfo?.storeAddress?.coordinates?.longitude;
+
+                                        if (hasCoordinates) {
+                                            return (
+                                                <Marker
+                                                    key={merchant.id}
+                                                    position={{
+                                                        lat: parseFloat(merchant.operationalInfo.storeAddress.coordinates.latitude),
+                                                        lng: parseFloat(merchant.operationalInfo.storeAddress.coordinates.longitude)
+                                                    }}
+                                                    title={merchant.name}
+                                                    icon={{
+                                                        url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
+                                                            <svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+                                                                <path d="M20 2C14.48 2 10 6.48 10 12c0 7.74 8.5 16.5 9.5 17.5L20 32l.5-.5C21.5 28.5 30 19.74 30 12c0-5.52-4.48-10-10-10z" fill="red" stroke="white" stroke-width="2"/>
+                                                                <circle cx="20" cy="12" r="4" fill="white"/>
+                                                            </svg>
+                                                        `),
+                                                        scaledSize: new window.google.maps.Size(40, 40),
+                                                        anchor: new window.google.maps.Point(20, 32)
+                                                    }}
+                                                    infoContent={`
+                                                        <div style="max-width: 280px;">
+                                                            <div style="font-weight: 600; margin-bottom: 8px; color: #1f2937;">${merchant.name}</div>
+                                                            <div style="margin-bottom: 4px;"><strong>ID:</strong> ${merchant.merchantId}</div>
+                                                            <div style="margin-bottom: 4px;"><strong>Status:</strong> 
+                                                                <span style="color: ${merchant.status === 'active' ? '#10B981' : merchant.status === 'hold' ? '#F59E0B' : '#EF4444'}; font-weight: 500;">
+                                                                    ${merchant.status}
+                                                                </span>
+                                                            </div>
+                                                            <div style="margin-bottom: 4px;"><strong>Type:</strong> ${merchant.businessType}</div>
+                                                            <div style="margin-bottom: 4px;"><strong>Address:</strong> ${merchant.operationalInfo?.storeAddress?.street || 'N/A'}</div>
+                                                            <div style="margin-bottom: 4px;"><strong>Phone:</strong> ${merchant.mobile}</div>
+                                                            <div style="margin-bottom: 4px;"><strong>Orders:</strong> ${merchant.totalOrders || 0}</div>
+                                                            <div style="margin-bottom: 8px;"><strong>Revenue:</strong> ₹${merchant.totalRevenue || 0}</div>
+                                                            <div style="font-size: 12px; color: #6B7280;">
+                                                                Lat: ${merchant.operationalInfo.storeAddress.coordinates.latitude}, 
+                                                                Lng: ${merchant.operationalInfo.storeAddress.coordinates.longitude}
+                                                            </div>
+                                                        </div>
+                                                    `}
+                                                />
+                                            );
+                                        } else {
+                                            // Show merchants without coordinates at a default location with a different marker
+                                            return (
+                                                <Marker
+                                                    key={merchant.id}
+                                                    position={{
+                                                        lat: 12.9716 + (Math.random() - 0.5) * 0.01, // Slight random offset from center
+                                                        lng: 77.5946 + (Math.random() - 0.5) * 0.01
+                                                    }}
+                                                    title={`${merchant.name} (Location not set)`}
+                                                    icon={{
+                                                        url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
+                                                            <svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+                                                                <path d="M20 2C14.48 2 10 6.48 10 12c0 7.74 8.5 16.5 9.5 17.5L20 32l.5-.5C21.5 28.5 30 19.74 30 12c0-5.52-4.48-10-10-10z" fill="#EF4444" stroke="white" stroke-width="2"/>
+                                                                <circle cx="20" cy="12" r="4" fill="white"/>
+                                                                <text x="20" y="16" text-anchor="middle" font-size="12" fill="#EF4444" font-weight="bold">!</text>
+                                                            </svg>
+                                                        `),
+                                                        scaledSize: new window.google.maps.Size(40, 40),
+                                                        anchor: new window.google.maps.Point(20, 32)
+                                                    }}
+                                                    infoContent={`
+                                                        <div style="max-width: 280px;">
+                                                            <div style="font-weight: 600; margin-bottom: 8px; color: #1f2937;">${merchant.name}</div>
+                                                            <div style="margin-bottom: 4px;"><strong>ID:</strong> ${merchant.merchantId}</div>
+                                                            <div style="margin-bottom: 4px;"><strong>Status:</strong> 
+                                                                <span style="color: ${merchant.status === 'active' ? '#10B981' : merchant.status === 'hold' ? '#F59E0B' : '#EF4444'}; font-weight: 500;">
+                                                                    ${merchant.status}
+                                                                </span>
+                                                            </div>
+                                                            <div style="margin-bottom: 4px;"><strong>Type:</strong> ${merchant.businessType}</div>
+                                                            <div style="margin-bottom: 4px;"><strong>Address:</strong> ${merchant.operationalInfo?.storeAddress?.street || 'N/A'}</div>
+                                                            <div style="margin-bottom: 4px;"><strong>Phone:</strong> ${merchant.mobile}</div>
+                                                            <div style="margin-bottom: 4px;"><strong>Orders:</strong> ${merchant.totalOrders || 0}</div>
+                                                            <div style="margin-bottom: 8px;"><strong>Revenue:</strong> ₹${merchant.totalRevenue || 0}</div>
+                                                            <div style="background-color: #FEF3C7; padding: 8px; border-radius: 4px; border: 1px solid #F59E0B; margin-top: 8px;">
+                                                                <strong style="color: #92400E;">⚠️ Location not set</strong><br/>
+                                                                <span style="color: #92400E; font-size: 12px;">Edit merchant to add coordinates</span>
+                                                            </div>
+                                                        </div>
+                                                    `}
+                                                />
+                                            );
+                                        }
+                                    })}
+                                </GoogleMap>
+                            </div>
+                            <div className="mt-4 flex items-center justify-between">
+                                <div className="text-sm text-gray-600">
+                                    Showing {filteredMerchants.length} merchants on map
+                                    {filteredMerchants.filter(m => m.operationalInfo?.storeAddress?.coordinates?.latitude).length > 0 && (
+                                        <span className="ml-2 text-green-600">
+                                            ({filteredMerchants.filter(m => m.operationalInfo?.storeAddress?.coordinates?.latitude).length} with coordinates)
+                                        </span>
+                                    )}
+                                </div>
+                                <button
+                                    onClick={() => setShowMapModal(false)}
+                                    className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
+                                >
+                                    Close Map
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </Layout>
     );
 };

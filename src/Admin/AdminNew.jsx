@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../Components/Layout';
 import {
-    Package, Plus, Store, ChartBarStacked,
-    ShoppingCart, Truck, MapPin, BarChart3, TrendingUp,
+    Package, Store, ChartBarStacked,
+    ShoppingCart, Truck, MapPin, TrendingUp,
     Users, Clock, CircleCheck,
     IndianRupee
 } from 'lucide-react';
@@ -124,33 +124,6 @@ export default function Admin() {
         </button>
     );
 
-    const quickActions = [
-        {
-            title: 'Add Product',
-            description: 'Add new items to inventory',
-            icon: Plus,
-            onClick: () => navigate('/products/add'),
-        },
-        {
-            title: 'View Orders',
-            description: 'Manage customer orders',
-            icon: ShoppingCart,
-            onClick: () => navigate('/orders'),
-        },
-        {
-            title: 'Delivery Agents',
-            description: 'Manage delivery team',
-            icon: Truck,
-            onClick: () => navigate('/delivery-agents'),
-        },
-        {
-            title: 'Analytics',
-            description: 'View performance reports',
-            icon: BarChart3,
-            onClick: () => navigate('/analytics'),
-        }
-    ];
-
     if (error) {
         return (
             <Layout title="Dashboard">
@@ -227,16 +200,6 @@ export default function Admin() {
                         value={dashboardStats.orders.completedOrders || 0}
                         icon={CircleCheck}
                     />
-                </div>
-
-                {/* Quick Actions */}
-                <div className="mb-8">
-                    <h3 className="text-base font-semibold text-green-800 mb-3">Quick Actions</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-                        {quickActions.map((action, index) => (
-                            <QuickAction key={index} {...action} />
-                        ))}
-                    </div>
                 </div>
 
                 {/* Management Links */}

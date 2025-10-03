@@ -26,7 +26,8 @@ import {
   Shield,
   Eye,
   RefreshCw,
-  CheckSquare
+  CheckSquare,
+  LogOut
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { GoogleMap, Marker } from '../Components/GoogleMapComponents';
@@ -300,6 +301,39 @@ export default function DeliveryAgentDetails() {
     }
   };
 
+  const clearLoginInfo = async () => {
+    if (!isAuthorized) return;
+
+    const confirmClear = window.confirm(
+      'Are you sure you want to clear the login session for this delivery agent? This will force them to log out from their mobile app.'
+    );
+
+    if (!confirmClear) return;
+
+    const loadingToast = toast.loading('Clearing login session...');
+    try {
+      const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/delivery-agents/${id}/clear-login`, {
+        method: 'POST',
+        credentials: 'include'
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to clear login session');
+      }
+
+      const data = await response.json();
+
+      // Refresh agent data to get updated status
+      await fetchAgentDetails();
+
+      toast.success('Login session cleared successfully. Agent has been logged out.');
+    } catch (err) {
+      toast.error(err.message || 'Failed to clear login session');
+    } finally {
+      toast.dismiss(loadingToast);
+    }
+  };
+
   const updateAgentDetails = async (updateData) => {
     if (!isAuthorized) return;
     const loadingToast = toast.loading('Updating agent details...');
@@ -524,6 +558,18 @@ export default function DeliveryAgentDetails() {
         toast.error('Please enter a first name');
         return;
       }
+    } else if (editingField === 'documents.documentsLink') {
+      if (!editValue.trim()) {
+        toast.error('Please enter a documents link');
+        return;
+      }
+      // Basic URL validation
+      try {
+        new URL(editValue.trim());
+      } catch {
+        toast.error('Please enter a valid URL');
+        return;
+      }
     } else if (!editValue.trim()) {
       toast.error('Please enter a value');
       return;
@@ -568,6 +614,9 @@ export default function DeliveryAgentDetails() {
     } else if (editingField === 'status.deliveryZone') {
       // Handle delivery zone editing
       updateData.status = { deliveryZone: editValue || null };
+    } else if (editingField === 'documents.documentsLink') {
+      // Handle documents link editing
+      updateData.documents = { documentsLink: editValue.trim() };
     }
 
     updateAgentDetails(updateData);
@@ -783,6 +832,16 @@ export default function DeliveryAgentDetails() {
           >
             <Edit3 className="w-4 h-4" />
             Edit Details
+          </button>
+
+          {/* Clear Login Info Button */}
+          <button
+            onClick={clearLoginInfo}
+            className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+            title="Clear login session and force logout"
+          >
+            <LogOut className="w-4 h-4" />
+            Clear Login Info
           </button>
         </div>
       </div>
@@ -1436,8 +1495,44 @@ export default function DeliveryAgentDetails() {
 
                 {/* Documents Link */}
                 <div className="md:col-span-2 border border-gray-200 rounded-lg p-4">
-                  <h3 className="font-medium text-gray-800 mb-3">Documents Link</h3>
-                  {agent.documents?.documentsLink ? (
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="font-medium text-gray-800">Documents Link</h3>
+                    {agent.documents?.documentsLink && (
+                      <button
+                        onClick={() => startEditing('documents.documentsLink', agent.documents.documentsLink)}
+                        className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded"
+                      >
+                        <Edit3 className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+                  {editingField === 'documents.documentsLink' ? (
+                    <div className="space-y-2">
+                      <input
+                        type="url"
+                        value={editValue}
+                        onChange={(e) => setEditValue(e.target.value)}
+                        placeholder="https://drive.google.com/..."
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      />
+                      <div className="flex gap-2">
+                        <button
+                          onClick={saveEditing}
+                          className="flex items-center gap-1 px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700"
+                        >
+                          <Save className="w-4 h-4" />
+                          Save
+                        </button>
+                        <button
+                          onClick={cancelEditing}
+                          className="flex items-center gap-1 px-3 py-1 bg-gray-600 text-white rounded hover:bg-gray-700"
+                        >
+                          <X className="w-4 h-4" />
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  ) : agent.documents?.documentsLink ? (
                     <div className="flex items-center gap-2">
                       <a
                         href={agent.documents.documentsLink}

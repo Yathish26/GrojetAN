@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { GoogleMap, DrawingManager, AddressSearch } from '../Components/GoogleMapComponents';
+import { GoogleMap, DrawingManager, AddressSearch, Marker } from '../Components/GoogleMapComponents';
 import Layout from '../Components/Layout';
 
 export default function GoogleMapsTest() {
@@ -36,6 +36,19 @@ export default function GoogleMapsTest() {
                 <DrawingManager
                   onPolygonComplete={handlePolygonComplete}
                 />
+                {selectedLocation && (
+                  <Marker
+                    position={{ lat: selectedLocation.lat, lng: selectedLocation.lng }}
+                    title={selectedLocation.address}
+                    infoContent={`
+                      <div style="max-width: 250px;">
+                        <strong>Selected Location</strong><br/>
+                        ${selectedLocation.address}<br/>
+                        <small>Lat: ${selectedLocation.lat.toFixed(6)}, Lng: ${selectedLocation.lng.toFixed(6)}</small>
+                      </div>
+                    `}
+                  />
+                )}
               </GoogleMap>
             </div>
 

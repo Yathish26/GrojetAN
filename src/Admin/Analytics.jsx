@@ -131,145 +131,110 @@ export default function Analytics() {
     try {
       setLoading(true);
       setError(null);
-      // Fetch the analytics data from the backend
-      const response = await fetch(
-        `${import.meta.env.VITE_SERVER}/admin/orders/analytics/chart-data?period=${timeRange}`,
+
+      // Fetch chart data
+      const chartResponse = await fetch(
+        `${import.meta.env.VITE_SERVER}/admin/analytics/chart-data?period=${timeRange}`,
         { credentials: 'include' }
       );
 
-      if (!response.ok) throw new Error('Failed to fetch analytics');
+      if (!chartResponse.ok) throw new Error('Failed to fetch chart data');
 
-      const data = await response.json();
-      const analyticsData = data.analyticsData || [];
+      const chartData = await chartResponse.json();
+      const analyticsData = chartData.analyticsData || [];
       setAnalytics(analyticsData);
 
-      // Calculate derived metrics for summary cards and charts
-      let totalOrders = 0,
-        totalRevenue = 0,
-        totalOrderValue = 0;
-      let prevOrders = 0,
-        prevRevenue = 0;
-      const len = analyticsData.length;
+      // Fetch dashboard metrics
+      const dashboardResponse = await fetch(
+        `${import.meta.env.VITE_SERVER}/admin/analytics/dashboard?period=${timeRange}`,
+        { credentials: 'include' }
+      );
 
-      analyticsData.forEach((point, idx) => {
-        totalOrders += point.orderCount || 0;
-        totalRevenue += point.revenue || 0;
-        totalOrderValue += point.avgOrderValue || 0;
-        // For growth: previous period is all except last day
-        if (idx < len - 1) {
-          prevOrders += point.orderCount || 0;
-          prevRevenue += point.revenue || 0;
-        }
-      });
-      const averageOrderValue = len > 0 ? Math.round(totalOrderValue / len) : 0;
+      if (!dashboardResponse.ok) throw new Error('Failed to fetch dashboard data');
 
-      // Calculate growth (compare last day to previous day, or last period to previous period)
-      let orderGrowth = 0,
-        revenueGrowth = 0;
-      if (len > 1) {
-        const last = analyticsData[len - 1];
-        const prev = analyticsData[len - 2];
-        orderGrowth = prev.orderCount
-          ? Math.round(((last.orderCount - prev.orderCount) / prev.orderCount) * 100)
-          : 0;
-        revenueGrowth = prev.revenue
-          ? Math.round(((last.revenue - prev.revenue) / prev.revenue) * 100)
-          : 0;
+      const dashboardData = await dashboardResponse.json();
+
+      if (dashboardData.success && dashboardData.data) {
+        setMetrics(dashboardData.data);
+      } else {
+        // Fallback to calculated metrics if dashboard endpoint fails
+        calculateFallbackMetrics(analyticsData);
       }
 
-      // --- FAKE DATA for "full dashboard" features ---
-      // These fields are here for demo and layout, adapt them to your real backend if available!
-      // "Completed" and "Pending" orders
-      const completedOrders = Math.floor((totalOrders * 0.8) || 0);
-      const pendingOrders = totalOrders - completedOrders;
-      // "Revenue breakdown"
-      const productRevenue = Math.floor(totalRevenue * 0.7);
-      const deliveryRevenue = Math.floor(totalRevenue * 0.2);
-      const serviceRevenue = totalRevenue - productRevenue - deliveryRevenue;
-      // "Delivery performance"
-      const averageDeliveryTime = 32 + (Math.random() * 8 | 0); // minutes
-      const onTimeDeliveryRate = 85 + (Math.random() * 10 | 0); // %
-      const activeAgents = 12 + (Math.random() * 6 | 0);
-      const averageAgentRating = 4 + Math.random();
-      // "Customer insights"
-      const activeCustomers = 100 + (Math.random() * 50 | 0);
-      const customerGrowth = 8 + (Math.random() * 5 | 0);
-      const deliverySuccessRate = 90 + (Math.random() * 6 | 0);
-      const successRateChange = 2 + (Math.random() * 2 | 0);
-      const newCustomers = 15 + (Math.random() * 7 | 0);
-      const returningCustomers = 7 + (Math.random() * 4 | 0);
-      const customerSatisfaction = (4 + Math.random()).toFixed(1);
-      // "Top Areas"
-      const topAreas = [
-        { name: 'Downtown', orders: 30 },
-        { name: 'Uptown', orders: 24 },
-        { name: 'Westend', orders: 21 },
-        { name: 'Eastside', orders: 19 },
-        { name: 'Suburbs', orders: 15 }
-      ];
-      // "Recent Activity"
-      const recentActivity = [
-        {
-          type: 'order',
-          description: 'Order #12345 placed',
-          timestamp: new Date(Date.now() - 1000 * 60 * 60 * 1).toISOString(),
-          value: '₹589'
-        },
-        {
-          type: 'delivery',
-          description: 'Order #12343 delivered',
-          timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString()
-        },
-        {
-          type: 'customer',
-          description: 'New customer registered',
-          timestamp: new Date(Date.now() - 1000 * 60 * 60 * 3).toISOString()
-        },
-        {
-          type: 'order',
-          description: 'Order #12340 placed',
-          timestamp: new Date(Date.now() - 1000 * 60 * 60 * 5).toISOString(),
-          value: '₹399'
-        },
-        {
-          type: 'order',
-          description: 'Order #12339 placed',
-          timestamp: new Date(Date.now() - 1000 * 60 * 60 * 7).toISOString(),
-          value: '₹712'
-        }
-      ];
+    } catch (error) {
+      console.error('Analytics fetch error:', error);
+      setError(error.message);
 
-      setMetrics({
-        totalOrders,
-        totalRevenue,
-        averageOrderValue,
-        orderGrowth,
-        revenueGrowth,
-        completedOrders,
-        pendingOrders,
-        productRevenue,
-        deliveryRevenue,
-        serviceRevenue,
-        averageDeliveryTime,
-        onTimeDeliveryRate,
-        activeAgents,
-        averageAgentRating: averageAgentRating.toFixed(1),
-        activeCustomers,
-        customerGrowth,
-        deliverySuccessRate,
-        successRateChange,
-        newCustomers,
-        returningCustomers,
-        customerSatisfaction,
-        topAreas,
-        recentActivity
-      });
-    } catch (err) {
-      setError(err.message);
-      toast.error('Failed to load analytics');
+      // Fallback to calculated metrics
+      calculateFallbackMetrics([]);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
+  };
+
+  const calculateFallbackMetrics = (analyticsData) => {
+    // Calculate basic metrics from chart data as fallback
+    let totalOrders = 0,
+      totalRevenue = 0,
+      totalOrderValue = 0;
+    let prevOrders = 0,
+      prevRevenue = 0;
+    const len = analyticsData.length;
+
+    analyticsData.forEach((point, idx) => {
+      totalOrders += point.orderCount || 0;
+      totalRevenue += point.revenue || 0;
+      totalOrderValue += point.avgOrderValue || 0;
+      // For growth: previous period is all except last day
+      if (idx < len - 1) {
+        prevOrders += point.orderCount || 0;
+        prevRevenue += point.revenue || 0;
+      }
+    });
+    const averageOrderValue = len > 0 ? Math.round(totalOrderValue / len) : 0;
+
+    // Calculate growth
+    let orderGrowth = 0,
+      revenueGrowth = 0;
+    if (len > 1) {
+      const last = analyticsData[len - 1];
+      const prev = analyticsData[len - 2];
+      orderGrowth = prev.orderCount
+        ? Math.round(((last.orderCount - prev.orderCount) / prev.orderCount) * 100)
+        : 0;
+      revenueGrowth = prev.revenue
+        ? Math.round(((last.revenue - prev.revenue) / prev.revenue) * 100)
+        : 0;
+    }
+
+    // Set basic metrics with zeros for unavailable data
+    setMetrics(prev => ({
+      ...prev,
+      totalOrders,
+      totalRevenue,
+      averageOrderValue,
+      orderGrowth,
+      revenueGrowth,
+      completedOrders: 0,
+      pendingOrders: 0,
+      productRevenue: 0,
+      deliveryRevenue: 0,
+      serviceRevenue: 0,
+      averageDeliveryTime: 0,
+      onTimeDeliveryRate: 0,
+      activeAgents: 0,
+      averageAgentRating: 0,
+      activeCustomers: 0,
+      customerGrowth: 0,
+      deliverySuccessRate: 0,
+      successRateChange: 0,
+      newCustomers: 0,
+      returningCustomers: 0,
+      customerSatisfaction: 0,
+      topAreas: [],
+      recentActivity: []
+    }));
   };
 
   const refreshAnalytics = async () => {

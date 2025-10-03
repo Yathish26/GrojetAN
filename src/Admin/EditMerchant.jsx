@@ -4,9 +4,10 @@ import {
   ArrowLeft, Save, X, Store, Phone, Mail, MapPin,
   FileText, CreditCard, Building, Globe, Users,
   Upload, Eye, Download, Image as ImageIcon,
-  CheckCircle, XCircle, AlertTriangle
+  CheckCircle, XCircle, AlertTriangle, Search, Navigation
 } from 'lucide-react';
 import Layout from '../Components/Layout';
+import { AddressSearch } from '../Components/GoogleMapComponents';
 import toast from 'react-hot-toast';
 
 const EditMerchant = () => {
@@ -17,6 +18,39 @@ const EditMerchant = () => {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
   const [uploadingFiles, setUploadingFiles] = useState({});
+
+  // Location search state
+  const [locationSearchQuery, setLocationSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [selectedLocation, setSelectedLocation] = useState(null);
+  const [isManualEntry, setIsManualEntry] = useState(false);
+  const [isSearchingLocation, setIsSearchingLocation] = useState(false);
+
+  // Handle location search
+  const handlePlaceSelect = (placeData) => {
+    if (placeData) {
+      setSelectedLocation(placeData);
+      setFormData(prev => ({
+        ...prev,
+        storeAddress: {
+          ...prev.storeAddress,
+          coordinates: {
+            latitude: placeData.lat.toString(),
+            longitude: placeData.lng.toString()
+          }
+        }
+      }));
+      toast.success('Location selected from Google Maps');
+    }
+  };
+
+  const handleManualEntryToggle = (checked) => {
+    setIsManualEntry(checked);
+    if (checked) {
+      setSelectedLocation(null);
+      setLocationSearchQuery('');
+    }
+  };
 
   // Form state
   const [formData, setFormData] = useState({
@@ -62,14 +96,15 @@ const EditMerchant = () => {
       state: '',
       pincode: '',
       country: 'India',
-      landmark: ''
+      landmark: '',
+      coordinates: { latitude: '', longitude: '' }
     },
     deliveryPreferences: {
       deliveryType: 'platform_delivery',
-    deliveryRadius: 10,
-    minimumOrderValue: 0,
-    deliveryCharges: 0,
-    freeDeliveryAbove: 500
+      deliveryRadius: 10,
+      minimumOrderValue: 0,
+      deliveryCharges: 0,
+      freeDeliveryAbove: 500
     },
     openingTime: '09:00 AM',
     closingTime: '09:00 PM',
@@ -86,9 +121,13 @@ const EditMerchant = () => {
       },
       shopEstablishmentLicense: '',
       fssaiLicense: '',
-      panCard: '',
-      aadhaarNumber: '',
-      bankAccountNumber: '',
+      panCardVerified: false,
+      aadhaarVerified: false,
+      gstinVerified: false,
+      shopEstablishmentVerified: false,
+      fssaiVerified: false,
+      bankAccountVerified: false,
+      documentsLink: '',
     },
 
     // Branding
@@ -184,9 +223,7 @@ const EditMerchant = () => {
               bankName: merchant.bankingInfo?.bankName || '',
               branchName: merchant.bankingInfo?.branchName || '',
               ifscCode: merchant.bankingInfo?.ifscCode || '',
-              accountType: merchant.bankingInfo?.accountType || 'business',
-              cancelledChequeNumber: merchant.bankingInfo?.cancelledChequeNumber || '',
-              bankPassbookNumber: merchant.bankingInfo?.bankPassbookNumber || ''
+              accountType: merchant.bankingInfo?.accountType || 'business'
             },
 
             // Operational Info
@@ -196,7 +233,11 @@ const EditMerchant = () => {
               state: merchant.operationalInfo?.storeAddress?.state || '',
               pincode: merchant.operationalInfo?.storeAddress?.pincode || '',
               country: merchant.operationalInfo?.storeAddress?.country || 'India',
-              landmark: merchant.operationalInfo?.storeAddress?.landmark || ''
+              landmark: merchant.operationalInfo?.storeAddress?.landmark || '',
+              coordinates: {
+                latitude: merchant.operationalInfo?.storeAddress?.coordinates?.latitude || '',
+                longitude: merchant.operationalInfo?.storeAddress?.coordinates?.longitude || ''
+              }
             },
             deliveryPreferences: {
               deliveryType: merchant.operationalInfo?.deliveryPreferences?.deliveryType || 'platform_delivery',
@@ -223,11 +264,13 @@ const EditMerchant = () => {
               },
               shopEstablishmentLicense: merchant.documents?.shopEstablishmentLicense || '',
               fssaiLicense: merchant.documents?.fssaiLicense || '',
-              panCard: merchant.documents?.panCard || '',
-              aadhaarNumber: merchant.documents?.aadhaarNumber || '',
-              bankAccountNumber: merchant.documents?.bankAccountNumber || '',
-              cancelledChequeNumber: merchant.documents?.cancelledChequeNumber || '',
-              bankPassbookNumber: merchant.documents?.bankPassbookNumber || ''
+              panCardVerified: merchant.documents?.panCard?.verified || false,
+              aadhaarVerified: merchant.documents?.aadhaarCard?.verified || false,
+              gstinVerified: merchant.documents?.gstinVerified || false,
+              shopEstablishmentVerified: merchant.documents?.shopEstablishmentVerified || false,
+              fssaiVerified: merchant.documents?.fssaiVerified || false,
+              bankAccountVerified: merchant.documents?.bankAccountVerified || false,
+              documentsLink: merchant.documents?.documentsLink || ''
             },
 
             // Branding
@@ -452,6 +495,28 @@ const EditMerchant = () => {
       }
     }));
   };
+
+  const renderCheckbox = (label, fieldName) => (
+    <div className="flex items-center space-x-3">
+      <input
+        type="checkbox"
+        checked={formData.documents[fieldName] || false}
+        onChange={(e) => {
+          setFormData(prev => ({
+            ...prev,
+            documents: {
+              ...prev.documents,
+              [fieldName]: e.target.checked
+            }
+          }));
+        }}
+        className="w-4 h-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+      />
+      <label className="text-sm font-medium text-gray-700">
+        {label}
+      </label>
+    </div>
+  );
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -1108,37 +1173,6 @@ const EditMerchant = () => {
                 </select>
               </div>
             </div>
-
-            {/* Banking Documents */}
-            <div className="mt-6">
-              <h3 className="text-md font-medium text-gray-900 mb-4">Banking Documents</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Cancelled Cheque Number
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.bankDetails.cancelledChequeNumber || ''}
-                    onChange={(e) => handleNestedInputChange('bankDetails', 'cancelledChequeNumber', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                    placeholder="Enter cancelled cheque number"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Bank Passbook Number
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.bankDetails.bankPassbookNumber || ''}
-                    onChange={(e) => handleNestedInputChange('bankDetails', 'bankPassbookNumber', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                    placeholder="Enter bank passbook number"
-                  />
-                </div>
-              </div>
-            </div>
           </div>
 
           {/* Operational Information */}
@@ -1215,6 +1249,86 @@ const EditMerchant = () => {
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                     placeholder="Enter landmark"
                   />
+                </div>
+
+                {/* Location Search */}
+                <div className="md:col-span-2 space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Business Location Search
+                    </label>
+                    <div className="flex gap-2">
+                      <div className="flex-1">
+                        <AddressSearch
+                          onPlaceSelect={handlePlaceSelect}
+                          placeholder="Search for your business name or address..."
+                        />
+                      </div>
+                    </div>
+                    {selectedLocation && (
+                      <div className="mt-2 p-3 bg-green-50 border border-green-200 rounded-lg">
+                        <div className="flex items-center gap-2 text-green-700">
+                          <CheckCircle size={16} />
+                          <span className="text-sm font-medium">Location Selected:</span>
+                        </div>
+                        <p className="text-sm text-green-600 mt-1">{selectedLocation.address}</p>
+                        <p className="text-xs text-green-500 mt-1">
+                          Lat: {selectedLocation.lat.toFixed(6)}, Lng: {selectedLocation.lng.toFixed(6)}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Manual Entry Option */}
+                  <div className="flex items-center space-x-3">
+                    <input
+                      type="checkbox"
+                      checked={isManualEntry}
+                      onChange={(e) => handleManualEntryToggle(e.target.checked)}
+                      className="w-4 h-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                    />
+                    <label className="text-sm font-medium text-gray-700">
+                      Not on Google Maps - Enter coordinates manually
+                    </label>
+                  </div>
+
+                  {/* Latitude & Longitude */}
+                  <div className={`grid grid-cols-1 md:grid-cols-2 gap-6 ${isManualEntry ? '' : 'opacity-50 pointer-events-none'}`}>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Latitude {isManualEntry && '*'}
+                      </label>
+                      <input
+                        type="number"
+                        step="any"
+                        value={formData.storeAddress.coordinates.latitude}
+                        onChange={(e) => handleDeepNestedInputChange('storeAddress', 'coordinates', 'latitude', e.target.value)}
+                        placeholder="e.g. 12.9716"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                        disabled={!isManualEntry}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Longitude {isManualEntry && '*'}
+                      </label>
+                      <input
+                        type="number"
+                        step="any"
+                        value={formData.storeAddress.coordinates.longitude}
+                        onChange={(e) => handleDeepNestedInputChange('storeAddress', 'coordinates', 'longitude', e.target.value)}
+                        placeholder="e.g. 77.5946"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                        disabled={!isManualEntry}
+                      />
+                    </div>
+                  </div>
+
+                  {!isManualEntry && !selectedLocation && (
+                    <p className="text-sm text-gray-500">
+                      Search for your business above or check "Not on Google Maps" to enter coordinates manually.
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
@@ -1374,14 +1488,10 @@ const EditMerchant = () => {
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   >
                     <option value="">Select Store Type</option>
-                    <option value="Grocery Store">Grocery Store</option>
-                    <option value="Restaurant">Restaurant</option>
-                    <option value="Pharmacy">Pharmacy</option>
-                    <option value="Bakery">Bakery</option>
-                    <option value="Butcher Shop">Butcher Shop</option>
-                    <option value="Dairy">Dairy</option>
-                    <option value="Convenience Store">Convenience Store</option>
-                    <option value="Supermarket">Supermarket</option>
+                    <option value="Grocery">Grocery</option>
+                    <option value="Healthcare">Healthcare</option>
+                    <option value="Fresh Fruits & Vegetables">Fresh Fruits & Vegetables</option>
+                    <option value="Meats">Meats</option>
                     <option value="Other">Other</option>
                   </select>
                 </div>
@@ -1407,12 +1517,9 @@ const EditMerchant = () => {
                   required
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 >
-                  <option value="pending_verification">Pending Verification</option>
-                  <option value="under_review">Under Review</option>
-                  <option value="approved">Approved</option>
                   <option value="active">Active</option>
-                  <option value="suspended">Suspended</option>
-                  <option value="rejected">Rejected</option>
+                  <option value="hold">Hold</option>
+                  <option value="banned">Banned</option>
                 </select>
               </div>
               <div>
@@ -1480,127 +1587,36 @@ const EditMerchant = () => {
               Documents & Verification
             </h2>
 
-            {/* GST Information */}
+            {/* Document Verification Checkboxes */}
             <div className="mb-6">
-              <h3 className="text-md font-medium text-gray-900 mb-4">GST Information</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    GST Number
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.documents.gstin.number}
-                    onChange={(e) => handleDeepNestedInputChange('documents', 'gstin', 'number', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                    placeholder="Enter GST number"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    GST Certificate Number
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.documents.gstin.certificateNumber || ''}
-                    onChange={(e) => handleDeepNestedInputChange('documents', 'gstin', 'certificateNumber', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                    placeholder="Enter GST certificate number"
-                  />
-                </div>
+              <h3 className="text-md font-medium text-gray-900 mb-4">Document Verification</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {renderCheckbox('PAN Card Verified', 'panCardVerified')}
+                {renderCheckbox('Aadhaar Card Verified', 'aadhaarVerified')}
+                {renderCheckbox('GSTIN Verified', 'gstinVerified')}
+                {renderCheckbox('Shop Establishment License Verified', 'shopEstablishmentVerified')}
+                {renderCheckbox('FSSAI License Verified', 'fssaiVerified')}
+                {renderCheckbox('Bank Account Verified', 'bankAccountVerified')}
               </div>
             </div>
 
-            {/* Business Documents */}
+            {/* Google Drive Documents Link */}
             <div className="mb-6">
-              <h3 className="text-md font-medium text-gray-900 mb-4">Business Documents</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    FSSAI License Number
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.documents.fssaiLicense}
-                    onChange={(e) => handleNestedInputChange('documents', 'fssaiLicense', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                    placeholder="Enter FSSAI number"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    PAN Card Number
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.documents.panCard}
-                    onChange={(e) => handleNestedInputChange('documents', 'panCard', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                    placeholder="Enter PAN number"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Shop Establishment License
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.documents.shopEstablishmentLicense}
-                    onChange={(e) => handleNestedInputChange('documents', 'shopEstablishmentLicense', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                    placeholder="Enter license number"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Aadhaar Card */}
-            <div className="mb-6">
-              <h3 className="text-md font-medium text-gray-900 mb-4">Aadhaar Card</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Aadhaar Number
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.documents.aadhaarNumber}
-                    onChange={(e) => handleNestedInputChange('documents', 'aadhaarNumber', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                    placeholder="Enter 12-digit Aadhaar number"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Banking Documents */}
-            <div className="mb-6">
-              <h3 className="text-md font-medium text-gray-900 mb-4">Banking Documents</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Cancelled Cheque Number
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.documents.cancelledChequeNumber || ''}
-                    onChange={(e) => handleNestedInputChange('documents', 'cancelledChequeNumber', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                    placeholder="Enter cancelled cheque number"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Bank Passbook Number
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.documents.bankPassbookNumber || ''}
-                    onChange={(e) => handleNestedInputChange('documents', 'bankPassbookNumber', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                    placeholder="Enter bank passbook number"
-                  />
-                </div>
+              <h3 className="text-md font-medium text-gray-900 mb-4">Documents Link</h3>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Google Drive Link
+                </label>
+                <input
+                  type="url"
+                  value={formData.documents.documentsLink || ''}
+                  onChange={(e) => handleNestedInputChange('documents', 'documentsLink', e.target.value)}
+                  placeholder="https://drive.google.com/drive/folders/..."
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Provide a Google Drive link containing all merchant documents
+                </p>
               </div>
             </div>
 
@@ -1736,11 +1752,10 @@ const EditMerchant = () => {
                             <button
                               type="button"
                               onClick={() => setPrimaryImage(index)}
-                              className={`p-1 rounded text-xs ${
-                                image.isPrimary
+                              className={`p-1 rounded text-xs ${image.isPrimary
                                   ? 'bg-green-500 text-white'
                                   : 'bg-white/80 text-gray-600 hover:bg-white'
-                              }`}
+                                }`}
                               title="Set as primary"
                             >
                               <CheckCircle size={12} />

@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import {
   Home, Package, Plus, Users, Store, ChartBarStacked,
   Truck, MapPin, BarChart3, Settings, LogOut, User,
-  Menu, X, Shield, ShoppingCart, Bell,
+  Menu, X, Shield, ShoppingCart, Bell, Gift,
   TabletSmartphone, Briefcase
 } from 'lucide-react';
 import { MdAdminPanelSettings } from 'react-icons/md';
@@ -125,6 +125,7 @@ const Layout = ({ children, title }) => {
     { name: 'Merchants', icon: Store, path: '/merchants', roles: ['super_admin', 'admin'] },
     { name: 'Delivery Agents', icon: Truck, path: '/delivery-agents', roles: ['super_admin', 'admin', 'delivery_manager'] },
     { name: 'Delivery Zones', icon: MapPin, path: '/delivery-zones', roles: ['super_admin', 'admin', 'delivery_manager'] },
+    { name: 'Offers', icon: Gift, path: '/offers', roles: ['super_admin', 'admin'] },
     { name: 'Analytics', icon: BarChart3, path: '/analytics', roles: ['super_admin', 'admin'] },
     { name: 'App Controls', icon: TabletSmartphone, path: '/app-controls', roles: ['super_admin', 'admin'] },
     { name: 'Admin Management', icon: Shield, path: '/admin-management', roles: ['super_admin'] },
@@ -163,7 +164,7 @@ const Layout = ({ children, title }) => {
         {/* Logo */}
         <div className="flex items-center justify-between h-16 px-6 border-b border-neutral-200 flex-shrink-0">
           <div className="flex items-center gap-3 w-full">
-            <img src="/grojet.png" alt="Grojet" className="h-8 object-contain" />
+            <img src="/grojet.png" alt="Grojet" className="h-6 object-contain" />
           </div>
           <button
             onClick={() => setSidebarOpen(false)}

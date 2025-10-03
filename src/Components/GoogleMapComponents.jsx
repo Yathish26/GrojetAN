@@ -377,9 +377,8 @@ export const DrawingManager = ({
               content: `
                 <div style="max-width: 200px;">
                   <strong>${zone.name}</strong><br>
-                  Delivery Fee: ₹${zone.deliveryFee}<br>
-                  Est. Time: ${zone.estimatedDeliveryTime} min<br>
-                  Max Distance: ${zone.maxDeliveryDistance} km
+                  Status: ${zone.isActive ? 'Active' : 'Inactive'}<br>
+                  Boundary Points: ${zone.boundaries?.coordinates?.[0]?.length || 0}
                 </div>
               `
             });
@@ -572,13 +571,12 @@ export const Marker = ({
       icon: icon || {
         url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
           <svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="20" cy="20" r="18" fill="#059669" stroke="white" stroke-width="3"/>
-            <circle cx="20" cy="20" r="8" fill="white"/>
-            <circle cx="20" cy="20" r="4" fill="#059669"/>
+            <path d="M20 2C14.48 2 10 6.48 10 12c0 7.74 8.5 16.5 9.5 17.5L20 32l.5-.5C21.5 28.5 30 19.74 30 12c0-5.52-4.48-10-10-10z" fill="#dc2626" stroke="white" stroke-width="2"/>
+            <circle cx="20" cy="12" r="4" fill="white"/>
           </svg>
         `),
         scaledSize: new window.google.maps.Size(40, 40),
-        anchor: new window.google.maps.Point(20, 40)
+        anchor: new window.google.maps.Point(20, 32)
       }
     });
 

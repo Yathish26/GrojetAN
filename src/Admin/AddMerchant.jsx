@@ -3,9 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, Upload, X, Eye, EyeOff, Save, User,
   Building, Phone, Mail, MapPin, CreditCard, FileText,
-  Camera, Store, DollarSign, Calendar, Shield
+  Camera, Store, DollarSign, Calendar, Shield, Search, Navigation
 } from 'lucide-react';
 import Layout from '../Components/Layout';
+import { AddressSearch } from '../Components/GoogleMapComponents';
 import toast from 'react-hot-toast';
 
 const AddMerchant = () => {
@@ -94,19 +95,53 @@ const AddMerchant = () => {
     // Store Status
     storeStatus: 'closed',
 
-    // Documents (Text inputs)
+    // Documents (Checkboxes and Google Drive link)
     documents: {
-      panCard: '',
-      aadhaarNumber: '',
-      gstinNumber: '',
-      shopEstablishmentLicense: '',
-      fssaiLicense: '',
-      bankAccountNumber: '',
+      panCardVerified: false,
+      aadhaarVerified: false,
+      gstinVerified: false,
+      shopEstablishmentVerified: false,
+      fssaiVerified: false,
+      bankAccountVerified: false,
+      documentsLink: '',
     }
   });
 
   const [currentStep, setCurrentStep] = useState(1);
   const totalSteps = 4;
+
+  // Location search state
+  const [locationSearchQuery, setLocationSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [selectedLocation, setSelectedLocation] = useState(null);
+  const [isManualEntry, setIsManualEntry] = useState(false);
+  const [isSearchingLocation, setIsSearchingLocation] = useState(false);
+
+  // Handle location search
+  const handlePlaceSelect = (placeData) => {
+    if (placeData) {
+      setSelectedLocation(placeData);
+      setFormData(prev => ({
+        ...prev,
+        storeAddress: {
+          ...prev.storeAddress,
+          coordinates: {
+            latitude: placeData.lat.toString(),
+            longitude: placeData.lng.toString()
+          }
+        }
+      }));
+      toast.success('Location selected from Google Maps');
+    }
+  };
+
+  const handleManualEntryToggle = (checked) => {
+    setIsManualEntry(checked);
+    if (checked) {
+      setSelectedLocation(null);
+      setLocationSearchQuery('');
+    }
+  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -225,27 +260,25 @@ const AddMerchant = () => {
     }
   };
 
-  const renderTextInput = (label, fieldName, placeholder = "", required = false, type = "text") => (
-    <div className="space-y-2">
-      <label className="block text-sm font-medium text-gray-700">
-        {label} {required && <span className="text-red-500">*</span>}
-      </label>
+  const renderCheckbox = (label, fieldName) => (
+    <div className="flex items-center space-x-3">
       <input
-        type={type}
-        value={formData.documents[fieldName] || ''}
+        type="checkbox"
+        checked={formData.documents[fieldName] || false}
         onChange={(e) => {
           setFormData(prev => ({
             ...prev,
             documents: {
               ...prev.documents,
-              [fieldName]: e.target.value
+              [fieldName]: e.target.checked
             }
           }));
         }}
-        placeholder={placeholder}
-        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-        required={required}
+        className="w-4 h-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
       />
+      <label className="text-sm font-medium text-gray-700">
+        {label}
+      </label>
     </div>
   );
 
@@ -689,13 +722,41 @@ const AddMerchant = () => {
                 <div>
                   <h4 className="text-md font-semibold text-gray-900 mb-4">Document Information</h4>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {renderTextInput('PAN Card Number', 'panCard', 'Enter PAN card number', true)}
-                    {renderTextInput('Aadhaar Number', 'aadhaarNumber', 'Enter 12-digit Aadhaar number', true)}
-                    {renderTextInput('GSTIN Number', 'gstinNumber', 'Enter GSTIN number')}
-                    {renderTextInput('Shop Establishment License', 'shopEstablishmentLicense', 'Enter license number')}
-                    {renderTextInput('FSSAI License Number', 'fssaiLicense', 'Enter FSSAI license number')}
-                    {renderTextInput('Bank Account Number', 'bankAccountNumber', 'Enter account number for verification', true)}
+                  <div className="space-y-4">
+                    {/* Document Verification Checkboxes */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {renderCheckbox('PAN Card Verified', 'panCardVerified')}
+                      {renderCheckbox('Aadhaar Card Verified', 'aadhaarVerified')}
+                      {renderCheckbox('GSTIN Verified', 'gstinVerified')}
+                      {renderCheckbox('Shop Establishment License Verified', 'shopEstablishmentVerified')}
+                      {renderCheckbox('FSSAI License Verified', 'fssaiVerified')}
+                      {renderCheckbox('Bank Account Verified', 'bankAccountVerified')}
+                    </div>
+
+                    {/* Google Drive Documents Link */}
+                    <div className="mt-6">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Documents Google Drive Link
+                      </label>
+                      <input
+                        type="url"
+                        value={formData.documents.documentsLink || ''}
+                        onChange={(e) => {
+                          setFormData(prev => ({
+                            ...prev,
+                            documents: {
+                              ...prev.documents,
+                              documentsLink: e.target.value
+                            }
+                          }));
+                        }}
+                        placeholder="https://drive.google.com/drive/folders/..."
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">
+                        Provide a Google Drive link containing all merchant documents
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -785,6 +846,88 @@ const AddMerchant = () => {
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                       />
                     </div>
+
+                    {/* Location Search */}
+                    <div className="md:col-span-2 space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Business Location Search
+                        </label>
+                        <div className="flex gap-2">
+                          <div className="flex-1">
+                            <AddressSearch
+                              onPlaceSelect={handlePlaceSelect}
+                              placeholder="Search for your business name or address..."
+                            />
+                          </div>
+                        </div>
+                        {selectedLocation && (
+                          <div className="mt-2 p-3 bg-green-50 border border-green-200 rounded-lg">
+                            <div className="flex items-center gap-2 text-green-700">
+                              <CheckCircle size={16} />
+                              <span className="text-sm font-medium">Location Selected:</span>
+                            </div>
+                            <p className="text-sm text-green-600 mt-1">{selectedLocation.address}</p>
+                            <p className="text-xs text-green-500 mt-1">
+                              Lat: {selectedLocation.lat.toFixed(6)}, Lng: {selectedLocation.lng.toFixed(6)}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Manual Entry Option */}
+                      <div className="flex items-center space-x-3">
+                        <input
+                          type="checkbox"
+                          checked={isManualEntry}
+                          onChange={(e) => handleManualEntryToggle(e.target.checked)}
+                          className="w-4 h-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                        />
+                        <label className="text-sm font-medium text-gray-700">
+                          Not on Google Maps - Enter coordinates manually
+                        </label>
+                      </div>
+
+                      {/* Latitude & Longitude */}
+                      <div className={`grid grid-cols-1 md:grid-cols-2 gap-6 ${isManualEntry ? '' : 'opacity-50 pointer-events-none'}`}>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Latitude {isManualEntry && <span className="text-red-500">*</span>}
+                          </label>
+                          <input
+                            type="number"
+                            step="any"
+                            name="storeAddress.coordinates.latitude"
+                            value={formData.storeAddress.coordinates.latitude}
+                            onChange={handleInputChange}
+                            placeholder="e.g. 12.9716"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                            disabled={!isManualEntry}
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Longitude {isManualEntry && <span className="text-red-500">*</span>}
+                          </label>
+                          <input
+                            type="number"
+                            step="any"
+                            name="storeAddress.coordinates.longitude"
+                            value={formData.storeAddress.coordinates.longitude}
+                            onChange={handleInputChange}
+                            placeholder="e.g. 77.5946"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                            disabled={!isManualEntry}
+                          />
+                        </div>
+                      </div>
+
+                      {!isManualEntry && !selectedLocation && (
+                        <p className="text-sm text-gray-500">
+                          Search for your business above or check "Not on Google Maps" to enter coordinates manually.
+                        </p>
+                      )}
+                    </div>
                   </div>
                 </div>
 
@@ -804,14 +947,10 @@ const AddMerchant = () => {
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                     >
                       <option value="">Select Store Type</option>
-                      <option value="Grocery Store">Grocery Store</option>
-                      <option value="Restaurant">Restaurant</option>
-                      <option value="Pharmacy">Pharmacy</option>
-                      <option value="Bakery">Bakery</option>
-                      <option value="Butcher Shop">Butcher Shop</option>
-                      <option value="Dairy">Dairy</option>
-                      <option value="Convenience Store">Convenience Store</option>
-                      <option value="Supermarket">Supermarket</option>
+                      <option value="Grocery">Grocery</option>
+                      <option value="Healthcare">Healthcare</option>
+                      <option value="Fresh Fruits & Vegetables">Fresh Fruits & Vegetables</option>
+                      <option value="Meats">Meats</option>
                       <option value="Other">Other</option>
                     </select>
                   </div>

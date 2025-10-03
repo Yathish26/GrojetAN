@@ -109,7 +109,7 @@ const DeliveryAgents = () => {
     setStatusUpdate({
       applicationStatus: agent.status.applicationStatus,
       rejectionReason: agent.verification.rejectionReason || '',
-      deliveryZone: agent.status.deliveryZone || ''
+      deliveryZone: agent.status.deliveryZone?._id || agent.status.deliveryZone || ''
     });
     setShowStatusModal(true);
   };
@@ -378,7 +378,7 @@ const DeliveryAgents = () => {
                                 {agent.personalInfo.firstName} {agent.personalInfo.lastName}
                               </div>
                               <div className="text-sm text-gray-500">
-                                Zone: {agent.status.deliveryZone || 'Not assigned'}
+                                Zone: {agent.status.deliveryZone?.name || 'Not assigned'}
                               </div>
                               <div className="flex items-center mt-1">
                                 {agent.status.isOnline && (

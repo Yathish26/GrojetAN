@@ -1,4 +1,3 @@
-
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom'
 import AdminNew from './Admin/AdminNew.jsx'
 import AdminLogin from './Admin/AdminLogin.jsx'
@@ -25,10 +24,12 @@ import Merchants from './Admin/Merchants.jsx'
 import AddMerchant from './Admin/AddMerchant.jsx'
 import MerchantDetails from './Admin/MerchantDetails.jsx'
 import EditMerchant from './Admin/EditMerchant.jsx'
+import MerchantInventory from './Admin/MerchantInventory.jsx'
 import GoogleMapsTest from './Admin/GoogleMapsTest.jsx'
 import AppControls from './Admin/AppControls.jsx'
 import Careers from './Admin/Careers.jsx'
 import RequestedProducts from './Admin/RequestedProducts.jsx'
+import Offers from './Admin/Offers.jsx'
 
 function App() {
   return (
@@ -86,6 +87,7 @@ function App() {
           <Route path="/merchants/add" element={<AddMerchant />} />
           <Route path="/merchants/:id" element={<MerchantDetails />} />
           <Route path="/merchants/:id/edit" element={<EditMerchant />} />
+          <Route path="/merchants/:id/inventory" element={<MerchantInventory />} />
           
           {/* Category Management */}
           <Route path="/categories" element={<Categories />} />
@@ -98,6 +100,7 @@ function App() {
           <Route path="/delivery-agents/:id" element={<DeliveryAgentDetails />} />
           <Route path="/delivery-zones" element={<DeliveryZones />} />
           <Route path="/delivery-signup" element={<DeliveryAgentSignup />} />
+          <Route path="/offers" element={<Offers />} />
           
           {/* Google Maps Test */}
           <Route path="/maps-test" element={<GoogleMapsTest />} />

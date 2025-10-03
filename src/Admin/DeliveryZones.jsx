@@ -12,9 +12,8 @@ import {
   Ban
 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import ChipInput from '../Components/ChipInput';
 import Layout from '../Components/Layout';
-import { GoogleMap, DrawingManager, AddressSearch, googleMapsApi } from '../Components/GoogleMapComponents';
+import { GoogleMap, DrawingManager, AddressSearch, googleMapsApi, Marker } from '../Components/GoogleMapComponents';
 
 // Lightweight overlay to render a zone polygon on a GoogleMap
 const ZonePolygon = ({ map, zone }) => {
@@ -67,9 +66,7 @@ const ZonePolygon = ({ map, zone }) => {
         <div style="max-width:220px">
           <div style="font-weight:600;margin-bottom:4px">${zone.name || 'Zone'}</div>
           <div>Status: ${zone.isActive ? 'Active' : 'Inactive'}</div>
-          <div>Fee: ₹${zone.deliveryFee ?? 0}</div>
-          <div>ETA: ${zone.estimatedDeliveryTime ?? 0} min</div>
-          <div>Max Dist: ${zone.maxDeliveryDistance ?? 0} km</div>
+          <div>Boundary Points: ${zone.boundaries?.coordinates?.[0]?.length || 0}</div>
         </div>
       `
     });
@@ -229,9 +226,7 @@ const AllZonesView = ({ map, zones }) => {
             <div style="max-width:220px">
               <div style="font-weight:600;margin-bottom:4px">${zone.name || 'Zone'}</div>
               <div>Status: ${zone.isActive ? 'Active' : 'Inactive'}</div>
-              <div>Fee: ₹${zone.deliveryFee ?? 0}</div>
-              <div>ETA: ${zone.estimatedDeliveryTime ?? 0} min</div>
-              <div>Max Dist: ${zone.maxDeliveryDistance ?? 0} km</div>
+              <div>Boundary Points: ${zone.boundaries?.coordinates?.[0]?.length || 0}</div>
             </div>
           `
         });
@@ -315,22 +310,7 @@ export default function DeliveryZones() {
       type: 'Polygon',
       coordinates: []
     },
-    isActive: true,
-    deliveryFee: '',
-    minimumOrderValue: '',
-    estimatedDeliveryTime: '',
-    maxDeliveryDistance: '',
-    peakHourMultiplier: 1.2,
-    coverage: {
-      pinCodes: [],
-      areas: [],
-      landmarks: []
-    },
-    restrictions: {
-      cashOnDelivery: true,
-      maxOrderValue: '',
-      blockedItems: []
-    }
+    isActive: true
   });
 
   // Initialize edit form when a zone is selected for editing
@@ -342,21 +322,6 @@ export default function DeliveryZones() {
         name: editingZone.name || '',
         description: editingZone.description || '',
         isActive: !!editingZone.isActive,
-        deliveryFee: editingZone.deliveryFee ?? '',
-        minimumOrderValue: editingZone.minimumOrderValue ?? '',
-        estimatedDeliveryTime: editingZone.estimatedDeliveryTime ?? '',
-        maxDeliveryDistance: editingZone.maxDeliveryDistance ?? '',
-        peakHourMultiplier: editingZone.peakHourMultiplier ?? 1.2,
-        coverage: {
-          pinCodes: editingZone.coverage?.pinCodes || [],
-          areas: editingZone.coverage?.areas || [],
-          landmarks: editingZone.coverage?.landmarks || []
-        },
-        restrictions: {
-          cashOnDelivery: editingZone.restrictions?.cashOnDelivery ?? true,
-          maxOrderValue: editingZone.restrictions?.maxOrderValue ?? '',
-          blockedItems: editingZone.restrictions?.blockedItems || []
-        },
         boundaries: {
           type: 'Polygon',
           coordinates: editingZone.boundaries?.coordinates || []
@@ -403,10 +368,7 @@ export default function DeliveryZones() {
     // Validation
     if (
       !createForm.name ||
-      !createForm.boundaries.coordinates.length ||
-      !createForm.estimatedDeliveryTime ||
-      !createForm.maxDeliveryDistance ||
-      !createForm.deliveryFee
+      !createForm.boundaries.coordinates.length
     ) {
       toast.error('Please fill all required fields including boundaries');
       return;
@@ -414,26 +376,12 @@ export default function DeliveryZones() {
 
     // Prepare payload
     const payload = {
-      ...createForm,
+      name: createForm.name,
       description: createForm.description,
-      deliveryFee: parseFloat(createForm.deliveryFee),
-      minimumOrderValue: createForm.minimumOrderValue ? parseFloat(createForm.minimumOrderValue) : 0,
-      estimatedDeliveryTime: parseInt(createForm.estimatedDeliveryTime),
-      maxDeliveryDistance: parseFloat(createForm.maxDeliveryDistance),
-      peakHourMultiplier: createForm.peakHourMultiplier ? parseFloat(createForm.peakHourMultiplier) : 1.2,
+      isActive: createForm.isActive,
       boundaries: {
         type: 'Polygon',
         coordinates: createForm.boundaries.coordinates
-      },
-      coverage: {
-        pinCodes: createForm.coverage.pinCodes,
-        areas: createForm.coverage.areas,
-        landmarks: createForm.coverage.landmarks
-      },
-      restrictions: {
-        cashOnDelivery: !!createForm.restrictions.cashOnDelivery,
-        maxOrderValue: createForm.restrictions.maxOrderValue ? parseFloat(createForm.restrictions.maxOrderValue) : undefined,
-        blockedItems: createForm.restrictions.blockedItems
       }
     };
 
@@ -459,14 +407,7 @@ export default function DeliveryZones() {
         name: '',
         description: '',
         boundaries: { type: 'Polygon', coordinates: [] },
-        isActive: true,
-        deliveryFee: '',
-        minimumOrderValue: '',
-        estimatedDeliveryTime: '',
-        maxDeliveryDistance: '',
-        peakHourMultiplier: 1.2,
-        coverage: { pinCodes: [], areas: [], landmarks: [] },
-        restrictions: { cashOnDelivery: true, maxOrderValue: '', blockedItems: [] }
+        isActive: true
       });
       toast.success('Delivery zone created successfully');
     } catch (err) {
@@ -475,7 +416,10 @@ export default function DeliveryZones() {
   };
 
   const handleDeleteZone = async (zoneId) => {
-    if (!isAuthorized) return;
+    if (!isAuthorized || currentUser?.role !== 'super_admin') {
+      toast.error('Only Super Admins can delete delivery zones');
+      return;
+    }
     if (!window.confirm('Are you sure you want to delete this delivery zone? This action cannot be undone.')) {
       return;
     }
@@ -498,7 +442,10 @@ export default function DeliveryZones() {
   };
 
   const handleUpdateZone = async (zoneId, updates) => {
-    if (!isAuthorized) return;
+    if (!isAuthorized) {
+      toast.error('You do not have permission to update delivery zones');
+      return;
+    }
     try {
       const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/delivery-zones/${zoneId}`, {
         method: 'PUT',
@@ -510,7 +457,8 @@ export default function DeliveryZones() {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to update zone');
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to update zone');
       }
 
       const data = await response.json();
@@ -524,6 +472,10 @@ export default function DeliveryZones() {
   };
 
   const toggleZoneStatus = async (zoneId, currentStatus) => {
+    if (!isAuthorized || currentUser?.role !== 'super_admin') {
+      toast.error('Only Super Admins can change zone status');
+      return;
+    }
     const newStatus = !currentStatus;
     await handleUpdateZone(zoneId, { isActive: newStatus });
   };
@@ -755,51 +707,29 @@ export default function DeliveryZones() {
               </div>
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-600">Delivery Fee</span>
-                  <span className="font-medium">₹{zone.deliveryFee || 0}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-600">Est. Time</span>
-                  <span className="font-medium">{zone.estimatedDeliveryTime || 0} min</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-600">Max Distance</span>
-                  <span className="font-medium">{zone.maxDeliveryDistance || 0} km</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-600">Coverage Points</span>
+                  <span className="text-gray-600">Boundary Points</span>
                   <span className="font-medium">
                     {Array.isArray(zone.boundaries?.coordinates) && zone.boundaries.coordinates[0]
                       ? zone.boundaries.coordinates[0].length
                       : 0} points
                   </span>
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-600">Pin Codes</span>
-                  <span className="font-medium">{zone.coverage?.pinCodes?.length || 0}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-600">Areas</span>
-                  <span className="font-medium">{zone.coverage?.areas?.length || 0}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-600">Landmarks</span>
-                  <span className="font-medium">{zone.coverage?.landmarks?.length || 0}</span>
-                </div>
               </div>
               <div className="mt-6 pt-4 border-t border-gray-200">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => toggleZoneStatus(zone._id, zone.isActive)}
-                      className={`p-1 rounded ${zone.isActive
-                        ? 'text-red-600 hover:bg-red-50'
-                        : 'text-green-600 hover:bg-green-50'
-                        }`}
-                      title={zone.isActive ? 'Deactivate' : 'Activate'}
-                    >
-                      {zone.isActive ? <X className="w-4 h-4" /> : <CircleCheck className="w-4 h-4" />}
-                    </button>
+                    {currentUser?.role === 'super_admin' && (
+                      <button
+                        onClick={() => toggleZoneStatus(zone._id, zone.isActive)}
+                        className={`p-1 rounded ${zone.isActive
+                          ? 'text-red-600 hover:bg-red-50'
+                          : 'text-green-600 hover:bg-green-50'
+                          }`}
+                        title={zone.isActive ? 'Deactivate' : 'Activate'}
+                      >
+                        {zone.isActive ? <X className="w-4 h-4" /> : <CircleCheck className="w-4 h-4" />}
+                      </button>
+                    )}
                     {/* Edit and delete can be implemented similarly */}
                     <button
                       onClick={() => setEditingZone(zone)}
@@ -808,13 +738,15 @@ export default function DeliveryZones() {
                     >
                       <Edit3 className="w-4 h-4" />
                     </button>
-                    <button
-                      onClick={() => handleDeleteZone(zone._id)}
-                      className="p-1 text-red-600 hover:bg-red-50 rounded"
-                      title="Delete Zone"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                    {currentUser?.role === 'super_admin' && (
+                      <button
+                        onClick={() => handleDeleteZone(zone._id)}
+                        className="p-1 text-red-600 hover:bg-red-50 rounded"
+                        title="Delete Zone"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
                   </div>
                   <button
                     onClick={() => handleViewMap(zone)}
@@ -887,20 +819,6 @@ export default function DeliveryZones() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Delivery Fee (₹) *
-                  </label>
-                  <input
-                    type="number"
-                    required
-                    value={createForm.deliveryFee}
-                    onChange={(e) => setCreateForm({ ...createForm, deliveryFee: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300  focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                    min="0"
-                    step="0.01"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
                     Zone Boundaries *
                   </label>
                   <div className="border border-gray-300 rounded-lg p-4">
@@ -957,138 +875,6 @@ export default function DeliveryZones() {
                       </div>
                     )}
                   </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Estimated Delivery Time (minutes) *
-                  </label>
-                  <input
-                    type="number"
-                    required
-                    value={createForm.estimatedDeliveryTime}
-                    onChange={e => setCreateForm({ ...createForm, estimatedDeliveryTime: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300  focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                    min="1"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Max Delivery Distance (km) *
-                  </label>
-                  <input
-                    type="number"
-                    required
-                    value={createForm.maxDeliveryDistance}
-                    onChange={e => setCreateForm({ ...createForm, maxDeliveryDistance: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300  focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                    min="0.1"
-                    step="0.1"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Minimum Order Value (₹)
-                  </label>
-                  <input
-                    type="number"
-                    value={createForm.minimumOrderValue}
-                    onChange={e => setCreateForm({ ...createForm, minimumOrderValue: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300  focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                    min="0"
-                    step="0.01"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Peak Hour Multiplier
-                  </label>
-                  <input
-                    type="number"
-                    value={createForm.peakHourMultiplier}
-                    onChange={e => setCreateForm({ ...createForm, peakHourMultiplier: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300  focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                    min="1"
-                    step="0.01"
-                  />
-                </div>
-                <div>
-                  <ChipInput
-                    label="Pin Codes"
-                    values={createForm.coverage.pinCodes}
-                    setValues={vals =>
-                      setCreateForm({
-                        ...createForm,
-                        coverage: { ...createForm.coverage, pinCodes: vals }
-                      })
-                    }
-                  />
-                  <ChipInput
-                    label="Areas"
-                    values={createForm.coverage.areas}
-                    setValues={vals =>
-                      setCreateForm({
-                        ...createForm,
-                        coverage: { ...createForm.coverage, areas: vals }
-                      })
-                    }
-                  />
-                  <ChipInput
-                    label="Landmarks"
-                    values={createForm.coverage.landmarks}
-                    setValues={vals =>
-                      setCreateForm({
-                        ...createForm,
-                        coverage: { ...createForm.coverage, landmarks: vals }
-                      })
-                    }
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1 mt-2">
-                    Cash On Delivery Allowed
-                  </label>
-                  <input
-                    type="checkbox"
-                    checked={createForm.restrictions.cashOnDelivery}
-                    onChange={e =>
-                      setCreateForm({
-                        ...createForm,
-                        restrictions: {
-                          ...createForm.restrictions,
-                          cashOnDelivery: e.target.checked
-                        }
-                      })
-                    }
-                  />
-                  <label className="block text-sm font-medium text-gray-700 mb-1 mt-2">
-                    Max Order Value (₹)
-                  </label>
-                  <input
-                    type="number"
-                    value={createForm.restrictions.maxOrderValue}
-                    onChange={e =>
-                      setCreateForm({
-                        ...createForm,
-                        restrictions: {
-                          ...createForm.restrictions,
-                          maxOrderValue: e.target.value
-                        }
-                      })
-                    }
-                    className="w-full px-3 py-2 border border-gray-300 "
-                    min="0"
-                    step="0.01"
-                  />
-                  <ChipInput
-                    label="Blocked Items"
-                    values={createForm.restrictions.blockedItems}
-                    setValues={vals =>
-                      setCreateForm({
-                        ...createForm,
-                        restrictions: { ...createForm.restrictions, blockedItems: vals }
-                      })
-                    }
-                  />
                 </div>
                 <div className="flex items-center gap-2 mt-2">
                   <input
@@ -1170,6 +956,19 @@ export default function DeliveryZones() {
                     onPolygonEdit={handlePolygonEdit}
                     existingZones={zones}
                   />
+                  {selectedLocation && (
+                    <Marker
+                      position={{ lat: selectedLocation.lat, lng: selectedLocation.lng }}
+                      title={selectedLocation.address}
+                      infoContent={`
+                        <div style="max-width: 250px;">
+                          <strong>Searched Location</strong><br/>
+                          ${selectedLocation.address}<br/>
+                          <small>Lat: ${selectedLocation.lat.toFixed(6)}, Lng: ${selectedLocation.lng.toFixed(6)}</small>
+                        </div>
+                      `}
+                    />
+                  )}
                 </GoogleMap>
               </div>
 
@@ -1270,28 +1069,18 @@ export default function DeliveryZones() {
               onSubmit={async (e) => {
                 e.preventDefault();
                 const payload = {
-                  ...editForm,
+                  name: editForm.name,
                   description: editForm.description,
-                  deliveryFee: parseFloat(editForm.deliveryFee),
-                  minimumOrderValue: editForm.minimumOrderValue ? parseFloat(editForm.minimumOrderValue) : 0,
-                  estimatedDeliveryTime: parseInt(editForm.estimatedDeliveryTime),
-                  maxDeliveryDistance: parseFloat(editForm.maxDeliveryDistance),
-                  peakHourMultiplier: editForm.peakHourMultiplier ? parseFloat(editForm.peakHourMultiplier) : 1.2,
                   boundaries: {
                     type: 'Polygon',
                     coordinates: editForm.boundaries?.coordinates || []
-                  },
-                  coverage: {
-                    pinCodes: editForm.coverage?.pinCodes || [],
-                    areas: editForm.coverage?.areas || [],
-                    landmarks: editForm.coverage?.landmarks || []
-                  },
-                  restrictions: {
-                    cashOnDelivery: !!editForm.restrictions?.cashOnDelivery,
-                    maxOrderValue: editForm.restrictions?.maxOrderValue ? parseFloat(editForm.restrictions.maxOrderValue) : undefined,
-                    blockedItems: editForm.restrictions?.blockedItems || []
                   }
                 };
+
+                // Only include isActive if user is super_admin
+                if (currentUser?.role === 'super_admin') {
+                  payload.isActive = editForm.isActive;
+                }
 
                 try {
                   await handleUpdateZone(editForm._id, payload);
@@ -1318,18 +1107,6 @@ export default function DeliveryZones() {
                     onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-green-500"
                     rows="3"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Delivery Fee (₹) *</label>
-                  <input
-                    type="number"
-                    required
-                    value={editForm.deliveryFee}
-                    onChange={(e) => setEditForm({ ...editForm, deliveryFee: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                    min="0"
-                    step="0.01"
                   />
                 </div>
                 <div>
@@ -1363,109 +1140,18 @@ export default function DeliveryZones() {
                     )}
                   </div>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Estimated Delivery Time (minutes) *</label>
-                  <input
-                    type="number"
-                    required
-                    value={editForm.estimatedDeliveryTime}
-                    onChange={e => setEditForm({ ...editForm, estimatedDeliveryTime: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                    min="1"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Max Delivery Distance (km) *</label>
-                  <input
-                    type="number"
-                    required
-                    value={editForm.maxDeliveryDistance}
-                    onChange={e => setEditForm({ ...editForm, maxDeliveryDistance: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                    min="0.1"
-                    step="0.1"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Minimum Order Value (₹)</label>
-                  <input
-                    type="number"
-                    value={editForm.minimumOrderValue}
-                    onChange={e => setEditForm({ ...editForm, minimumOrderValue: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                    min="0"
-                    step="0.01"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Peak Hour Multiplier</label>
-                  <input
-                    type="number"
-                    value={editForm.peakHourMultiplier}
-                    onChange={e => setEditForm({ ...editForm, peakHourMultiplier: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                    min="1"
-                    step="0.01"
-                  />
-                </div>
-                <div>
-                  <ChipInput
-                    label="Pin Codes"
-                    values={editForm.coverage.pinCodes}
-                    setValues={vals => setEditForm({ ...editForm, coverage: { ...editForm.coverage, pinCodes: vals } })}
-                  />
-                  <ChipInput
-                    label="Areas"
-                    values={editForm.coverage.areas}
-                    setValues={vals => setEditForm({ ...editForm, coverage: { ...editForm.coverage, areas: vals } })}
-                  />
-                  <ChipInput
-                    label="Landmarks"
-                    values={editForm.coverage.landmarks}
-                    setValues={vals => setEditForm({ ...editForm, coverage: { ...editForm.coverage, landmarks: vals } })}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1 mt-2">Cash On Delivery Allowed</label>
-                  <input
-                    type="checkbox"
-                    checked={editForm.restrictions.cashOnDelivery}
-                    onChange={e => setEditForm({
-                      ...editForm,
-                      restrictions: { ...editForm.restrictions, cashOnDelivery: e.target.checked }
-                    })}
-                  />
-                  <label className="block text-sm font-medium text-gray-700 mb-1 mt-2">Max Order Value (₹)</label>
-                  <input
-                    type="number"
-                    value={editForm.restrictions.maxOrderValue}
-                    onChange={e => setEditForm({
-                      ...editForm,
-                      restrictions: { ...editForm.restrictions, maxOrderValue: e.target.value }
-                    })}
-                    className="w-full px-3 py-2 border border-gray-300"
-                    min="0"
-                    step="0.01"
-                  />
-                  <ChipInput
-                    label="Blocked Items"
-                    values={editForm.restrictions.blockedItems}
-                    setValues={vals => setEditForm({
-                      ...editForm,
-                      restrictions: { ...editForm.restrictions, blockedItems: vals }
-                    })}
-                  />
-                </div>
-                <div className="flex items-center gap-2 mt-2">
-                  <input
-                    type="checkbox"
-                    id="isActiveEdit"
-                    checked={editForm.isActive}
-                    onChange={(e) => setEditForm({ ...editForm, isActive: e.target.checked })}
-                    className="text-green-600 focus:ring-green-500"
-                  />
-                  <label htmlFor="isActiveEdit" className="text-sm text-gray-700">Active Zone</label>
-                </div>
+                {currentUser?.role === 'super_admin' && (
+                  <div className="flex items-center gap-2 mt-2">
+                    <input
+                      type="checkbox"
+                      id="isActiveEdit"
+                      checked={editForm.isActive}
+                      onChange={(e) => setEditForm({ ...editForm, isActive: e.target.checked })}
+                      className="text-green-600 focus:ring-green-500"
+                    />
+                    <label htmlFor="isActiveEdit" className="text-sm text-gray-700">Active Zone</label>
+                  </div>
+                )}
               </div>
               <div className="flex justify-end gap-3 pt-4">
                 <button type="button" onClick={() => setEditingZone(null)} className="px-4 py-2 text-gray-700 border border-gray-300 hover:bg-gray-50 transition-colors">Cancel</button>
@@ -1519,6 +1205,19 @@ export default function DeliveryZones() {
                       existingZones={[]}
                       removePolygonAfterComplete
                     />
+                    {editSelectedLocation && (
+                      <Marker
+                        position={{ lat: editSelectedLocation.lat, lng: editSelectedLocation.lng }}
+                        title={editSelectedLocation.address}
+                        infoContent={`
+                          <div style="max-width: 250px;">
+                            <strong>Searched Location (Edit)</strong><br/>
+                            ${editSelectedLocation.address}<br/>
+                            <small>Lat: ${editSelectedLocation.lat.toFixed(6)}, Lng: ${editSelectedLocation.lng.toFixed(6)}</small>
+                          </div>
+                        `}
+                      />
+                    )}
                 </GoogleMap>
               </div>
               <div className="mt-4 flex justify-between items-center">

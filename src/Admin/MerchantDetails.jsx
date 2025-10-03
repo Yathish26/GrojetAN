@@ -9,6 +9,7 @@ import {
   Download, Image as ImageIcon
 } from 'lucide-react';
 import Layout from '../Components/Layout';
+import { GoogleMap, Marker } from '../Components/GoogleMapComponents';
 import toast from 'react-hot-toast';
 
 const MerchantDetails = () => {
@@ -68,14 +69,10 @@ const MerchantDetails = () => {
     switch (status) {
       case 'active':
         return 'bg-green-100 text-green-800 border-green-200';
-      case 'inactive':
-        return 'bg-red-100 text-red-800 border-red-200';
-      case 'pending_verification':
+      case 'hold':
         return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'suspended':
-        return 'bg-orange-100 text-orange-800 border-orange-200';
-      case 'closed':
-        return 'bg-gray-100 text-gray-800 border-gray-200';
+      case 'banned':
+        return 'bg-red-100 text-red-800 border-red-200';
       default:
         return 'bg-blue-100 text-blue-800 border-blue-200';
     }
@@ -96,14 +93,10 @@ const MerchantDetails = () => {
     switch (status) {
       case 'active':
         return <CheckCircle className="w-5 h-5 text-green-600" />;
-      case 'inactive':
-        return <XCircle className="w-5 h-5 text-red-600" />;
-      case 'pending_verification':
+      case 'hold':
         return <Clock className="w-5 h-5 text-yellow-600" />;
-      case 'suspended':
-        return <AlertTriangle className="w-5 h-5 text-orange-600" />;
-      case 'closed':
-        return <XCircle className="w-5 h-5 text-gray-600" />;
+      case 'banned':
+        return <XCircle className="w-5 h-5 text-red-600" />;
       default:
         return <Clock className="w-5 h-5 text-blue-600" />;
     }
@@ -359,6 +352,13 @@ const MerchantDetails = () => {
               Clear Device Login
             </button>
             <button
+              onClick={() => navigate(`/merchants/${id}/inventory`)}
+              className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+            >
+              <Package size={16} />
+              Inventory
+            </button>
+            <button
               onClick={handleEdit}
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
             >
@@ -379,10 +379,8 @@ const MerchantDetails = () => {
                 </h3>
                 <p className="text-sm">
                   {merchant.status === 'active' && 'This merchant is active and can receive orders.'}
-                  {merchant.status === 'inactive' && 'This merchant is inactive and cannot receive orders.'}
-                  {merchant.status === 'pending_verification' && 'This merchant is pending verification.'}
-                  {merchant.status === 'suspended' && 'This merchant has been suspended.'}
-                  {merchant.status === 'closed' && 'This merchant account has been closed.'}
+                  {merchant.status === 'hold' && 'This merchant account is on hold.'}
+                  {merchant.status === 'banned' && 'This merchant account has been banned.'}
                 </p>
               </div>
             </div>
@@ -565,7 +563,48 @@ const MerchantDetails = () => {
                 <p className="text-gray-900">{operationalInfo.storeAddress.landmark}</p>
               </div>
             )}
+            {operationalInfo.storeAddress?.coordinates && (
+              <div className="md:col-span-2">
+                <label className="text-sm font-medium text-gray-500">Coordinates</label>
+                <p className="text-gray-900">
+                  Latitude: {operationalInfo.storeAddress.coordinates.latitude || 'N/A'}, 
+                  Longitude: {operationalInfo.storeAddress.coordinates.longitude || 'N/A'}
+                </p>
+              </div>
+            )}
           </div>
+
+          {/* Map View */}
+          {operationalInfo.storeAddress?.coordinates?.latitude && operationalInfo.storeAddress?.coordinates?.longitude && (
+            <div className="mt-6">
+              <label className="text-sm font-medium text-gray-500 mb-2 block">Store Location</label>
+              <div className="w-full h-64 rounded-lg overflow-hidden border border-gray-200">
+                <GoogleMap
+                  center={{
+                    lat: parseFloat(operationalInfo.storeAddress.coordinates.latitude),
+                    lng: parseFloat(operationalInfo.storeAddress.coordinates.longitude)
+                  }}
+                  zoom={15}
+                  style={{ height: '100%', width: '100%' }}
+                >
+                  <Marker
+                    position={{
+                      lat: parseFloat(operationalInfo.storeAddress.coordinates.latitude),
+                      lng: parseFloat(operationalInfo.storeAddress.coordinates.longitude)
+                    }}
+                    title={`${merchant?.businessInfo?.storeName || 'Store'} Location`}
+                    infoContent={`
+                      <div style="max-width: 250px;">
+                        <strong>${merchant?.businessInfo?.storeName || 'Store'} Location</strong><br/>
+                        ${operationalInfo.storeAddress.fullAddress || 'Address not available'}<br/>
+                        <small>Lat: ${operationalInfo.storeAddress.coordinates.latitude}, Lng: ${operationalInfo.storeAddress.coordinates.longitude}</small>
+                      </div>
+                    `}
+                  />
+                </GoogleMap>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Operating Hours */}
@@ -910,63 +949,101 @@ const MerchantDetails = () => {
             <FileText className="w-5 h-5" />
             Documents & Verification
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <DocumentCard
-              title="GST Certificate"
-              isVerified={documents.gst?.isVerified || merchant.gstNumber}
-              documentUrl={documents.gst?.certificateUrl}
-              number={documents.gst?.number || merchant.gstNumber}
-            />
 
-            <DocumentCard
-              title="FSSAI License"
-              isVerified={documents.fssai?.isVerified || merchant.fssaiNumber}
-              documentUrl={documents.fssai?.certificateUrl}
-              number={documents.fssai?.number || merchant.fssaiNumber}
-            />
+          {/* Document Verification Checkboxes */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+            <div className="flex items-center space-x-3 p-3 border border-gray-200 rounded-lg">
+              <input
+                type="checkbox"
+                checked={documents.panCard?.verified || false}
+                readOnly
+                className="w-4 h-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+              />
+              <label className="text-sm font-medium text-gray-700">
+                PAN Card Verified
+              </label>
+            </div>
 
-            <DocumentCard
-              title="PAN Card"
-              isVerified={documents.pan?.isVerified || merchant.panNumber}
-              documentUrl={documents.pan?.certificateUrl}
-              number={documents.pan?.number || merchant.panNumber}
-            />
+            <div className="flex items-center space-x-3 p-3 border border-gray-200 rounded-lg">
+              <input
+                type="checkbox"
+                checked={documents.aadhaarCard?.verified || false}
+                readOnly
+                className="w-4 h-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+              />
+              <label className="text-sm font-medium text-gray-700">
+                Aadhaar Card Verified
+              </label>
+            </div>
 
-            <DocumentCard
-              title="Address Proof"
-              isVerified={documents.addressProof?.isVerified}
-              documentUrl={documents.addressProof?.certificateUrl}
-            />
+            <div className="flex items-center space-x-3 p-3 border border-gray-200 rounded-lg">
+              <input
+                type="checkbox"
+                checked={documents.gstinVerified || false}
+                readOnly
+                className="w-4 h-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+              />
+              <label className="text-sm font-medium text-gray-700">
+                GSTIN Verified
+              </label>
+            </div>
 
-            <DocumentCard
-              title="Aadhaar Card (Front)"
-              isVerified={documents.aadhaarCard?.isVerified}
-              documentUrl={documents.aadhaarCard?.frontUrl}
-            />
+            <div className="flex items-center space-x-3 p-3 border border-gray-200 rounded-lg">
+              <input
+                type="checkbox"
+                checked={documents.shopEstablishmentVerified || false}
+                readOnly
+                className="w-4 h-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+              />
+              <label className="text-sm font-medium text-gray-700">
+                Shop Establishment License Verified
+              </label>
+            </div>
 
-            <DocumentCard
-              title="Aadhaar Card (Back)"
-              isVerified={documents.aadhaarCard?.isVerified}
-              documentUrl={documents.aadhaarCard?.backUrl}
-            />
+            <div className="flex items-center space-x-3 p-3 border border-gray-200 rounded-lg">
+              <input
+                type="checkbox"
+                checked={documents.fssaiVerified || false}
+                readOnly
+                className="w-4 h-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+              />
+              <label className="text-sm font-medium text-gray-700">
+                FSSAI License Verified
+              </label>
+            </div>
 
-            <DocumentCard
-              title="Cancelled Cheque"
-              isVerified={bankingInfo.cancelledChequeUrl || merchant.bankDetails?.cancelledCheque}
-              documentUrl={bankingInfo.cancelledChequeUrl || merchant.bankDetails?.cancelledCheque}
-            />
+            <div className="flex items-center space-x-3 p-3 border border-gray-200 rounded-lg">
+              <input
+                type="checkbox"
+                checked={documents.bankAccountVerified || false}
+                readOnly
+                className="w-4 h-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+              />
+              <label className="text-sm font-medium text-gray-700">
+                Bank Account Verified
+              </label>
+            </div>
+          </div>
 
-            <DocumentCard
-              title="Bank Passbook"
-              isVerified={bankingInfo.bankPassbookUrl || merchant.bankDetails?.bankPassbook}
-              documentUrl={bankingInfo.bankPassbookUrl || merchant.bankDetails?.bankPassbook}
-            />
-
-            <DocumentCard
-              title="Shop Establishment License"
-              isVerified={documents.shopEstablishmentLicense}
-              documentUrl={documents.shopEstablishmentLicense}
-            />
+          {/* Google Drive Documents Link */}
+          <div className="border-t pt-4">
+            <h3 className="text-md font-semibold text-gray-900 mb-3">Documents Link</h3>
+            {documents.documentsLink ? (
+              <div className="flex items-center gap-2">
+                <a
+                  href={documents.documentsLink.startsWith('http') ? documents.documentsLink : `https://drive.google.com/drive/folders/${documents.documentsLink}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-600 hover:text-blue-700 text-sm flex items-center gap-1"
+                >
+                  <Eye className="w-4 h-4" />
+                  View Documents Folder
+                </a>
+                <CheckCircle className="w-5 h-5 text-green-500" />
+              </div>
+            ) : (
+              <span className="text-sm text-red-600">No documents link provided</span>
+            )}
           </div>
         </div>
 
@@ -980,7 +1057,7 @@ const MerchantDetails = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="text-sm font-medium text-gray-500">Account Holder Name</label>
-                <p className="text-gray-900">{bankingInfo.accountHolder || merchant.bankDetails?.accountHolderName || 'Not provided'}</p>
+                <p className="text-gray-900">{bankingInfo.accountHolderName || merchant.bankDetails?.accountHolderName || 'Not provided'}</p>
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-500">Account Number</label>
@@ -1001,57 +1078,6 @@ const MerchantDetails = () => {
             </div>
           </div>
         )}
-
-        {/* Additional Documents */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <FileText className="w-5 h-5" />
-            Additional Documents
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <DocumentCard
-              title="Store Logo"
-              isVerified={documents.storeLogo || brandingInfo?.logo}
-              documentUrl={documents.storeLogo || brandingInfo?.logo}
-            />
-
-            <DocumentCard
-              title="Store Banner"
-              isVerified={documents.storeBanner || brandingInfo?.banner}
-              documentUrl={documents.storeBanner || brandingInfo?.banner}
-            />
-
-            <DocumentCard
-              title="Shop Establishment License"
-              isVerified={documents.shopEstablishmentLicense}
-              documentUrl={documents.shopEstablishmentLicense}
-            />
-
-            <DocumentCard
-              title="Aadhaar Card (Front)"
-              isVerified={documents.aadhaarCard?.frontUrl}
-              documentUrl={documents.aadhaarCard?.frontUrl}
-            />
-
-            <DocumentCard
-              title="Aadhaar Card (Back)"
-              isVerified={documents.aadhaarCard?.backUrl}
-              documentUrl={documents.aadhaarCard?.backUrl}
-            />
-
-            <DocumentCard
-              title="Cancelled Cheque"
-              isVerified={documents.cancelledCheque || bankingInfo?.cancelledChequeUrl}
-              documentUrl={documents.cancelledCheque || bankingInfo?.cancelledChequeUrl}
-            />
-
-            <DocumentCard
-              title="Bank Passbook"
-              isVerified={documents.bankPassbook || bankingInfo?.bankPassbookUrl}
-              documentUrl={documents.bankPassbook || bankingInfo?.bankPassbookUrl}
-            />
-          </div>
-        </div>
       </div>
     </Layout>
   );
