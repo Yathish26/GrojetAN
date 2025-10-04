@@ -30,6 +30,7 @@ import AppControls from './Admin/AppControls.jsx'
 import Careers from './Admin/Careers.jsx'
 import RequestedProducts from './Admin/RequestedProducts.jsx'
 import Offers from './Admin/Offers.jsx'
+import MarketArea from './Admin/MarketArea.jsx'
 
 function App() {
   return (
@@ -99,6 +100,7 @@ function App() {
           <Route path="/delivery-agents" element={<DeliveryAgents />} />
           <Route path="/delivery-agents/:id" element={<DeliveryAgentDetails />} />
           <Route path="/delivery-zones" element={<DeliveryZones />} />
+          <Route path="/market-area" element={<MarketArea />} />
           <Route path="/delivery-signup" element={<DeliveryAgentSignup />} />
           <Route path="/offers" element={<Offers />} />
           

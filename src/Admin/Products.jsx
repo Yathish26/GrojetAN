@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Plus, Edit, Trash2, X, Loader2, ChevronLeft, ChevronRight, Shield } from 'lucide-react';
+import { Search, Plus, Edit, Trash2, X, Loader2, ChevronLeft, ChevronRight, Shield, Download } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
 import Modal from 'react-modal';
 import ChipInput from '../Components/ChipInput';
@@ -39,6 +39,7 @@ export default function Products() {
   const [confirmDeleteVisible, setConfirmDeleteVisible] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
   const [productIdToDelete, setProductIdToDelete] = useState(null);
   const [imageViewerVisible, setImageViewerVisible] = useState(false);
   const [selectedImageUrl, setSelectedImageUrl] = useState(null);
@@ -199,6 +200,35 @@ export default function Products() {
       fetchRequestedProducts(requestPage);
     } catch (error) {
       toast.error(error.message);
+    }
+  };
+
+  // Handle export to Excel
+  const handleExport = async () => {
+    setIsExporting(true);
+    try {
+      const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/products/export`, {
+        credentials: 'include',
+      });
+      if (response.status === 401) {
+        navigate('/login');
+        return;
+      }
+      if (!response.ok) throw new Error('Failed to export products');
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'products.xlsx';
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      toast.success('Products exported successfully');
+    } catch (error) {
+      toast.error(error.message);
+    } finally {
+      setIsExporting(false);
     }
   };
 
@@ -588,6 +618,27 @@ export default function Products() {
               <Shield size={16} className="sm:w-[18px] sm:h-[18px]" />
               <span className="hidden xs:inline">Requested Products</span>
               <span className="xs:hidden">Requests</span>
+            </button>
+            <button
+              onClick={handleExport}
+              disabled={isExporting}
+              className={`px-2 py-1.5 sm:px-4 sm:py-2 shadow flex items-center justify-center gap-1 sm:gap-2 text-sm sm:text-base ${
+                isExporting
+                  ? 'bg-purple-400 cursor-not-allowed'
+                  : 'bg-purple-600 hover:bg-purple-700 cursor-pointer'
+              } text-white`}
+            >
+              {isExporting ? (
+                <Loader2 size={16} className="sm:w-[18px] sm:h-[18px] animate-spin" />
+              ) : (
+                <Download size={16} className="sm:w-[18px] sm:h-[18px]" />
+              )}
+              <span className="hidden xs:inline">
+                {isExporting ? 'Exporting...' : 'Export to Excel'}
+              </span>
+              <span className="xs:hidden">
+                {isExporting ? 'Exporting...' : 'Export'}
+              </span>
             </button>
             <button
               onClick={() => navigate('/products/add')}
