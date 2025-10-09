@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Plus,
   Edit3,
@@ -274,6 +275,7 @@ const AllZonesView = ({ map, zones }) => {
 };
 
 export default function DeliveryZones() {
+  const navigate = useNavigate();
   const [zones, setZones] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -352,6 +354,10 @@ export default function DeliveryZones() {
       }
 
       const data = await response.json();
+      if (data.tokenValid === false) {
+        navigate('/login', { replace: true });
+        return;
+      }
       setZones(data.zones || []);
     } catch (err) {
       setError(err.message);
@@ -401,6 +407,10 @@ export default function DeliveryZones() {
       }
 
       const data = await response.json();
+      if (data.tokenValid === false) {
+        navigate('/login', { replace: true });
+        return;
+      }
       setZones([...zones, data.zone]);
       setShowCreateModal(false);
       setCreateForm({
@@ -434,6 +444,11 @@ export default function DeliveryZones() {
         throw new Error('Failed to delete zone');
       }
 
+      const data = await response.json();
+      if (data.tokenValid === false) {
+        navigate('/login', { replace: true });
+        return;
+      }
       setZones(zones.filter(zone => zone._id !== zoneId));
       toast.success('Zone deleted successfully');
     } catch (err) {
@@ -462,6 +477,10 @@ export default function DeliveryZones() {
       }
 
       const data = await response.json();
+      if (data.tokenValid === false) {
+        navigate('/login', { replace: true });
+        return;
+      }
       setZones(zones.map(zone =>
         zone._id === zoneId ? data.zone : zone
       ));

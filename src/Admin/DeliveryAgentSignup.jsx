@@ -1,17 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  User,
-  Mail,
-  Phone,
-  MapPin,
-  Truck,
   Eye,
   EyeOff,
-  CircleCheck,
   AlertCircle,
-  ArrowRight,
-  ArrowLeft,
   Save,
   ArrowLeft as BackIcon,
   FileText
@@ -20,7 +12,6 @@ import toast from 'react-hot-toast';
 
 export default function DeliveryAgentSignup() {
   const navigate = useNavigate();
-  const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [availableZones, setAvailableZones] = useState([]);
@@ -59,18 +50,11 @@ export default function DeliveryAgentSignup() {
     // Vehicle Information
     vehicleInfo: {
       vehicleType: '',
-      vehicleNumber: '',
-      rcBook: false,
-      insurance: false
+      vehicleNumber: ''
     },
     
     // Documents
     documents: {
-      aadharFront: false,
-      aadharBack: false,
-      panCard: false,
-      drivingLicense: false,
-      profilePhoto: false,
       documentsLink: '',
       bankAccount: {
         accountNumber: '',
@@ -82,7 +66,6 @@ export default function DeliveryAgentSignup() {
     
     // Work Information
     workInfo: {
-      expectedSalary: '',
       experience: '',
       assignedZone: ''
     },
@@ -91,14 +74,6 @@ export default function DeliveryAgentSignup() {
     agreedToTerms: false,
     agreedToPrivacy: false
   });
-
-  const steps = [
-    { id: 1, title: 'Personal Info', icon: User },
-    { id: 2, title: 'Account Setup', icon: Mail },
-    { id: 3, title: 'Vehicle Details', icon: Truck },
-    { id: 4, title: 'Documents', icon: FileText },
-    { id: 5, title: 'Preferences', icon: MapPin }
-  ];
 
   const vehicleTypes = [
     'bike',
@@ -115,8 +90,13 @@ export default function DeliveryAgentSignup() {
           credentials: 'include'
         });
 
+        const data = await response.json();
+        if (data.tokenValid === false) {
+          navigate('/login', { replace: true });
+          return;
+        }
+
         if (response.ok) {
-          const data = await response.json();
           setAvailableZones(data.zones || []);
         } else {
           console.error('Failed to fetch delivery zones');
@@ -136,13 +116,20 @@ export default function DeliveryAgentSignup() {
 
   const handleInputChange = (section, field, value) => {
     if (section) {
-      setFormData(prev => ({
-        ...prev,
-        [section]: {
-          ...prev[section],
-          [field]: value
+      setFormData(prev => {
+        const keys = field.split('.');
+        const updatedSection = { ...prev[section] };
+        let current = updatedSection;
+        for (let i = 0; i < keys.length - 1; i++) {
+          if (!current[keys[i]]) current[keys[i]] = {};
+          current = current[keys[i]];
         }
-      }));
+        current[keys[keys.length - 1]] = value;
+        return {
+          ...prev,
+          [section]: updatedSection
+        };
+      });
     } else {
       setFormData(prev => ({
         ...prev,
@@ -151,48 +138,26 @@ export default function DeliveryAgentSignup() {
     }
   };
 
-  const validateStep = (step) => {
-    switch (step) {
-      case 1:
-        return formData.personalInfo.firstName && 
-               formData.personalInfo.email && formData.personalInfo.phone && 
-               formData.personalInfo.dateOfBirth;
-      case 2:
-        return formData.password && formData.confirmPassword &&
-               formData.password === formData.confirmPassword &&
-               formData.password.length >= 6 &&
-               formData.emergencyContact.name && formData.emergencyContact.phone &&
-               formData.emergencyContact.relationship;
-      case 3:
-        return formData.vehicleInfo.vehicleType && formData.vehicleInfo.vehicleNumber &&
-               formData.vehicleInfo.rcBook && formData.vehicleInfo.insurance;
-      case 4:
-        const bank = formData.documents.bankAccount;
-        return formData.documents.aadharFront && formData.documents.aadharBack &&
-               formData.documents.panCard && bank.accountNumber && bank.ifscCode &&
-               bank.bankName && bank.accountHolderName;
-      case 5:
-        return formData.agreedToTerms && formData.agreedToPrivacy;
-      default:
-        return true;
-    }
-  };
-
-  const nextStep = () => {
-    if (validateStep(currentStep)) {
-      setCurrentStep(prev => Math.min(prev + 1, 5));
-    } else {
-      toast.error('Please fill in all required fields');
-    }
-  };
-
-  const prevStep = () => {
-    setCurrentStep(prev => Math.max(prev - 1, 1));
+  const validateForm = () => {
+    return formData.personalInfo.firstName && 
+           formData.personalInfo.email && formData.personalInfo.phone && 
+           formData.personalInfo.dateOfBirth &&
+           formData.address.street && formData.address.city && 
+           formData.address.state && formData.address.zipCode &&
+           formData.password && formData.confirmPassword &&
+           formData.password === formData.confirmPassword &&
+           formData.password.length >= 6 &&
+           formData.emergencyContact.name && formData.emergencyContact.phone &&
+           formData.emergencyContact.relationship &&
+           formData.vehicleInfo.vehicleType && formData.vehicleInfo.vehicleNumber &&
+           formData.documents.bankAccount.accountNumber && formData.documents.bankAccount.ifscCode &&
+           formData.documents.bankAccount.bankName && formData.documents.bankAccount.accountHolderName &&
+           formData.agreedToTerms && formData.agreedToPrivacy;
   };
 
   const handleSubmit = async () => {
-    if (!validateStep(5)) {
-      toast.error('Please complete all required fields and accept terms');
+    if (!validateForm()) {
+      toast.error('Please fill in all required fields');
       return;
     }
 
@@ -206,8 +171,7 @@ export default function DeliveryAgentSignup() {
           email: formData.personalInfo.email,
           phone: formData.personalInfo.phone,
           dateOfBirth: formData.personalInfo.dateOfBirth,
-          gender: formData.personalInfo.gender,
-          profilePhoto: formData.personalInfo.profilePhoto || ''
+          gender: formData.personalInfo.gender
         },
         address: {
           street: formData.address.street,
@@ -223,15 +187,9 @@ export default function DeliveryAgentSignup() {
         },
         vehicleInfo: {
           vehicleType: formData.vehicleInfo.vehicleType,
-          vehicleNumber: formData.vehicleInfo.vehicleNumber,
-          rcBook: formData.vehicleInfo.rcBook,
-          insurance: formData.vehicleInfo.insurance
+          vehicleNumber: formData.vehicleInfo.vehicleNumber
         },
         documents: {
-          aadharFront: formData.documents.aadharFront,
-          aadharBack: formData.documents.aadharBack,
-          panCard: formData.documents.panCard,
-          drivingLicense: formData.documents.drivingLicense,
           documentsLink: formData.documents.documentsLink,
           bankAccount: {
             accountNumber: formData.documents.bankAccount.accountNumber,
@@ -241,7 +199,6 @@ export default function DeliveryAgentSignup() {
           }
         },
         workInfo: {
-          expectedSalary: parseInt(formData.workInfo.expectedSalary) || 0,
           experience: formData.workInfo.experience || '',
           assignedZone: formData.workInfo.assignedZone || null
         },
@@ -270,17 +227,16 @@ export default function DeliveryAgentSignup() {
         address: { street: '', city: '', state: '', zipCode: '', landmark: '' },
         emergencyContact: { name: '', phone: '', relationship: '' },
         password: '', confirmPassword: '',
-        vehicleInfo: { vehicleType: '', vehicleNumber: '', rcBook: false, insurance: false },
+        vehicleInfo: { vehicleType: '', vehicleNumber: '' },
         documents: { 
-          aadharFront: false, aadharBack: false, panCard: false, drivingLicense: false, profilePhoto: false, documentsLink: '',
+          documentsLink: '',
           bankAccount: { accountNumber: '', ifscCode: '', bankName: '', accountHolderName: '' }
         },
-        workInfo: { 
-          expectedSalary: '', experience: '', assignedZone: '' 
+        workInfo: {
+          experience: '', assignedZone: ''
         },
         agreedToTerms: false, agreedToPrivacy: false
       });
-      setCurrentStep(1);
       
     } catch (err) {
       toast.error(err.message);
@@ -307,47 +263,12 @@ export default function DeliveryAgentSignup() {
           <div className="w-32"></div> {/* Spacer for centering */}
         </div>
 
-        {/* Progress Steps */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
-          <div className="flex items-center justify-between">
-            {steps.map((step, index) => {
-              const Icon = step.icon;
-              const isActive = currentStep === step.id;
-              const isCompleted = currentStep > step.id;
-
-              return (
-                <React.Fragment key={step.id}>
-                  <div className="flex flex-col items-center">
-                    <div className={`w-12 h-12 rounded-full flex items-center justify-center border-2 ${isCompleted
-                      ? 'bg-green-600 border-green-600 text-white'
-                      : isActive
-                        ? 'bg-blue-600 border-blue-600 text-white'
-                        : 'bg-gray-100 border-gray-300 text-gray-400'
-                      }`}>
-                      {isCompleted ? <CircleCheck className="w-6 h-6" /> : <Icon className="w-6 h-6" />}
-                    </div>
-                    <span className={`text-sm mt-2 ${isActive ? 'text-blue-600 font-medium' : 'text-gray-500'
-                      }`}>
-                      {step.title}
-                    </span>
-                  </div>
-
-                  {index < steps.length - 1 && (
-                    <div className={`flex-1 h-0.5 mx-4 ${currentStep > step.id ? 'bg-green-600' : 'bg-gray-300'
-                      }`} />
-                  )}
-                </React.Fragment>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Form Steps */}
+        {/* Form */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
-          {/* Step 1: Personal Information */}
-          {currentStep === 1 && (
-            <div className="space-y-6">
-              <h2 className="text-xl font-semibold text-gray-800 mb-6">Personal Information</h2>
+          <div className="space-y-6">
+          {/* Personal Information */}
+          <div className="space-y-6">
+            <h2 className="text-xl font-semibold text-gray-800 mb-6">Personal Information</h2>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
@@ -500,10 +421,8 @@ export default function DeliveryAgentSignup() {
                 </div>
               </div>
             </div>
-          )}
 
-          {/* Step 2: Account Setup */}
-          {currentStep === 2 && (
+            {/* Account Setup */}
             <div className="space-y-6">
               <h2 className="text-xl font-semibold text-gray-800 mb-6">Account Setup</h2>
 
@@ -598,10 +517,8 @@ export default function DeliveryAgentSignup() {
                 </div>
               </div>
             </div>
-          )}
 
-          {/* Step 3: Vehicle Details */}
-          {currentStep === 3 && (
+            {/* Vehicle Information */}
             <div className="space-y-6">
               <h2 className="text-xl font-semibold text-gray-800 mb-6">Vehicle Information</h2>
 
@@ -639,202 +556,49 @@ export default function DeliveryAgentSignup() {
                   />
                 </div>
               </div>
-
-              {/* Vehicle Documents */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-medium text-gray-800">Vehicle Documents</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="flex items-center space-x-3">
-                    <input
-                      type="checkbox"
-                      id="rcBook"
-                      checked={formData.vehicleInfo.rcBook}
-                      onChange={(e) => handleInputChange('vehicleInfo', 'rcBook', e.target.checked)}
-                      className="w-4 h-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
-                    />
-                    <label htmlFor="rcBook" className="text-sm font-medium text-gray-700">
-                      RC Book <span className="text-red-500">*</span>
-                    </label>
-                    {formData.vehicleInfo.rcBook && (
-                      <CircleCheck className="w-5 h-5 text-green-500" />
-                    )}
-                  </div>
-
-                  <div className="flex items-center space-x-3">
-                    <input
-                      type="checkbox"
-                      id="insurance"
-                      checked={formData.vehicleInfo.insurance}
-                      onChange={(e) => handleInputChange('vehicleInfo', 'insurance', e.target.checked)}
-                      className="w-4 h-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
-                    />
-                    <label htmlFor="insurance" className="text-sm font-medium text-gray-700">
-                      Insurance <span className="text-red-500">*</span>
-                    </label>
-                    {formData.vehicleInfo.insurance && (
-                      <CircleCheck className="w-5 h-5 text-green-500" />
-                    )}
-                  </div>
-                </div>
-              </div>
             </div>
-          )}
 
-          {/* Step 4: Documents */}
-          {currentStep === 4 && (
+            {/* Document Upload */}
             <div className="space-y-6">
               <h2 className="text-xl font-semibold text-gray-800 mb-6">Document Upload</h2>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-4">
-                  <h3 className="text-lg font-medium text-gray-800">Document Verification</h3>
+                  <h3 className="text-lg font-medium text-gray-800">Bank Account Details</h3>
                   
-                  <div className="space-y-3">
-                    <div className="flex items-center space-x-3">
-                      <input
-                        type="checkbox"
-                        id="aadharFront"
-                        checked={formData.documents.aadharFront}
-                        onChange={(e) => handleInputChange('documents', 'aadharFront', e.target.checked)}
-                        className="w-4 h-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
-                      />
-                      <label htmlFor="aadharFront" className="text-sm font-medium text-gray-700">
-                        Aadhar Front <span className="text-red-500">*</span>
-                      </label>
-                      {formData.documents.aadharFront && (
-                        <CircleCheck className="w-5 h-5 text-green-500" />
-                      )}
-                    </div>
-
-                    <div className="flex items-center space-x-3">
-                      <input
-                        type="checkbox"
-                        id="aadharBack"
-                        checked={formData.documents.aadharBack}
-                        onChange={(e) => handleInputChange('documents', 'aadharBack', e.target.checked)}
-                        className="w-4 h-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
-                      />
-                      <label htmlFor="aadharBack" className="text-sm font-medium text-gray-700">
-                        Aadhar Back <span className="text-red-500">*</span>
-                      </label>
-                      {formData.documents.aadharBack && (
-                        <CircleCheck className="w-5 h-5 text-green-500" />
-                      )}
-                    </div>
-
-                    <div className="flex items-center space-x-3">
-                      <input
-                        type="checkbox"
-                        id="panCard"
-                        checked={formData.documents.panCard}
-                        onChange={(e) => handleInputChange('documents', 'panCard', e.target.checked)}
-                        className="w-4 h-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
-                      />
-                      <label htmlFor="panCard" className="text-sm font-medium text-gray-700">
-                        PAN Card
-                      </label>
-                      {formData.documents.panCard && (
-                        <CircleCheck className="w-5 h-5 text-green-500" />
-                      )}
-                    </div>
-
-                    <div className="flex items-center space-x-3">
-                      <input
-                        type="checkbox"
-                        id="drivingLicense"
-                        checked={formData.documents.drivingLicense}
-                        onChange={(e) => handleInputChange('documents', 'drivingLicense', e.target.checked)}
-                        className="w-4 h-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
-                      />
-                      <label htmlFor="drivingLicense" className="text-sm font-medium text-gray-700">
-                        Driving License <span className="text-red-500">*</span>
-                      </label>
-                      {formData.documents.drivingLicense && (
-                        <CircleCheck className="w-5 h-5 text-green-500" />
-                      )}
-                    </div>
-
-                    <div className="flex items-center space-x-3">
-                      <input
-                        type="checkbox"
-                        id="profilePhoto"
-                        checked={formData.documents.profilePhoto}
-                        onChange={(e) => handleInputChange('documents', 'profilePhoto', e.target.checked)}
-                        className="w-4 h-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
-                      />
-                      <label htmlFor="profilePhoto" className="text-sm font-medium text-gray-700">
-                        Profile Photo
-                      </label>
-                      {formData.documents.profilePhoto && (
-                        <CircleCheck className="w-5 h-5 text-green-500" />
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <h3 className="text-lg font-medium text-gray-800">Documents Link</h3>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Google Drive / Document Link
-                    </label>
-                    <input
-                      type="url"
-                      value={formData.documents.documentsLink}
-                      onChange={(e) => handleInputChange('documents', 'documentsLink', e.target.value)}
-                      placeholder="https://drive.google.com/..."
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                    />
-                    <p className="text-xs text-gray-500 mt-1">
-                      Paste the link to your documents folder (Google Drive, Dropbox, etc.)
-                    </p>
-                  </div>
-                </div>
-              </div>
-              {/* Bank Details Section */}
-              <div className="mt-8">
-                <h3 className="text-lg font-medium text-gray-800 mb-4">Bank Account Details <span className="text-red-500">*</span></h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Account Holder Name *
+                      Account Number <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="text"
-                      required
-                      maxLength={100}
-                      value={formData.documents.bankAccount.accountHolderName}
-                      onChange={e => setFormData(prev => ({
-                        ...prev,
-                        documents: {
-                          ...prev.documents,
-                          bankAccount: {
-                            ...prev.documents.bankAccount,
-                            accountHolderName: e.target.value
-                          }
-                        }
-                      }))}
+                      value={formData.documents.bankAccount.accountNumber}
+                      onChange={(e) => handleInputChange('documents', 'bankAccount.accountNumber', e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                      placeholder="Enter account number"
                     />
                   </div>
+
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Bank Name *
+                      IFSC Code <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.documents.bankAccount.ifscCode}
+                      onChange={(e) => handleInputChange('documents', 'bankAccount.ifscCode', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                      placeholder="e.g., SBIN0001234"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Bank Name <span className="text-red-500">*</span>
                     </label>
                     <select
-                      required
                       value={formData.documents.bankAccount.bankName}
-                      onChange={e => setFormData(prev => ({
-                        ...prev,
-                        documents: {
-                          ...prev.documents,
-                          bankAccount: {
-                            ...prev.documents.bankAccount,
-                            bankName: e.target.value
-                          }
-                        }
-                      }))}
+                      onChange={(e) => handleInputChange('documents', 'bankAccount.bankName', e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
                     >
                       <option value="">Select Bank</option>
@@ -951,76 +715,49 @@ export default function DeliveryAgentSignup() {
                       </optgroup>
                     </select>
                   </div>
+
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Account Number *
+                      Account Holder Name <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="text"
-                      required
-                      maxLength={20}
-                      value={formData.documents.bankAccount.accountNumber}
-                      onChange={e => setFormData(prev => ({
-                        ...prev,
-                        documents: {
-                          ...prev.documents,
-                          bankAccount: {
-                            ...prev.documents.bankAccount,
-                            accountNumber: e.target.value
-                          }
-                        }
-                      }))}
+                      value={formData.documents.bankAccount.accountHolderName}
+                      onChange={(e) => handleInputChange('documents', 'bankAccount.accountHolderName', e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                      placeholder="Enter account holder name"
                     />
                   </div>
+                </div>
+
+                <div className="space-y-4">
+                  <h3 className="text-lg font-medium text-gray-800">Documents Link</h3>
+                  
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      IFSC Code *
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Google Drive / Document Link
                     </label>
                     <input
-                      type="text"
-                      required
-                      maxLength={11}
-                      value={formData.documents.bankAccount.ifscCode}
-                      onChange={e => setFormData(prev => ({
-                        ...prev,
-                        documents: {
-                          ...prev.documents,
-                          bankAccount: {
-                            ...prev.documents.bankAccount,
-                            ifscCode: e.target.value
-                          }
-                        }
-                      }))}
+                      type="url"
+                      value={formData.documents.documentsLink}
+                      onChange={(e) => handleInputChange('documents', 'documentsLink', e.target.value)}
+                      placeholder="https://drive.google.com/..."
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
                     />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Paste the link to your documents folder (Google Drive, Dropbox, etc.)
+                    </p>
                   </div>
                 </div>
               </div>
             </div>
-          )}
 
-          {/* Step 5: Preferences & Terms */}
-          {currentStep === 5 && (
+            {/* Work Preferences */}
             <div className="space-y-6">
               <h2 className="text-xl font-semibold text-gray-800 mb-6">Work Preferences</h2>
 
               <div className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Expected Salary (per month)
-                    </label>
-                    <input
-                      type="number"
-                      value={formData.workInfo.expectedSalary}
-                      onChange={(e) => handleInputChange('workInfo', 'expectedSalary', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                      min="0"
-                      placeholder="e.g., 25000"
-                    />
-                  </div>
-
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Previous Experience (years)
@@ -1092,33 +829,9 @@ export default function DeliveryAgentSignup() {
                 </div>
               </div>
             </div>
-          )}
 
-          {/* Navigation Buttons */}
-          <div className="flex justify-between pt-8 border-t border-gray-200">
-            <button
-              type="button"
-              onClick={prevStep}
-              disabled={currentStep === 1}
-              className={`flex items-center gap-2 px-6 py-2 rounded-lg transition-colors ${currentStep === 1
-                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                : 'bg-gray-600 text-white hover:bg-gray-700'
-                }`}
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Previous
-            </button>
-
-            {currentStep < 5 ? (
-              <button
-                type="button"
-                onClick={nextStep}
-                className="flex items-center gap-2 px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-              >
-                Next
-                <ArrowRight className="w-4 h-4" />
-              </button>
-            ) : (
+            {/* Navigation Buttons */}
+            <div className="flex justify-center pt-8 border-t border-gray-200">
               <button
                 type="button"
                 onClick={handleSubmit}
@@ -1137,7 +850,7 @@ export default function DeliveryAgentSignup() {
                   </>
                 )}
               </button>
-            )}
+            </div>
           </div>
         </div>
       </div>

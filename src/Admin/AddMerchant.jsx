@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, Upload, X, Eye, EyeOff, Save, User,
   Building, Phone, Mail, MapPin, CreditCard, FileText,
-  Camera, Store, DollarSign, Calendar, Shield, Search, Navigation
+  Camera, Store, DollarSign, Calendar, Shield, Search, Navigation, CheckCircle,
+  CircleCheck
 } from 'lucide-react';
 import Layout from '../Components/Layout';
 import { AddressSearch } from '../Components/GoogleMapComponents';
@@ -18,7 +19,6 @@ const AddMerchant = () => {
     merchantId: '',
     legalName: '',
     displayName: '',
-    businessType: 'Sole Proprietor',
     description: '',
     website: '',
     establishedYear: '',
@@ -29,8 +29,6 @@ const AddMerchant = () => {
     alternateMobile: '',
     email: '',
     password: '',
-    governmentIdType: 'pan',
-    governmentId: '',
     address: {
       street: '',
       city: '',
@@ -45,7 +43,6 @@ const AddMerchant = () => {
     bankName: '',
     branchName: '',
     accountHolderName: '',
-    accountType: 'business',
 
     // Operational Info
     storeAddress: {
@@ -69,46 +66,30 @@ const AddMerchant = () => {
     productCategories: [],
     storeType: '',
     deliveryType: 'platform_delivery',
-    deliveryRadius: 10,
-    minimumOrderValue: 0,
-    deliveryCharges: 0,
-    freeDeliveryAbove: 500,
 
     // Branding Info
     tagline: '',
     storeDescription: '',
-    storeLogoUrl: '',
-    storeBannerUrl: '',
-    socialMedia: {
-      facebook: '',
-      instagram: '',
-      twitter: '',
-      whatsapp: '',
-      googleBusiness: ''
+    brandingInfo: {
+      logoUrl: '',
+      bannerUrl: '',
+      socialMedia: {
+        googleBusiness: ''
+      }
     },
 
     // Commission
     commissionPercentage: 10,
     settlementCycle: 'weekly',
-    minimumSettlement: 1000,
 
     // Store Status
     storeStatus: 'closed',
 
-    // Documents (Checkboxes and Google Drive link)
+    // Documents
     documents: {
-      panCardVerified: false,
-      aadhaarVerified: false,
-      gstinVerified: false,
-      shopEstablishmentVerified: false,
-      fssaiVerified: false,
-      bankAccountVerified: false,
-      documentsLink: '',
+      documentsLink: ''
     }
   });
-
-  const [currentStep, setCurrentStep] = useState(1);
-  const totalSteps = 4;
 
   // Location search state
   const [locationSearchQuery, setLocationSearchQuery] = useState('');
@@ -116,6 +97,10 @@ const AddMerchant = () => {
   const [selectedLocation, setSelectedLocation] = useState(null);
   const [isManualEntry, setIsManualEntry] = useState(false);
   const [isSearchingLocation, setIsSearchingLocation] = useState(false);
+
+  // Image upload state
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [uploadingBanner, setUploadingBanner] = useState(false);
 
   // Handle location search
   const handlePlaceSelect = (placeData) => {
@@ -171,6 +156,49 @@ const AddMerchant = () => {
     }));
   };
 
+  // Image upload handlers
+  const handleImageUpload = async (file, type) => {
+    if (!file) return;
+
+    const setUploading = type === 'logo' ? setUploadingLogo : setUploadingBanner;
+    const fieldName = type === 'logo' ? 'logoUrl' : 'bannerUrl';
+
+    setUploading(true);
+    try {
+      const formDataUpload = new FormData();
+      formDataUpload.append('image', file);
+
+      const response = await fetch(`${import.meta.env.VITE_SERVER}/image/upload`, {
+        method: 'POST',
+        body: formDataUpload,
+        credentials: 'include'
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.tokenValid === false) {
+          navigate('/login', { replace: true });
+          return;
+        }
+        setFormData(prev => ({
+          ...prev,
+          brandingInfo: {
+            ...prev.brandingInfo,
+            [fieldName]: data.url
+          }
+        }));
+        toast.success(`${type === 'logo' ? 'Logo' : 'Banner'} uploaded successfully!`);
+      } else {
+        throw new Error('Upload failed');
+      }
+    } catch (error) {
+      console.error('Upload error:', error);
+      toast.error(`Failed to upload ${type}`);
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const handleStoreTimingChange = (day, field, value) => {
     setFormData(prev => ({
       ...prev,
@@ -186,53 +214,15 @@ const AddMerchant = () => {
 
   
 
-  const validateStep = (step) => {
-    switch (step) {
-      case 1: // Business & Owner Info
-        if (!formData.merchantId || !formData.legalName || !formData.displayName ||
-            !formData.fullName || !formData.mobile || !formData.email || !formData.password ||
-            !formData.governmentIdType) {
-          toast.error('Please fill all required fields in Business & Owner Information');
-          return false;
-        }
-        break;
-      case 2: // Banking & Documents
-        if (!formData.accountNumber || !formData.ifscCode || !formData.bankName ||
-            !formData.accountHolderName) {
-          toast.error('Please fill all required banking details');
-          return false;
-        }
-        break;
-      case 3: // Operational Info
-        if (!formData.storeAddress.street || !formData.storeAddress.city ||
-            !formData.storeAddress.state || !formData.storeAddress.pincode) {
-          toast.error('Please fill all store address details');
-          return false;
-        }
-        break;
-      case 4: // Branding & Review
-        // No required fields in step 4, but ensure user can review
-        break;
-      default:
-        return true;
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    // Check if form is valid
+    const form = e.target;
+    if (!form.checkValidity()) {
+      form.reportValidity();
+      return;
     }
-    return true;
-  };
-
-  const handleNext = () => {
-    if (validateStep(currentStep)) {
-      setCurrentStep(prev => Math.min(prev + 1, totalSteps));
-    }
-  };
-
-  const handlePrev = () => {
-    setCurrentStep(prev => Math.max(prev - 1, 1));
-  };
-
-  const handleSubmit = async () => {
-    if (currentStep < totalSteps) return; // Prevent submission if not on the last step
-
-    if (!validateStep(currentStep)) return;
 
     setLoading(true);
     try {
@@ -246,6 +236,11 @@ const AddMerchant = () => {
       });
 
       if (response.ok) {
+        const data = await response.json();
+        if (data.tokenValid === false) {
+          navigate('/login', { replace: true });
+          return;
+        }
         toast.success('Merchant created successfully!');
         navigate('/merchants');
       } else {
@@ -260,35 +255,6 @@ const AddMerchant = () => {
     }
   };
 
-  const renderCheckbox = (label, fieldName) => (
-    <div className="flex items-center space-x-3">
-      <input
-        type="checkbox"
-        checked={formData.documents[fieldName] || false}
-        onChange={(e) => {
-          setFormData(prev => ({
-            ...prev,
-            documents: {
-              ...prev.documents,
-              [fieldName]: e.target.checked
-            }
-          }));
-        }}
-        className="w-4 h-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
-      />
-      <label className="text-sm font-medium text-gray-700">
-        {label}
-      </label>
-    </div>
-  );
-
-  const steps = [
-    { id: 1, name: 'Business & Owner Info', icon: Building },
-    { id: 2, name: 'Banking & Documents', icon: CreditCard },
-    { id: 3, name: 'Store & Operations', icon: Store },
-    { id: 4, name: 'Branding & Review', icon: Camera }
-  ];
-
   return (
     <Layout title="Add New Merchant">
       <div className="max-w-4xl mx-auto space-y-6">
@@ -297,7 +263,7 @@ const AddMerchant = () => {
           <div className="flex items-center space-x-4">
             <button
               onClick={() => navigate('/merchants')}
-              className="p-2 hover:bg-gray-100 rounded-lg"
+              className="p-2 hover:bg-gray-100"
             >
               <ArrowLeft size={20} />
             </button>
@@ -308,38 +274,12 @@ const AddMerchant = () => {
           </div>
         </div>
 
-        {/* Progress Steps */}
-        <div className="flex items-center justify-between">
-          {steps.map((step, index) => (
-            <div key={step.id} className="flex items-center">
-              <div className={`flex items-center justify-center w-10 h-10 rounded-full ${
-                currentStep >= step.id ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-600'
-              }`}>
-                <step.icon size={20} />
-              </div>
-              <div className="ml-3">
-                <p className={`text-sm font-medium ${
-                  currentStep >= step.id ? 'text-green-600' : 'text-gray-600'
-                }`}>
-                  {step.name}
-                </p>
-              </div>
-              {index < steps.length - 1 && (
-                <div className={`w-16 h-0.5 mx-4 ${
-                  currentStep > step.id ? 'bg-green-600' : 'bg-gray-200'
-                }`} />
-              )}
-            </div>
-          ))}
-        </div>
-
         {/* Form */}
-        <form className="bg-white rounded-xl shadow-sm border border-gray-200">
-          <div className="p-6">
-            {/* Step 1: Business & Owner Info */}
-            {currentStep === 1 && (
-              <div className="space-y-6">
-                <h3 className="text-lg font-semibold text-gray-900">Business & Owner Information</h3>
+        <form onSubmit={handleSubmit} noValidate className="bg-white shadow-sm border border-gray-200">
+          <div className="p-6 space-y-8">
+            {/* Business & Owner Information */}
+            <div className="space-y-6">
+              <h3 className="text-lg font-semibold text-gray-900">Business & Owner Information</h3>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* Merchant ID */}
@@ -352,7 +292,7 @@ const AddMerchant = () => {
                       name="merchantId"
                       value={formData.merchantId}
                       onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
                       placeholder="e.g., M001"
                       required
                     />
@@ -368,7 +308,7 @@ const AddMerchant = () => {
                       name="legalName"
                       value={formData.legalName}
                       onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
                       required
                     />
                   </div>
@@ -383,31 +323,9 @@ const AddMerchant = () => {
                       name="displayName"
                       value={formData.displayName}
                       onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
                       required
                     />
-                  </div>
-
-                  {/* Business Type */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Business Type <span className="text-red-500">*</span>
-                    </label>
-                    <select
-                      name="businessType"
-                      value={formData.businessType}
-                      onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                      required
-                    >
-                      <option value="Sole Proprietor">Sole Proprietor</option>
-                      <option value="Partnership">Partnership</option>
-                      <option value="Private Limited">Private Limited</option>
-                      <option value="LLP">LLP</option>
-                      <option value="Trust">Trust</option>
-                      <option value="Society">Society</option>
-                      <option value="Other">Other</option>
-                    </select>
                   </div>
                 </div>
 
@@ -426,7 +344,7 @@ const AddMerchant = () => {
                         name="fullName"
                         value={formData.fullName}
                         onChange={handleInputChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                        className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
                         required
                       />
                     </div>
@@ -447,7 +365,7 @@ const AddMerchant = () => {
                             mobile: value
                           }));
                         }}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                        className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
                         placeholder="10-digit number"
                         maxLength={10}
                         required
@@ -464,7 +382,7 @@ const AddMerchant = () => {
                         name="email"
                         value={formData.email}
                         onChange={handleInputChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                        className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
                         required
                       />
                     </div>
@@ -480,7 +398,7 @@ const AddMerchant = () => {
                           name="password"
                           value={formData.password}
                           onChange={handleInputChange}
-                          className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                          className="w-full px-3 py-2 pr-10 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
                           placeholder="Minimum 6 characters"
                           required
                         />
@@ -493,50 +411,13 @@ const AddMerchant = () => {
                         </button>
                       </div>
                     </div>
-
-                    {/* Government ID Type */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Government ID Type <span className="text-red-500">*</span>
-                      </label>
-                      <select
-                        name="governmentIdType"
-                        value={formData.governmentIdType}
-                        onChange={handleInputChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                        required
-                      >
-                        <option value="pan">PAN Card</option>
-                        <option value="aadhaar">Aadhaar Card</option>
-                        <option value="passport">Passport</option>
-                        <option value="driving_license">Driving License</option>
-                        <option value="voter_id">Voter ID</option>
-                      </select>
-                    </div>
-
-                    {/* Government ID Document */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Government ID Document
-                      </label>
-                      <input
-                        type="text"
-                        name="governmentId"
-                        value={formData.governmentId}
-                        onChange={handleInputChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                        placeholder="Enter ID number"
-                      />
-                    </div>
                   </div>
                 </div>
               </div>
-            )}
 
-            {/* Step 2: Banking & Documents */}
-            {currentStep === 2 && (
-              <div className="space-y-6">
-                <h3 className="text-lg font-semibold text-gray-900">Banking & Document Information</h3>
+            {/* Banking & Document Information */}
+            <div className="space-y-6">
+              <h3 className="text-lg font-semibold text-gray-900">Banking & Document Information</h3>
 
                 {/* Banking Details */}
                 <div className="border-b pb-6">
@@ -553,7 +434,7 @@ const AddMerchant = () => {
                         name="accountNumber"
                         value={formData.accountNumber}
                         onChange={handleInputChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                        className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
                         required
                       />
                     </div>
@@ -568,7 +449,7 @@ const AddMerchant = () => {
                         name="ifscCode"
                         value={formData.ifscCode}
                         onChange={handleInputChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                        className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
                         placeholder="e.g., SBIN0001234"
                         required
                       />
@@ -583,7 +464,7 @@ const AddMerchant = () => {
                         name="bankName"
                         value={formData.bankName}
                         onChange={handleInputChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                        className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
                         required
                       >
                         <option value="">Select Bank</option>
@@ -711,61 +592,45 @@ const AddMerchant = () => {
                         name="accountHolderName"
                         value={formData.accountHolderName}
                         onChange={handleInputChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                        className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
                         required
                       />
                     </div>
                   </div>
                 </div>
 
-                {/* Document Uploads */}
+                {/* Documents Link */}
                 <div>
-                  <h4 className="text-md font-semibold text-gray-900 mb-4">Document Information</h4>
-
-                  <div className="space-y-4">
-                    {/* Document Verification Checkboxes */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {renderCheckbox('PAN Card Verified', 'panCardVerified')}
-                      {renderCheckbox('Aadhaar Card Verified', 'aadhaarVerified')}
-                      {renderCheckbox('GSTIN Verified', 'gstinVerified')}
-                      {renderCheckbox('Shop Establishment License Verified', 'shopEstablishmentVerified')}
-                      {renderCheckbox('FSSAI License Verified', 'fssaiVerified')}
-                      {renderCheckbox('Bank Account Verified', 'bankAccountVerified')}
-                    </div>
-
-                    {/* Google Drive Documents Link */}
-                    <div className="mt-6">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Documents Google Drive Link
-                      </label>
-                      <input
-                        type="url"
-                        value={formData.documents.documentsLink || ''}
-                        onChange={(e) => {
-                          setFormData(prev => ({
-                            ...prev,
-                            documents: {
-                              ...prev.documents,
-                              documentsLink: e.target.value
-                            }
-                          }));
-                        }}
-                        placeholder="https://drive.google.com/drive/folders/..."
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                      />
-                      <p className="text-xs text-gray-500 mt-1">
-                        Provide a Google Drive link containing all merchant documents
-                      </p>
-                    </div>
+                  <h4 className="text-md font-semibold text-gray-900 mb-4">Documents</h4>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Documents Google Drive Link
+                    </label>
+                    <input
+                      type="url"
+                      value={formData.documents.documentsLink || ''}
+                      onChange={(e) => {
+                        setFormData(prev => ({
+                          ...prev,
+                          documents: {
+                            ...prev.documents,
+                            documentsLink: e.target.value
+                          }
+                        }));
+                      }}
+                      placeholder="https://drive.google.com/drive/folders/..."
+                      className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Provide a Google Drive link containing all merchant documents
+                    </p>
                   </div>
                 </div>
               </div>
-            )}
 
-            {/* Step 3: Store & Operations */}
-            {currentStep === 3 && (
-              <div className="space-y-6">
-                <h3 className="text-lg font-semibold text-gray-900">Store & Operational Information</h3>
+            {/* Store & Operational Information */}
+            <div className="space-y-6">
+              <h3 className="text-lg font-semibold text-gray-900">Store & Operational Information</h3>
 
                 {/* Store Address */}
                 <div className="border-b pb-6">
@@ -782,7 +647,7 @@ const AddMerchant = () => {
                         name="storeAddress.street"
                         value={formData.storeAddress.street}
                         onChange={handleInputChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                        className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
                         required
                       />
                     </div>
@@ -797,7 +662,7 @@ const AddMerchant = () => {
                         name="storeAddress.city"
                         value={formData.storeAddress.city}
                         onChange={handleInputChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                        className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
                         required
                       />
                     </div>
@@ -812,7 +677,7 @@ const AddMerchant = () => {
                         name="storeAddress.state"
                         value={formData.storeAddress.state}
                         onChange={handleInputChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                        className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
                         required
                       />
                     </div>
@@ -827,7 +692,7 @@ const AddMerchant = () => {
                         name="storeAddress.pincode"
                         value={formData.storeAddress.pincode}
                         onChange={handleInputChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                        className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
                         placeholder="6-digit pincode"
                         required
                       />
@@ -843,7 +708,7 @@ const AddMerchant = () => {
                         name="storeAddress.landmark"
                         value={formData.storeAddress.landmark}
                         onChange={handleInputChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                        className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
                       />
                     </div>
 
@@ -862,9 +727,9 @@ const AddMerchant = () => {
                           </div>
                         </div>
                         {selectedLocation && (
-                          <div className="mt-2 p-3 bg-green-50 border border-green-200 rounded-lg">
+                          <div className="mt-2 p-3 bg-green-50 border border-green-200">
                             <div className="flex items-center gap-2 text-green-700">
-                              <CheckCircle size={16} />
+                              <CircleCheck size={16} />
                               <span className="text-sm font-medium">Location Selected:</span>
                             </div>
                             <p className="text-sm text-green-600 mt-1">{selectedLocation.address}</p>
@@ -901,8 +766,9 @@ const AddMerchant = () => {
                             value={formData.storeAddress.coordinates.latitude}
                             onChange={handleInputChange}
                             placeholder="e.g. 12.9716"
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                            className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
                             disabled={!isManualEntry}
+                            required={isManualEntry}
                           />
                         </div>
                         <div>
@@ -916,8 +782,9 @@ const AddMerchant = () => {
                             value={formData.storeAddress.coordinates.longitude}
                             onChange={handleInputChange}
                             placeholder="e.g. 77.5946"
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                            className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
                             disabled={!isManualEntry}
+                            required={isManualEntry}
                           />
                         </div>
                       </div>
@@ -944,7 +811,7 @@ const AddMerchant = () => {
                       value={formData.storeType}
                       onChange={handleInputChange}
                       required
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
                     >
                       <option value="">Select Store Type</option>
                       <option value="Grocery">Grocery</option>
@@ -958,7 +825,7 @@ const AddMerchant = () => {
 
                 {/* Product Categories */}
                 <div className="border-b pb-6">
-                  <h4 className="text-md font-semibold text-gray-900 mb-4">Product Categories</h4>
+                  <h4 className="text-md font-semibold text-gray-900 mb-4">Product Categories Include</h4>
 
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     {['Grocery', 'Pharmacy', 'Stationery', 'Electronics', 'Fashion', 'Food', 'Household', 'Other'].map((category) => (
@@ -989,7 +856,7 @@ const AddMerchant = () => {
                         name="deliveryType"
                         value={formData.deliveryType}
                         onChange={handleInputChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                        className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
                       >
                         <option value="platform_delivery">Platform Delivery</option>
                         <option value="self_delivery">Self Delivery</option>
@@ -997,86 +864,13 @@ const AddMerchant = () => {
                       </select>
                     </div>
 
-                    {/* Delivery Radius */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Delivery Radius (km)
-                      </label>
-                      <input
-                        type="number"
-                        name="deliveryRadius"
-                        value={formData.deliveryRadius}
-                        onChange={handleInputChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                        min="1"
-                        max="50"
-                      />
-                    </div>
-
-                    {/* Minimum Order Value */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Minimum Order Value (₹)
-                      </label>
-                      <input
-                        type="number"
-                        name="minimumOrderValue"
-                        value={formData.minimumOrderValue}
-                        onChange={handleInputChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                        min="0"
-                      />
-                    </div>
-
-                    {/* Free Delivery Above */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Free Delivery Above (₹)
-                      </label>
-                      <input
-                        type="number"
-                        name="freeDeliveryAbove"
-                        value={formData.freeDeliveryAbove}
-                        onChange={handleInputChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                        min="0"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Store Status */}
-                <div>
-                  <h4 className="text-md font-semibold text-gray-900 mb-4">Store Status</h4>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* Store Status */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Initial Store Status
-                      </label>
-                      <select
-                        name="storeStatus"
-                        value={formData.storeStatus}
-                        onChange={handleInputChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                      >
-                        <option value="closed">Closed</option>
-                        <option value="open">Open</option>
-                      </select>
-                      <p className="text-xs text-gray-500 mt-1">
-                        This can be changed later by the merchant
-                      </p>
-                    </div>
                   </div>
                 </div>
               </div>
-            )}
 
-            {/* Step 4: Branding & Review */}
-            {currentStep === 4 && (
-              <div className="space-y-6">
-                <h3 className="text-lg font-semibold text-gray-900">Branding & Final Review</h3>
+            {/* Branding & Final Review */}
+            <div className="space-y-6">
+              <h3 className="text-lg font-semibold text-gray-900">Branding & Final Review</h3>
 
                 {/* Branding */}
                 <div className="border-b pb-6">
@@ -1093,7 +887,7 @@ const AddMerchant = () => {
                         name="tagline"
                         value={formData.tagline}
                         onChange={handleInputChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                        className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
                         placeholder="e.g., Fresh & Fast Delivery"
                       />
                     </div>
@@ -1108,7 +902,7 @@ const AddMerchant = () => {
                         value={formData.storeDescription}
                         onChange={handleInputChange}
                         rows={3}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                        className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
                         placeholder="Brief description about your store"
                       />
                     </div>
@@ -1116,31 +910,15 @@ const AddMerchant = () => {
 
                   {/* Social Media */}
                   <div className="mt-4">
-                    <h5 className="text-sm font-medium text-gray-700 mb-2">Social Media Links</h5>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <h5 className="text-sm font-medium text-gray-700 mb-2">Google Business Link</h5>
+                    <div className="grid grid-cols-1 gap-4">
                       <input
                         type="url"
-                        name="socialMedia.facebook"
-                        value={formData.socialMedia.facebook}
+                        name="brandingInfo.socialMedia.googleBusiness"
+                        value={formData.brandingInfo?.socialMedia?.googleBusiness}
                         onChange={handleInputChange}
-                        placeholder="Facebook URL"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                      />
-                      <input
-                        type="url"
-                        name="socialMedia.instagram"
-                        value={formData.socialMedia.instagram}
-                        onChange={handleInputChange}
-                        placeholder="Instagram URL"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                      />
-                      <input
-                        type="url"
-                        name="socialMedia.googleBusiness"
-                        value={formData.socialMedia.googleBusiness}
-                        onChange={handleInputChange}
-                        placeholder="Google Business URL"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                        placeholder="Google Business Profile URL"
+                        className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
                       />
                     </div>
                   </div>
@@ -1151,29 +929,63 @@ const AddMerchant = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Store Logo URL
+                          Store Logo
                         </label>
-                        <input
-                          type="url"
-                          name="storeLogoUrl"
-                          value={formData.storeLogoUrl || ''}
-                          onChange={handleInputChange}
-                          placeholder="https://example.com/logo.png"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                        />
+                        <div className="space-y-2">
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => handleImageUpload(e.target.files[0], 'logo')}
+                            disabled={uploadingLogo}
+                            className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent file:mr-4 file:py-2 file:px-4 file:rounded-l-lg file:border-0 file:text-sm file:font-medium file:bg-green-50 file:text-green-700 hover:file:bg-green-100"
+                          />
+                          {uploadingLogo && (
+                            <div className="flex items-center text-sm text-gray-600">
+                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-600 mr-2"></div>
+                              Uploading logo...
+                            </div>
+                          )}
+                          {formData.brandingInfo?.logoUrl && (
+                            <div className="flex items-center space-x-2">
+                              <img
+                                src={formData.brandingInfo.logoUrl}
+                                alt="Logo preview"
+                                className="w-16 h-16 object-cover border"
+                              />
+                              <span className="text-sm text-gray-600">Logo uploaded</span>
+                            </div>
+                          )}
+                        </div>
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Store Banner URL
+                          Store Banner
                         </label>
-                        <input
-                          type="url"
-                          name="storeBannerUrl"
-                          value={formData.storeBannerUrl || ''}
-                          onChange={handleInputChange}
-                          placeholder="https://example.com/banner.png"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                        />
+                        <div className="space-y-2">
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => handleImageUpload(e.target.files[0], 'banner')}
+                            disabled={uploadingBanner}
+                            className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent file:mr-4 file:py-2 file:px-4 file:rounded-l-lg file:border-0 file:text-sm file:font-medium file:bg-green-50 file:text-green-700 hover:file:bg-green-100"
+                          />
+                          {uploadingBanner && (
+                            <div className="flex items-center text-sm text-gray-600">
+                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-600 mr-2"></div>
+                              Uploading banner...
+                            </div>
+                          )}
+                          {formData.brandingInfo?.bannerUrl && (
+                            <div className="flex items-center space-x-2">
+                              <img
+                                src={formData.brandingInfo.bannerUrl}
+                                alt="Banner preview"
+                                className="w-24 h-16 object-cover border"
+                              />
+                              <span className="text-sm text-gray-600">Banner uploaded</span>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -1194,7 +1006,7 @@ const AddMerchant = () => {
                         name="commissionPercentage"
                         value={formData.commissionPercentage}
                         onChange={handleInputChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                        className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
                         min="0"
                         max="50"
                       />
@@ -1209,76 +1021,36 @@ const AddMerchant = () => {
                         name="settlementCycle"
                         value={formData.settlementCycle}
                         onChange={handleInputChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                        className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
                       >
-                        <option value="daily">Daily</option>
                         <option value="weekly">Weekly</option>
-                        <option value="bi_weekly">Bi-weekly</option>
                         <option value="monthly">Monthly</option>
                       </select>
-                    </div>
-
-                    {/* Minimum Settlement */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Min Settlement (₹)
-                      </label>
-                      <input
-                        type="number"
-                        name="minimumSettlement"
-                        value={formData.minimumSettlement}
-                        onChange={handleInputChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                        min="0"
-                      />
                     </div>
                   </div>
                 </div>
               </div>
-            )}
           </div>
 
           {/* Form Actions */}
-          <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-between">
+          <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end">
             <button
-              type="button"
-              onClick={handlePrev}
-              disabled={currentStep === 1}
-              className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              type="submit"
+              disabled={loading}
+              className="px-6 py-2 bg-green-600 text-white hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
             >
-              Previous
-            </button>
-
-            <div className="flex space-x-3">
-              {currentStep < totalSteps ? (
-                <button
-                  type="button"
-                  onClick={handleNext}
-                  className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
-                >
-                  Next
-                </button>
+              {loading ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  <span>Creating...</span>
+                </>
               ) : (
-                <button
-                  type="button"
-                  onClick={handleSubmit}
-                  disabled={loading}
-                  className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
-                >
-                  {loading ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                      <span>Creating...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Save size={16} />
-                      <span>Create Merchant</span>
-                    </>
-                  )}
-                </button>
+                <>
+                  <Save size={16} />
+                  <span>Create Merchant</span>
+                </>
               )}
-            </div>
+            </button>
           </div>
         </form>
       </div>

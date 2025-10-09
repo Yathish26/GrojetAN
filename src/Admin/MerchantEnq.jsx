@@ -9,7 +9,6 @@ export default function MerchantEnq() {
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [filters, setFilters] = useState({
-        businessType: '',
         status: 'all'
     });
     const [expandedCard, setExpandedCard] = useState(null);
@@ -43,6 +42,10 @@ export default function MerchantEnq() {
             }
 
             const data = await response.json();
+            if (data.tokenValid === false) {
+                navigate('/login', { replace: true });
+                return;
+            }
 
             if (response.ok) {
                 setMerchants(data.merchants || []);
@@ -101,17 +104,12 @@ export default function MerchantEnq() {
             merchant.contactPerson.toLowerCase().includes(searchTerm.toLowerCase()) ||
             merchant.email.toLowerCase().includes(searchTerm.toLowerCase());
 
-        const matchesBusinessType = filters.businessType === '' ||
-            merchant.businessType === filters.businessType;
-
         const matchesStatus = filters.status === 'all' ||
             (filters.status === 'pending' && !merchant.approved) ||
             (filters.status === 'approved' && merchant.approved);
 
-        return matchesSearch && matchesBusinessType && matchesStatus;
+        return matchesSearch && matchesStatus;
     });
-
-    const businessTypes = [...new Set(merchants.map(m => m.businessType))];
 
     const toggleExpandCard = (id) => {
         setExpandedCard(expandedCard === id ? null : id);
@@ -146,19 +144,6 @@ export default function MerchantEnq() {
                                 <span>Filters</span>
                             </button>
                             <div className="absolute right-0 mt-1 w-56 bg-white border border-gray-300  shadow-lg z-10 hidden group-hover:block">
-                                <div className="p-3 border-b border-gray-200">
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Business Type</label>
-                                    <select
-                                        className="w-full p-2 border border-gray-300 "
-                                        value={filters.businessType}
-                                        onChange={(e) => setFilters({ ...filters, businessType: e.target.value })}
-                                    >
-                                        <option value="">All Types</option>
-                                        {businessTypes.map((type, i) => (
-                                            <option key={i} value={type}>{type}</option>
-                                        ))}
-                                    </select>
-                                </div>
                                 <div className="p-3">
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
                                     <select
@@ -198,7 +183,6 @@ export default function MerchantEnq() {
                                     >
                                         <div>
                                             <h3 className="font-medium text-gray-900">{merchant.businessName}</h3>
-                                            <p className="text-sm text-gray-500">{merchant.businessType}</p>
                                         </div>
                                         <div className="flex items-center gap-4">
                                             <button 
@@ -225,7 +209,6 @@ export default function MerchantEnq() {
                                                     <div>
                                                         <p className="text-sm font-medium text-gray-500">Business</p>
                                                         <p className="text-gray-900">{merchant.businessName}</p>
-                                                        <p className="text-gray-600 text-sm">{merchant.businessType}</p>
                                                     </div>
                                                 </div>
                                                 <div className="flex items-start gap-3">

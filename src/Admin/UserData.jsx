@@ -59,6 +59,10 @@ export default function UserData() {
       }
 
       const data = await response.json();
+      if (data.tokenValid === false) {
+        navigate('/login');
+        return;
+      }
       setUser(data.user);
     } catch (error) {
       console.error('Error fetching user details:', error);

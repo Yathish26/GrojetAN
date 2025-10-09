@@ -49,6 +49,14 @@ export default function Admin() {
                     usersRes.json()
                 ]);
 
+                // Check for token validation in responses
+                if (inventoryData.tokenValid === false || ordersData.tokenValid === false ||
+                    agentsData.tokenValid === false || usersData.tokenValid === false) {
+                    setRedirecting(true);
+                    navigate('/login', { replace: true });
+                    return;
+                }
+
                 setDashboardStats({
                     inventoryCount: inventoryData.success ? inventoryData.count : 0,
                     orders: ordersData.success ? ordersData.stats : {},

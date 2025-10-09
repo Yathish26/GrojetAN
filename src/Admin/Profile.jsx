@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { User, Mail, Phone, Shield, Calendar, Edit3, Save, X, Eye, EyeOff, Lock, Settings as SettingsIcon, AlertCircle, ScanFace } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export default function Profile() {
+  const navigate = useNavigate();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
@@ -29,6 +31,10 @@ export default function Profile() {
         const res = await fetch(`${import.meta.env.VITE_SERVER}/admin/auth/profile`, { credentials: 'include' });
         if (!res.ok) throw new Error('Failed to fetch profile');
         const data = await res.json();
+        if (data.tokenValid === false) {
+            navigate('/login', { replace: true });
+            return;
+        }
         setProfile(data.admin);
         localStorage.setItem('adminUser', JSON.stringify(data.admin));
         setEditForm({ name: data.admin.name||'', email: data.admin.email||'', phone: data.admin.phone||'', department: data.admin.department||'' });
@@ -42,6 +48,10 @@ export default function Profile() {
       const res = await fetch(`${import.meta.env.VITE_SERVER}/admin/auth/profile`, { method:'PUT', headers:{'Content-Type':'application/json'}, credentials:'include', body: JSON.stringify(editForm) });
       if(!res.ok){ const er = await res.json(); throw new Error(er.message||'Failed'); }
       const data = await res.json();
+      if (data.tokenValid === false) {
+          navigate('/login', { replace: true });
+          return;
+      }
       setProfile(data.admin); localStorage.setItem('adminUser', JSON.stringify(data.admin)); setEditing(false); toast.success('Profile updated');
     } catch(err){ toast.error(err.message); }
   };
@@ -53,6 +63,11 @@ export default function Profile() {
     try {
       const res = await fetch(`${import.meta.env.VITE_SERVER}/admin/auth/change-password`, { method:'PUT', headers:{'Content-Type':'application/json'}, credentials:'include', body: JSON.stringify({ currentPassword: passwordForm.currentPassword, newPassword: passwordForm.newPassword }) });
       if(!res.ok){ const er = await res.json(); throw new Error(er.message||'Failed'); }
+      const data = await res.json();
+      if (data.tokenValid === false) {
+          navigate('/login', { replace: true });
+          return;
+      }
       setPasswordForm({ currentPassword:'', newPassword:'', confirmPassword:'' }); setChangingPassword(false); toast.success('Password changed');
     } catch(err){ toast.error(err.message); }
   };
@@ -64,6 +79,11 @@ export default function Profile() {
     try {
       const res = await fetch(`${import.meta.env.VITE_SERVER}/admin/auth/settings/pin`, { method:'PUT', headers:{'Content-Type':'application/json'}, credentials:'include', body: JSON.stringify({ newPin: pinForm.newPin }) });
       if(!res.ok){ const er = await res.json(); throw new Error(er.message||'Failed'); }
+      const data = await res.json();
+      if (data.tokenValid === false) {
+          navigate('/login', { replace: true });
+          return;
+      }
       setPinForm({ newPin:'', confirmPin:'' }); setChangingPin(false); toast.success('Registration PIN updated');
     } catch(err){ toast.error(err.message); }
   };
@@ -73,7 +93,12 @@ export default function Profile() {
       const enable = !profile.twofactorAuth;
       const res = await fetch(`${import.meta.env.VITE_SERVER}/admin/auth/2fa`, { method:'POST', headers:{'Content-Type':'application/json'}, credentials:'include', body: JSON.stringify({ enable }) });
       if(!res.ok){ const er = await res.json(); throw new Error(er.message||'Failed'); }
-      const data = await res.json(); toast.success(data.message || (enable?'2FA enabled':'2FA disabled')); setProfile(p=>({...p, twofactorAuth: enable}));
+      const data = await res.json();
+      if (data.tokenValid === false) {
+          navigate('/login', { replace: true });
+          return;
+      }
+      toast.success(data.message || (enable?'2FA enabled':'2FA disabled')); setProfile(p=>({...p, twofactorAuth: enable}));
     } catch(err){ toast.error(err.message); }
   };
 

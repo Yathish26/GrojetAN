@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { MapPin, Store, Loader2, Map, X } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import Layout from '../Components/Layout';
 import { GoogleMap, Marker } from '../Components/GoogleMapComponents';
@@ -142,6 +143,7 @@ const MarketMap = ({ zones, merchants }) => {
 };
 
 const MarketArea = () => {
+  const navigate = useNavigate();
   const [marketData, setMarketData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showMap, setShowMap] = useState(false);
@@ -161,9 +163,18 @@ const MarketArea = () => {
 
       if (response.ok) {
         const data = await response.json();
+        if (data.tokenValid === false) {
+          navigate('/login', { replace: true });
+          return;
+        }
         console.log('Market area data:', data);
         setMarketData(data.data || []);
       } else {
+        // Handle authentication errors
+        if (response.status === 401 || response.status === 403) {
+          navigate('/login', { replace: true });
+          return;
+        }
         const errorData = await response.json();
         console.error('Failed to fetch market data:', errorData);
         toast.error('Failed to fetch market area data');
@@ -185,8 +196,17 @@ const MarketArea = () => {
 
       if (response.ok) {
         const data = await response.json();
+        if (data.tokenValid === false) {
+          navigate('/login', { replace: true });
+          return;
+        }
         setMapData(data);
       } else {
+        // Handle authentication errors
+        if (response.status === 401 || response.status === 403) {
+          navigate('/login', { replace: true });
+          return;
+        }
         toast.error('Failed to fetch map data');
       }
     } catch (error) {
@@ -231,7 +251,7 @@ const MarketArea = () => {
             </div>
             <button
               onClick={handleShowMap}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 transition-colors"
             >
               <Map className="w-5 h-5" />
               Market Map
@@ -240,19 +260,19 @@ const MarketArea = () => {
         </div>
 
         <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="bg-blue-50 p-4 rounded-lg">
+          <div className="bg-blue-50 p-4">
             <div className="text-sm text-blue-600 font-medium">Total Merchants</div>
             <div className="text-2xl font-bold text-blue-700">
               {marketData.reduce((sum, zone) => sum + zone.merchantCount, 0)}
             </div>
           </div>
-          <div className="bg-green-50 p-4 rounded-lg">
+          <div className="bg-green-50 p-4">
             <div className="text-sm text-green-600 font-medium">Active Zones</div>
             <div className="text-2xl font-bold text-green-700">
               {marketData.filter(zone => zone.merchantCount > 0).length}
             </div>
           </div>
-          <div className="bg-orange-50 p-4 rounded-lg">
+          <div className="bg-orange-50 p-4">
             <div className="text-sm text-orange-600 font-medium">Empty Zones</div>
             <div className="text-2xl font-bold text-orange-700">
               {marketData.filter(zone => zone.merchantCount === 0).length}
@@ -265,11 +285,11 @@ const MarketArea = () => {
           {marketData.map((zone) => (
             <div
               key={zone.id}
-              className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow"
+              className="bg-white shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow"
             >
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-green-50 rounded-lg">
+                  <div className="p-2 bg-green-50">
                     <MapPin className="w-6 h-6 text-green-600" />
                   </div>
                   <div>
@@ -309,12 +329,12 @@ const MarketArea = () => {
       {/* Market Map Modal */}
       {showMap && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-6xl h-[90vh] flex flex-col">
+          <div className="bg-white shadow-xl w-full max-w-6xl h-[90vh] flex flex-col">
             <div className="flex items-center justify-between p-4 border-b">
               <h2 className="text-xl font-semibold text-gray-900">Market Map</h2>
               <button
                 onClick={() => setShowMap(false)}
-                className="p-2 hover:bg-gray-100 rounded-lg"
+                className="p-2 hover:bg-gray-100"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -334,11 +354,11 @@ const MarketArea = () => {
             <div className="p-4 border-t bg-gray-50">
               <div className="flex items-center gap-6 text-sm">
                 <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-green-500 opacity-25 border border-green-500 rounded"></div>
+                  <div className="w-4 h-4 bg-green-500 opacity-25 border border-green-500"></div>
                   <span>Delivery Zones ({mapData.zones.length})</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-blue-500 rounded-full"></div>
+                  <div className="w-4 h-4 bg-blue-500"></div>
                   <span>Merchants ({mapData.merchants.length})</span>
                 </div>
               </div>

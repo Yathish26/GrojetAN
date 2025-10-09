@@ -12,8 +12,6 @@ import {
   XCircle,
   AlertCircle,
   Crown,
-  Lock,
-  Unlock,
   UserPlus,
   Settings
 } from 'lucide-react';
@@ -120,8 +118,12 @@ export default function AdminManagement() {
         credentials: 'include',
         body: JSON.stringify({ ...createForm }),
       });
-      if (!response.ok) throw new Error((await response.json()).message || 'Failed to create admin');
       const data = await response.json();
+      if (data.tokenValid === false) {
+        navigate('/login', { replace: true });
+        return;
+      }
+      if (!response.ok) throw new Error(data.message || 'Failed to create admin');
       setAdmins([...admins, data.admin]);
       setShowCreateModal(false);
       setCreateForm({
@@ -141,7 +143,7 @@ export default function AdminManagement() {
       role: admin.role,
       phone: admin.phone || '',
       department: admin.department || '',
-      status: admin.status || 'active'
+      status: admin.isActive ? 'active' : 'suspended'
     });
   };
 
@@ -153,8 +155,12 @@ export default function AdminManagement() {
         credentials: 'include',
         body: JSON.stringify({ ...updates }),
       });
-      if (!response.ok) throw new Error('Failed to update admin');
       const data = await response.json();
+      if (data.tokenValid === false) {
+        navigate('/login', { replace: true });
+        return;
+      }
+      if (!response.ok) throw new Error('Failed to update admin');
       setAdmins(admins.map(admin => admin._id === adminId ? data.admin : admin));
       setEditingAdmin(null);
       toast.success('Admin updated successfully');
@@ -172,6 +178,11 @@ export default function AdminManagement() {
         method: 'DELETE',
         credentials: 'include'
       });
+      const data = await response.json();
+      if (data.tokenValid === false) {
+        navigate('/login', { replace: true });
+        return;
+      }
       if (!response.ok) {
         throw new Error('Failed to delete admin');
       }
@@ -183,16 +194,14 @@ export default function AdminManagement() {
   };
 
   const toggleAdminStatus = async (adminId, currentStatus) => {
-    const newStatus = currentStatus === 'Active' ? 'Inactive' : 'Active';
-    await handleUpdateAdmin(adminId, { status: newStatus }, []);
+    const newIsActive = currentStatus !== 'active';
+    await handleUpdateAdmin(adminId, { isActive: newIsActive });
   };
 
   const getStatusColor = (status) => {
     switch (status) {
       case 'active':
         return 'bg-green-100 text-green-800';
-      case 'inactive':
-        return 'bg-gray-100 text-gray-800';
       case 'suspended':
         return 'bg-red-100 text-red-800';
       default:
@@ -217,7 +226,7 @@ export default function AdminManagement() {
     const matchesSearch = admin.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       admin.email.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesRole = roleFilter === 'all' || admin.role === roleFilter;
-    const matchesStatus = statusFilter === 'all' || (admin.status || (admin.isActive ? 'active' : 'inactive')) === statusFilter;
+    const matchesStatus = statusFilter === 'all' || (admin.isActive ? 'active' : 'suspended') === statusFilter;
     return matchesSearch && matchesRole && matchesStatus;
   });
 
@@ -237,7 +246,7 @@ export default function AdminManagement() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+        <div className="animate-spin h-12 w-12 border-4 border-green-200 border-t-green-600 rounded-full"></div>
       </div>
     );
   }
@@ -299,7 +308,6 @@ export default function AdminManagement() {
             >
               <option value="all">All Status</option>
               <option value="active">Active</option>
-              <option value="inactive">Inactive</option>
               <option value="suspended">Suspended</option>
             </select>
             <div className="flex items-center gap-2 text-gray-600">
@@ -370,8 +378,8 @@ export default function AdminManagement() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center gap-2">
-                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(admin.status || (admin.isActive ? 'active' : 'inactive'))}`}>
-                          {admin.status || (admin.isActive ? 'Active' : 'Inactive')}
+                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(admin.isActive ? 'active' : 'suspended')}`}>
+                          {admin.isActive ? 'Active' : 'Suspended'}
                         </span>
                       </div>
                     </td>
@@ -382,14 +390,6 @@ export default function AdminManagement() {
                       <div className="flex items-center gap-2">
                         {admin._id !== currentUser?._id && (
                           <>
-                            <button
-                              onClick={() => toggleAdminStatus(admin._id, admin.status || (admin.isActive ? 'active' : 'inactive'))}
-                              className={`p-1 hover:bg-gray-100 ${(admin.status || (admin.isActive ? 'active' : 'inactive')) === 'active' ? 'text-red-600' : 'text-green-600'
-                                }`}
-                              title={(admin.status || (admin.isActive ? 'active' : 'inactive')) === 'active' ? 'Deactivate' : 'Activate'}
-                            >
-                              {(admin.status || (admin.isActive ? 'active' : 'inactive')) === 'active' ? <Lock className="w-4 h-4" /> : <Unlock className="w-4 h-4" />}
-                            </button>
                             <button
                               onClick={() => openEditModal(admin)}
                               className="p-1 text-blue-600 hover:bg-gray-100 rounded"
@@ -531,7 +531,9 @@ export default function AdminManagement() {
               <form
                 onSubmit={e => {
                   e.preventDefault();
-                  handleUpdateAdmin(editingAdmin._id, editForm);
+                  const updates = { ...editForm, isActive: editForm.status === 'active' };
+                  delete updates.status;
+                  handleUpdateAdmin(editingAdmin._id, updates);
                 }}
                 className="p-6 space-y-4"
               >
@@ -596,7 +598,6 @@ export default function AdminManagement() {
                       className="w-full px-3 py-2 border border-gray-300  focus:ring-2 focus:ring-green-500 focus:border-green-500"
                     >
                       <option value="active">Active</option>
-                      <option value="inactive">Inactive</option>
                       <option value="suspended">Suspended</option>
                     </select>
                   </div>

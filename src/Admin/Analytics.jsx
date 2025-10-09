@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   TrendingUp,
   Package,
@@ -57,6 +58,7 @@ const formatDate = (year, month, day) => {
 };
 
 export default function Analytics() {
+  const navigate = useNavigate();
   const [analytics, setAnalytics] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -75,7 +77,7 @@ export default function Analytics() {
         const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/auth/profile`, { credentials: 'include' });
         const data = await response.json();
         if (data.tokenValid === false) {
-          window.location.replace('/login');
+          navigate('/login', { replace: true });
           return;
         }
         if (response.ok && data.admin) {
@@ -141,6 +143,10 @@ export default function Analytics() {
       if (!chartResponse.ok) throw new Error('Failed to fetch chart data');
 
       const chartData = await chartResponse.json();
+      if (chartData.tokenValid === false) {
+        navigate('/login', { replace: true });
+        return;
+      }
       const analyticsData = chartData.analyticsData || [];
       setAnalytics(analyticsData);
 
@@ -153,6 +159,10 @@ export default function Analytics() {
       if (!dashboardResponse.ok) throw new Error('Failed to fetch dashboard data');
 
       const dashboardData = await dashboardResponse.json();
+      if (dashboardData.tokenValid === false) {
+        navigate('/login', { replace: true });
+        return;
+      }
 
       if (dashboardData.success && dashboardData.data) {
         setMetrics(dashboardData.data);

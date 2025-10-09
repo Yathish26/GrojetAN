@@ -54,6 +54,10 @@ const Orders = () => {
       }
 
       const data = await response.json();
+      if (data.tokenValid === false) {
+        navigate('/login', { replace: true });
+        return;
+      }
       if (data.success) {
         setOrders(data.orders);
         setPagination(prev => ({
@@ -79,6 +83,10 @@ const Orders = () => {
 
       if (response.ok) {
         const data = await response.json();
+        if (data.tokenValid === false) {
+          navigate('/login', { replace: true });
+          return;
+        }
         setStats(data.stats);
       }
     } catch (error) {
@@ -113,6 +121,11 @@ const Orders = () => {
       );
 
       if (response.ok) {
+        const data = await response.json();
+        if (data.tokenValid === false) {
+          navigate('/login', { replace: true });
+          return;
+        }
         toast.success('Order status updated successfully');
         fetchOrders();
         fetchStats();

@@ -58,6 +58,10 @@ const DeliveryAgents = () => {
       }
 
       const data = await response.json();
+      if (data.tokenValid === false) {
+        navigate('/login', { replace: true });
+        return;
+      }
       if (data.success) {
         setAgents(data.agents);
         setPagination(prev => ({
@@ -83,6 +87,10 @@ const DeliveryAgents = () => {
 
       if (response.ok) {
         const data = await response.json();
+        if (data.tokenValid === false) {
+          navigate('/login', { replace: true });
+          return;
+        }
         setStats(data.stats);
       }
     } catch (error) {
@@ -128,6 +136,11 @@ const DeliveryAgents = () => {
       );
 
       if (response.ok) {
+        const data = await response.json();
+        if (data.tokenValid === false) {
+          navigate('/login', { replace: true });
+          return;
+        }
         toast.success('Agent status updated successfully');
         setShowStatusModal(false);
         fetchAgents();
@@ -215,7 +228,7 @@ const DeliveryAgents = () => {
   if (checkingUser) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+        <div className="animate-spin h-12 w-12 border-4 border-green-200 border-t-green-600 rounded-full"></div>
       </div>
     );
   }

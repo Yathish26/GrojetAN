@@ -150,6 +150,10 @@ export default function Products() {
       }
       if (!response.ok) throw new Error('Failed to fetch products');
       const data = await response.json();
+      if (data.tokenValid === false) {
+        navigate('/login', { replace: true });
+        return;
+      }
       setProducts(data.products || []);
       setTotalPages(data.totalPages || 1);
       setTotalProducts(data.total || 0);
@@ -172,6 +176,10 @@ export default function Products() {
       }
       if (!response.ok) throw new Error('Failed to fetch categories');
       const data = await response.json();
+      if (data.tokenValid === false) {
+        navigate('/login', { replace: true });
+        return;
+      }
       setCategorylist(data.categories || []);
     } catch (error) {
       toast.error('Failed to load categories. Please refresh the page.');
@@ -195,6 +203,10 @@ export default function Products() {
       }
       if (!response.ok) throw new Error('Failed to update request status');
       const data = await response.json();
+      if (data.tokenValid === false) {
+        navigate('/login', { replace: true });
+        return;
+      }
       toast.success(data.message);
       // Refresh the requested products list
       fetchRequestedProducts(requestPage);
@@ -313,6 +325,11 @@ export default function Products() {
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.message || 'Failed to delete product');
+      }
+      const data = await response.json();
+      if (data.tokenValid === false) {
+        navigate('/login', { replace: true });
+        return;
       }
       toast.success('Product deleted successfully');
       fetchProducts({ page, search: searchTerm, category: filters.category, status: filters.status, sort: filters.sort, startsWith: filters.startsWith });
@@ -505,6 +522,11 @@ export default function Products() {
         const errorData = await response.json();
         throw new Error(errorData.message || 'Failed to update product');
       }
+      const data = await response.json();
+      if (data.tokenValid === false) {
+        navigate('/login', { replace: true });
+        return;
+      }
       toast.success('Product updated successfully');
       fetchProducts({ page, search: searchTerm, category: filters.category, status: filters.status, sort: filters.sort, startsWith: filters.startsWith });
       closeEditModal();
@@ -550,7 +572,7 @@ export default function Products() {
   if (checkingUser) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+        <div className="animate-spin h-12 w-12 border-4 border-green-200 border-t-green-600 rounded-full"></div>
       </div>
     );
   }

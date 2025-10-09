@@ -17,12 +17,19 @@ const Merchants = () => {
     const [searchInput, setSearchInput] = useState('');
     const [currentSearch, setCurrentSearch] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
-    const [categoryFilter, setCategoryFilter] = useState('all');
     const [showFilters, setShowFilters] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [totalMerchants, setTotalMerchants] = useState(0);
     const [showMapModal, setShowMapModal] = useState(false);
+    const [stats, setStats] = useState({
+        totalMerchants: 0,
+        openMerchants: 0,
+        activeMerchants: 0,
+        holdMerchants: 0,
+        bannedMerchants: 0,
+        totalRevenue: 0
+    });
 
     // Calculate map center and zoom based on merchant locations
     const getMapCenterAndZoom = () => {
@@ -90,14 +97,14 @@ const Merchants = () => {
     };
 
     // Fetch merchants from API with search and filters
-    const fetchMerchants = async (page = 1, search = '', status = 'all', businessType = 'all') => {
+    const fetchMerchants = async (page = 1, search = '', status = 'all') => {
         try {
             setLoading(true);
 
             // Build query parameters
             const params = new URLSearchParams({
                 page: page.toString(),
-                limit: '20'
+                limit: '5'
             });
 
             if (search && search.trim()) {
@@ -106,10 +113,6 @@ const Merchants = () => {
 
             if (status && status !== 'all') {
                 params.append('status', status);
-            }
-
-            if (businessType && businessType !== 'all') {
-                params.append('businessType', businessType);
             }
 
             const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/merchant-stores?${params}`, {
@@ -122,7 +125,12 @@ const Merchants = () => {
 
             if (response.ok) {
                 const data = await response.json();
+                if (data.tokenValid === false) {
+                    navigate('/login', { replace: true });
+                    return;
+                }
                 if (data.success) {
+                    console.log('API Response:', data); // Debug log
                     // Transform API data to match component expectations
                     const transformedMerchants = data.merchants.map(merchant => ({
                         id: merchant.id,
@@ -130,10 +138,9 @@ const Merchants = () => {
                         name: merchant.displayName,
                         email: merchant.email,
                         phone: merchant.mobile,
-                        businessType: merchant.businessType,
-                        category: getCategoryFromBusinessType(merchant.businessType),
                         address: merchant.city ? `${merchant.city}, India` : 'Address not available',
                         status: merchant.status,
+                        storeStatus: merchant.storeStatus,
                         rating: 0, // Will be calculated from reviews later
                         totalOrders: merchant.totalOrders,
                         totalRevenue: merchant.totalRevenue,
@@ -150,6 +157,7 @@ const Merchants = () => {
 
                     setMerchants(transformedMerchants);
                     setFilteredMerchants(transformedMerchants);
+                    setStats(data.stats);
                     setTotalPages(data.pagination.totalPages);
                     setTotalMerchants(data.pagination.total);
                     setCurrentPage(page);
@@ -165,6 +173,14 @@ const Merchants = () => {
             // Set empty array on error
             setMerchants([]);
             setFilteredMerchants([]);
+            setStats({
+                totalMerchants: 0,
+                openMerchants: 0,
+                activeMerchants: 0,
+                holdMerchants: 0,
+                bannedMerchants: 0,
+                totalRevenue: 0
+            });
         } finally {
             setLoading(false);
         }
@@ -174,39 +190,19 @@ const Merchants = () => {
     const handleSearch = () => {
         setCurrentSearch(searchInput);
         setCurrentPage(1);
-        fetchMerchants(1, searchInput, statusFilter, categoryFilter);
+        fetchMerchants(1, searchInput, statusFilter);
     };
 
     // Handle filter changes
     const handleStatusFilterChange = (newStatus) => {
         setStatusFilter(newStatus);
         setCurrentPage(1);
-        fetchMerchants(1, currentSearch, newStatus, categoryFilter);
-    };
-
-    const handleCategoryFilterChange = (newCategory) => {
-        setCategoryFilter(newCategory);
-        setCurrentPage(1);
-        fetchMerchants(1, currentSearch, statusFilter, newCategory);
+        fetchMerchants(1, currentSearch, newStatus);
     };
 
     // Handle page change
     const handlePageChange = (page) => {
-        fetchMerchants(page, currentSearch, statusFilter, categoryFilter);
-    };
-
-    // Helper function to map business type to category
-    const getCategoryFromBusinessType = (businessType) => {
-        const categoryMap = {
-            'sole_proprietor': 'Retail',
-            'partnership': 'Retail',
-            'pvt_ltd': 'Retail',
-            'llp': 'Retail',
-            'trust': 'Retail',
-            'society': 'Retail',
-            'other': 'Other'
-        };
-        return categoryMap[businessType] || 'Other';
+        fetchMerchants(page, currentSearch, statusFilter);
     };
 
     useEffect(() => {
@@ -215,11 +211,9 @@ const Merchants = () => {
 
     const getStatusColor = (status) => {
         switch (status) {
-            case 'active':
+            case 'Open':
                 return 'bg-green-100 text-green-800';
-            case 'hold':
-                return 'bg-yellow-100 text-yellow-800';
-            case 'banned':
+            case 'Closed':
                 return 'bg-red-100 text-red-800';
             default:
                 return 'bg-blue-100 text-blue-800';
@@ -228,12 +222,10 @@ const Merchants = () => {
 
     const getStatusIcon = (status) => {
         switch (status) {
-            case 'active':
+            case 'Open':
                 return '🟢';
-            case 'hold':
-                return '�';
-            case 'banned':
-                return '�';
+            case 'Closed':
+                return '🔴';
             default:
                 return '⚪';
         }
@@ -246,35 +238,138 @@ const Merchants = () => {
         }).format(amount || 0);
     };
 
-    const exportMerchants = () => {
-        // Create CSV content
-        const headers = ['Merchant ID', 'Name', 'Email', 'Phone', 'Business Type', 'Status', 'City', 'Total Orders', 'Total Revenue', 'Join Date'];
-        const csvContent = [
-            headers.join(','),
-            ...filteredMerchants.map(merchant => [
-                merchant.merchantId,
-                `"${merchant.name}"`,
-                merchant.email,
-                merchant.phone,
-                merchant.businessType,
-                merchant.status,
-                `"${merchant.address}"`,
-                merchant.totalOrders,
-                merchant.totalRevenue,
-                merchant.joinDate
-            ].join(','))
-        ].join('\n');
+    const exportMerchants = async () => {
+        try {
+            setLoading(true);
 
-        // Create and download the file
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement('a');
-        const url = URL.createObjectURL(blob);
-        link.setAttribute('href', url);
-        link.setAttribute('download', `merchants_${new Date().toISOString().split('T')[0]}.csv`);
-        link.style.visibility = 'hidden';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+            // Fetch all merchants data from backend
+            const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/merchant-stores/export/all`, {
+                method: 'GET',
+                credentials: 'include',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to fetch export data');
+            }
+
+            const result = await response.json();
+
+            if (!result.success) {
+                throw new Error(result.message || 'Export failed');
+            }
+
+            const merchants = result.data;
+
+            if (merchants.length === 0) {
+                toast.error('No merchants found to export');
+                return;
+            }
+
+            // Create CSV headers - all fields except password
+            const headers = [
+                'Merchant ID', 'Legal Name', 'Display Name', 'Website', 'Established Year',
+                'Owner Full Name', 'Owner Mobile', 'Owner Alternate Mobile', 'Owner Email',
+                'Account Number', 'IFSC Code', 'Bank Name', 'Branch Name', 'Account Holder Name',
+                'Store Street', 'Store City', 'Store State', 'Store Pincode', 'Store Country', 'Store Landmark', 'Store Latitude', 'Store Longitude',
+                'Opening Time', 'Closing Time', 'Store Type', 'Delivery Type',
+                'Logo URL', 'Banner URL', 'Tagline', 'Store Description', 'Facebook URL', 'Instagram URL', 'Twitter URL', 'WhatsApp URL', 'Google Business URL',
+                'Documents Link', 'Store Banner',
+                'KYC Status', 'Commission Percentage', 'Commission Settlement Cycle', 'Commission Minimum Settlement', 'KYC Remarks',
+                'Status', 'Store Status',
+                'Rating', 'Total Ratings', 'Total Orders', 'Completed Orders', 'Cancelled Orders', 'Total Revenue', 'Average Order Value', 'Average Delivery Time', 'Customer Satisfaction', 'Response Time',
+                'Registration Date', 'Last Login', 'Updated At',
+                'Device Platform', 'Device Name', 'Last Device Login'
+            ];
+
+            // Create CSV content
+            const csvContent = [
+                headers.join(','),
+                ...merchants.map(merchant => [
+                    `"${merchant.merchantId}"`,
+                    `"${merchant.legalName}"`,
+                    `"${merchant.displayName}"`,
+                    `"${merchant.website}"`,
+                    `"${merchant.establishedYear}"`,
+                    `"${merchant.ownerFullName}"`,
+                    `"${merchant.ownerMobile}"`,
+                    `"${merchant.ownerAlternateMobile}"`,
+                    `"${merchant.ownerEmail}"`,
+                    `"${merchant.accountNumber}"`,
+                    `"${merchant.ifscCode}"`,
+                    `"${merchant.bankName}"`,
+                    `"${merchant.branchName}"`,
+                    `"${merchant.accountHolderName}"`,
+                    `"${merchant.storeStreet}"`,
+                    `"${merchant.storeCity}"`,
+                    `"${merchant.storeState}"`,
+                    `"${merchant.storePincode}"`,
+                    `"${merchant.storeCountry}"`,
+                    `"${merchant.storeLandmark}"`,
+                    `"${merchant.storeLatitude}"`,
+                    `"${merchant.storeLongitude}"`,
+                    `"${merchant.openingTime}"`,
+                    `"${merchant.closingTime}"`,
+                    `"${merchant.storeType}"`,
+                    `"${merchant.deliveryType}"`,
+                    `"${merchant.logoUrl}"`,
+                    `"${merchant.bannerUrl}"`,
+                    `"${merchant.tagline}"`,
+                    `"${merchant.storeDescription}"`,
+                    `"${merchant.facebookUrl}"`,
+                    `"${merchant.instagramUrl}"`,
+                    `"${merchant.twitterUrl}"`,
+                    `"${merchant.whatsappUrl}"`,
+                    `"${merchant.googleBusinessUrl}"`,
+                    `"${merchant.documentsLink}"`,
+                    `"${merchant.storeBanner}"`,
+                    `"${merchant.kycStatus}"`,
+                    `"${merchant.commissionPercentage}"`,
+                    `"${merchant.commissionSettlementCycle}"`,
+                    `"${merchant.commissionMinimumSettlement}"`,
+                    `"${merchant.kycRemarks}"`,
+                    `"${merchant.status}"`,
+                    `"${merchant.storeStatus}"`,
+                    `"${merchant.rating}"`,
+                    `"${merchant.totalRatings}"`,
+                    `"${merchant.totalOrders}"`,
+                    `"${merchant.completedOrders}"`,
+                    `"${merchant.cancelledOrders}"`,
+                    `"${merchant.totalRevenue}"`,
+                    `"${merchant.averageOrderValue}"`,
+                    `"${merchant.averageDeliveryTime}"`,
+                    `"${merchant.customerSatisfaction}"`,
+                    `"${merchant.responseTime}"`,
+                    `"${merchant.registrationDate}"`,
+                    `"${merchant.lastLogin}"`,
+                    `"${merchant.updatedAt}"`,
+                    `"${merchant.devicePlatform}"`,
+                    `"${merchant.deviceName}"`,
+                    `"${merchant.lastDeviceLogin}"`
+                ].join(','))
+            ].join('\n');
+
+            // Create and download the file
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', `all_merchants_export_${new Date().toISOString().split('T')[0]}.csv`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            toast.success(`Successfully exported ${merchants.length} merchants`);
+
+        } catch (error) {
+            console.error('Export error:', error);
+            toast.error('Failed to export merchants data');
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -289,21 +384,26 @@ const Merchants = () => {
                     <div className="flex gap-3">
                         <button
                             onClick={() => setShowMapModal(true)}
-                            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white hover:bg-blue-700"
                         >
                             <Map size={16} />
                             Merchants Map
                         </button>
                         <button
                             onClick={exportMerchants}
-                            className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+                            disabled={loading}
+                            className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            <Download size={16} />
-                            Export
+                            {loading ? (
+                                <div className="animate-spin h-4 w-4 border-4 border-gray-300 border-t-gray-600 rounded-full"></div>
+                            ) : (
+                                <Download size={16} />
+                            )}
+                            {loading ? 'Exporting...' : 'Export'}
                         </button>
                         <button
                             onClick={() => navigate('/merchants/add')}
-                            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white hover:bg-green-700"
                         >
                             <Plus size={16} />
                             Add Merchant
@@ -312,7 +412,7 @@ const Merchants = () => {
                 </div>
 
                 {/* Search and Filters */}
-                <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                <div className="bg-white p-6 shadow-sm border border-gray-200">
                     <div className="flex flex-col lg:flex-row gap-4">
                         {/* Search */}
                         <div className="flex-1">
@@ -324,7 +424,7 @@ const Merchants = () => {
                                     value={searchInput}
                                     onChange={(e) => setSearchInput(e.target.value)}
                                     onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                    className="w-full pl-10 pr-4 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
                                 />
                             </div>
                         </div>
@@ -332,7 +432,7 @@ const Merchants = () => {
                         {/* Search Button */}
                         <button
                             onClick={handleSearch}
-                            className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-2"
+                            className="px-6 py-2 bg-green-600 text-white hover:bg-green-700 flex items-center gap-2"
                         >
                             <Search size={16} />
                             Search
@@ -341,7 +441,7 @@ const Merchants = () => {
                         {/* Filters Toggle */}
                         <button
                             onClick={() => setShowFilters(!showFilters)}
-                            className="flex items-center gap-2 px-4 py-2 bg-gray-100 border border-gray-300 rounded-lg hover:bg-gray-200"
+                            className="flex items-center gap-2 px-4 py-2 bg-gray-100 border border-gray-300 hover:bg-gray-200"
                         >
                             <Filter size={16} />
                             Filters
@@ -357,29 +457,12 @@ const Merchants = () => {
                                     <select
                                         value={statusFilter}
                                         onChange={(e) => handleStatusFilterChange(e.target.value)}
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                        className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
                                     >
                                         <option value="all">All Status</option>
                                         <option value="active">Active</option>
                                         <option value="hold">Hold</option>
                                         <option value="banned">Banned</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">Business Type</label>
-                                    <select
-                                        value={categoryFilter}
-                                        onChange={(e) => handleCategoryFilterChange(e.target.value)}
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                                    >
-                                        <option value="all">All Types</option>
-                                        <option value="sole_proprietor">Sole Proprietor</option>
-                                        <option value="partnership">Partnership</option>
-                                        <option value="pvt_ltd">Private Limited</option>
-                                        <option value="llp">LLP</option>
-                                        <option value="trust">Trust</option>
-                                        <option value="society">Society</option>
-                                        <option value="other">Other</option>
                                     </select>
                                 </div>
                             </div>
@@ -389,47 +472,47 @@ const Merchants = () => {
 
                 {/* Stats Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                    <div className="bg-white p-6 shadow-sm border border-gray-200">
                         <div className="flex items-center justify-between">
                             <div>
                                 <p className="text-sm font-medium text-gray-600">Total Merchants</p>
-                                <p className="text-2xl font-bold text-gray-900">{totalMerchants}</p>
+                                <p className="text-2xl font-bold text-gray-900">{stats.totalMerchants}</p>
                             </div>
                             <Store className="w-8 h-8 text-green-600" />
                         </div>
                     </div>
-                    <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                    <div className="bg-white p-6 shadow-sm border border-gray-200">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-sm font-medium text-gray-600">Active Merchants</p>
+                                <p className="text-sm font-medium text-gray-600">Open Merchants</p>
                                 <p className="text-2xl font-bold text-green-600">
-                                    {merchants.filter(m => m.status === 'active').length}
+                                    {stats.openMerchants}
                                 </p>
                             </div>
-                            <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                                <span className="text-green-600 font-bold">A</span>
+                            <div className="w-8 h-8 bg-green-100 flex items-center justify-center">
+                                <span className="text-green-600 font-bold">O</span>
                             </div>
                         </div>
                     </div>
-                    <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                    <div className="bg-white p-6 shadow-sm border border-gray-200">
                         <div className="flex items-center justify-between">
                             <div>
                                 <p className="text-sm font-medium text-gray-600">On Hold</p>
                                 <p className="text-2xl font-bold text-yellow-600">
-                                    {merchants.filter(m => m.status === 'hold').length}
+                                    {stats.holdMerchants}
                                 </p>
                             </div>
-                            <div className="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center">
+                            <div className="w-8 h-8 bg-yellow-100 flex items-center justify-center">
                                 <span className="text-yellow-600 font-bold">H</span>
                             </div>
                         </div>
                     </div>
-                    <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                    <div className="bg-white p-6 shadow-sm border border-gray-200">
                         <div className="flex items-center justify-between">
                             <div>
                                 <p className="text-sm font-medium text-gray-600">Total Revenue</p>
                                 <p className="text-2xl font-bold text-blue-600">
-                                    {formatCurrency(merchants.reduce((sum, m) => sum + m.totalRevenue, 0))}
+                                    {formatCurrency(stats.totalRevenue)}
                                 </p>
                             </div>
                             <DollarSign className="w-8 h-8 text-blue-600" />
@@ -438,7 +521,7 @@ const Merchants = () => {
                 </div>
 
                 {/* Merchants List */}
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                <div className="bg-white shadow-sm border border-gray-200 overflow-hidden">
                     <div className="px-6 py-4 border-b border-gray-200">
                         <h2 className="text-lg font-semibold text-gray-900">
                             Merchants ({filteredMerchants.length})
@@ -447,7 +530,7 @@ const Merchants = () => {
 
                     {loading ? (
                         <div className="flex items-center justify-center py-12">
-                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
+                            <div className="animate-spin h-8 w-8 border-4 border-green-200 border-t-green-600 rounded-full"></div>
                             <span className="ml-2 text-gray-600">Loading merchants...</span>
                         </div>
                     ) : (
@@ -461,9 +544,6 @@ const Merchants = () => {
                                             </th>
                                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                                 Contact
-                                            </th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                Business Type
                                             </th>
                                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                                 Status
@@ -488,12 +568,12 @@ const Merchants = () => {
                                                 <tr key={merchant.id} className="hover:bg-gray-50">
                                                     <td className="px-6 py-4 whitespace-nowrap">
                                                         <div className="flex items-center">
-                                                            <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center overflow-hidden">
+                                                            <div className="w-10 h-10 bg-green-100 flex items-center justify-center overflow-hidden">
                                                                 {merchant.brandingInfo?.logoUrl ? (
                                                                     <img
                                                                         src={merchant.brandingInfo.logoUrl}
                                                                         alt={`${merchant.name} logo`}
-                                                                        className="w-full h-full object-cover rounded-full"
+                                                                        className="w-full h-full object-cover"
                                                                         onError={(e) => {
                                                                             e.target.style.display = 'none';
                                                                             e.target.nextSibling.style.display = 'block';
@@ -523,11 +603,8 @@ const Merchants = () => {
                                                         </div>
                                                     </td>
                                                     <td className="px-6 py-4 whitespace-nowrap">
-                                                        <span className="text-sm text-gray-900">{merchant.businessType}</span>
-                                                    </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap">
-                                                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(merchant.status)}`}>
-                                                            {getStatusIcon(merchant.status)} {merchant.status}
+                                                        <span className={`inline-flex px-2 py-1 text-xs font-semibold ${getStatusColor(merchant.storeStatus)}`}>
+                                                            {getStatusIcon(merchant.storeStatus)} {merchant.storeStatus}
                                                         </span>
                                                     </td>
                                                     <td className="px-6 py-4 whitespace-nowrap">
@@ -554,16 +631,18 @@ const Merchants = () => {
                             </div>
 
                             {/* Pagination */}
-                            {totalPages > 1 && (
-                                <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
-                                    <div className="text-sm text-gray-700">
-                                        Showing page {currentPage} of {totalPages}
-                                    </div>
+                            {(() => {
+                                console.log('Pagination check:', { totalPages, totalMerchants: stats.totalMerchants });
+                                return (totalPages > 1 || stats.totalMerchants > 10) && (
+                                    <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
+                                        <div className="text-sm text-gray-700">
+                                            Showing page {currentPage} of {totalPages} ({stats.totalMerchants} total merchants)
+                                        </div>
                                     <div className="flex items-center space-x-2">
                                         <button
                                             onClick={() => handlePageChange(currentPage - 1)}
                                             disabled={currentPage === 1}
-                                            className="px-3 py-1 border border-gray-300 rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                                            className="px-3 py-1 border border-gray-300 text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
                                         >
                                             Previous
                                         </button>
@@ -573,7 +652,7 @@ const Merchants = () => {
                                                 <button
                                                     key={pageNum}
                                                     onClick={() => handlePageChange(pageNum)}
-                                                    className={`px-3 py-1 border rounded-md text-sm ${pageNum === currentPage
+                                                    className={`px-3 py-1 border text-sm ${pageNum === currentPage
                                                         ? 'bg-green-600 text-white border-green-600'
                                                         : 'border-gray-300 hover:bg-gray-50'
                                                         }`}
@@ -585,13 +664,14 @@ const Merchants = () => {
                                         <button
                                             onClick={() => handlePageChange(currentPage + 1)}
                                             disabled={currentPage === totalPages}
-                                            className="px-3 py-1 border border-gray-300 rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                                            className="px-3 py-1 border border-gray-300 text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
                                         >
                                             Next
                                         </button>
                                     </div>
                                 </div>
-                            )}
+                            );
+                            })()}
                         </>
                     )}
                 </div>
@@ -600,7 +680,7 @@ const Merchants = () => {
             {/* Merchants Map Modal */}
             {showMapModal && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-xl shadow-xl max-w-6xl w-full mx-4 max-h-[90vh] overflow-hidden">
+                    <div className="bg-white shadow-xl max-w-6xl w-full mx-4 max-h-[90vh] overflow-hidden">
                         <div className="flex items-center justify-between p-6 border-b border-gray-200">
                             <div>
                                 <h2 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
@@ -613,13 +693,13 @@ const Merchants = () => {
                             </div>
                             <button
                                 onClick={() => setShowMapModal(false)}
-                                className="p-2 hover:bg-gray-100 rounded-lg"
+                                className="p-2 hover:bg-gray-100"
                             >
                                 <X size={20} />
                             </button>
                         </div>
                         <div className="p-6">
-                            <div className="h-[600px] w-full rounded-lg overflow-hidden border border-gray-200">
+                            <div className="h-[600px] w-full overflow-hidden border border-gray-200">
                                 <GoogleMap
                                     center={getMapCenterAndZoom().center}
                                     zoom={getMapCenterAndZoom().zoom}
@@ -653,11 +733,10 @@ const Merchants = () => {
                                                             <div style="font-weight: 600; margin-bottom: 8px; color: #1f2937;">${merchant.name}</div>
                                                             <div style="margin-bottom: 4px;"><strong>ID:</strong> ${merchant.merchantId}</div>
                                                             <div style="margin-bottom: 4px;"><strong>Status:</strong> 
-                                                                <span style="color: ${merchant.status === 'active' ? '#10B981' : merchant.status === 'hold' ? '#F59E0B' : '#EF4444'}; font-weight: 500;">
-                                                                    ${merchant.status}
+                                                                <span style="color: ${merchant.storeStatus === 'Open' ? '#10B981' : merchant.storeStatus === 'Closed' ? '#EF4444' : '#6B7280'}; font-weight: 500;">
+                                                                    ${merchant.storeStatus}
                                                                 </span>
                                                             </div>
-                                                            <div style="margin-bottom: 4px;"><strong>Type:</strong> ${merchant.businessType}</div>
                                                             <div style="margin-bottom: 4px;"><strong>Address:</strong> ${merchant.operationalInfo?.storeAddress?.street || 'N/A'}</div>
                                                             <div style="margin-bottom: 4px;"><strong>Phone:</strong> ${merchant.mobile}</div>
                                                             <div style="margin-bottom: 4px;"><strong>Orders:</strong> ${merchant.totalOrders || 0}</div>
@@ -696,11 +775,10 @@ const Merchants = () => {
                                                             <div style="font-weight: 600; margin-bottom: 8px; color: #1f2937;">${merchant.name}</div>
                                                             <div style="margin-bottom: 4px;"><strong>ID:</strong> ${merchant.merchantId}</div>
                                                             <div style="margin-bottom: 4px;"><strong>Status:</strong> 
-                                                                <span style="color: ${merchant.status === 'active' ? '#10B981' : merchant.status === 'hold' ? '#F59E0B' : '#EF4444'}; font-weight: 500;">
-                                                                    ${merchant.status}
+                                                                <span style="color: ${merchant.storeStatus === 'Open' ? '#10B981' : merchant.storeStatus === 'Closed' ? '#EF4444' : '#6B7280'}; font-weight: 500;">
+                                                                    ${merchant.storeStatus}
                                                                 </span>
                                                             </div>
-                                                            <div style="margin-bottom: 4px;"><strong>Type:</strong> ${merchant.businessType}</div>
                                                             <div style="margin-bottom: 4px;"><strong>Address:</strong> ${merchant.operationalInfo?.storeAddress?.street || 'N/A'}</div>
                                                             <div style="margin-bottom: 4px;"><strong>Phone:</strong> ${merchant.mobile}</div>
                                                             <div style="margin-bottom: 4px;"><strong>Orders:</strong> ${merchant.totalOrders || 0}</div>
@@ -728,7 +806,7 @@ const Merchants = () => {
                                 </div>
                                 <button
                                     onClick={() => setShowMapModal(false)}
-                                    className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
+                                    className="px-4 py-2 bg-gray-600 text-white hover:bg-gray-700"
                                 >
                                     Close Map
                                 </button>

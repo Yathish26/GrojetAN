@@ -41,6 +41,10 @@ function RequestedProducts() {
       }
       if (!response.ok) throw new Error('Failed to fetch requested products');
       const data = await response.json();
+      if (data.tokenValid === false) {
+        navigate('/login');
+        return;
+      }
       setRequestedProducts(data.requests || []);
       setTotalPages(data.pagination?.totalPages || 1);
       setPage(pageNum);

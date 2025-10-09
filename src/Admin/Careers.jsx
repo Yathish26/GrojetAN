@@ -69,8 +69,12 @@ export default function Careers() {
       const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/jobs`, {
         credentials: 'include'
       });
+      const data = await response.json();
+      if (data.tokenValid === false) {
+        navigate('/login', { replace: true });
+        return;
+      }
       if (response.ok) {
-        const data = await response.json();
         setJobs(data.jobs || []);
       }
     } catch (error) {
@@ -137,6 +141,12 @@ export default function Careers() {
         method: 'DELETE',
         credentials: 'include'
       });
+
+      const data = await response.json();
+      if (data.tokenValid === false) {
+        navigate('/login', { replace: true });
+        return;
+      }
 
       if (response.ok) {
         toast.success('Job deleted successfully');

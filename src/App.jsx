@@ -25,7 +25,6 @@ import AddMerchant from './Admin/AddMerchant.jsx'
 import MerchantDetails from './Admin/MerchantDetails.jsx'
 import EditMerchant from './Admin/EditMerchant.jsx'
 import MerchantInventory from './Admin/MerchantInventory.jsx'
-import GoogleMapsTest from './Admin/GoogleMapsTest.jsx'
 import AppControls from './Admin/AppControls.jsx'
 import Careers from './Admin/Careers.jsx'
 import RequestedProducts from './Admin/RequestedProducts.jsx'
@@ -103,9 +102,6 @@ function App() {
           <Route path="/market-area" element={<MarketArea />} />
           <Route path="/delivery-signup" element={<DeliveryAgentSignup />} />
           <Route path="/offers" element={<Offers />} />
-          
-          {/* Google Maps Test */}
-          <Route path="/maps-test" element={<GoogleMapsTest />} />
           
           {/* Analytics & Reports */}
           <Route path="/analytics" element={<Analytics />} />

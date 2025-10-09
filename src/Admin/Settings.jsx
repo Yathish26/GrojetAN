@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   Shield, 
   Smartphone, 
@@ -16,6 +17,7 @@ import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 
 export default function Settings() {
+  const navigate = useNavigate();
   const [settings, setSettings] = useState({
     faq: {
       website: [],
@@ -128,6 +130,10 @@ export default function Settings() {
       
       if (response.ok) {
         const data = await response.json();
+        if (data.tokenValid === false) {
+            navigate('/login', { replace: true });
+            return;
+        }
         setSettings(prev => ({
           ...prev,
           terms: data.terms || {
@@ -151,6 +157,10 @@ export default function Settings() {
       
       if (response.ok) {
         const data = await response.json();
+        if (data.tokenValid === false) {
+            navigate('/login', { replace: true });
+            return;
+        }
         setSettings(prev => ({
           ...prev,
           privacy: data.privacy || {
@@ -174,6 +184,10 @@ export default function Settings() {
 
       if (response.ok) {
         const data = await response.json();
+        if (data.tokenValid === false) {
+            navigate('/login', { replace: true });
+            return;
+        }
         setSettings(prev => ({
           ...prev,
           support: data.support || {
@@ -197,6 +211,10 @@ export default function Settings() {
       
       if (response.ok) {
         const data = await response.json();
+        if (data.tokenValid === false) {
+            navigate('/login', { replace: true });
+            return;
+        }
         setSettings(prev => ({
           ...prev,
           faq: data.faq || {
@@ -400,15 +418,6 @@ export default function Settings() {
           >
             <Download className="w-4 h-4" />
             Export
-          </button>
-          
-          <button
-            onClick={saveSettings}
-            disabled={saving}
-            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
-          >
-            {saving ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-            {saving ? 'Saving...' : 'Save Changes'}
           </button>
         </div>
       </div>

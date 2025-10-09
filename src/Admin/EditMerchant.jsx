@@ -58,7 +58,6 @@ const EditMerchant = () => {
     merchantId: '',
     legalName: '',
     displayName: '',
-    businessType: '',
     website: '',
     establishedYear: '',
 
@@ -67,15 +66,6 @@ const EditMerchant = () => {
     mobile: '',
     alternateMobile: '',
     email: '',
-    governmentIdType: '',
-    governmentId: '',
-    ownerAddress: {
-      street: '',
-      city: '',
-      state: '',
-      pincode: '',
-      country: 'India'
-    },
 
     // Banking Info
     bankDetails: {
@@ -83,10 +73,7 @@ const EditMerchant = () => {
       accountNumber: '',
       bankName: '',
       branchName: '',
-      ifscCode: '',
-      accountType: 'business',
-      cancelledChequeUrl: '',
-      bankPassbookUrl: ''
+      ifscCode: ''
     },
 
     // Operational Info
@@ -100,33 +87,13 @@ const EditMerchant = () => {
       coordinates: { latitude: '', longitude: '' }
     },
     deliveryPreferences: {
-      deliveryType: 'platform_delivery',
-      deliveryRadius: 10,
-      minimumOrderValue: 0,
-      deliveryCharges: 0,
-      freeDeliveryAbove: 500
+      deliveryType: 'platform_delivery'
     },
     openingTime: '09:00 AM',
     closingTime: '09:00 PM',
-    catalogInfo: {
-      totalProducts: 0,
-      catalogUrl: ''
-    },
     productCategories: [],
     storeType: '',    // Documents (Text inputs)
     documents: {
-      gstin: {
-        number: '',
-        isRegistered: false
-      },
-      shopEstablishmentLicense: '',
-      fssaiLicense: '',
-      panCardVerified: false,
-      aadhaarVerified: false,
-      gstinVerified: false,
-      shopEstablishmentVerified: false,
-      fssaiVerified: false,
-      bankAccountVerified: false,
       documentsLink: '',
     },
 
@@ -138,10 +105,6 @@ const EditMerchant = () => {
       tagline: '',
       storeDescription: '',
       socialMedia: {
-        facebook: '',
-        instagram: '',
-        twitter: '',
-        whatsapp: '',
         googleBusiness: ''
       }
     },
@@ -187,6 +150,10 @@ const EditMerchant = () => {
 
       if (response.ok) {
         const data = await response.json();
+        if (data.tokenValid === false) {
+            navigate('/login', { replace: true });
+            return;
+        }
         if (data.success) {
           setMerchant(data.merchant);
           const merchant = data.merchant;
@@ -197,7 +164,6 @@ const EditMerchant = () => {
             merchantId: merchant.businessInfo?.merchantId || '',
             legalName: merchant.businessInfo?.legalName || '',
             displayName: merchant.businessInfo?.displayName || '',
-            businessType: merchant.businessInfo?.businessType || '',
             website: merchant.businessInfo?.website || '',
             establishedYear: merchant.businessInfo?.establishedYear || '',
 
@@ -206,15 +172,6 @@ const EditMerchant = () => {
             mobile: merchant.ownerInfo?.mobile || '',
             alternateMobile: merchant.ownerInfo?.alternateMobile || '',
             email: merchant.ownerInfo?.email || '',
-            governmentIdType: merchant.ownerInfo?.governmentIdType || '',
-            governmentId: merchant.ownerInfo?.governmentId || '',
-            ownerAddress: {
-              street: merchant.ownerInfo?.address?.street || '',
-              city: merchant.ownerInfo?.address?.city || '',
-              state: merchant.ownerInfo?.address?.state || '',
-              pincode: merchant.ownerInfo?.address?.pincode || '',
-              country: merchant.ownerInfo?.address?.country || 'India'
-            },
 
             // Banking Info
             bankDetails: {
@@ -222,8 +179,7 @@ const EditMerchant = () => {
               accountNumber: merchant.bankingInfo?.accountNumber || '',
               bankName: merchant.bankingInfo?.bankName || '',
               branchName: merchant.bankingInfo?.branchName || '',
-              ifscCode: merchant.bankingInfo?.ifscCode || '',
-              accountType: merchant.bankingInfo?.accountType || 'business'
+              ifscCode: merchant.bankingInfo?.ifscCode || ''
             },
 
             // Operational Info
@@ -240,36 +196,15 @@ const EditMerchant = () => {
               }
             },
             deliveryPreferences: {
-              deliveryType: merchant.operationalInfo?.deliveryPreferences?.deliveryType || 'platform_delivery',
-              deliveryRadius: merchant.operationalInfo?.deliveryPreferences?.deliveryRadius || 10,
-              minimumOrderValue: merchant.operationalInfo?.deliveryPreferences?.minimumOrderValue || 0,
-              deliveryCharges: merchant.operationalInfo?.deliveryPreferences?.deliveryCharges || 0,
-              freeDeliveryAbove: merchant.operationalInfo?.deliveryPreferences?.freeDeliveryAbove || 500
+              deliveryType: merchant.operationalInfo?.deliveryPreferences?.deliveryType || 'platform_delivery'
             },
             openingTime: merchant.operationalInfo?.openingTime || '09:00 AM',
             closingTime: merchant.operationalInfo?.closingTime || '09:00 PM',
-            catalogInfo: {
-              totalProducts: merchant.operationalInfo?.catalogInfo?.totalProducts || 0,
-              catalogUrl: merchant.operationalInfo?.catalogInfo?.catalogUrl || ''
-            },
             storeType: merchant.operationalInfo?.storeType || '',
             productCategories: merchant.operationalInfo?.productCategories || [],
 
             // Documents (Text inputs)
             documents: {
-              gstin: {
-                number: merchant.documents?.gstin?.number || '',
-                isRegistered: merchant.documents?.gstin?.isRegistered || false,
-                certificateNumber: merchant.documents?.gstin?.certificateNumber || ''
-              },
-              shopEstablishmentLicense: merchant.documents?.shopEstablishmentLicense || '',
-              fssaiLicense: merchant.documents?.fssaiLicense || '',
-              panCardVerified: merchant.documents?.panCard?.verified || false,
-              aadhaarVerified: merchant.documents?.aadhaarCard?.verified || false,
-              gstinVerified: merchant.documents?.gstinVerified || false,
-              shopEstablishmentVerified: merchant.documents?.shopEstablishmentVerified || false,
-              fssaiVerified: merchant.documents?.fssaiVerified || false,
-              bankAccountVerified: merchant.documents?.bankAccountVerified || false,
               documentsLink: merchant.documents?.documentsLink || ''
             },
 
@@ -281,10 +216,6 @@ const EditMerchant = () => {
               tagline: merchant.brandingInfo?.tagline || '',
               storeDescription: merchant.brandingInfo?.storeDescription || '',
               socialMedia: {
-                facebook: merchant.brandingInfo?.socialMedia?.facebook || '',
-                instagram: merchant.brandingInfo?.socialMedia?.instagram || '',
-                twitter: merchant.brandingInfo?.socialMedia?.twitter || '',
-                whatsapp: merchant.brandingInfo?.socialMedia?.whatsapp || '',
                 googleBusiness: merchant.brandingInfo?.socialMedia?.googleBusiness || ''
               }
             },
@@ -373,6 +304,15 @@ const EditMerchant = () => {
         ...prev.bankDetails,
         [name]: value
       }
+    }));
+  };
+
+  const handleProductCategoryChange = (category) => {
+    setFormData(prev => ({
+      ...prev,
+      productCategories: prev.productCategories.includes(category)
+        ? prev.productCategories.filter(c => c !== category)
+        : [...prev.productCategories, category]
     }));
   };
 
@@ -530,7 +470,6 @@ const EditMerchant = () => {
           merchantId: formData.merchantId,
           legalName: formData.legalName,
           displayName: formData.displayName,
-          businessType: formData.businessType,
           website: formData.website,
           establishedYear: formData.establishedYear ? parseInt(formData.establishedYear) : null
         },
@@ -539,35 +478,21 @@ const EditMerchant = () => {
           mobile: formData.mobile,
           alternateMobile: formData.alternateMobile,
           email: formData.email,
-          password: formData.password,
-          governmentIdType: formData.governmentIdType,
-          governmentId: formData.governmentId,
-          address: formData.ownerAddress
+          password: formData.password
         },
         bankingInfo: {
           accountHolderName: formData.bankDetails.accountHolderName,
           accountNumber: formData.bankDetails.accountNumber,
           bankName: formData.bankDetails.bankName,
           branchName: formData.bankDetails.branchName,
-          ifscCode: formData.bankDetails.ifscCode,
-          accountType: formData.bankDetails.accountType,
-          cancelledChequeUrl: formData.bankDetails.cancelledChequeUrl,
-          bankPassbookUrl: formData.bankDetails.bankPassbookUrl
+          ifscCode: formData.bankDetails.ifscCode
         },
         operationalInfo: {
           storeAddress: formData.storeAddress,
           openingTime: formData.openingTime,
           closingTime: formData.closingTime,
           deliveryPreferences: {
-            deliveryType: formData.deliveryPreferences.deliveryType,
-            deliveryRadius: parseInt(formData.deliveryPreferences.deliveryRadius) || 10,
-            minimumOrderValue: parseFloat(formData.deliveryPreferences.minimumOrderValue) || 0,
-            deliveryCharges: parseFloat(formData.deliveryPreferences.deliveryCharges) || 0,
-            freeDeliveryAbove: parseFloat(formData.deliveryPreferences.freeDeliveryAbove) || 500
-          },
-          catalogInfo: {
-            totalProducts: parseInt(formData.catalogInfo.totalProducts) || 0,
-            catalogUrl: formData.catalogInfo.catalogUrl
+            deliveryType: formData.deliveryPreferences.deliveryType
           },
           storeType: formData.storeType,
           productCategories: formData.productCategories
@@ -627,9 +552,9 @@ const EditMerchant = () => {
   if (loading) {
     return (
       <Layout title="Edit Merchant">
-        <div className="flex items-center justify-center min-h-96">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
-          <span className="ml-3 text-gray-600">Loading merchant details...</span>
+        <div className="flex flex-col items-center justify-center min-h-96">
+          <div className="animate-spin h-12 w-12 border-4 border-green-200 border-t-green-600 rounded-full"></div>
+          <span className="mt-4 text-gray-600">Loading merchant details...</span>
         </div>
       </Layout>
     );
@@ -646,7 +571,7 @@ const EditMerchant = () => {
           </div>
           <button
             onClick={() => navigate('/merchants')}
-            className="mt-4 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+            className="mt-4 px-4 py-2 bg-green-600 text-white hover:bg-green-700"
           >
             Back to Merchants
           </button>
@@ -663,21 +588,20 @@ const EditMerchant = () => {
           <div className="flex items-center gap-4">
             <button
               onClick={() => navigate(`/merchants/${id}`)}
-              className="flex items-center gap-2 px-3 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg"
+              className="flex items-center gap-2 px-3 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100"
             >
               <ArrowLeft size={16} />
-              Back to Details
+              <span className="hidden sm:inline">Back to Details</span>
             </button>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Edit Merchant</h1>
-              <p className="text-gray-600">Merchant ID: {merchant?.businessInfo.merchantId}</p>
+              <h1 className="text-2xl font-bold text-gray-900">Merchant ID: {merchant?.businessInfo.merchantId}</h1>
             </div>
           </div>
-          <div className="flex gap-3">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-3">
             <button
               type="button"
               onClick={() => navigate(`/merchants/${id}`)}
-              className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+              className="px-4 py-2 sm:px-4 sm:py-2 border border-gray-300 text-gray-700 hover:bg-gray-50 w-full sm:w-auto"
             >
               Cancel
             </button>
@@ -685,17 +609,17 @@ const EditMerchant = () => {
               type="submit"
               form="merchant-form"
               disabled={saving}
-              className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex items-center justify-center gap-2 px-4 py-2 sm:px-4 sm:py-2 bg-green-600 text-white hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto"
             >
               {saving ? (
                 <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  <div className="animate-spin h-4 w-4 border-4 border-white border-t-transparent rounded-full"></div>
                   Saving...
                 </>
               ) : (
                 <>
                   <Save size={16} />
-                  Save Changes
+                  Save
                 </>
               )}
             </button>
@@ -705,7 +629,7 @@ const EditMerchant = () => {
         {/* Edit Form */}
         <form id="merchant-form" onSubmit={handleSubmit} className="space-y-6">
           {/* Business Information */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <div className="bg-white shadow-sm border border-gray-200 p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
               <Building className="w-5 h-5" />
               Business Information
@@ -721,7 +645,7 @@ const EditMerchant = () => {
                   value={formData.merchantId}
                   onChange={handleInputChange}
                   required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   placeholder="Enter merchant ID"
                 />
               </div>
@@ -735,7 +659,7 @@ const EditMerchant = () => {
                   value={formData.legalName}
                   onChange={handleInputChange}
                   required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   placeholder="Enter legal name"
                 />
               </div>
@@ -749,30 +673,9 @@ const EditMerchant = () => {
                   value={formData.displayName}
                   onChange={handleInputChange}
                   required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   placeholder="Enter display name"
                 />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Business Type *
-                </label>
-                <select
-                  name="businessType"
-                  value={formData.businessType}
-                  onChange={handleInputChange}
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                >
-                  <option value="">Select business type</option>
-                  <option value="Sole Proprietor">Sole Proprietor</option>
-                  <option value="Partnership">Partnership</option>
-                  <option value="Private Limited">Private Limited</option>
-                  <option value="LLP">LLP</option>
-                  <option value="Trust">Trust</option>
-                  <option value="Society">Society</option>
-                  <option value="Other">Other</option>
-                </select>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -783,7 +686,7 @@ const EditMerchant = () => {
                   name="website"
                   value={formData.website}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   placeholder="https://example.com"
                 />
               </div>
@@ -798,7 +701,7 @@ const EditMerchant = () => {
                   onChange={handleInputChange}
                   min="1900"
                   max={new Date().getFullYear()}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   placeholder="2020"
                 />
               </div>
@@ -806,7 +709,7 @@ const EditMerchant = () => {
           </div>
 
           {/* Owner Information */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <div className="bg-white shadow-sm border border-gray-200 p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
               <Users className="w-5 h-5" />
               Owner Information
@@ -822,7 +725,7 @@ const EditMerchant = () => {
                   value={formData.fullName}
                   onChange={handleInputChange}
                   required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   placeholder="Enter full name"
                 />
               </div>
@@ -836,7 +739,7 @@ const EditMerchant = () => {
                   value={formData.mobile}
                   onChange={handleInputChange}
                   required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   placeholder="Enter mobile number"
                 />
               </div>
@@ -849,7 +752,7 @@ const EditMerchant = () => {
                   name="alternateMobile"
                   value={formData.alternateMobile}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   placeholder="Enter alternate mobile"
                 />
               </div>
@@ -863,115 +766,15 @@ const EditMerchant = () => {
                   value={formData.email}
                   onChange={handleInputChange}
                   required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   placeholder="Enter email address"
                 />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Government ID Type *
-                </label>
-                <select
-                  name="governmentIdType"
-                  value={formData.governmentIdType}
-                  onChange={handleInputChange}
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                >
-                  <option value="">Select ID type</option>
-                  <option value="pan">PAN Card</option>
-                  <option value="aadhaar">Aadhaar Card</option>
-                  <option value="passport">Passport</option>
-                  <option value="driving_license">Driving License</option>
-                  <option value="voter_id">Voter ID</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Government ID Number *
-                </label>
-                <input
-                  type="text"
-                  name="governmentId"
-                  value={formData.governmentId}
-                  onChange={handleInputChange}
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                  placeholder="Enter ID number"
-                />
-              </div>
-            </div>
-
-            {/* Owner Address */}
-            <div className="mt-6">
-              <h3 className="text-md font-medium text-gray-900 mb-4">Owner Address</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Street Address
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.ownerAddress.street}
-                    onChange={(e) => handleNestedInputChange('ownerAddress', 'street', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                    placeholder="Enter street address"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    City
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.ownerAddress.city}
-                    onChange={(e) => handleNestedInputChange('ownerAddress', 'city', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                    placeholder="Enter city"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    State
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.ownerAddress.state}
-                    onChange={(e) => handleNestedInputChange('ownerAddress', 'state', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                    placeholder="Enter state"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Pincode
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.ownerAddress.pincode}
-                    onChange={(e) => handleNestedInputChange('ownerAddress', 'pincode', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                    placeholder="Enter pincode"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Country
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.ownerAddress.country}
-                    onChange={(e) => handleNestedInputChange('ownerAddress', 'country', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                    placeholder="Enter country"
-                  />
-                </div>
               </div>
             </div>
           </div>
 
           {/* Banking Information */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <div className="bg-white shadow-sm border border-gray-200 p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
               <CreditCard className="w-5 h-5" />
               Banking Information
@@ -987,7 +790,7 @@ const EditMerchant = () => {
                   value={formData.bankDetails.accountHolderName}
                   onChange={handleBankDetailsChange}
                   required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   placeholder="Enter account holder name"
                 />
               </div>
@@ -1001,7 +804,7 @@ const EditMerchant = () => {
                   value={formData.bankDetails.accountNumber}
                   onChange={handleBankDetailsChange}
                   required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   placeholder="Enter account number"
                 />
               </div>
@@ -1014,7 +817,7 @@ const EditMerchant = () => {
                   value={formData.bankDetails.bankName}
                   onChange={handleBankDetailsChange}
                   required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 >
                   <option value="">Select Bank</option>
                   {/* Public Sector Banks */}
@@ -1139,7 +942,7 @@ const EditMerchant = () => {
                   name="branchName"
                   value={formData.bankDetails.branchName}
                   onChange={handleBankDetailsChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   placeholder="Enter branch name"
                 />
               </div>
@@ -1153,30 +956,15 @@ const EditMerchant = () => {
                   value={formData.bankDetails.ifscCode}
                   onChange={handleBankDetailsChange}
                   required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   placeholder="Enter IFSC code"
                 />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Account Type
-                </label>
-                <select
-                  name="accountType"
-                  value={formData.bankDetails.accountType}
-                  onChange={handleBankDetailsChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                >
-                  <option value="savings">Savings</option>
-                  <option value="current">Current</option>
-                  <option value="business">Business</option>
-                </select>
               </div>
             </div>
           </div>
 
           {/* Operational Information */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <div className="bg-white shadow-sm border border-gray-200 p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
               <MapPin className="w-5 h-5" />
               Store & Operational Information
@@ -1195,7 +983,7 @@ const EditMerchant = () => {
                     value={formData.storeAddress.street}
                     onChange={(e) => handleNestedInputChange('storeAddress', 'street', e.target.value)}
                     required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
                     placeholder="Enter street address"
                   />
                 </div>
@@ -1208,7 +996,7 @@ const EditMerchant = () => {
                     value={formData.storeAddress.city}
                     onChange={(e) => handleNestedInputChange('storeAddress', 'city', e.target.value)}
                     required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
                     placeholder="Enter city"
                   />
                 </div>
@@ -1221,7 +1009,7 @@ const EditMerchant = () => {
                     value={formData.storeAddress.state}
                     onChange={(e) => handleNestedInputChange('storeAddress', 'state', e.target.value)}
                     required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
                     placeholder="Enter state"
                   />
                 </div>
@@ -1234,7 +1022,7 @@ const EditMerchant = () => {
                     value={formData.storeAddress.pincode}
                     onChange={(e) => handleNestedInputChange('storeAddress', 'pincode', e.target.value)}
                     required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
                     placeholder="Enter pincode"
                   />
                 </div>
@@ -1246,7 +1034,7 @@ const EditMerchant = () => {
                     type="text"
                     value={formData.storeAddress.landmark}
                     onChange={(e) => handleNestedInputChange('storeAddress', 'landmark', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
                     placeholder="Enter landmark"
                   />
                 </div>
@@ -1266,7 +1054,7 @@ const EditMerchant = () => {
                       </div>
                     </div>
                     {selectedLocation && (
-                      <div className="mt-2 p-3 bg-green-50 border border-green-200 rounded-lg">
+                      <div className="mt-2 p-3 bg-green-50 border border-green-200">
                         <div className="flex items-center gap-2 text-green-700">
                           <CheckCircle size={16} />
                           <span className="text-sm font-medium">Location Selected:</span>
@@ -1304,7 +1092,7 @@ const EditMerchant = () => {
                         value={formData.storeAddress.coordinates.latitude}
                         onChange={(e) => handleDeepNestedInputChange('storeAddress', 'coordinates', 'latitude', e.target.value)}
                         placeholder="e.g. 12.9716"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                        className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
                         disabled={!isManualEntry}
                       />
                     </div>
@@ -1318,7 +1106,7 @@ const EditMerchant = () => {
                         value={formData.storeAddress.coordinates.longitude}
                         onChange={(e) => handleDeepNestedInputChange('storeAddress', 'coordinates', 'longitude', e.target.value)}
                         placeholder="e.g. 77.5946"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                        className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
                         disabled={!isManualEntry}
                       />
                     </div>
@@ -1344,65 +1132,12 @@ const EditMerchant = () => {
                   <select
                     value={formData.deliveryPreferences.deliveryType}
                     onChange={(e) => handleNestedInputChange('deliveryPreferences', 'deliveryType', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   >
                     <option value="platform_delivery">Platform Delivery</option>
                     <option value="self_delivery">Self Delivery</option>
                     <option value="both">Both</option>
                   </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Delivery Radius (km)
-                  </label>
-                  <input
-                    type="number"
-                    value={formData.deliveryPreferences.deliveryRadius}
-                    onChange={(e) => handleNestedInputChange('deliveryPreferences', 'deliveryRadius', e.target.value)}
-                    min="1"
-                    max="50"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                    placeholder="10"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Minimum Order Value (₹)
-                  </label>
-                  <input
-                    type="number"
-                    value={formData.deliveryPreferences.minimumOrderValue}
-                    onChange={(e) => handleNestedInputChange('deliveryPreferences', 'minimumOrderValue', e.target.value)}
-                    min="0"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                    placeholder="0"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Delivery Charges (₹)
-                  </label>
-                  <input
-                    type="number"
-                    value={formData.deliveryPreferences.deliveryCharges}
-                    onChange={(e) => handleNestedInputChange('deliveryPreferences', 'deliveryCharges', e.target.value)}
-                    min="0"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                    placeholder="0"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Free Delivery Above (₹)
-                  </label>
-                  <input
-                    type="number"
-                    value={formData.deliveryPreferences.freeDeliveryAbove}
-                    onChange={(e) => handleNestedInputChange('deliveryPreferences', 'freeDeliveryAbove', e.target.value)}
-                    min="0"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                    placeholder="500"
-                  />
                 </div>
               </div>
             </div>
@@ -1419,7 +1154,7 @@ const EditMerchant = () => {
                     type="text"
                     value={formData.openingTime}
                     onChange={(e) => handleInputChange({ target: { name: 'openingTime', value: e.target.value } })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
                     placeholder="09:00 AM"
                   />
                 </div>
@@ -1431,7 +1166,7 @@ const EditMerchant = () => {
                     type="text"
                     value={formData.closingTime}
                     onChange={(e) => handleInputChange({ target: { name: 'closingTime', value: e.target.value } })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
                     placeholder="09:00 PM"
                   />
                 </div>
@@ -1439,38 +1174,6 @@ const EditMerchant = () => {
               <p className="text-sm text-gray-500 mt-2">
                 Store operates daily from {formData.openingTime} to {formData.closingTime}
               </p>
-            </div>
-
-            {/* Catalog Information */}
-            <div className="mb-6">
-              <h3 className="text-md font-medium text-gray-900 mb-4">Catalog Information</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Total Products
-                  </label>
-                  <input
-                    type="number"
-                    value={formData.catalogInfo.totalProducts}
-                    onChange={(e) => handleNestedInputChange('catalogInfo', 'totalProducts', e.target.value)}
-                    min="0"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                    placeholder="0"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Catalog URL
-                  </label>
-                  <input
-                    type="url"
-                    value={formData.catalogInfo.catalogUrl}
-                    onChange={(e) => handleNestedInputChange('catalogInfo', 'catalogUrl', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                    placeholder="https://example.com/catalog"
-                  />
-                </div>
-              </div>
             </div>
 
             {/* Store Type */}
@@ -1485,7 +1188,7 @@ const EditMerchant = () => {
                     value={formData.storeType}
                     onChange={(e) => handleInputChange({ target: { name: 'storeType', value: e.target.value } })}
                     required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   >
                     <option value="">Select Store Type</option>
                     <option value="Grocery">Grocery</option>
@@ -1497,10 +1200,28 @@ const EditMerchant = () => {
                 </div>
               </div>
             </div>
+
+            {/* Product Categories */}
+            <div className="mb-6">
+              <h3 className="text-md font-medium text-gray-900 mb-4">Product Categories Include</h3>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {['Grocery', 'Pharmacy', 'Stationery', 'Electronics', 'Fashion', 'Food', 'Household', 'Other'].map((category) => (
+                  <label key={category} className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      checked={formData.productCategories.includes(category)}
+                      onChange={() => handleProductCategoryChange(category)}
+                      className="rounded border-gray-300 text-green-600 focus:ring-green-500"
+                    />
+                    <span className="text-sm text-gray-700">{category}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
           </div>
 
           {/* Status & Compliance */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <div className="bg-white shadow-sm border border-gray-200 p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
               <FileText className="w-5 h-5" />
               Status & Compliance
@@ -1515,7 +1236,7 @@ const EditMerchant = () => {
                   value={formData.status}
                   onChange={handleInputChange}
                   required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 >
                   <option value="active">Active</option>
                   <option value="hold">Hold</option>
@@ -1530,7 +1251,7 @@ const EditMerchant = () => {
                   name="storeStatus"
                   value={formData.storeStatus}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 >
                   <option value="open">Open</option>
                   <option value="closed">Closed</option>
@@ -1543,7 +1264,7 @@ const EditMerchant = () => {
                 <select
                   value={formData.complianceInfo.kycStatus}
                   onChange={(e) => handleNestedInputChange('complianceInfo', 'kycStatus', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 >
                   <option value="pending">Pending</option>
                   <option value="under_review">Under Review</option>
@@ -1561,7 +1282,7 @@ const EditMerchant = () => {
                   onChange={(e) => handleDeepNestedInputChange('complianceInfo', 'commissionStructure', 'percentage', e.target.value)}
                   min="0"
                   max="50"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   placeholder="10"
                 />
               </div>
@@ -1574,31 +1295,18 @@ const EditMerchant = () => {
                 value={formData.complianceInfo.kycRemarks}
                 onChange={(e) => handleNestedInputChange('complianceInfo', 'kycRemarks', e.target.value)}
                 rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 placeholder="Enter KYC remarks"
               />
             </div>
           </div>
 
           {/* Documents */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <div className="bg-white shadow-sm border border-gray-200 p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
               <FileText className="w-5 h-5" />
               Documents & Verification
             </h2>
-
-            {/* Document Verification Checkboxes */}
-            <div className="mb-6">
-              <h3 className="text-md font-medium text-gray-900 mb-4">Document Verification</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {renderCheckbox('PAN Card Verified', 'panCardVerified')}
-                {renderCheckbox('Aadhaar Card Verified', 'aadhaarVerified')}
-                {renderCheckbox('GSTIN Verified', 'gstinVerified')}
-                {renderCheckbox('Shop Establishment License Verified', 'shopEstablishmentVerified')}
-                {renderCheckbox('FSSAI License Verified', 'fssaiVerified')}
-                {renderCheckbox('Bank Account Verified', 'bankAccountVerified')}
-              </div>
-            </div>
 
             {/* Google Drive Documents Link */}
             <div className="mb-6">
@@ -1612,7 +1320,7 @@ const EditMerchant = () => {
                   value={formData.documents.documentsLink || ''}
                   onChange={(e) => handleNestedInputChange('documents', 'documentsLink', e.target.value)}
                   placeholder="https://drive.google.com/drive/folders/..."
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 />
                 <p className="text-xs text-gray-500 mt-1">
                   Provide a Google Drive link containing all merchant documents
@@ -1632,32 +1340,32 @@ const EditMerchant = () => {
                     <input
                       type="file"
                       accept="image/*"
-                      onChange={(e) => handleFileChange(e, 'documents.storeLogo')}
+                      onChange={(e) => handleFileChange(e, 'brandingInfo.logoUrl')}
                       className="hidden"
                       id="store-logo"
-                      disabled={uploadingFiles['documents.storeLogo']}
+                      disabled={uploadingFiles['brandingInfo.logoUrl']}
                     />
                     <label
                       htmlFor="store-logo"
-                      className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 cursor-pointer disabled:opacity-50"
+                      className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 hover:bg-blue-100 cursor-pointer disabled:opacity-50"
                     >
-                      {uploadingFiles['documents.storeLogo'] ? (
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                      {uploadingFiles['brandingInfo.logoUrl'] ? (
+                        <div className="animate-spin h-4 w-4 border-4 border-blue-200 border-t-blue-600 rounded-full"></div>
                       ) : (
                         <Upload size={16} />
                       )}
                       Upload Logo
                     </label>
-                    {formData.documents.storeLogo && (
+                    {formData.brandingInfo.logoUrl && (
                       <div className="flex items-center gap-2">
                         <img
-                          src={formData.documents.storeLogo}
+                          src={formData.brandingInfo.logoUrl}
                           alt="Store Logo"
                           className="w-10 h-10 object-cover rounded"
                         />
                         <button
                           type="button"
-                          onClick={() => window.open(formData.documents.storeLogo, '_blank')}
+                          onClick={() => window.open(formData.brandingInfo.logoUrl, '_blank')}
                           className="flex items-center gap-1 px-3 py-1 text-sm bg-green-50 text-green-600 rounded hover:bg-green-100"
                         >
                           <Eye size={14} />
@@ -1683,10 +1391,10 @@ const EditMerchant = () => {
                     />
                     <label
                       htmlFor="store-banner"
-                      className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 cursor-pointer disabled:opacity-50"
+                      className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 hover:bg-blue-100 cursor-pointer disabled:opacity-50"
                     >
                       {uploadingFiles['documents.storeBanner'] ? (
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                        <div className="animate-spin h-4 w-4 border-4 border-blue-200 border-t-blue-600 rounded-full"></div>
                       ) : (
                         <Upload size={16} />
                       )}
@@ -1728,10 +1436,10 @@ const EditMerchant = () => {
                     />
                     <label
                       htmlFor="store-images"
-                      className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 cursor-pointer disabled:opacity-50"
+                      className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 hover:bg-blue-100 cursor-pointer disabled:opacity-50"
                     >
                       {uploadingFiles['storeImages'] ? (
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                        <div className="animate-spin h-4 w-4 border-4 border-blue-200 border-t-blue-600 rounded-full"></div>
                       ) : (
                         <Upload size={16} />
                       )}
@@ -1746,7 +1454,7 @@ const EditMerchant = () => {
                           <img
                             src={image.url}
                             alt={image.alt || `Store image ${index + 1}`}
-                            className="w-full h-24 object-cover rounded-lg border"
+                            className="w-full h-24 object-cover border"
                           />
                           <div className="absolute top-2 right-2 flex gap-1">
                             <button
@@ -1784,7 +1492,7 @@ const EditMerchant = () => {
           </div>
 
           {/* Branding Information */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <div className="bg-white shadow-sm border border-gray-200 p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
               <ImageIcon className="w-5 h-5" />
               Branding Information
@@ -1798,7 +1506,7 @@ const EditMerchant = () => {
                   type="text"
                   value={formData.brandingInfo.tagline}
                   onChange={(e) => handleNestedInputChange('brandingInfo', 'tagline', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   placeholder="Enter store tagline"
                 />
               </div>
@@ -1810,7 +1518,7 @@ const EditMerchant = () => {
                   value={formData.brandingInfo.storeDescription}
                   onChange={(e) => handleNestedInputChange('brandingInfo', 'storeDescription', e.target.value)}
                   rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   placeholder="Enter store description"
                 />
               </div>
@@ -1822,61 +1530,13 @@ const EditMerchant = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Facebook
-                  </label>
-                  <input
-                    type="url"
-                    value={formData.brandingInfo.socialMedia.facebook}
-                    onChange={(e) => handleDeepNestedInputChange('brandingInfo', 'socialMedia', 'facebook', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                    placeholder="https://facebook.com/yourpage"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Instagram
-                  </label>
-                  <input
-                    type="url"
-                    value={formData.brandingInfo.socialMedia.instagram}
-                    onChange={(e) => handleDeepNestedInputChange('brandingInfo', 'socialMedia', 'instagram', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                    placeholder="https://instagram.com/yourhandle"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Twitter
-                  </label>
-                  <input
-                    type="url"
-                    value={formData.brandingInfo.socialMedia.twitter}
-                    onChange={(e) => handleDeepNestedInputChange('brandingInfo', 'socialMedia', 'twitter', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                    placeholder="https://twitter.com/yourhandle"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    WhatsApp
-                  </label>
-                  <input
-                    type="url"
-                    value={formData.brandingInfo.socialMedia.whatsapp}
-                    onChange={(e) => handleDeepNestedInputChange('brandingInfo', 'socialMedia', 'whatsapp', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                    placeholder="https://wa.me/yournumber"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
                     Google Business
                   </label>
                   <input
                     type="url"
                     value={formData.brandingInfo.socialMedia.googleBusiness}
                     onChange={(e) => handleDeepNestedInputChange('brandingInfo', 'socialMedia', 'googleBusiness', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
                     placeholder="https://g.page/yourbusiness"
                   />
                 </div>

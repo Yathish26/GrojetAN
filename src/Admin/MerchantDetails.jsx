@@ -5,8 +5,7 @@ import {
   DollarSign, Calendar, User, Edit, Trash2, CheckCircle,
   XCircle, Clock, AlertTriangle, FileText, CreditCard,
   Building, Globe, Users, Award, TrendingUp, Timer,
-  Instagram, Facebook, Twitter, Truck, Settings, Eye,
-  Download, Image as ImageIcon
+  Truck, Settings, Eye, Download, Image as ImageIcon
 } from 'lucide-react';
 import Layout from '../Components/Layout';
 import { GoogleMap, Marker } from '../Components/GoogleMapComponents';
@@ -33,15 +32,13 @@ const MerchantDetails = () => {
         },
       });
 
-      if (response.status === 401) {
-        // Token expired or invalid, clear local storage and redirect to login
-        localStorage.removeItem('adminUser');
-        navigate('/login');
+      const data = await response.json();
+      if (data.tokenValid === false) {
+        navigate('/login', { replace: true });
         return;
       }
 
       if (response.ok) {
-        const data = await response.json();
         if (data.success) {
           setMerchant(data.merchant);
         } else {
@@ -158,15 +155,13 @@ const MerchantDetails = () => {
         },
       });
 
-      if (response.status === 401) {
-        // Token expired or invalid, clear local storage and redirect to login
-        localStorage.removeItem('adminUser');
-        navigate('/login');
+      const data = await response.json();
+      if (data.tokenValid === false) {
+        navigate('/login', { replace: true });
         return;
       }
 
       if (response.ok) {
-        const data = await response.json();
         if (data.success) {
           toast.success('Device login cleared successfully. Merchant can now login on a new device.');
           // Refresh merchant details to show updated device info
@@ -225,7 +220,7 @@ const MerchantDetails = () => {
   };
 
   const DocumentCard = ({ title, isVerified, documentUrl, number, children }) => (
-    <div className="p-4 border border-gray-200 rounded-lg">
+    <div className="p-4 border border-gray-200">
       <div className="flex items-center justify-between mb-2">
         <p className="font-medium text-gray-900">{title}</p>
         <div className="flex items-center gap-2">
@@ -238,14 +233,14 @@ const MerchantDetails = () => {
             <div className="flex gap-1">
               <button
                 onClick={() => handleViewDocument(documentUrl, title)}
-                className="p-1 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded"
+                className="p-1 text-blue-600 hover:text-blue-800 hover:bg-blue-50"
                 title="View Document"
               >
                 <Eye size={16} />
               </button>
               <button
                 onClick={() => handleDownloadDocument(documentUrl, title)}
-                className="p-1 text-green-600 hover:text-green-800 hover:bg-green-50 rounded"
+                className="p-1 text-green-600 hover:text-green-800 hover:bg-green-50"
                 title="Download Document"
               >
                 <Download size={16} />
@@ -268,7 +263,7 @@ const MerchantDetails = () => {
     return (
       <Layout title="Merchant Details">
         <div className="flex items-center justify-center min-h-96">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+          <div className="animate-spin h-12 w-12 border-4 border-green-200 border-t-green-600 rounded-full"></div>
           <span className="ml-3 text-gray-600">Loading merchant details...</span>
         </div>
       </Layout>
@@ -286,7 +281,7 @@ const MerchantDetails = () => {
           </div>
           <button
             onClick={() => navigate('/merchants')}
-            className="mt-4 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+            className="mt-4 px-4 py-2 bg-green-600 text-white hover:bg-green-700"
           >
             Back to Merchants
           </button>
@@ -306,7 +301,7 @@ const MerchantDetails = () => {
           </div>
           <button
             onClick={() => navigate('/merchants')}
-            className="mt-4 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+            className="mt-4 px-4 py-2 bg-green-600 text-white hover:bg-green-700"
           >
             Back to Merchants
           </button>
@@ -333,7 +328,7 @@ const MerchantDetails = () => {
           <div className="flex items-center gap-4">
             <button
               onClick={() => navigate('/merchants')}
-              className="flex items-center gap-2 px-3 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg"
+              className="flex items-center gap-2 px-3 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100"
             >
               <ArrowLeft size={16} />
               Back to Merchants
@@ -346,21 +341,21 @@ const MerchantDetails = () => {
           <div className="flex gap-3">
             <button
               onClick={handleClearDeviceLogin}
-              className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+              className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white hover:bg-red-700"
             >
               <Settings size={16} />
               Clear Device Login
             </button>
             <button
               onClick={() => navigate(`/merchants/${id}/inventory`)}
-              className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+              className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white hover:bg-green-700"
             >
               <Package size={16} />
               Inventory
             </button>
             <button
               onClick={handleEdit}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white hover:bg-blue-700"
             >
               <Edit size={16} />
               Edit Merchant
@@ -370,7 +365,7 @@ const MerchantDetails = () => {
 
         {/* Status Banner */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className={`p-4 rounded-lg border ${getStatusColor(merchant.status)}`}>
+          <div className={`p-4 border ${getStatusColor(merchant.status)}`}>
             <div className="flex items-center gap-3">
               {getStatusIcon(merchant.status)}
               <div>
@@ -387,7 +382,7 @@ const MerchantDetails = () => {
           </div>
 
           {merchant.storeStatus && (
-            <div className={`p-4 rounded-lg border ${getStoreStatusColor(merchant.storeStatus)}`}>
+            <div className={`p-4 border ${getStoreStatusColor(merchant.storeStatus)}`}>
               <div className="flex items-center gap-3">
                 <Store className="w-5 h-5" />
                 <div>
@@ -405,16 +400,12 @@ const MerchantDetails = () => {
         </div>
 
         {/* Basic Information */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div className="bg-white shadow-sm border border-gray-200 p-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
             <Building className="w-5 h-5" />
             Basic Information
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="text-sm font-medium text-gray-500">Display Name</label>
-              <p className="text-gray-900">{businessInfo.displayName || merchant.displayName || 'N/A'}</p>
-            </div>
             {brandingInfo.logoUrl && (
               <div>
                 <label className="text-sm font-medium text-gray-500">Store Logo</label>
@@ -422,7 +413,7 @@ const MerchantDetails = () => {
                   <img
                     src={brandingInfo.logoUrl}
                     alt="Store Logo"
-                    className="w-16 h-16 object-cover rounded-lg border border-gray-200"
+                    className="w-16 h-16 object-cover border border-gray-200"
                     onError={(e) => {
                       e.target.style.display = 'none';
                     }}
@@ -431,12 +422,16 @@ const MerchantDetails = () => {
               </div>
             )}
             <div>
+              <label className="text-sm font-medium text-gray-500">Display Name</label>
+              <p className="text-gray-900">{businessInfo.displayName || merchant.displayName || 'N/A'}</p>
+            </div>
+            <div>
               <label className="text-sm font-medium text-gray-500">Merchant ID</label>
               <p className="text-gray-900">{businessInfo.merchantId || merchant.merchantId || 'N/A'}</p>
             </div>
             <div>
-              <label className="text-sm font-medium text-gray-500">Business Type</label>
-              <p className="text-gray-900 capitalize">{businessInfo.businessType || merchant.businessType || 'N/A'}</p>
+              <label className="text-sm font-medium text-gray-500">Established Year</label>
+              <p className="text-gray-900">{businessInfo.establishedYear || 'N/A'}</p>
             </div>
             <div>
               <label className="text-sm font-medium text-gray-500">Store Description</label>
@@ -470,6 +465,10 @@ const MerchantDetails = () => {
               <label className="text-sm font-medium text-gray-500">Device Last Login</label>
               <p className="text-gray-900">{merchant.deviceInfo?.lastLogin ? formatDate(merchant.deviceInfo.lastLogin) : 'N/A'}</p>
             </div>
+            <div>
+              <label className="text-sm font-medium text-gray-500">Push Token</label>
+              <p className="text-gray-900">{merchant.deviceInfo?.pushToken || 'Not available'}</p>
+            </div>
             {businessInfo.website && (
               <div>
                 <label className="text-sm font-medium text-gray-500">Website</label>
@@ -484,7 +483,7 @@ const MerchantDetails = () => {
         </div>
 
         {/* Owner Information */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div className="bg-white shadow-sm border border-gray-200 p-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
             <User className="w-5 h-5" />
             Owner Information
@@ -505,48 +504,26 @@ const MerchantDetails = () => {
               <label className="text-sm font-medium text-gray-500">Phone</label>
               <p className="text-gray-900 flex items-center gap-2">
                 <Phone className="w-4 h-4" />
-                {ownerInfo.phone || merchant.mobile || 'N/A'}
+                {ownerInfo.mobile || merchant.mobile || 'N/A'}
               </p>
             </div>
             <div>
               <label className="text-sm font-medium text-gray-500">Alternate Phone</label>
               <p className="text-gray-900 flex items-center gap-2">
                 <Phone className="w-4 h-4" />
-                {ownerInfo.alternatePhone || 'N/A'}
+                {ownerInfo.alternateMobile || 'N/A'}
               </p>
-            </div>
-            <div>
-              <label className="text-sm font-medium text-gray-500">Date of Birth</label>
-              <p className="text-gray-900">{formatDate(ownerInfo.dateOfBirth)}</p>
-            </div>
-            <div>
-              <label className="text-sm font-medium text-gray-500">Gender</label>
-              <p className="text-gray-900 capitalize">{ownerInfo.gender || 'N/A'}</p>
             </div>
           </div>
         </div>
 
-        {/* Contact & Address */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        {/* Store Address */}
+        <div className="bg-white shadow-sm border border-gray-200 p-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
             <MapPin className="w-5 h-5" />
-            Contact & Address
+            Store Address
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="text-sm font-medium text-gray-500">Email</label>
-              <p className="text-gray-900 flex items-center gap-2">
-                <Mail className="w-4 h-4" />
-                {ownerInfo.email || merchant.email || 'N/A'}
-              </p>
-            </div>
-            <div>
-              <label className="text-sm font-medium text-gray-500">Phone</label>
-              <p className="text-gray-900 flex items-center gap-2">
-                <Phone className="w-4 h-4" />
-                {ownerInfo.phone || merchant.mobile || 'N/A'}
-              </p>
-            </div>
             <div className="md:col-span-2">
               <label className="text-sm font-medium text-gray-500">Address</label>
               <p className="text-gray-900 flex items-start gap-2">
@@ -578,14 +555,28 @@ const MerchantDetails = () => {
           {operationalInfo.storeAddress?.coordinates?.latitude && operationalInfo.storeAddress?.coordinates?.longitude && (
             <div className="mt-6">
               <label className="text-sm font-medium text-gray-500 mb-2 block">Store Location</label>
-              <div className="w-full h-64 rounded-lg overflow-hidden border border-gray-200">
+              <div className="w-full h-64 overflow-hidden border border-gray-200 relative">
                 <GoogleMap
                   center={{
                     lat: parseFloat(operationalInfo.storeAddress.coordinates.latitude),
                     lng: parseFloat(operationalInfo.storeAddress.coordinates.longitude)
                   }}
                   zoom={15}
-                  style={{ height: '100%', width: '100%' }}
+                  style={{
+                    height: '100%',
+                    width: '100%',
+                    position: 'relative',
+                    overflow: 'hidden'
+                  }}
+                  options={{
+                    zoomControl: true,
+                    mapTypeControl: false,
+                    scaleControl: false,
+                    streetViewControl: false,
+                    rotateControl: false,
+                    fullscreenControl: false,
+                    gestureHandling: 'cooperative'
+                  }}
                 >
                   <Marker
                     position={{
@@ -608,7 +599,7 @@ const MerchantDetails = () => {
         </div>
 
         {/* Operating Hours */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div className="bg-white shadow-sm border border-gray-200 p-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
             <Clock className="w-5 h-5" />
             Operating Hours
@@ -631,7 +622,7 @@ const MerchantDetails = () => {
             </div>
           </div>
           {(operationalInfo.openingTime && operationalInfo.closingTime) && (
-            <div className="mt-3 p-3 bg-gray-50 rounded-lg">
+            <div className="mt-3 p-3 bg-gray-50">
               <p className="text-sm text-gray-600">
                 Store operates daily from {operationalInfo.openingTime} to {operationalInfo.closingTime}
               </p>
@@ -640,41 +631,23 @@ const MerchantDetails = () => {
         </div>
 
         {/* Operational Information */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div className="bg-white shadow-sm border border-gray-200 p-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
             <Settings className="w-5 h-5" />
             Operational Information
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <div>
+              <label className="text-sm font-medium text-gray-500">Store Type</label>
+              <p className="text-gray-900">
+                {operationalInfo.storeType || 'N/A'}
+              </p>
+            </div>
+            <div>
               <label className="text-sm font-medium text-gray-500">Product Categories</label>
               <p className="text-gray-900">
-                {operationalInfo.productCategories?.length > 0 
-                  ? operationalInfo.productCategories.join(', ') 
-                  : 'N/A'
-                }
-              </p>
-            </div>
-            <div>
-              <label className="text-sm font-medium text-gray-500">Delivery Radius</label>
-              <p className="text-gray-900 flex items-center gap-2">
-                <Truck className="w-4 h-4" />
-                {operationalInfo.deliveryPreferences?.radius || 0} km
-              </p>
-            </div>
-            <div>
-              <label className="text-sm font-medium text-gray-500">Delivery Charges</label>
-              <p className="text-gray-900">{formatCurrency(operationalInfo.deliveryPreferences?.charges || 0)}</p>
-            </div>
-            <div>
-              <label className="text-sm font-medium text-gray-500">Minimum Order</label>
-              <p className="text-gray-900">{formatCurrency(operationalInfo.deliveryPreferences?.minimumOrder || 0)}</p>
-            </div>
-            <div className="md:col-span-2">
-              <label className="text-sm font-medium text-gray-500">Payment Methods</label>
-              <p className="text-gray-900">
-                {operationalInfo.paymentMethods?.length > 0 
-                  ? operationalInfo.paymentMethods.join(', ') 
+                {operationalInfo.productCategories?.length > 0
+                  ? operationalInfo.productCategories.join(', ')
                   : 'N/A'
                 }
               </p>
@@ -684,27 +657,27 @@ const MerchantDetails = () => {
 
         {/* Branding Information */}
         {brandingInfo && Object.keys(brandingInfo).length > 0 && (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <div className="bg-white shadow-sm border border-gray-200 p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
               <Award className="w-5 h-5" />
               Branding Information
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {brandingInfo.logo && (
-                <div className="p-4 border border-gray-200 rounded-lg">
+                <div className="p-4 border border-gray-200">
                   <div className="flex items-center justify-between mb-2">
                     <p className="font-medium text-gray-900">Store Logo</p>
                     <div className="flex gap-1">
                       <button
                         onClick={() => handleViewDocument(brandingInfo.logo, 'Store Logo')}
-                        className="p-1 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded"
+                        className="p-1 text-blue-600 hover:text-blue-800 hover:bg-blue-50"
                         title="View Logo"
                       >
                         <Eye size={16} />
                       </button>
                       <button
                         onClick={() => handleDownloadDocument(brandingInfo.logo, 'Store Logo')}
-                        className="p-1 text-green-600 hover:text-green-800 hover:bg-green-50 rounded"
+                        className="p-1 text-green-600 hover:text-green-800 hover:bg-green-50"
                         title="Download Logo"
                       >
                         <Download size={16} />
@@ -715,7 +688,7 @@ const MerchantDetails = () => {
                     <img
                       src={brandingInfo.logo}
                       alt="Store Logo"
-                      className="w-16 h-16 object-cover rounded-lg border border-gray-200"
+                      className="w-16 h-16 object-cover border border-gray-200"
                       onError={(e) => {
                         e.target.style.display = 'none';
                       }}
@@ -725,20 +698,20 @@ const MerchantDetails = () => {
               )}
 
               {brandingInfo.banner && (
-                <div className="p-4 border border-gray-200 rounded-lg">
+                <div className="p-4 border border-gray-200">
                   <div className="flex items-center justify-between mb-2">
                     <p className="font-medium text-gray-900">Store Banner</p>
                     <div className="flex gap-1">
                       <button
                         onClick={() => handleViewDocument(brandingInfo.banner, 'Store Banner')}
-                        className="p-1 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded"
+                        className="p-1 text-blue-600 hover:text-blue-800 hover:bg-blue-50"
                         title="View Banner"
                       >
                         <Eye size={16} />
                       </button>
                       <button
                         onClick={() => handleDownloadDocument(brandingInfo.banner, 'Store Banner')}
-                        className="p-1 text-green-600 hover:text-green-800 hover:bg-green-50 rounded"
+                        className="p-1 text-green-600 hover:text-green-800 hover:bg-green-50"
                         title="Download Banner"
                       >
                         <Download size={16} />
@@ -749,7 +722,7 @@ const MerchantDetails = () => {
                     <img
                       src={brandingInfo.banner}
                       alt="Store Banner"
-                      className="w-full h-20 object-cover rounded-lg border border-gray-200"
+                      className="w-full h-20 object-cover border border-gray-200"
                       onError={(e) => {
                         e.target.style.display = 'none';
                       }}
@@ -783,58 +756,33 @@ const MerchantDetails = () => {
                 </div>
               )}
 
-              {brandingInfo.socialMedia && (
-                <div className="md:col-span-2">
-                  <label className="text-sm font-medium text-gray-500">Social Media</label>
-                  <div className="flex gap-4 mt-2">
-                    {brandingInfo.socialMedia.instagram && (
-                      <a href={brandingInfo.socialMedia.instagram} target="_blank" rel="noopener noreferrer"
-                         className="flex items-center gap-2 text-pink-600 hover:text-pink-800">
-                        <Instagram className="w-4 h-4" />
-                        Instagram
-                      </a>
-                    )}
-                    {brandingInfo.socialMedia.facebook && (
-                      <a href={brandingInfo.socialMedia.facebook} target="_blank" rel="noopener noreferrer"
-                         className="flex items-center gap-2 text-blue-600 hover:text-blue-800">
-                        <Facebook className="w-4 h-4" />
-                        Facebook
-                      </a>
-                    )}
-                    {brandingInfo.socialMedia.twitter && (
-                      <a href={brandingInfo.socialMedia.twitter} target="_blank" rel="noopener noreferrer"
-                         className="flex items-center gap-2 text-blue-400 hover:text-blue-600">
-                        <Twitter className="w-4 h-4" />
-                        Twitter
-                      </a>
-                    )}
-                    {brandingInfo.socialMedia.googleBusiness && (
-                      <a href={brandingInfo.socialMedia.googleBusiness} target="_blank" rel="noopener noreferrer"
-                         className="flex items-center gap-2 text-green-600 hover:text-green-800">
-                        <Globe className="w-4 h-4" />
-                        Google Business
-                      </a>
-                    )}
-                  </div>
+              {brandingInfo.socialMedia?.googleBusiness && (
+                <div>
+                  <label className="text-sm font-medium text-gray-500">Google Business</label>
+                  <a href={brandingInfo.socialMedia.googleBusiness} target="_blank" rel="noopener noreferrer"
+                     className="text-green-600 hover:text-green-800 flex items-center gap-2">
+                    <Globe className="w-4 h-4" />
+                    Google Business Profile
+                  </a>
                 </div>
               )}
 
               {/* Store Images */}
-              {documents.storeImages && documents.storeImages.length > 0 && (
+              {merchant.brandingInfo?.storeImages && merchant.brandingInfo.storeImages.length > 0 && (
                 <div className="md:col-span-2">
                   <label className="text-sm font-medium text-gray-500 mb-2 block">Store Images</label>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                    {documents.storeImages.map((imageUrl, index) => (
+                    {merchant.brandingInfo.storeImages.map((image, index) => (
                       <div key={index} className="relative group">
                         <img
-                          src={imageUrl}
-                          alt={`Store Image ${index + 1}`}
-                          className="w-full h-20 object-cover rounded-lg border border-gray-200"
+                          src={image.url}
+                          alt={image.alt || `Store Image ${index + 1}`}
+                          className="w-full h-20 object-cover border border-gray-200"
                           onError={(e) => {
                             e.target.style.display = 'none';
                           }}
                         />
-                        <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all duration-200 rounded-lg flex items-center justify-center gap-1">
+                        <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all duration-200 flex items-center justify-center gap-1">
                           <button
                             onClick={() => handleViewDocument(imageUrl, `Store Image ${index + 1}`)}
                             className="p-1 bg-blue-600 text-white rounded opacity-0 group-hover:opacity-100 transition-opacity"
@@ -860,13 +808,13 @@ const MerchantDetails = () => {
         )}
 
         {/* Performance Metrics */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div className="bg-white shadow-sm border border-gray-200 p-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
             <TrendingUp className="w-5 h-5" />
             Performance Metrics
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-gradient-to-r from-blue-50 to-blue-100 p-4 rounded-lg">
+            <div className="bg-gradient-to-r from-blue-50 to-blue-100 p-4">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600">Total Orders</p>
@@ -878,7 +826,7 @@ const MerchantDetails = () => {
                 <Package className="w-8 h-8 text-blue-600" />
               </div>
             </div>
-            <div className="bg-gradient-to-r from-green-50 to-green-100 p-4 rounded-lg">
+            <div className="bg-gradient-to-r from-green-50 to-green-100 p-4">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600">Total Revenue</p>
@@ -890,7 +838,7 @@ const MerchantDetails = () => {
                 <DollarSign className="w-8 h-8 text-green-600" />
               </div>
             </div>
-            <div className="bg-gradient-to-r from-yellow-50 to-yellow-100 p-4 rounded-lg">
+            <div className="bg-gradient-to-r from-yellow-50 to-yellow-100 p-4">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600">Average Rating</p>
@@ -905,7 +853,7 @@ const MerchantDetails = () => {
                 <Star className="w-8 h-8 text-yellow-600" />
               </div>
             </div>
-            <div className="bg-gradient-to-r from-purple-50 to-purple-100 p-4 rounded-lg">
+            <div className="bg-gradient-to-r from-purple-50 to-purple-100 p-4">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600">Avg Delivery Time</p>
@@ -917,7 +865,7 @@ const MerchantDetails = () => {
                 <Timer className="w-8 h-8 text-purple-600" />
               </div>
             </div>
-            <div className="bg-gradient-to-r from-indigo-50 to-indigo-100 p-4 rounded-lg">
+            <div className="bg-gradient-to-r from-indigo-50 to-indigo-100 p-4">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600">Customer Satisfaction</p>
@@ -926,7 +874,7 @@ const MerchantDetails = () => {
                 <Users className="w-8 h-8 text-indigo-600" />
               </div>
             </div>
-            <div className="bg-gradient-to-r from-teal-50 to-teal-100 p-4 rounded-lg">
+            <div className="bg-gradient-to-r from-teal-50 to-teal-100 p-4">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600">Completion Rate</p>
@@ -944,86 +892,11 @@ const MerchantDetails = () => {
         </div>
 
         {/* Documents Section */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div className="bg-white shadow-sm border border-gray-200 p-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
             <FileText className="w-5 h-5" />
             Documents & Verification
           </h2>
-
-          {/* Document Verification Checkboxes */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-            <div className="flex items-center space-x-3 p-3 border border-gray-200 rounded-lg">
-              <input
-                type="checkbox"
-                checked={documents.panCard?.verified || false}
-                readOnly
-                className="w-4 h-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
-              />
-              <label className="text-sm font-medium text-gray-700">
-                PAN Card Verified
-              </label>
-            </div>
-
-            <div className="flex items-center space-x-3 p-3 border border-gray-200 rounded-lg">
-              <input
-                type="checkbox"
-                checked={documents.aadhaarCard?.verified || false}
-                readOnly
-                className="w-4 h-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
-              />
-              <label className="text-sm font-medium text-gray-700">
-                Aadhaar Card Verified
-              </label>
-            </div>
-
-            <div className="flex items-center space-x-3 p-3 border border-gray-200 rounded-lg">
-              <input
-                type="checkbox"
-                checked={documents.gstinVerified || false}
-                readOnly
-                className="w-4 h-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
-              />
-              <label className="text-sm font-medium text-gray-700">
-                GSTIN Verified
-              </label>
-            </div>
-
-            <div className="flex items-center space-x-3 p-3 border border-gray-200 rounded-lg">
-              <input
-                type="checkbox"
-                checked={documents.shopEstablishmentVerified || false}
-                readOnly
-                className="w-4 h-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
-              />
-              <label className="text-sm font-medium text-gray-700">
-                Shop Establishment License Verified
-              </label>
-            </div>
-
-            <div className="flex items-center space-x-3 p-3 border border-gray-200 rounded-lg">
-              <input
-                type="checkbox"
-                checked={documents.fssaiVerified || false}
-                readOnly
-                className="w-4 h-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
-              />
-              <label className="text-sm font-medium text-gray-700">
-                FSSAI License Verified
-              </label>
-            </div>
-
-            <div className="flex items-center space-x-3 p-3 border border-gray-200 rounded-lg">
-              <input
-                type="checkbox"
-                checked={documents.bankAccountVerified || false}
-                readOnly
-                className="w-4 h-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
-              />
-              <label className="text-sm font-medium text-gray-700">
-                Bank Account Verified
-              </label>
-            </div>
-          </div>
 
           {/* Google Drive Documents Link */}
           <div className="border-t pt-4">
@@ -1049,7 +922,7 @@ const MerchantDetails = () => {
 
         {/* Banking Information */}
         {((bankingInfo && Object.keys(bankingInfo).length > 0) || merchant.bankDetails) && (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <div className="bg-white shadow-sm border border-gray-200 p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
               <CreditCard className="w-5 h-5" />
               Banking Information
@@ -1070,10 +943,6 @@ const MerchantDetails = () => {
               <div>
                 <label className="text-sm font-medium text-gray-500">IFSC Code</label>
                 <p className="text-gray-900">{bankingInfo.ifscCode || merchant.bankDetails?.ifscCode || 'Not provided'}</p>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-gray-500">Account Type</label>
-                <p className="text-gray-900">{bankingInfo.accountType || 'Not provided'}</p>
               </div>
             </div>
           </div>

@@ -50,6 +50,10 @@ export default function AppControls() {
       });
 
       const result = await response.json();
+      if (result.tokenValid === false) {
+        navigate('/login', { replace: true });
+        return;
+      }
 
       if (result.success) {
         setNotificationResults(result);

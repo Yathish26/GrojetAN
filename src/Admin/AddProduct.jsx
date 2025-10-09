@@ -93,14 +93,13 @@ export default function AddProduct() {
           credentials: 'include', // use cookie for auth
         });
 
-        if (response.status === 401) {
-          navigate('/login');
-          return;
-        }
-
         if (!response.ok) throw new Error('Failed to fetch categories');
 
         const data = await response.json();
+        if (data.tokenValid === false) {
+          navigate('/login', { replace: true });
+          return;
+        }
         setCategories(data.categories || []);
       } catch (error) {
         console.error('Error fetching categories:', error);
@@ -252,6 +251,10 @@ export default function AddProduct() {
       }
 
       const data = await response.json();
+      if (data.tokenValid === false) {
+        navigate('/login', { replace: true });
+        return;
+      }
 
       if (response.ok) {
         toast.success(`"${formData.name}" added successfully!`);

@@ -79,11 +79,16 @@ export default function OrderDetails() {
         body: JSON.stringify({ status: newStatus })
       });
 
+      const data = await response.json();
+      if (data.tokenValid === false) {
+        navigate('/login', { replace: true });
+        return;
+      }
+
       if (!response.ok) {
         throw new Error('Failed to update order status');
       }
 
-      const data = await response.json();
       setOrder(data.order);
       toast.success(`Order status updated to ${newStatus}`);
     } catch (err) {
@@ -105,11 +110,16 @@ export default function OrderDetails() {
         body: JSON.stringify({ deliveryAgentId: agentId })
       });
 
+      const data = await response.json();
+      if (data.tokenValid === false) {
+        navigate('/login', { replace: true });
+        return;
+      }
+
       if (!response.ok) {
         throw new Error('Failed to assign delivery agent');
       }
 
-      const data = await response.json();
       setOrder(data.order);
       toast.success('Delivery agent assigned successfully');
     } catch (err) {
@@ -138,6 +148,12 @@ export default function OrderDetails() {
         method: 'DELETE',
         credentials: 'include'
       });
+
+      const data = await response.json();
+      if (data.tokenValid === false) {
+        navigate('/login', { replace: true });
+        return;
+      }
 
       if (!response.ok) {
         throw new Error('Failed to delete order');
@@ -171,11 +187,16 @@ export default function OrderDetails() {
         body: JSON.stringify({ [editingField]: editValue })
       });
 
+      const data = await response.json();
+      if (data.tokenValid === false) {
+        navigate('/login', { replace: true });
+        return;
+      }
+
       if (!response.ok) {
         throw new Error('Failed to update order');
       }
 
-      const data = await response.json();
       setOrder(data.order);
       setEditingField(null);
       setEditValue('');
@@ -431,7 +452,6 @@ export default function OrderDetails() {
                   <div className="space-y-1 text-sm text-orange-700">
                     <p>Legal Name: {order.store.businessInfo.legalName || 'N/A'}</p>
                     <p>Display Name: {order.store.businessInfo.displayName || 'N/A'}</p>
-                    <p>Type: {order.store.businessInfo.businessType || 'N/A'}</p>
                     {order.store.businessInfo.website && <p>Website: {order.store.businessInfo.website}</p>}
                   </div>
                 </div>
@@ -443,8 +463,6 @@ export default function OrderDetails() {
                   <div className="space-y-1 text-sm text-blue-700">
                     <p>Hours: {order.store.operationalInfo.openingTime || 'N/A'} - {order.store.operationalInfo.closingTime || 'N/A'}</p>
                     <p>Store Type: {order.store.operationalInfo.storeType || 'N/A'}</p>
-                    <p>Delivery Radius: {order.store.operationalInfo.deliveryPreferences?.deliveryRadius || 'N/A'} km</p>
-                    <p>Min Order: ₹{order.store.operationalInfo.deliveryPreferences?.minimumOrderValue || 'N/A'}</p>
                   </div>
                 </div>
               )}

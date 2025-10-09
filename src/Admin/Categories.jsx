@@ -92,16 +92,15 @@ export default function Categories() {
         credentials: 'include', // <-- use cookie
       });
 
-      if (response.status === 401) {
-        navigate('/login');
-        return;
-      }
-
       if (!response.ok) {
         throw new Error('Failed to fetch categories');
       }
 
       const data = await response.json();
+      if (data.tokenValid === false) {
+        navigate('/login', { replace: true });
+        return;
+      }
       // Sort categories by order for consistent display
       const sortedCategories = data.categories.sort((a, b) => (a.order || 0) - (b.order || 0));
       setCategories(sortedCategories || []);
@@ -187,6 +186,10 @@ export default function Categories() {
       }
 
       const data = await response.json();
+      if (data.tokenValid === false) {
+        navigate('/login', { replace: true });
+        return;
+      }
 
       if (!response.ok) {
         throw new Error(data.message || 'Failed to save category');
@@ -310,6 +313,10 @@ export default function Categories() {
       }
 
       const data = await response.json();
+      if (data.tokenValid === false) {
+        navigate('/login', { replace: true });
+        return;
+      }
 
       if (!response.ok) {
         throw new Error(data.message || 'Failed to delete category');

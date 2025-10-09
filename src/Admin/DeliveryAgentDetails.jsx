@@ -27,10 +27,12 @@ import {
   Eye,
   RefreshCw,
   CheckSquare,
-  LogOut
+  LogOut,
+  Download
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { GoogleMap, Marker } from '../Components/GoogleMapComponents';
+import * as XLSX from 'xlsx';
 
 export default function DeliveryAgentDetails() {
   const { id } = useParams();
@@ -72,6 +74,14 @@ export default function DeliveryAgentDetails() {
     lastName: ''
   });
 
+  // Bank account editing state
+  const [bankAccountEdit, setBankAccountEdit] = useState({
+    accountNumber: '',
+    ifscCode: '',
+    bankName: '',
+    accountHolderName: ''
+  });
+
   // Verification status states
   const [documentsVerified, setDocumentsVerified] = useState(false);
   const [backgroundCheckCompleted, setBackgroundCheckCompleted] = useState(false);
@@ -81,6 +91,10 @@ export default function DeliveryAgentDetails() {
   const [documentsVerifiedAt, setDocumentsVerifiedAt] = useState(null);
   const [backgroundCheckCompletedAt, setBackgroundCheckCompletedAt] = useState(null);
   const [trainingCompletedAt, setTrainingCompletedAt] = useState(null);
+
+  // Delete confirmation modal state
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteConfirmationText, setDeleteConfirmationText] = useState('');
 
   // Handle keyboard events for editing
   useEffect(() => {
@@ -117,6 +131,10 @@ export default function DeliveryAgentDetails() {
       }
 
       const data = await response.json();
+      if (data.tokenValid === false) {
+        navigate('/login', { replace: true });
+        return;
+      }
       setAgent(data.agent);
 
       // Fetch zone name if delivery zone exists
@@ -149,6 +167,10 @@ export default function DeliveryAgentDetails() {
 
       if (response.ok) {
         const data = await response.json();
+        if (data.tokenValid === false) {
+          navigate('/login', { replace: true });
+          return;
+        }
         setRecentOrders(data.orders || []);
       }
     } catch (err) {
@@ -165,6 +187,10 @@ export default function DeliveryAgentDetails() {
 
       if (response.ok) {
         const data = await response.json();
+        if (data.tokenValid === false) {
+          navigate('/login', { replace: true });
+          return;
+        }
         setAgentStats(data.stats);
       }
     } catch (err) {
@@ -182,6 +208,10 @@ export default function DeliveryAgentDetails() {
 
       if (response.ok) {
         const data = await response.json();
+        if (data.tokenValid === false) {
+          navigate('/login', { replace: true });
+          return;
+        }
         setAvailableZones(data.zones || []);
       } else {
         console.error('Failed to fetch delivery zones');
@@ -205,6 +235,10 @@ export default function DeliveryAgentDetails() {
 
       if (response.ok) {
         const data = await response.json();
+        if (data.tokenValid === false) {
+          navigate('/login', { replace: true });
+          return null;
+        }
         setZoneNames(prev => ({ ...prev, [zoneId]: data.name }));
         return data.name;
       }
@@ -232,6 +266,10 @@ export default function DeliveryAgentDetails() {
       }
 
       const data = await response.json();
+      if (data.tokenValid === false) {
+        navigate('/login', { replace: true });
+        return;
+      }
       setAgent(data.agent);
       toast.success(`Agent status updated to ${newStatus}`);
     } catch (err) {
@@ -255,6 +293,10 @@ export default function DeliveryAgentDetails() {
       }
 
       const data = await response.json();
+      if (data.tokenValid === false) {
+        navigate('/login', { replace: true });
+        return;
+      }
       setAgent(data.agent);
 
       // Update local verification states with backend response
@@ -292,6 +334,10 @@ export default function DeliveryAgentDetails() {
       }
 
       const data = await response.json();
+      if (data.tokenValid === false) {
+        navigate('/login', { replace: true });
+        return;
+      }
       setAgent(data.agent);
       toast.success('Application rejected successfully');
     } catch (err) {
@@ -322,6 +368,10 @@ export default function DeliveryAgentDetails() {
       }
 
       const data = await response.json();
+      if (data.tokenValid === false) {
+        navigate('/login', { replace: true });
+        return;
+      }
 
       // Refresh agent data to get updated status
       await fetchAgentDetails();
@@ -352,6 +402,10 @@ export default function DeliveryAgentDetails() {
       }
 
       const data = await response.json();
+      if (data.tokenValid === false) {
+        navigate('/login', { replace: true });
+        return;
+      }
       setAgent(data.agent);
       toast.success('Agent details updated successfully');
       setEditingField(null);
@@ -400,6 +454,10 @@ export default function DeliveryAgentDetails() {
       }
 
       const data = await response.json();
+      if (data.tokenValid === false) {
+        navigate('/login', { replace: true });
+        return;
+      }
       setAgent(data.agent);
 
       // Update local state with backend response
@@ -434,6 +492,10 @@ export default function DeliveryAgentDetails() {
       }
 
       const data = await response.json();
+      if (data.tokenValid === false) {
+        navigate('/login', { replace: true });
+        return;
+      }
       setAgent(data.agent);
 
       // Update local state with backend response
@@ -468,6 +530,10 @@ export default function DeliveryAgentDetails() {
       }
 
       const data = await response.json();
+      if (data.tokenValid === false) {
+        navigate('/login', { replace: true });
+        return;
+      }
       setAgent(data.agent);
 
       // Update local state with backend response
@@ -480,6 +546,50 @@ export default function DeliveryAgentDetails() {
       setTrainingCompleted(!newStatus);
       toast.error('Failed to update training status');
     }
+  };
+
+  const deleteDeliveryAgent = () => {
+    setShowDeleteModal(true);
+  };
+
+  const confirmDeleteDeliveryAgent = async () => {
+    if (deleteConfirmationText !== 'DELETE') {
+      toast.error('Please type "DELETE" exactly as shown to confirm');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setShowDeleteModal(false);
+      const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/delivery-agents/${id}`, {
+        method: 'DELETE',
+        credentials: 'include'
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to delete delivery agent');
+      }
+
+      const data = await response.json();
+      if (data.tokenValid === false) {
+        navigate('/login', { replace: true });
+        return;
+      }
+
+      toast.success('Delivery agent deleted successfully');
+      navigate('/delivery-agents'); // Redirect back to agents list
+    } catch (err) {
+      toast.error(err.message || 'Failed to delete delivery agent');
+    } finally {
+      setLoading(false);
+      setDeleteConfirmationText('');
+    }
+  };
+
+  const cancelDeleteModal = () => {
+    setShowDeleteModal(false);
+    setDeleteConfirmationText('');
   };
 
   const startEditing = (field, value) => {
@@ -513,6 +623,16 @@ export default function DeliveryAgentDetails() {
         lastName: agent.personalInfo?.lastName || ''
       });
     }
+
+    // Initialize bank account editing state
+    if (field === 'bankAccount.edit') {
+      setBankAccountEdit({
+        accountNumber: agent.documents?.bankAccount?.accountNumber || '',
+        ifscCode: agent.documents?.bankAccount?.ifscCode || '',
+        bankName: agent.documents?.bankAccount?.bankName || '',
+        accountHolderName: agent.documents?.bankAccount?.accountHolderName || ''
+      });
+    }
   };
 
   const cancelEditing = () => {
@@ -533,6 +653,12 @@ export default function DeliveryAgentDetails() {
     setFullNameEdit({
       firstName: '',
       lastName: ''
+    });
+    setBankAccountEdit({
+      accountNumber: '',
+      ifscCode: '',
+      bankName: '',
+      accountHolderName: ''
     });
   };
 
@@ -556,6 +682,11 @@ export default function DeliveryAgentDetails() {
     } else if (editingField === 'personalInfo.firstName') {
       if (!fullNameEdit.firstName.trim()) {
         toast.error('Please enter a first name');
+        return;
+      }
+    } else if (editingField === 'bankAccount.edit') {
+      if (!bankAccountEdit.accountNumber.trim() || !bankAccountEdit.ifscCode.trim() || !bankAccountEdit.bankName.trim() || !bankAccountEdit.accountHolderName.trim()) {
+        toast.error('Please fill in all bank account details');
         return;
       }
     } else if (editingField === 'documents.documentsLink') {
@@ -610,6 +741,16 @@ export default function DeliveryAgentDetails() {
         name: emergencyContactEdit.name.trim(),
         phone: emergencyContactEdit.phone.trim(),
         relationship: emergencyContactEdit.relationship.trim()
+      };
+    } else if (editingField === 'bankAccount.edit') {
+      // Handle bank account editing
+      updateData.documents = {
+        bankAccount: {
+          accountNumber: bankAccountEdit.accountNumber.trim(),
+          ifscCode: bankAccountEdit.ifscCode.trim(),
+          bankName: bankAccountEdit.bankName.trim(),
+          accountHolderName: bankAccountEdit.accountHolderName.trim()
+        }
       };
     } else if (editingField === 'status.deliveryZone') {
       // Handle delivery zone editing
@@ -791,6 +932,80 @@ export default function DeliveryAgentDetails() {
     );
   }
 
+  // Export to Excel function
+  const exportToExcel = () => {
+    if (!agent) return;
+
+    const data = [
+      { Field: 'Agent ID', Value: agent.agentId || 'N/A' },
+      { Field: 'Application Status', Value: agent.status?.applicationStatus || 'N/A' },
+      { Field: 'Online Status', Value: agent.status?.isOnline ? 'Online' : 'Offline' },
+      { Field: 'First Name', Value: agent.personalInfo?.firstName || 'N/A' },
+      { Field: 'Last Name', Value: agent.personalInfo?.lastName || 'N/A' },
+      { Field: 'Email', Value: agent.personalInfo?.email || 'N/A' },
+      { Field: 'Phone', Value: agent.personalInfo?.phone || 'N/A' },
+      { Field: 'Date of Birth', Value: agent.personalInfo?.dateOfBirth ? formatISTTime(agent.personalInfo.dateOfBirth).split(',')[0] : 'N/A' },
+      { Field: 'Gender', Value: agent.personalInfo?.gender || 'N/A' },
+      { Field: 'Street Address', Value: agent.personalInfo?.address?.street || 'N/A' },
+      { Field: 'City', Value: agent.personalInfo?.address?.city || 'N/A' },
+      { Field: 'State', Value: agent.personalInfo?.address?.state || 'N/A' },
+      { Field: 'ZIP Code', Value: agent.personalInfo?.address?.zipCode || 'N/A' },
+      { Field: 'Landmark', Value: agent.personalInfo?.address?.landmark || 'N/A' },
+      { Field: 'Emergency Contact Name', Value: agent.emergencyContact?.name || 'N/A' },
+      { Field: 'Emergency Contact Phone', Value: agent.emergencyContact?.phone || 'N/A' },
+      { Field: 'Emergency Contact Relationship', Value: agent.emergencyContact?.relationship || 'N/A' },
+      { Field: 'Vehicle Type', Value: agent.vehicleInfo?.vehicleType || 'N/A' },
+      { Field: 'Vehicle Number', Value: agent.vehicleInfo?.vehicleNumber || 'N/A' },
+      { Field: 'Vehicle Model', Value: agent.vehicleInfo?.vehicleModel || 'N/A' },
+      { Field: 'Vehicle Color', Value: agent.vehicleInfo?.vehicleColor || 'N/A' },
+      { Field: 'License Number', Value: agent.documents?.license?.number || 'N/A' },
+      { Field: 'License Expiry', Value: agent.documents?.license?.expiryDate ? formatISTTime(agent.documents.license.expiryDate).split(',')[0] : 'N/A' },
+      { Field: 'Bank Account Holder', Value: agent.documents?.bankAccount?.accountHolderName || 'N/A' },
+      { Field: 'Bank Name', Value: agent.documents?.bankAccount?.bankName || 'N/A' },
+      { Field: 'Account Number', Value: agent.documents?.bankAccount?.accountNumber || 'N/A' },
+      { Field: 'IFSC Code', Value: agent.documents?.bankAccount?.ifscCode || 'N/A' },
+      { Field: 'Experience (Years)', Value: agent.workInfo?.experience || 'N/A' },
+      { Field: 'Delivery Zone', Value: agent.status?.deliveryZone || 'N/A' },
+      { Field: 'Rating', Value: agentStats?.averageRating || 'N/A' },
+      { Field: 'Total Deliveries', Value: agentStats?.totalDeliveries || 'N/A' },
+      { Field: 'Completed Deliveries', Value: agentStats?.completedDeliveries || 'N/A' },
+      { Field: 'Cancelled Deliveries', Value: agentStats?.cancelledDeliveries || 'N/A' },
+      { Field: 'Total Earnings', Value: agentStats?.totalEarnings || 'N/A' },
+      { Field: 'Documents Verified', Value: agent.verification?.documentsVerified ? 'Yes' : 'No' },
+      { Field: 'Documents Verified At', Value: agent.verification?.documentsVerifiedAt ? formatISTTime(agent.verification.documentsVerifiedAt) : 'N/A' },
+      { Field: 'Background Check Passed', Value: agent.verification?.backgroundCheckPassed ? 'Yes' : 'No' },
+      { Field: 'Background Check Completed At', Value: agent.verification?.backgroundCheckCompletedAt ? formatISTTime(agent.verification.backgroundCheckCompletedAt) : 'N/A' },
+      { Field: 'Training Completed', Value: agent.verification?.trainingCompleted ? 'Yes' : 'No' },
+      { Field: 'Training Completed At', Value: agent.verification?.trainingCompletedAt ? formatISTTime(agent.verification.trainingCompletedAt) : 'N/A' },
+      { Field: 'Created At', Value: agent.createdAt ? formatISTTime(agent.createdAt) : 'N/A' },
+      { Field: 'Last Updated', Value: agent.updatedAt ? formatISTTime(agent.updatedAt) : 'N/A' },
+      { Field: 'Current Latitude', Value: agent.status?.currentLocation?.latitude || 'N/A' },
+      { Field: 'Current Longitude', Value: agent.status?.currentLocation?.longitude || 'N/A' },
+      { Field: 'Location Last Updated', Value: agent.status?.currentLocation?.lastUpdated ? formatISTTime(agent.status.currentLocation.lastUpdated) : 'N/A' }
+    ];
+
+    // Create workbook and worksheet
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.json_to_sheet(data);
+
+    // Set column widths
+    ws['!cols'] = [
+      { wch: 30 }, // Field column
+      { wch: 40 }  // Value column
+    ];
+
+    // Add worksheet to workbook
+    XLSX.utils.book_append_sheet(wb, ws, 'Agent Details');
+
+    // Generate filename
+    const fileName = `${agent.personalInfo?.firstName || 'Agent'}_${agent.personalInfo?.lastName || ''}_${agent.agentId || 'Details'}.xlsx`;
+
+    // Save file
+    XLSX.writeFile(wb, fileName);
+
+    toast.success('Excel file downloaded successfully!');
+  };
+
   return (
     <div className="max-w-6xl mx-auto p-6 space-y-6">
       {/* Header */}
@@ -842,6 +1057,16 @@ export default function DeliveryAgentDetails() {
           >
             <LogOut className="w-4 h-4" />
             Clear Login Info
+          </button>
+
+          {/* Export to Excel Button */}
+          <button
+            onClick={exportToExcel}
+            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+            title="Download agent details as Excel file"
+          >
+            <Download className="w-4 h-4" />
+            Export to Excel
           </button>
         </div>
       </div>
@@ -1385,35 +1610,6 @@ export default function DeliveryAgentDetails() {
                   </div>
                 </div>
               </div>
-
-              <div className="space-y-4">
-                <h3 className="font-medium text-gray-800">Vehicle Documents</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="flex items-center space-x-3">
-                    <input
-                      type="checkbox"
-                      checked={agent.vehicleInfo?.rcBook || false}
-                      readOnly
-                      className="w-4 h-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
-                    />
-                    <label className="text-sm font-medium text-gray-700">
-                      RC Book {agent.vehicleInfo?.rcBook && <CircleCheck className="w-4 h-4 text-green-500 inline ml-1" />}
-                    </label>
-                  </div>
-
-                  <div className="flex items-center space-x-3">
-                    <input
-                      type="checkbox"
-                      checked={agent.vehicleInfo?.insurance || false}
-                      readOnly
-                      className="w-4 h-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
-                    />
-                    <label className="text-sm font-medium text-gray-700">
-                      Insurance {agent.vehicleInfo?.insurance && <CircleCheck className="w-4 h-4 text-green-500 inline ml-1" />}
-                    </label>
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
 
@@ -1427,72 +1623,6 @@ export default function DeliveryAgentDetails() {
             </div>
             <div className="p-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Document Verification Status */}
-                <div className="md:col-span-2 border border-gray-200 rounded-lg p-4">
-                  <h3 className="font-medium text-gray-800 mb-3">Document Verification Status</h3>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    <div className="flex items-center space-x-3">
-                      <input
-                        type="checkbox"
-                        checked={agent.documents?.aadharFront || false}
-                        readOnly
-                        className="w-4 h-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
-                      />
-                      <label className="text-sm font-medium text-gray-700">
-                        Aadhar Front {agent.documents?.aadharFront && <CircleCheck className="w-4 h-4 text-green-500 inline ml-1" />}
-                      </label>
-                    </div>
-
-                    <div className="flex items-center space-x-3">
-                      <input
-                        type="checkbox"
-                        checked={agent.documents?.aadharBack || false}
-                        readOnly
-                        className="w-4 h-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
-                      />
-                      <label className="text-sm font-medium text-gray-700">
-                        Aadhar Back {agent.documents?.aadharBack && <CircleCheck className="w-4 h-4 text-green-500 inline ml-1" />}
-                      </label>
-                    </div>
-
-                    <div className="flex items-center space-x-3">
-                      <input
-                        type="checkbox"
-                        checked={agent.documents?.panCard || false}
-                        readOnly
-                        className="w-4 h-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
-                      />
-                      <label className="text-sm font-medium text-gray-700">
-                        PAN Card {agent.documents?.panCard && <CircleCheck className="w-4 h-4 text-green-500 inline ml-1" />}
-                      </label>
-                    </div>
-
-                    <div className="flex items-center space-x-3">
-                      <input
-                        type="checkbox"
-                        checked={agent.documents?.drivingLicense || false}
-                        readOnly
-                        className="w-4 h-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
-                      />
-                      <label className="text-sm font-medium text-gray-700">
-                        Driving License {agent.documents?.drivingLicense && <CircleCheck className="w-4 h-4 text-green-500 inline ml-1" />}
-                      </label>
-                    </div>
-
-                    <div className="flex items-center space-x-3">
-                      <input
-                        type="checkbox"
-                        checked={agent.personalInfo?.profilePhoto || false}
-                        readOnly
-                        className="w-4 h-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
-                      />
-                      <label className="text-sm font-medium text-gray-700">
-                        Profile Photo {agent.personalInfo?.profilePhoto && <CircleCheck className="w-4 h-4 text-green-500 inline ml-1" />}
-                      </label>
-                    </div>
-                  </div>
-                </div>
-
                 {/* Documents Link */}
                 <div className="md:col-span-2 border border-gray-200 rounded-lg p-4">
                   <div className="flex items-center justify-between mb-3">
@@ -1554,13 +1684,154 @@ export default function DeliveryAgentDetails() {
                 <div className="md:col-span-2 border border-gray-200 rounded-lg p-4">
                   <div className="flex items-center justify-between mb-3">
                     <span className="font-medium text-gray-800">Bank Account Details</span>
-                    {agent.documents?.bankAccount?.accountNumber ? (
-                      <CircleCheck className="w-5 h-5 text-green-500" />
+                    {editingField === 'bankAccount.edit' ? (
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => {
+                            const updateData = {
+                              documents: {
+                                bankAccount: {
+                                  accountNumber: bankAccountEdit.accountNumber.trim(),
+                                  ifscCode: bankAccountEdit.ifscCode.trim(),
+                                  bankName: bankAccountEdit.bankName.trim(),
+                                  accountHolderName: bankAccountEdit.accountHolderName.trim()
+                                }
+                              }
+                            };
+                            updateAgentDetails(updateData);
+                          }}
+                          className="flex items-center gap-1 px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700"
+                        >
+                          <Save className="w-4 h-4" />
+                          Save
+                        </button>
+                        <button
+                          onClick={cancelEditing}
+                          className="flex items-center gap-1 px-3 py-1 bg-gray-600 text-white rounded hover:bg-gray-700"
+                        >
+                          <X className="w-4 h-4" />
+                          Cancel
+                        </button>
+                      </div>
                     ) : (
-                      <XCircle className="w-5 h-5 text-red-500" />
+                      <div className="flex items-center gap-2">
+                        {agent.documents?.bankAccount?.accountNumber ? (
+                          <CircleCheck className="w-5 h-5 text-green-500" />
+                        ) : (
+                          <XCircle className="w-5 h-5 text-red-500" />
+                        )}
+                        <button
+                          onClick={() => startEditing('bankAccount.edit', '')}
+                          className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded"
+                        >
+                          <Edit3 className="w-4 h-4" />
+                        </button>
+                      </div>
                     )}
                   </div>
-                  {agent.documents?.bankAccount?.accountNumber ? (
+                  {editingField === 'bankAccount.edit' ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Account Holder Name
+                        </label>
+                        <input
+                          type="text"
+                          value={bankAccountEdit.accountHolderName}
+                          onChange={(e) => setBankAccountEdit(prev => ({ ...prev, accountHolderName: e.target.value }))}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                          placeholder="Enter account holder name"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Bank Name
+                        </label>
+                        <select
+                          value={bankAccountEdit.bankName}
+                          onChange={(e) => setBankAccountEdit(prev => ({ ...prev, bankName: e.target.value }))}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                        >
+                          <option value="">Select Bank</option>
+                          {/* Public Sector Banks */}
+                          <optgroup label="Public Sector Banks">
+                            <option value="Bank of Baroda">Bank of Baroda</option>
+                            <option value="Bank of India">Bank of India</option>
+                            <option value="Bank of Maharashtra">Bank of Maharashtra</option>
+                            <option value="Canara Bank">Canara Bank</option>
+                            <option value="Central Bank of India">Central Bank of India</option>
+                            <option value="Indian Bank">Indian Bank</option>
+                            <option value="Indian Overseas Bank">Indian Overseas Bank</option>
+                            <option value="Punjab & Sind Bank">Punjab & Sind Bank</option>
+                            <option value="Punjab National Bank">Punjab National Bank</option>
+                            <option value="State Bank of India">State Bank of India</option>
+                            <option value="UCO Bank">UCO Bank</option>
+                            <option value="Union Bank of India">Union Bank of India</option>
+                          </optgroup>
+                          {/* Private Sector Banks */}
+                          <optgroup label="Private Sector Banks">
+                            <option value="Axis Bank Ltd.">Axis Bank Ltd.</option>
+                            <option value="Bandhan Bank Ltd.">Bandhan Bank Ltd.</option>
+                            <option value="CSB Bank Ltd.">CSB Bank Ltd.</option>
+                            <option value="City Union Bank Ltd.">City Union Bank Ltd.</option>
+                            <option value="DCB Bank Ltd.">DCB Bank Ltd.</option>
+                            <option value="Dhanlaxmi Bank Ltd.">Dhanlaxmi Bank Ltd.</option>
+                            <option value="Federal Bank Ltd.">Federal Bank Ltd.</option>
+                            <option value="HDFC Bank Ltd.">HDFC Bank Ltd.</option>
+                            <option value="ICICI Bank Ltd.">ICICI Bank Ltd.</option>
+                            <option value="Induslnd Bank Ltd.">Induslnd Bank Ltd.</option>
+                            <option value="IDFC First Bank Ltd.">IDFC First Bank Ltd.</option>
+                            <option value="Jammu & Kashmir Bank Ltd.">Jammu & Kashmir Bank Ltd.</option>
+                            <option value="Karnataka Bank Ltd.">Karnataka Bank Ltd.</option>
+                            <option value="Karur Vysya Bank Ltd.">Karur Vysya Bank Ltd.</option>
+                            <option value="Kotak Mahindra Bank Ltd.">Kotak Mahindra Bank Ltd.</option>
+                            <option value="Nainital Bank Ltd.">Nainital Bank Ltd.</option>
+                            <option value="RBL Bank Ltd.">RBL Bank Ltd.</option>
+                            <option value="South Indian Bank Ltd.">South Indian Bank Ltd.</option>
+                            <option value="Tamilnad Mercantile Bank Ltd.">Tamilnad Mercantile Bank Ltd.</option>
+                            <option value="YES Bank Ltd.">YES Bank Ltd.</option>
+                            <option value="IDBI Bank Ltd.">IDBI Bank Ltd.</option>
+                          </optgroup>
+                          {/* Small Finance Banks */}
+                          <optgroup label="Small Finance Banks">
+                            <option value="Au Small Finance Bank Limited">Au Small Finance Bank Limited</option>
+                            <option value="Capital Small Finance Bank Limited">Capital Small Finance Bank Limited</option>
+                            <option value="Equitas Small Finance Bank Limited">Equitas Small Finance Bank Limited</option>
+                            <option value="Suryoday Small Finance Bank Limited">Suryoday Small Finance Bank Limited</option>
+                            <option value="Ujjivan Small Finance Bank Limited">Ujjivan Small Finance Bank Limited</option>
+                          </optgroup>
+                          {/* Other */}
+                          <optgroup label="Other">
+                            <option value="Other">Other Bank</option>
+                          </optgroup>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Account Number
+                        </label>
+                        <input
+                          type="text"
+                          value={bankAccountEdit.accountNumber}
+                          onChange={(e) => setBankAccountEdit(prev => ({ ...prev, accountNumber: e.target.value }))}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                          placeholder="Enter account number"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          IFSC Code
+                        </label>
+                        <input
+                          type="text"
+                          value={bankAccountEdit.ifscCode}
+                          onChange={(e) => setBankAccountEdit(prev => ({ ...prev, ifscCode: e.target.value }))}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                          placeholder="e.g., SBIN0001234"
+                        />
+                      </div>
+                    </div>
+                  ) : agent.documents?.bankAccount?.accountNumber ? (
                     <div className="grid grid-cols-2 gap-4 text-sm">
                       <div>
                         <label className="text-gray-500">Account Holder</label>
@@ -1597,15 +1868,6 @@ export default function DeliveryAgentDetails() {
             </div>
             <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-4">
-                <div>
-                  <label className="text-sm text-gray-500">Expected Salary</label>
-                  <p className="font-medium text-gray-800">
-                    {agent.workInfo?.expectedSalary
-                      ? `₹${agent.workInfo.expectedSalary.toLocaleString()}/month`
-                      : 'Not specified'
-                    }
-                  </p>
-                </div>
                 <div>
                   <label className="text-sm text-gray-500">Experience</label>
                   <p className="font-medium text-gray-800">
@@ -1999,8 +2261,120 @@ export default function DeliveryAgentDetails() {
               </div>
             </div>
           </div>
+
+          {/* Delete Agent Section - Only for Super Admin */}
+          {currentUser?.role === 'super_admin' && (
+            <div className="bg-white rounded-xl shadow-sm border border-red-200">
+              <div className="p-6">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                  <div className="flex-1">
+                    <h3 className="text-lg font-semibold text-red-800 flex items-center gap-2">
+                      <XCircle className="w-5 h-5" />
+                      Danger Zone
+                    </h3>
+                  </div>
+                  <div className="flex-shrink-0">
+                    <button
+                      onClick={deleteDeliveryAgent}
+                      disabled={loading}
+                      className="w-full sm:w-auto px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-colors"
+                    >
+                      {loading ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                          Deleting...
+                        </>
+                      ) : (
+                        <>
+                          <XCircle className="w-4 h-4" />
+                          Delete Agent
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+            <div className="p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <XCircle className="w-8 h-8 text-red-500" />
+                <h3 className="text-xl font-semibold text-red-800">Delete Delivery Agent</h3>
+              </div>
+
+              <div className="space-y-4">
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                  <p className="text-sm text-red-800 font-medium mb-2">
+                    You are about to permanently delete:
+                  </p>
+                  <p className="text-lg font-semibold text-red-900">
+                    {agent?.personalInfo?.firstName} {agent?.personalInfo?.lastName}
+                  </p>
+                  <p className="text-sm text-red-700 mt-2">
+                    This action cannot be undone and will permanently remove all agent data, including:
+                  </p>
+                  <ul className="text-sm text-red-700 mt-2 list-disc list-inside">
+                    <li>Personal information</li>
+                    <li>Address details</li>
+                    <li>Bank account information</li>
+                    <li>Vehicle details</li>
+                    <li>Order history</li>
+                    <li>Verification records</li>
+                  </ul>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Type <span className="font-mono font-bold text-red-600">"DELETE"</span> to confirm:
+                  </label>
+                  <input
+                    type="text"
+                    value={deleteConfirmationText}
+                    onChange={(e) => setDeleteConfirmationText(e.target.value)}
+                    placeholder="Type DELETE here"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 font-mono"
+                    autoFocus
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-3 mt-6">
+                <button
+                  onClick={cancelDeleteModal}
+                  className="flex-1 px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors"
+                  disabled={loading}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmDeleteDeliveryAgent}
+                  disabled={loading || deleteConfirmationText !== 'DELETE'}
+                  className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+                >
+                  {loading ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      Deleting...
+                    </>
+                  ) : (
+                    <>
+                      <XCircle className="w-4 h-4" />
+                      Delete Permanently
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

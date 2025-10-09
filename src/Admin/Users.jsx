@@ -77,6 +77,10 @@ export default function Users() {
       }
 
       const data = await response.json();
+      if (data.tokenValid === false) {
+        navigate('/login', { replace: true });
+        return;
+      }
       setUsers(data.users || []);
     } catch (error) {
       console.error('Error fetching users:', error);
@@ -102,6 +106,10 @@ export default function Users() {
       }
 
       const data = await response.json();
+      if (data.tokenValid === false) {
+        navigate('/login', { replace: true });
+        return;
+      }
 
       if (!response.ok) {
         throw new Error('Failed to fetch total users count');
@@ -117,7 +125,7 @@ export default function Users() {
   // Show loading spinner while loading
   if (checkingUser) return (
     <div className="flex items-center justify-center h-screen">
-      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+      <div className="animate-spin h-12 w-12 border-4 border-green-200 border-t-green-600 rounded-full"></div>
     </div>
   );
 
@@ -167,6 +175,10 @@ export default function Users() {
       }
 
       const data = await response.json();
+      if (data.tokenValid === false) {
+        navigate('/login', { replace: true });
+        return;
+      }
       setUsers(data.users || []);
       setTotalUsers(data.users?.length || 0);
       setCurrentPage(1); // Optionally reset pagination for search results

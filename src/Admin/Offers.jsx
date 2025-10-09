@@ -72,6 +72,10 @@ const Offers = () => {
       }
 
       const data = await response.json();
+      if (data.tokenValid === false) {
+        navigate('/login');
+        return;
+      }
       if (data.success) {
         setOffers(data.offers);
         setPagination(prev => ({
@@ -359,7 +363,7 @@ const Offers = () => {
     return (
       <Layout>
         <div className="flex justify-center items-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+          <div className="animate-spin h-12 w-12 border-4 border-green-200 border-t-green-600 rounded-full"></div>
         </div>
       </Layout>
     );
@@ -389,7 +393,7 @@ const Offers = () => {
           </div>
           <button
             onClick={openAddModal}
-            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center"
+            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 flex items-center"
           >
             <Plus size={18} className="mr-2" />
             Add Offer
@@ -397,7 +401,7 @@ const Offers = () => {
         </div>
 
         {/* Search and Filters */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
+        <div className="bg-white shadow-sm border border-gray-200 p-4 mb-6">
           <div className="flex flex-wrap gap-4">
             <form onSubmit={handleSearch} className="flex-1 min-w-64">
               <div className="relative">
@@ -407,7 +411,7 @@ const Offers = () => {
                   placeholder="Search offers..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 />
               </div>
             </form>
@@ -415,7 +419,7 @@ const Offers = () => {
             <select
               value={filters.isActive}
               onChange={(e) => handleFilterChange('isActive', e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+              className="px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500"
             >
               <option value="">All Status</option>
               <option value="true">Active</option>
@@ -425,7 +429,7 @@ const Offers = () => {
             <select
               value={filters.discountType}
               onChange={(e) => handleFilterChange('discountType', e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+              className="px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500"
             >
               <option value="">All Types</option>
               <option value="free_delivery">Free Delivery</option>
@@ -435,7 +439,7 @@ const Offers = () => {
 
             <button
               onClick={fetchOffers}
-              className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg flex items-center"
+              className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 flex items-center"
             >
               <RefreshCw size={18} className="mr-2" />
               Refresh
@@ -444,10 +448,10 @@ const Offers = () => {
         </div>
 
         {/* Offers Table */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+        <div className="bg-white shadow-sm border border-gray-200 overflow-hidden">
           {loading ? (
             <div className="flex justify-center items-center h-64">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+              <div className="animate-spin h-12 w-12 border-4 border-green-200 border-t-green-600 rounded-full"></div>
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -467,7 +471,7 @@ const Offers = () => {
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
                           <div className="flex-shrink-0 h-10 w-10">
-                            <img className="h-10 w-10 rounded-lg object-cover" src={offer.image} alt="" />
+                            <img className="h-10 w-10 object-cover" src={offer.image} alt="" />
                           </div>
                           <div className="ml-4">
                             <div className="text-sm font-medium text-gray-900">{offer.title}</div>
@@ -476,7 +480,7 @@ const Offers = () => {
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-800 rounded-full">
+                        <span className="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-800">
                           {offer.code}
                         </span>
                       </td>
@@ -485,7 +489,7 @@ const Offers = () => {
                          offer.discountType === 'percentage' ? 'Percentage' : 'Fixed Amount'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                        <span className={`px-2 py-1 text-xs font-medium ${
                           offer.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
                         }`}>
                           {offer.isActive ? 'Active' : 'Inactive'}
@@ -531,7 +535,7 @@ const Offers = () => {
                   <button
                     onClick={() => setPagination(prev => ({ ...prev, page: prev.page - 1 }))}
                     disabled={pagination.page === 1}
-                    className="px-3 py-1 border border-gray-300 rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-3 py-1 border border-gray-300 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Previous
                   </button>
@@ -541,7 +545,7 @@ const Offers = () => {
                   <button
                     onClick={() => setPagination(prev => ({ ...prev, page: prev.page + 1 }))}
                     disabled={pagination.page === pagination.totalPages}
-                    className="px-3 py-1 border border-gray-300 rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-3 py-1 border border-gray-300 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Next
                   </button>
@@ -554,7 +558,7 @@ const Offers = () => {
         {/* Add/Edit Modal */}
         {(showAddModal || showEditModal) && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="bg-white p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
               <h2 className="text-xl font-bold mb-4">
                 {showAddModal ? 'Add New Offer' : 'Edit Offer'}
               </h2>
@@ -567,7 +571,7 @@ const Offers = () => {
                       type="text"
                       value={formData.title}
                       onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+                      className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500"
                       required
                     />
                   </div>
@@ -577,7 +581,7 @@ const Offers = () => {
                     <textarea
                       value={formData.description}
                       onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+                      className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500"
                       rows={3}
                       required
                     />
@@ -589,7 +593,7 @@ const Offers = () => {
                       type="text"
                       value={formData.code}
                       onChange={(e) => setFormData(prev => ({ ...prev, code: e.target.value.toUpperCase() }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+                      className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500"
                       required
                     />
                   </div>
@@ -599,7 +603,7 @@ const Offers = () => {
                     <select
                       value={formData.discountType}
                       onChange={(e) => setFormData(prev => ({ ...prev, discountType: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+                      className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500"
                     >
                       <option value="free_delivery">Free Delivery</option>
                       <option value="percentage">Percentage Discount</option>
@@ -613,7 +617,7 @@ const Offers = () => {
                       type="number"
                       value={formData.minimumOrderValue}
                       onChange={(e) => setFormData(prev => ({ ...prev, minimumOrderValue: parseFloat(e.target.value) || 0 }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+                      className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500"
                       min="0"
                     />
                   </div>
@@ -628,7 +632,7 @@ const Offers = () => {
                           type="number"
                           value={formData.discountValue}
                           onChange={(e) => setFormData(prev => ({ ...prev, discountValue: parseFloat(e.target.value) || 0 }))}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+                          className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500"
                           min="0"
                         />
                       </div>
@@ -639,7 +643,7 @@ const Offers = () => {
                           type="number"
                           value={formData.maxDiscount}
                           onChange={(e) => setFormData(prev => ({ ...prev, maxDiscount: parseFloat(e.target.value) || 0 }))}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+                          className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500"
                           min="0"
                         />
                       </div>
@@ -651,7 +655,7 @@ const Offers = () => {
                     <select
                       value={formData.applicableFor}
                       onChange={(e) => setFormData(prev => ({ ...prev, applicableFor: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+                      className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500"
                     >
                       <option value="all">All Users</option>
                       <option value="new_customers">New Customers</option>
@@ -665,7 +669,7 @@ const Offers = () => {
                       type="date"
                       value={formData.validFrom}
                       onChange={(e) => setFormData(prev => ({ ...prev, validFrom: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+                      className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500"
                     />
                   </div>
 
@@ -675,7 +679,7 @@ const Offers = () => {
                       type="date"
                       value={formData.validTo}
                       onChange={(e) => setFormData(prev => ({ ...prev, validTo: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+                      className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500"
                     />
                   </div>
 
@@ -686,12 +690,12 @@ const Offers = () => {
                         type="file"
                         accept="image/*"
                         onChange={handleFileChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-green-50 file:text-green-700 hover:file:bg-green-100"
+                        className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 file:mr-4 file:py-2 file:px-4 file:border-0 file:text-sm file:font-medium file:bg-green-50 file:text-green-700 hover:file:bg-green-100"
                         disabled={uploadingImage}
                       />
                       {uploadingImage && (
                         <div className="flex items-center gap-2 text-sm text-gray-600">
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-500"></div>
+                          <div className="animate-spin h-4 w-4 border-4 border-green-200 border-t-green-500 rounded-full"></div>
                           Uploading image...
                         </div>
                       )}
@@ -700,7 +704,7 @@ const Offers = () => {
                           <img
                             src={imagePreview}
                             alt="Offer preview"
-                            className="w-32 h-32 object-cover rounded-lg border border-gray-300"
+                            className="w-32 h-32 object-cover border border-gray-300"
                           />
                         </div>
                       )}
@@ -715,7 +719,7 @@ const Offers = () => {
                           type="text"
                           value={condition}
                           onChange={(e) => updateCondition(index, e.target.value)}
-                          className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+                          className="flex-1 px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500"
                         />
                         <button
                           type="button"
@@ -729,7 +733,7 @@ const Offers = () => {
                     <button
                       type="button"
                       onClick={addCondition}
-                      className="inline-flex items-center px-3 py-2 border border-green-300 rounded-md shadow-sm text-sm font-medium text-green-700 bg-green-50 hover:bg-green-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors duration-200"
+                      className="inline-flex items-center px-3 py-2 border border-green-300 shadow-sm text-sm font-medium text-green-700 bg-green-50 hover:bg-green-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors duration-200"
                     >
                       <Plus size={16} className="mr-2" />
                       Add Condition
@@ -756,13 +760,13 @@ const Offers = () => {
                       setShowEditModal(false);
                       resetForm();
                     }}
-                    className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+                    className="px-4 py-2 border border-gray-300 text-gray-700 hover:bg-gray-50"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                    className="px-4 py-2 bg-green-600 text-white hover:bg-green-700"
                   >
                     {showAddModal ? 'Create Offer' : 'Update Offer'}
                   </button>

@@ -35,6 +35,10 @@ const MerchantInventory = () => {
 
       if (response.ok) {
         const data = await response.json();
+        if (data.tokenValid === false) {
+          navigate('/login', { replace: true });
+          return;
+        }
         if (data.success) {
           setMerchant(data.merchant);
           setInventory(data.merchant.inventory || []);
