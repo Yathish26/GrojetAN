@@ -29,6 +29,10 @@ export default function Profile() {
         setEditForm({ name: data.name||'', email: data.email||'', phone: data.phone||'', department: data.department||'' });
       } else {
         const res = await fetch(`${import.meta.env.VITE_SERVER}/admin/auth/profile`, { credentials: 'include' });
+        if (res.status === 401) {
+          navigate('/login', { replace: true });
+          return;
+        }
         if (!res.ok) throw new Error('Failed to fetch profile');
         const data = await res.json();
         if (data.tokenValid === false) {
@@ -46,6 +50,10 @@ export default function Profile() {
     e.preventDefault();
     try {
       const res = await fetch(`${import.meta.env.VITE_SERVER}/admin/auth/profile`, { method:'PUT', headers:{'Content-Type':'application/json'}, credentials:'include', body: JSON.stringify(editForm) });
+      if (res.status === 401) {
+        navigate('/login', { replace: true });
+        return;
+      }
       if(!res.ok){ const er = await res.json(); throw new Error(er.message||'Failed'); }
       const data = await res.json();
       if (data.tokenValid === false) {
@@ -62,6 +70,10 @@ export default function Profile() {
     if(passwordForm.newPassword.length < 6) return toast.error('Min 6 chars');
     try {
       const res = await fetch(`${import.meta.env.VITE_SERVER}/admin/auth/change-password`, { method:'PUT', headers:{'Content-Type':'application/json'}, credentials:'include', body: JSON.stringify({ currentPassword: passwordForm.currentPassword, newPassword: passwordForm.newPassword }) });
+      if (res.status === 401) {
+        navigate('/login', { replace: true });
+        return;
+      }
       if(!res.ok){ const er = await res.json(); throw new Error(er.message||'Failed'); }
       const data = await res.json();
       if (data.tokenValid === false) {
@@ -78,6 +90,10 @@ export default function Profile() {
     if(pinForm.newPin.length < 4) return toast.error('PIN >= 4 digits');
     try {
       const res = await fetch(`${import.meta.env.VITE_SERVER}/admin/auth/settings/pin`, { method:'PUT', headers:{'Content-Type':'application/json'}, credentials:'include', body: JSON.stringify({ newPin: pinForm.newPin }) });
+      if (res.status === 401) {
+        navigate('/login', { replace: true });
+        return;
+      }
       if(!res.ok){ const er = await res.json(); throw new Error(er.message||'Failed'); }
       const data = await res.json();
       if (data.tokenValid === false) {
@@ -92,6 +108,10 @@ export default function Profile() {
     try {
       const enable = !profile.twofactorAuth;
       const res = await fetch(`${import.meta.env.VITE_SERVER}/admin/auth/2fa`, { method:'POST', headers:{'Content-Type':'application/json'}, credentials:'include', body: JSON.stringify({ enable }) });
+      if (res.status === 401) {
+        navigate('/login', { replace: true });
+        return;
+      }
       if(!res.ok){ const er = await res.json(); throw new Error(er.message||'Failed'); }
       const data = await res.json();
       if (data.tokenValid === false) {

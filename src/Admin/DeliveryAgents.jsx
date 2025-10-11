@@ -177,15 +177,15 @@ const DeliveryAgents = () => {
   };
 
   const StatCard = ({ title, value, icon: Icon, color = 'text-gray-600' }) => (
-    <div className="bg-white  shadow p-6">
+    <div className="bg-white shadow-sm border border-gray-200 p-4 sm:p-6">
       <div className="flex items-center justify-between">
-        <div>
-          <p className="text-sm font-medium text-gray-500">{title}</p>
-          <p className={`text-2xl font-bold ${color}`}>
+        <div className="flex-1 min-w-0">
+          <p className="text-xs sm:text-sm font-medium text-gray-500 truncate">{title}</p>
+          <p className={`text-lg sm:text-2xl font-bold ${color} mt-1`}>
             {typeof value === 'number' ? value.toLocaleString() : value}
           </p>
         </div>
-        <Icon className={`h-8 w-8 ${color}`} />
+        <Icon className={`h-6 w-6 sm:h-8 sm:w-8 ${color} flex-shrink-0 ml-2`} />
       </div>
     </div>
   );
@@ -244,58 +244,68 @@ const DeliveryAgents = () => {
 
   return (
     <Layout title="Delivery Agents">
-      <div className="p-6">
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <StatCard
-            title="Total Agents"
-            value={stats.total || 0}
-            icon={Truck}
-            color="text-blue-600"
-          />
-          <StatCard
-            title="Active Agents"
-            value={stats.active || 0}
-            icon={CircleCheck}
-            color="text-green-600"
-          />
-          <StatCard
-            title="Online Now"
-            value={stats.online || 0}
-            icon={MapPin}
-            color="text-orange-600"
-          />
-          <StatCard
-            title="Total Deliveries"
-            value={stats.totalDeliveries || 0}
-            icon={Star}
-            color="text-purple-600"
-          />
-        </div>
+      <div className="p-4 sm:p-6">
+        {/* Header Section */}
+        <div className="mb-6 sm:mb-8">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4 sm:mb-6">
+            <div>
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-900 flex items-center">
+                <Truck className="mr-2 sm:mr-3 text-green-600" size={24} />
+                <span className="hidden sm:inline">Delivery Agents Management</span>
+                <span className="sm:hidden">Delivery Agents</span>
+              </h1>
+              <p className="text-gray-600 mt-1 text-sm sm:text-base">Manage and monitor delivery agents across your network</p>
+            </div>
+            <button
+              onClick={() => navigate('/delivery-signup')}
+              className="w-full sm:w-auto bg-green-600 text-white px-4 py-2 hover:bg-green-700 flex items-center justify-center gap-2 transition-colors duration-200"
+            >
+              <Plus size={16} className="sm:w-4 sm:h-4" />
+              Add New Agent
+            </button>
+          </div>
 
-        {/* Action Buttons */}
-        <div className="flex justify-end mb-6">
-          <button
-            onClick={() => navigate('/delivery-signup')}
-            className="bg-green-600 text-white px-4 py-2  hover:bg-green-700 flex items-center gap-2"
-          >
-            <Plus size={16} />
-            Add New Agent
-          </button>
+          {/* Stats Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+            <StatCard
+              title="Total Agents"
+              value={stats.total || 0}
+              icon={Truck}
+              color="text-blue-600"
+            />
+            <StatCard
+              title="Active Agents"
+              value={stats.active || 0}
+              icon={CircleCheck}
+              color="text-green-600"
+            />
+            <StatCard
+              title="Online Now"
+              value={stats.online || 0}
+              icon={MapPin}
+              color="text-orange-600"
+            />
+            <StatCard
+              title="Total Deliveries"
+              value={stats.totalDeliveries || 0}
+              icon={Star}
+              color="text-purple-600"
+            />
+          </div>
         </div>
 
         {/* Filters and Search */}
-        <div className="bg-white  shadow mb-6">
-          <div className="p-6 border-b border-gray-200">
-            <div className="flex flex-col lg:flex-row gap-4">
+        <div className="bg-white shadow-sm border border-gray-200 mb-4 sm:mb-6">
+          <div className="p-4 sm:p-6">
+            <div className="flex flex-col gap-4">
               {/* Search */}
-              <form onSubmit={handleSearch} className="flex-1">
+              <form onSubmit={handleSearch} className="w-full">
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
                   <input
                     type="text"
                     placeholder="Search by name, email, or phone..."
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300  focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    className="w-full pl-10 pr-4 py-2 sm:py-3 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors duration-200"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                   />
@@ -303,11 +313,11 @@ const DeliveryAgents = () => {
               </form>
 
               {/* Filters */}
-              <div className="flex flex-wrap gap-4">
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                 <select
                   value={filters.applicationStatus}
                   onChange={(e) => handleFilterChange('applicationStatus', e.target.value)}
-                  className="px-3 py-2 border border-gray-300  focus:ring-2 focus:ring-green-500"
+                  className="flex-1 px-3 py-2 sm:py-3 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors duration-200"
                 >
                   <option value="">All Applications</option>
                   <option value="pending">Pending</option>
@@ -320,7 +330,7 @@ const DeliveryAgents = () => {
                 <select
                   value={filters.status}
                   onChange={(e) => handleFilterChange('status', e.target.value)}
-                  className="px-3 py-2 border border-gray-300  focus:ring-2 focus:ring-green-500"
+                  className="flex-1 px-3 py-2 sm:py-3 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors duration-200"
                 >
                   <option value="">All Status</option>
                   <option value="active">Active</option>
@@ -329,7 +339,7 @@ const DeliveryAgents = () => {
 
                 <button
                   onClick={fetchAgents}
-                  className="px-4 py-2 bg-green-600 text-white  hover:bg-green-700 flex items-center gap-2"
+                  className="px-4 py-2 sm:py-3 bg-green-600 text-white hover:bg-green-700 flex items-center justify-center gap-2 transition-colors duration-200 whitespace-nowrap"
                 >
                   <RefreshCw size={16} />
                   Refresh
@@ -340,19 +350,20 @@ const DeliveryAgents = () => {
         </div>
 
         {/* Agents Table */}
-        <div className="bg-white  shadow overflow-hidden">
+        <div className="bg-white shadow-sm border border-gray-200 overflow-hidden">
           {loading ? (
-            <div className="flex justify-center items-center p-12">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500"></div>
+            <div className="flex justify-center items-center p-8 sm:p-12">
+              <div className="animate-spin rounded-full h-8 w-8 sm:h-12 sm:w-12 border-b-2 border-green-500"></div>
             </div>
           ) : agents.length === 0 ? (
-            <div className="p-12 text-center text-gray-500">
-              <Truck size={48} className="mx-auto mb-4 text-gray-300" />
-              <p>No delivery agents found</p>
+            <div className="p-8 sm:p-12 text-center text-gray-500">
+              <Truck size={40} className="mx-auto mb-4 text-gray-300" />
+              <p className="text-sm sm:text-base">No delivery agents found</p>
             </div>
           ) : (
             <>
-              <div className="overflow-x-auto">
+              {/* Desktop Table View */}
+              <div className="hidden md:block overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
@@ -462,20 +473,100 @@ const DeliveryAgents = () => {
                 </table>
               </div>
 
+              {/* Mobile Card View */}
+              <div className="md:hidden">
+                <div className="divide-y divide-gray-200">
+                  {agents.map((agent) => (
+                    <div key={agent._id} className="p-4 hover:bg-gray-50">
+                      <div className="flex items-start gap-3">
+                        <div className="flex-shrink-0 w-12 h-12">
+                          <div className="w-full h-full rounded-full bg-gray-200 flex items-center justify-center">
+                            <User className="w-6 h-6 text-gray-400" />
+                          </div>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start justify-between mb-2">
+                            <div className="flex-1 min-w-0">
+                              <h3 className="text-sm font-medium text-gray-900 truncate">
+                                {agent.personalInfo.firstName} {agent.personalInfo.lastName}
+                              </h3>
+                              <p className="text-xs text-gray-500 mt-0.5">
+                                Zone: {agent.status.deliveryZone?.name || 'Not assigned'}
+                              </p>
+                            </div>
+                            <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ml-2 flex-shrink-0 ${getStatusColor(agent.status.applicationStatus)}`}>
+                              {getStatusIcon(agent.status.applicationStatus)}
+                              {agent.status.applicationStatus.replace('_', ' ')}
+                            </span>
+                          </div>
+
+                          <div className="flex items-center gap-3 mb-3">
+                            <div className="flex items-center gap-1 text-xs text-gray-600">
+                              <Phone size={12} />
+                              {agent.personalInfo.phone}
+                            </div>
+                            {agent.status.isOnline && (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                                Online
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-3 mb-3">
+                            <div className="text-xs">
+                              <span className="text-gray-500">Vehicle:</span>
+                              <div className="font-medium text-gray-900 capitalize">{agent.vehicleInfo.vehicleType}</div>
+                              <div className="text-gray-600">{agent.vehicleInfo.vehicleNumber}</div>
+                            </div>
+                            <div className="text-xs">
+                              <span className="text-gray-500">Performance:</span>
+                              <div className="flex items-center gap-1 font-medium text-gray-900">
+                                <Star size={12} className="text-yellow-400" />
+                                {agent.status.rating.toFixed(1)}
+                              </div>
+                              <div className="text-gray-600">{agent.status.completedDeliveries} deliveries</div>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <button
+                                onClick={() => navigate(`/delivery-agents/${agent._id}`)}
+                                className="text-green-600 hover:text-green-900 p-1"
+                                title="View Details"
+                              >
+                                <Eye size={16} />
+                              </button>
+                              <button
+                                onClick={() => openStatusModal(agent)}
+                                className="text-blue-600 hover:text-blue-900 p-1"
+                                title="Update Status"
+                              >
+                                <Shield size={16} />
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
               {/* Pagination */}
               <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200">
                 <div className="flex-1 flex justify-between sm:hidden">
                   <button
                     onClick={() => setPagination(prev => ({ ...prev, page: prev.page - 1 }))}
                     disabled={pagination.page === 1}
-                    className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
+                    className="relative inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 transition-colors duration-200"
                   >
                     Previous
                   </button>
                   <button
                     onClick={() => setPagination(prev => ({ ...prev, page: prev.page + 1 }))}
                     disabled={pagination.page === pagination.totalPages}
-                    className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
+                    className="ml-3 relative inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 transition-colors duration-200"
                   >
                     Next
                   </button>
@@ -501,14 +592,14 @@ const DeliveryAgents = () => {
                       <button
                         onClick={() => setPagination(prev => ({ ...prev, page: prev.page - 1 }))}
                         disabled={pagination.page === 1}
-                        className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
+                        className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 transition-colors duration-200"
                       >
                         Previous
                       </button>
                       <button
                         onClick={() => setPagination(prev => ({ ...prev, page: prev.page + 1 }))}
                         disabled={pagination.page === pagination.totalPages}
-                        className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
+                        className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 transition-colors duration-200"
                       >
                         Next
                       </button>
@@ -522,72 +613,74 @@ const DeliveryAgents = () => {
 
         {/* Status Update Modal */}
         {showStatusModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white  p-6 w-full max-w-md">
-              <h3 className="text-lg font-semibold mb-4">Update Agent Status</h3>
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white w-full max-w-md max-h-[90vh] overflow-y-auto">
+              <div className="p-4 sm:p-6">
+                <h3 className="text-lg sm:text-xl font-semibold mb-4 sm:mb-6">Update Agent Status</h3>
 
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Application Status
-                  </label>
-                  <select
-                    value={statusUpdate.applicationStatus}
-                    onChange={(e) => setStatusUpdate(prev => ({ ...prev, applicationStatus: e.target.value }))}
-                    className="w-full border border-gray-300  px-3 py-2 focus:ring-2 focus:ring-green-500"
-                  >
-                    <option value="pending">Pending</option>
-                    <option value="under_review">Under Review</option>
-                    <option value="approved">Approved</option>
-                    <option value="rejected">Rejected</option>
-                    <option value="suspended">Suspended</option>
-                  </select>
+                <div className="space-y-4 sm:space-y-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Application Status
+                    </label>
+                    <select
+                      value={statusUpdate.applicationStatus}
+                      onChange={(e) => setStatusUpdate(prev => ({ ...prev, applicationStatus: e.target.value }))}
+                      className="w-full border border-gray-300 px-3 py-2 sm:py-3 focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors duration-200"
+                    >
+                      <option value="pending">Pending</option>
+                      <option value="under_review">Under Review</option>
+                      <option value="approved">Approved</option>
+                      <option value="rejected">Rejected</option>
+                      <option value="suspended">Suspended</option>
+                    </select>
+                  </div>
+
+                  {statusUpdate.applicationStatus === 'approved' && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Delivery Zone
+                      </label>
+                      <input
+                        type="text"
+                        value={statusUpdate.deliveryZone}
+                        onChange={(e) => setStatusUpdate(prev => ({ ...prev, deliveryZone: e.target.value }))}
+                        placeholder="Enter delivery zone"
+                        className="w-full border border-gray-300 px-3 py-2 sm:py-3 focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors duration-200"
+                      />
+                    </div>
+                  )}
+
+                  {statusUpdate.applicationStatus === 'rejected' && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Rejection Reason
+                      </label>
+                      <textarea
+                        value={statusUpdate.rejectionReason}
+                        onChange={(e) => setStatusUpdate(prev => ({ ...prev, rejectionReason: e.target.value }))}
+                        placeholder="Enter reason for rejection"
+                        className="w-full border border-gray-300 px-3 py-2 sm:py-3 focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors duration-200"
+                        rows={3}
+                      />
+                    </div>
+                  )}
                 </div>
 
-                {statusUpdate.applicationStatus === 'approved' && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Delivery Zone
-                    </label>
-                    <input
-                      type="text"
-                      value={statusUpdate.deliveryZone}
-                      onChange={(e) => setStatusUpdate(prev => ({ ...prev, deliveryZone: e.target.value }))}
-                      placeholder="Enter delivery zone"
-                      className="w-full border border-gray-300  px-3 py-2 focus:ring-2 focus:ring-green-500"
-                    />
-                  </div>
-                )}
-
-                {statusUpdate.applicationStatus === 'rejected' && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Rejection Reason
-                    </label>
-                    <textarea
-                      value={statusUpdate.rejectionReason}
-                      onChange={(e) => setStatusUpdate(prev => ({ ...prev, rejectionReason: e.target.value }))}
-                      placeholder="Enter reason for rejection"
-                      className="w-full border border-gray-300  px-3 py-2 focus:ring-2 focus:ring-green-500"
-                      rows={3}
-                    />
-                  </div>
-                )}
-              </div>
-
-              <div className="flex justify-end gap-3 mt-6">
-                <button
-                  onClick={() => setShowStatusModal(false)}
-                  className="px-4 py-2 text-gray-700 border border-gray-300  hover:bg-gray-50"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={updateAgentStatus}
-                  className="px-4 py-2 bg-green-600 text-white  hover:bg-green-700"
-                >
-                  Update Status
-                </button>
+                <div className="flex flex-col sm:flex-row justify-end gap-3 mt-6 sm:mt-8">
+                  <button
+                    onClick={() => setShowStatusModal(false)}
+                    className="w-full sm:w-auto px-4 py-2 sm:py-3 text-gray-700 border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors duration-200"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={updateAgentStatus}
+                    className="w-full sm:w-auto px-4 py-2 sm:py-3 bg-green-600 text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors duration-200"
+                  >
+                    Update Status
+                  </button>
+                </div>
               </div>
             </div>
           </div>

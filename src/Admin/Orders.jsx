@@ -169,15 +169,15 @@ const Orders = () => {
   };
 
   const StatCard = ({ title, value, icon: Icon, color = 'text-gray-600' }) => (
-    <div className="bg-white rounded-lg shadow p-6">
+    <div className="bg-white shadow-sm border border-gray-200 p-4 sm:p-6">
       <div className="flex items-center justify-between">
-        <div>
-          <p className="text-sm font-medium text-gray-500">{title}</p>
-          <p className={`text-2xl font-bold ${color}`}>
+        <div className="flex-1 min-w-0">
+          <p className="text-xs sm:text-sm font-medium text-gray-500 truncate">{title}</p>
+          <p className={`text-lg sm:text-2xl font-bold ${color} mt-1`}>
             {typeof value === 'number' ? value.toLocaleString() : value}
           </p>
         </div>
-        <Icon className={`h-8 w-8 ${color}`} />
+        <Icon className={`h-6 w-6 sm:h-8 sm:w-8 ${color} flex-shrink-0 ml-2`} />
       </div>
     </div>
   );
@@ -236,47 +236,61 @@ const Orders = () => {
 
   return (
     <Layout title="Orders Management">
-      <div className="p-6">
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <StatCard
-            title="Total Orders"
-            value={stats.totalOrders || 0}
-            icon={ShoppingCart}
-            color="text-blue-600"
-          />
-          <StatCard
-            title="Today's Orders"
-            value={stats.todayOrders || 0}
-            icon={Calendar}
-            color="text-green-600"
-          />
-          <StatCard
-            title="Active Orders"
-            value={stats.activeOrders || 0}
-            icon={Clock}
-            color="text-orange-600"
-          />
-          <StatCard
-            title="Total Revenue"
-            value={`₹${(stats.totalRevenue || 0).toLocaleString()}`}
-            icon={DollarSign}
-            color="text-purple-600"
-          />
+      <div className="p-4 sm:p-6">
+        {/* Header Section */}
+        <div className="mb-6 sm:mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-900 flex items-center">
+                <ShoppingCart className="mr-2 sm:mr-3 text-green-600" size={24} />
+                <span className="hidden sm:inline">Orders Management</span>
+                <span className="sm:hidden">Orders</span>
+              </h1>
+              <p className="text-gray-600 mt-1 text-sm sm:text-base">Monitor and manage all customer orders</p>
+            </div>
+          </div>
+
+          {/* Stats Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mt-4 sm:mt-6">
+            <StatCard
+              title="Total Orders"
+              value={stats.totalOrders || 0}
+              icon={ShoppingCart}
+              color="text-blue-600"
+            />
+            <StatCard
+              title="Today's Orders"
+              value={stats.todayOrders || 0}
+              icon={Calendar}
+              color="text-green-600"
+            />
+            <StatCard
+              title="Active Orders"
+              value={stats.activeOrders || 0}
+              icon={Clock}
+              color="text-orange-600"
+            />
+            <StatCard
+              title="Total Revenue"
+              value={`₹${(stats.totalRevenue || 0).toLocaleString()}`}
+              icon={DollarSign}
+              color="text-purple-600"
+            />
+          </div>
         </div>
 
         {/* Filters and Search */}
-        <div className="bg-white rounded-lg shadow mb-6">
-          <div className="p-6 border-b border-gray-200">
-            <div className="flex flex-col lg:flex-row gap-4">
+        <div className="bg-white shadow-sm border border-gray-200 mb-4 sm:mb-6">
+          <div className="p-4 sm:p-6">
+            <div className="flex flex-col gap-4">
               {/* Search */}
-              <form onSubmit={handleSearch} className="flex-1">
+              <form onSubmit={handleSearch} className="w-full">
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
                   <input
                     type="text"
                     placeholder="Search by order number, customer name, or phone..."
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    className="w-full pl-10 pr-4 py-2 sm:py-3 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors duration-200"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                   />
@@ -284,11 +298,11 @@ const Orders = () => {
               </form>
 
               {/* Filters */}
-              <div className="flex flex-wrap gap-4">
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                 <select
                   value={filters.status}
                   onChange={(e) => handleFilterChange('status', e.target.value)}
-                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+                  className="flex-1 px-3 py-2 sm:py-3 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors duration-200"
                 >
                   <option value="">All Status</option>
                   <option value="placed">Placed</option>
@@ -304,7 +318,7 @@ const Orders = () => {
                 <select
                   value={filters.paymentStatus}
                   onChange={(e) => handleFilterChange('paymentStatus', e.target.value)}
-                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+                  className="flex-1 px-3 py-2 sm:py-3 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors duration-200"
                 >
                   <option value="">All Payments</option>
                   <option value="pending">Pending</option>
@@ -315,7 +329,7 @@ const Orders = () => {
 
                 <button
                   onClick={fetchOrders}
-                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-2"
+                  className="px-4 py-2 sm:py-3 bg-green-600 text-white hover:bg-green-700 flex items-center justify-center gap-2 transition-colors duration-200 whitespace-nowrap"
                 >
                   <RefreshCw size={16} />
                   Refresh
@@ -326,19 +340,20 @@ const Orders = () => {
         </div>
 
         {/* Orders Table */}
-        <div className="bg-white rounded-lg shadow overflow-hidden">
+        <div className="bg-white shadow-sm border border-gray-200 overflow-hidden">
           {loading ? (
-            <div className="flex justify-center items-center p-12">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500"></div>
+            <div className="flex justify-center items-center p-8 sm:p-12">
+              <div className="animate-spin rounded-full h-8 w-8 sm:h-12 sm:w-12 border-b-2 border-green-500"></div>
             </div>
           ) : orders.length === 0 ? (
-            <div className="p-12 text-center text-gray-500">
-              <ShoppingCart size={48} className="mx-auto mb-4 text-gray-300" />
-              <p>No orders found</p>
+            <div className="p-8 sm:p-12 text-center text-gray-500">
+              <ShoppingCart size={40} className="mx-auto mb-4 text-gray-300" />
+              <p className="text-sm sm:text-base">No orders found</p>
             </div>
           ) : (
             <>
-              <div className="overflow-x-auto">
+              {/* Desktop Table View */}
+              <div className="hidden md:block overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
@@ -450,57 +465,132 @@ const Orders = () => {
                 </table>
               </div>
 
-              {/* Pagination */}
-              <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200">
-                <div className="flex-1 flex justify-between sm:hidden">
-                  <button
-                    onClick={() => setPagination(prev => ({ ...prev, page: prev.page - 1 }))}
-                    disabled={pagination.page === 1}
-                    className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
-                  >
-                    Previous
-                  </button>
-                  <button
-                    onClick={() => setPagination(prev => ({ ...prev, page: prev.page + 1 }))}
-                    disabled={pagination.page === pagination.totalPages}
-                    className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
-                  >
-                    Next
-                  </button>
+              {/* Mobile Card View */}
+              <div className="md:hidden">
+                <div className="divide-y divide-gray-200">
+                  {orders.map((order) => (
+                    <div key={order._id} className="p-4 hover:bg-gray-50">
+                      <div className="flex items-start gap-3">
+                        <div className="flex-shrink-0 w-12 h-12">
+                          <div className="w-full h-full rounded-full bg-gray-200 flex items-center justify-center">
+                            <ShoppingCart className="w-6 h-6 text-gray-400" />
+                          </div>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start justify-between mb-2">
+                            <div className="flex-1 min-w-0">
+                              <h3 className="text-sm font-medium text-gray-900 truncate">
+                                #{order.orderNumber}
+                              </h3>
+                              <p className="text-xs text-gray-500 mt-0.5">
+                                {new Date(order.createdAt).toLocaleDateString()} • {order.items.length} item(s)
+                              </p>
+                            </div>
+                            <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ml-2 flex-shrink-0 ${getStatusColor(order.status.current)}`}>
+                              {getStatusIcon(order.status.current)}
+                              {order.status.current.replace('_', ' ')}
+                            </span>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-3 mb-3">
+                            <div className="text-xs">
+                              <span className="text-gray-500">Customer:</span>
+                              <div className="font-medium text-gray-900 truncate">
+                                {order.customer.name || order.customer.phone || 'Customer'}
+                              </div>
+                              <div className="text-gray-600">{order.customer.phone || 'N/A'}</div>
+                            </div>
+                            <div className="text-xs">
+                              <span className="text-gray-500">Amount:</span>
+                              <div className="font-medium text-gray-900">₹{order.pricing.totalAmount}</div>
+                              <div className={`text-xs ${
+                                order.payment.status === 'paid' ? 'text-green-600' : 
+                                order.payment.status === 'failed' ? 'text-red-600' : 'text-yellow-600'
+                              }`}>
+                                {order.payment.status}
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <button
+                                onClick={() => navigate(`/orders/${order._id}`)}
+                                className="text-green-600 hover:text-green-900 p-1"
+                                title="View Details"
+                              >
+                                <Eye size={16} />
+                              </button>
+                              <select
+                                value={order.status.current}
+                                onChange={(e) => updateOrderStatus(order._id, e.target.value)}
+                                className="text-xs border border-gray-300 rounded px-2 py-1 focus:ring-2 focus:ring-green-500"
+                              >
+                                <option value="placed">Placed</option>
+                                <option value="confirmed">Confirmed</option>
+                                <option value="preparing">Preparing</option>
+                                <option value="ready_for_pickup">Ready for Pickup</option>
+                                <option value="picked_up">Picked Up</option>
+                                <option value="out_for_delivery">Out for Delivery</option>
+                                <option value="delivered">Delivered</option>
+                                <option value="cancelled">Cancelled</option>
+                              </select>
+                            </div>
+                            {order.delivery && order.delivery.agentName && (
+                              <div className="text-xs text-gray-500 text-right">
+                                <div className="font-medium">{order.delivery.agentName}</div>
+                                <div>{order.delivery.agentPhone || 'N/A'}</div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-                <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-                  <div>
-                    <p className="text-sm text-gray-700">
-                      Showing{' '}
-                      <span className="font-medium">
-                        {(pagination.page - 1) * pagination.limit + 1}
-                      </span>{' '}
-                      to{' '}
-                      <span className="font-medium">
-                        {Math.min(pagination.page * pagination.limit, pagination.total)}
-                      </span>{' '}
-                      of{' '}
-                      <span className="font-medium">{pagination.total}</span>{' '}
-                      results
-                    </p>
+              </div>
+
+              {/* Pagination */}
+              <div className="bg-white px-4 py-3 border-t border-gray-200">
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+                  <div className="text-xs sm:text-sm text-gray-700">
+                    Showing {Math.min((pagination.page - 1) * pagination.limit + 1, pagination.total)} to{' '}
+                    {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total} orders
                   </div>
-                  <div>
-                    <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
-                      <button
-                        onClick={() => setPagination(prev => ({ ...prev, page: prev.page - 1 }))}
-                        disabled={pagination.page === 1}
-                        className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
-                      >
-                        Previous
-                      </button>
-                      <button
-                        onClick={() => setPagination(prev => ({ ...prev, page: prev.page + 1 }))}
-                        disabled={pagination.page === pagination.totalPages}
-                        className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
-                      >
-                        Next
-                      </button>
-                    </nav>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setPagination(prev => ({ ...prev, page: prev.page - 1 }))}
+                      disabled={pagination.page === 1}
+                      className="px-3 py-1.5 text-xs sm:text-sm border border-gray-300 rounded-md bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    >
+                      Previous
+                    </button>
+                    <div className="flex items-center gap-1">
+                      {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
+                        const pageNum = Math.max(1, Math.min(pagination.totalPages - 4, pagination.page - 2)) + i;
+                        if (pageNum > pagination.totalPages) return null;
+                        return (
+                          <button
+                            key={pageNum}
+                            onClick={() => setPagination(prev => ({ ...prev, page: pageNum }))}
+                            className={`px-2.5 py-1.5 text-xs sm:text-sm border rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500 ${
+                              pagination.page === pageNum
+                                ? 'bg-green-500 text-white border-green-500'
+                                : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                            }`}
+                          >
+                            {pageNum}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <button
+                      onClick={() => setPagination(prev => ({ ...prev, page: prev.page + 1 }))}
+                      disabled={pagination.page === pagination.totalPages}
+                      className="px-3 py-1.5 text-xs sm:text-sm border border-gray-300 rounded-md bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    >
+                      Next
+                    </button>
                   </div>
                 </div>
               </div>

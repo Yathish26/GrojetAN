@@ -237,128 +237,139 @@ const MarketArea = () => {
 
   return (
     <Layout title="Market Area">
-      <div className="p-6">
-      <div className="mb-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">Market Area Overview</h1>
-            <p className="text-gray-600">Delivery zones and merchant distribution across your market area</p>
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="text-right">
-              <div className="text-sm text-gray-500">Total Zones</div>
-              <div className="text-2xl font-bold text-green-600">{marketData.length}</div>
+      <div className="p-4 sm:p-6">
+        {/* Header Section */}
+        <div className="mb-4 sm:mb-6">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4 sm:mb-6">
+            <div>
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-900 flex items-center">
+                <MapPin className="mr-2 sm:mr-3 text-green-600" size={24} />
+                <span className="hidden sm:inline">Market Area Overview</span>
+                <span className="sm:hidden">Market Area</span>
+              </h1>
+              <p className="text-gray-600 mt-1 text-sm sm:text-base">Delivery zones and merchant distribution across your market area</p>
             </div>
-            <button
-              onClick={handleShowMap}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 transition-colors"
-            >
-              <Map className="w-5 h-5" />
-              Market Map
-            </button>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 w-full sm:w-auto">
+              <div className="text-left sm:text-right">
+                <div className="text-sm text-gray-500">Total Zones</div>
+                <div className="text-xl sm:text-2xl font-bold text-green-600">{marketData.length}</div>
+              </div>
+              <button
+                onClick={handleShowMap}
+                className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+              >
+                <Map className="w-4 h-4 sm:w-5 sm:h-5" />
+                Market Map
+              </button>
+            </div>
+          </div>
+
+          {/* Statistics Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+            <div className="bg-blue-50 p-3 sm:p-4">
+              <div className="text-sm text-blue-600 font-medium">Total Merchants</div>
+              <div className="text-xl sm:text-2xl font-bold text-blue-700">
+                {marketData.reduce((sum, zone) => sum + zone.merchantCount, 0)}
+              </div>
+            </div>
+            <div className="bg-green-50 p-3 sm:p-4">
+              <div className="text-sm text-green-600 font-medium">Active Zones</div>
+              <div className="text-xl sm:text-2xl font-bold text-green-700">
+                {marketData.filter(zone => zone.merchantCount > 0).length}
+              </div>
+            </div>
+            <div className="bg-orange-50 p-3 sm:p-4">
+              <div className="text-sm text-orange-600 font-medium">Empty Zones</div>
+              <div className="text-xl sm:text-2xl font-bold text-orange-700">
+                {marketData.filter(zone => zone.merchantCount === 0).length}
+              </div>
+            </div>
           </div>
         </div>
 
-        <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="bg-blue-50 p-4">
-            <div className="text-sm text-blue-600 font-medium">Total Merchants</div>
-            <div className="text-2xl font-bold text-blue-700">
-              {marketData.reduce((sum, zone) => sum + zone.merchantCount, 0)}
-            </div>
-          </div>
-          <div className="bg-green-50 p-4">
-            <div className="text-sm text-green-600 font-medium">Active Zones</div>
-            <div className="text-2xl font-bold text-green-700">
-              {marketData.filter(zone => zone.merchantCount > 0).length}
-            </div>
-          </div>
-          <div className="bg-orange-50 p-4">
-            <div className="text-sm text-orange-600 font-medium">Empty Zones</div>
-            <div className="text-2xl font-bold text-orange-700">
-              {marketData.filter(zone => zone.merchantCount === 0).length}
-            </div>
-          </div>
-        </div>
-      </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {/* Zone Cards Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {marketData.map((zone) => (
             <div
               key={zone.id}
-              className="bg-white shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow"
+              className="bg-white shadow-sm border border-gray-200 p-4 sm:p-6 hover:shadow-md transition-shadow"
             >
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-green-50">
-                    <MapPin className="w-6 h-6 text-green-600" />
+              <div className="flex items-start justify-between mb-3 sm:mb-4">
+                <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+                  <div className="p-1.5 sm:p-2 bg-green-50 flex-shrink-0">
+                    <MapPin className="w-5 h-5 sm:w-6 sm:h-6 text-green-600" />
                   </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-900">{zone.name}</h3>
+                  <div className="min-w-0 flex-1">
+                    <h3 className="font-semibold text-gray-900 text-sm sm:text-base truncate">{zone.name}</h3>
                     {zone.description && (
-                      <p className="text-sm text-gray-500">{zone.description}</p>
+                      <p className="text-xs sm:text-sm text-gray-500 mt-0.5 line-clamp-2">{zone.description}</p>
                     )}
                   </div>
                 </div>
               </div>
 
-              <div className="flex items-center gap-2">
-                <Store className="w-5 h-5 text-blue-600" />
-                <span className="text-sm font-medium text-gray-700">
-                  {zone.merchantCount} Merchant{zone.merchantCount !== 1 ? 's' : ''}
-                </span>
-              </div>
-
-              {zone.merchantCount === 0 && (
-                <div className="mt-2 text-xs text-gray-500">
-                  No merchants in this zone
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5 sm:gap-2">
+                  <Store className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 flex-shrink-0" />
+                  <span className="text-xs sm:text-sm font-medium text-gray-700">
+                    {zone.merchantCount} Merchant{zone.merchantCount !== 1 ? 's' : ''}
+                  </span>
                 </div>
-              )}
+                {zone.merchantCount === 0 && (
+                  <div className="text-xs text-gray-500 bg-gray-50 px-2 py-1 rounded">
+                    Empty zone
+                  </div>
+                )}
+              </div>
             </div>
           ))}
         </div>
 
+        {/* Empty State */}
         {marketData.length === 0 && (
-          <div className="text-center py-12">
-            <MapPin className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No Delivery Zones Found</h3>
-            <p className="text-gray-500">Create delivery zones to see market area data</p>
+          <div className="text-center py-8 sm:py-12">
+            <MapPin className="w-10 h-10 sm:w-12 sm:h-12 text-gray-400 mx-auto mb-3 sm:mb-4" />
+            <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-2">No Delivery Zones Found</h3>
+            <p className="text-gray-500 text-sm sm:text-base">Create delivery zones to see market area data</p>
           </div>
         )}
       </div>
 
       {/* Market Map Modal */}
       {showMap && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white shadow-xl w-full max-w-6xl h-[90vh] flex flex-col">
-            <div className="flex items-center justify-between p-4 border-b">
-              <h2 className="text-xl font-semibold text-gray-900">Market Map</h2>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
+          <div className="bg-white shadow-xl w-full max-w-6xl h-[95vh] sm:h-[90vh] flex flex-col">
+            <div className="flex items-center justify-between p-3 sm:p-4 border-b">
+              <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Market Map</h2>
               <button
                 onClick={() => setShowMap(false)}
-                className="p-2 hover:bg-gray-100"
+                className="p-1.5 sm:p-2 hover:bg-gray-100 rounded-full transition-colors"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4 sm:w-5 sm:h-5" />
               </button>
             </div>
 
-            <div className="flex-1 p-4">
+            <div className="flex-1 p-2 sm:p-4 min-h-0">
               {mapLoading ? (
-                <div className="flex items-center justify-center h-full">
-                  <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-                  <span className="ml-2 text-gray-600">Loading map data...</span>
+                <div className="flex flex-col items-center justify-center h-full">
+                  <Loader2 className="w-6 h-6 sm:w-8 sm:h-8 animate-spin text-blue-600 mb-2" />
+                  <span className="text-gray-600 text-sm sm:text-base">Loading map data...</span>
                 </div>
               ) : (
-                <MarketMap zones={mapData.zones} merchants={mapData.merchants} />
+                <div className="h-full w-full">
+                  <MarketMap zones={mapData.zones} merchants={mapData.merchants} />
+                </div>
               )}
             </div>
 
-            <div className="p-4 border-t bg-gray-50">
-              <div className="flex items-center gap-6 text-sm">
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-green-500 opacity-25 border border-green-500"></div>
+            <div className="p-3 sm:p-4 border-t bg-gray-50">
+              <div className="flex flex-wrap items-center gap-3 sm:gap-6 text-xs sm:text-sm">
+                <div className="flex items-center gap-1.5 sm:gap-2">
+                  <div className="w-3 h-3 sm:w-4 sm:h-4 bg-green-500 opacity-25 border border-green-500 rounded-sm"></div>
                   <span>Delivery Zones ({mapData.zones.length})</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-blue-500"></div>
+                <div className="flex items-center gap-1.5 sm:gap-2">
+                  <div className="w-3 h-3 sm:w-4 sm:h-4 bg-blue-500 rounded-full"></div>
                   <span>Merchants ({mapData.merchants.length})</span>
                 </div>
               </div>

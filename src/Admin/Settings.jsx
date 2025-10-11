@@ -128,6 +128,11 @@ export default function Settings() {
         credentials: 'include'
       });
       
+      if (response.status === 401) {
+        navigate('/login', { replace: true });
+        return;
+      }
+      
       if (response.ok) {
         const data = await response.json();
         if (data.tokenValid === false) {
@@ -154,6 +159,11 @@ export default function Settings() {
       const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/privacy`, {
         credentials: 'include'
       });
+      
+      if (response.status === 401) {
+        navigate('/login', { replace: true });
+        return;
+      }
       
       if (response.ok) {
         const data = await response.json();
@@ -182,6 +192,11 @@ export default function Settings() {
         credentials: 'include'
       });
 
+      if (response.status === 401) {
+        navigate('/login', { replace: true });
+        return;
+      }
+
       if (response.ok) {
         const data = await response.json();
         if (data.tokenValid === false) {
@@ -208,6 +223,11 @@ export default function Settings() {
       const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/faq`, {
         credentials: 'include'
       });
+      
+      if (response.status === 401) {
+        navigate('/login', { replace: true });
+        return;
+      }
       
       if (response.ok) {
         const data = await response.json();
@@ -241,6 +261,11 @@ export default function Settings() {
         credentials: 'include',
         body: JSON.stringify(settings)
       });
+
+      if (response.status === 401) {
+        navigate('/login', { replace: true });
+        return;
+      }
 
       if (!response.ok) {
         throw new Error('Failed to save settings');
@@ -292,11 +317,20 @@ export default function Settings() {
         })
       });
 
+      if (response.status === 401) {
+        navigate('/login', { replace: true });
+        return;
+      }
+
       if (!response.ok) {
         throw new Error('Failed to save terms');
       }
 
       const data = await response.json();
+      if (data.tokenValid === false) {
+          navigate('/login', { replace: true });
+          return;
+      }
       setSettings(prev => ({
         ...prev,
         terms: {
@@ -330,11 +364,20 @@ export default function Settings() {
         })
       });
 
+      if (response.status === 401) {
+        navigate('/login', { replace: true });
+        return;
+      }
+
       if (!response.ok) {
         throw new Error('Failed to save privacy policy');
       }
 
       const data = await response.json();
+      if (data.tokenValid === false) {
+          navigate('/login', { replace: true });
+          return;
+      }
       setSettings(prev => ({
         ...prev,
         privacy: {
@@ -366,11 +409,20 @@ export default function Settings() {
         body: JSON.stringify(settings.support)
       });
 
+      if (response.status === 401) {
+        navigate('/login', { replace: true });
+        return;
+      }
+
       if (!response.ok) {
         throw new Error('Failed to save support settings');
       }
 
       const data = await response.json();
+      if (data.tokenValid === false) {
+          navigate('/login', { replace: true });
+          return;
+      }
       setSettings(prev => ({
         ...prev,
         support: data.support
@@ -1323,6 +1375,11 @@ function FaqManager({ faqs, onUpdate, appType }) {
         credentials: 'include',
         body: JSON.stringify({ faqs })
       });
+
+      if (response.status === 401) {
+        navigate('/login', { replace: true });
+        return;
+      }
 
       if (!response.ok) {
         throw new Error('Failed to save FAQs');

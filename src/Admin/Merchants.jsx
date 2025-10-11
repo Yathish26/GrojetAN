@@ -374,28 +374,29 @@ const Merchants = () => {
 
     return (
         <Layout title="Merchants">
-            <div className="space-y-6">
+            <div className="max-w-7xl mx-auto p-4 sm:p-6 space-y-4 sm:space-y-6">
                 {/* Header */}
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                     <div>
                         <h1 className="text-2xl font-bold text-gray-900">Merchants</h1>
-                        <p className="text-gray-600">Manage and monitor all merchant accounts</p>
+                        <p className="text-gray-600 text-sm sm:text-base">Manage and monitor all merchant accounts</p>
                     </div>
-                    <div className="flex gap-3">
+                    <div className="flex gap-3 flex-wrap">
                         <button
                             onClick={() => setShowMapModal(true)}
-                            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white hover:bg-blue-700"
+                            className="flex items-center justify-center gap-2 px-3 py-2 bg-blue-600 text-white hover:bg-blue-700 text-sm"
                         >
                             <Map size={16} />
-                            Merchants Map
+                            <span className="hidden sm:inline">Merchants Map</span>
+                            <span className="sm:hidden">Map</span>
                         </button>
                         <button
                             onClick={exportMerchants}
                             disabled={loading}
-                            className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="flex items-center justify-center gap-2 px-3 py-2 bg-white border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                         >
                             {loading ? (
-                                <div className="animate-spin h-4 w-4 border-4 border-gray-300 border-t-gray-600 rounded-full"></div>
+                                <div className="animate-spin h-4 w-4 border-2 border-gray-300 border-t-gray-600 rounded-full"></div>
                             ) : (
                                 <Download size={16} />
                             )}
@@ -403,16 +404,17 @@ const Merchants = () => {
                         </button>
                         <button
                             onClick={() => navigate('/merchants/add')}
-                            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white hover:bg-green-700"
+                            className="flex items-center justify-center gap-2 px-3 py-2 bg-green-600 text-white hover:bg-green-700 text-sm"
                         >
                             <Plus size={16} />
-                            Add Merchant
+                            <span className="hidden sm:inline">Add Merchant</span>
+                            <span className="sm:hidden">Add</span>
                         </button>
                     </div>
                 </div>
 
                 {/* Search and Filters */}
-                <div className="bg-white p-6 shadow-sm border border-gray-200">
+                <div className="bg-white p-4 sm:p-6 shadow-sm border border-gray-200">
                     <div className="flex flex-col lg:flex-row gap-4">
                         {/* Search */}
                         <div className="flex-1">
@@ -420,11 +422,11 @@ const Merchants = () => {
                                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
                                 <input
                                     type="text"
-                                    placeholder="Search merchants by name, email, phone, or ID..."
+                                    placeholder="Search merchants..."
                                     value={searchInput}
                                     onChange={(e) => setSearchInput(e.target.value)}
                                     onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                                    className="w-full pl-10 pr-4 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                    className="w-full pl-10 pr-4 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
                                 />
                             </div>
                         </div>
@@ -432,7 +434,7 @@ const Merchants = () => {
                         {/* Search Button */}
                         <button
                             onClick={handleSearch}
-                            className="px-6 py-2 bg-green-600 text-white hover:bg-green-700 flex items-center gap-2"
+                            className="px-4 py-2 bg-green-600 text-white hover:bg-green-700 flex items-center justify-center gap-2 text-sm whitespace-nowrap"
                         >
                             <Search size={16} />
                             Search
@@ -441,7 +443,7 @@ const Merchants = () => {
                         {/* Filters Toggle */}
                         <button
                             onClick={() => setShowFilters(!showFilters)}
-                            className="flex items-center gap-2 px-4 py-2 bg-gray-100 border border-gray-300 hover:bg-gray-200"
+                            className="flex items-center justify-center gap-2 px-4 py-2 bg-gray-100 border border-gray-300 hover:bg-gray-200 text-sm whitespace-nowrap"
                         >
                             <Filter size={16} />
                             Filters
@@ -471,58 +473,58 @@ const Merchants = () => {
                 </div>
 
                 {/* Stats Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    <div className="bg-white p-6 shadow-sm border border-gray-200">
+                <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
+                    <div className="bg-white p-3 sm:p-6 shadow-sm border border-gray-200">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-sm font-medium text-gray-600">Total Merchants</p>
-                                <p className="text-2xl font-bold text-gray-900">{stats.totalMerchants}</p>
+                                <p className="text-xs sm:text-sm font-medium text-gray-600">Total Merchants</p>
+                                <p className="text-lg sm:text-2xl font-bold text-gray-900">{stats.totalMerchants}</p>
                             </div>
-                            <Store className="w-8 h-8 text-green-600" />
+                            <Store className="w-6 h-6 sm:w-8 sm:h-8 text-green-600" />
                         </div>
                     </div>
-                    <div className="bg-white p-6 shadow-sm border border-gray-200">
+                    <div className="bg-white p-3 sm:p-6 shadow-sm border border-gray-200">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-sm font-medium text-gray-600">Open Merchants</p>
-                                <p className="text-2xl font-bold text-green-600">
+                                <p className="text-xs sm:text-sm font-medium text-gray-600">Open Merchants</p>
+                                <p className="text-lg sm:text-2xl font-bold text-green-600">
                                     {stats.openMerchants}
                                 </p>
                             </div>
-                            <div className="w-8 h-8 bg-green-100 flex items-center justify-center">
-                                <span className="text-green-600 font-bold">O</span>
+                            <div className="w-6 h-6 sm:w-8 sm:h-8 bg-green-100 flex items-center justify-center">
+                                <span className="text-green-600 font-bold text-xs sm:text-sm">O</span>
                             </div>
                         </div>
                     </div>
-                    <div className="bg-white p-6 shadow-sm border border-gray-200">
+                    <div className="bg-white p-3 sm:p-6 shadow-sm border border-gray-200">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-sm font-medium text-gray-600">On Hold</p>
-                                <p className="text-2xl font-bold text-yellow-600">
+                                <p className="text-xs sm:text-sm font-medium text-gray-600">On Hold</p>
+                                <p className="text-lg sm:text-2xl font-bold text-yellow-600">
                                     {stats.holdMerchants}
                                 </p>
                             </div>
-                            <div className="w-8 h-8 bg-yellow-100 flex items-center justify-center">
-                                <span className="text-yellow-600 font-bold">H</span>
+                            <div className="w-6 h-6 sm:w-8 sm:h-8 bg-yellow-100 flex items-center justify-center">
+                                <span className="text-yellow-600 font-bold text-xs sm:text-sm">H</span>
                             </div>
                         </div>
                     </div>
-                    <div className="bg-white p-6 shadow-sm border border-gray-200">
+                    <div className="bg-white p-3 sm:p-6 shadow-sm border border-gray-200">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-sm font-medium text-gray-600">Total Revenue</p>
-                                <p className="text-2xl font-bold text-blue-600">
+                                <p className="text-xs sm:text-sm font-medium text-gray-600">Total Revenue</p>
+                                <p className="text-lg sm:text-2xl font-bold text-blue-600">
                                     {formatCurrency(stats.totalRevenue)}
                                 </p>
                             </div>
-                            <DollarSign className="w-8 h-8 text-blue-600" />
+                            <DollarSign className="w-6 h-6 sm:w-8 sm:h-8 text-blue-600" />
                         </div>
                     </div>
                 </div>
 
                 {/* Merchants List */}
                 <div className="bg-white shadow-sm border border-gray-200 overflow-hidden">
-                    <div className="px-6 py-4 border-b border-gray-200">
+                    <div className="px-4 sm:px-6 py-4 border-b border-gray-200">
                         <h2 className="text-lg font-semibold text-gray-900">
                             Merchants ({filteredMerchants.length})
                         </h2>
@@ -535,7 +537,8 @@ const Merchants = () => {
                         </div>
                     ) : (
                         <>
-                            <div className="overflow-x-auto">
+                            {/* Desktop Table View */}
+                            <div className="hidden md:block overflow-x-auto">
                                 <table className="w-full">
                                     <thead className="bg-gray-50">
                                         <tr>
@@ -630,47 +633,115 @@ const Merchants = () => {
                                 </table>
                             </div>
 
+                            {/* Mobile Card View */}
+                            <div className="md:hidden">
+                                {filteredMerchants.length === 0 ? (
+                                    <div className="px-4 py-12 text-center text-gray-500">
+                                        No merchants found matching your criteria.
+                                    </div>
+                                ) : (
+                                    <div className="divide-y divide-gray-200">
+                                        {filteredMerchants.map((merchant) => (
+                                            <div key={merchant.id} className="p-4 hover:bg-gray-50">
+                                                <div className="flex items-start gap-3">
+                                                    <div className="w-12 h-12 bg-green-100 flex items-center justify-center overflow-hidden flex-shrink-0">
+                                                        {merchant.brandingInfo?.logoUrl ? (
+                                                            <img
+                                                                src={merchant.brandingInfo.logoUrl}
+                                                                alt={`${merchant.name} logo`}
+                                                                className="w-full h-full object-cover"
+                                                                onError={(e) => {
+                                                                    e.target.style.display = 'none';
+                                                                    e.target.nextSibling.style.display = 'block';
+                                                                }}
+                                                            />
+                                                        ) : null}
+                                                        <Store className="w-6 h-6 text-green-600" style={{ display: merchant.brandingInfo?.logoUrl ? 'none' : 'block' }} />
+                                                    </div>
+                                                    <div className="flex-1 min-w-0">
+                                                        <div className="flex items-start justify-between">
+                                                            <div className="flex-1 min-w-0">
+                                                                <h3 className="text-sm font-medium text-gray-900 truncate">
+                                                                    {merchant.name}
+                                                                </h3>
+                                                                <p className="text-xs text-gray-500">ID: {merchant.merchantId}</p>
+                                                            </div>
+                                                            <span className={`inline-flex px-2 py-1 text-xs font-semibold ml-2 flex-shrink-0 ${getStatusColor(merchant.storeStatus)}`}>
+                                                                {getStatusIcon(merchant.storeStatus)} {merchant.storeStatus}
+                                                            </span>
+                                                        </div>
+                                                        
+                                                        <div className="mt-2 space-y-1">
+                                                            <div className="flex items-center gap-1 text-xs text-gray-600">
+                                                                <Mail className="w-3 h-3" />
+                                                                <span className="truncate">{merchant.email}</span>
+                                                            </div>
+                                                            <div className="flex items-center gap-1 text-xs text-gray-600">
+                                                                <Phone className="w-3 h-3" />
+                                                                <span>{merchant.phone}</span>
+                                                            </div>
+                                                        </div>
+
+                                                        <div className="mt-2 flex items-center justify-between">
+                                                            <div className="text-xs text-gray-600">
+                                                                {merchant.totalOrders} orders • {formatCurrency(merchant.totalRevenue)}
+                                                            </div>
+                                                            <button
+                                                                onClick={() => navigate(`/merchants/${merchant.id}`)}
+                                                                className="text-green-600 hover:text-green-900 text-xs font-medium"
+                                                            >
+                                                                View Details
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+
                             {/* Pagination */}
                             {(() => {
                                 console.log('Pagination check:', { totalPages, totalMerchants: stats.totalMerchants });
                                 return (totalPages > 1 || stats.totalMerchants > 10) && (
-                                    <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
-                                        <div className="text-sm text-gray-700">
+                                    <div className="px-4 sm:px-6 py-4 border-t border-gray-200 flex flex-col sm:flex-row items-center justify-between gap-3">
+                                        <div className="text-xs sm:text-sm text-gray-700 text-center sm:text-left">
                                             Showing page {currentPage} of {totalPages} ({stats.totalMerchants} total merchants)
                                         </div>
-                                    <div className="flex items-center space-x-2">
-                                        <button
-                                            onClick={() => handlePageChange(currentPage - 1)}
-                                            disabled={currentPage === 1}
-                                            className="px-3 py-1 border border-gray-300 text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-                                        >
-                                            Previous
-                                        </button>
-                                        {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                                            const pageNum = Math.max(1, Math.min(totalPages - 4, currentPage - 2)) + i;
-                                            return (
-                                                <button
-                                                    key={pageNum}
-                                                    onClick={() => handlePageChange(pageNum)}
-                                                    className={`px-3 py-1 border text-sm ${pageNum === currentPage
-                                                        ? 'bg-green-600 text-white border-green-600'
-                                                        : 'border-gray-300 hover:bg-gray-50'
-                                                        }`}
-                                                >
-                                                    {pageNum}
-                                                </button>
-                                            );
-                                        })}
-                                        <button
-                                            onClick={() => handlePageChange(currentPage + 1)}
-                                            disabled={currentPage === totalPages}
-                                            className="px-3 py-1 border border-gray-300 text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-                                        >
-                                            Next
-                                        </button>
+                                        <div className="flex items-center space-x-1 sm:space-x-2">
+                                            <button
+                                                onClick={() => handlePageChange(currentPage - 1)}
+                                                disabled={currentPage === 1}
+                                                className="px-2 sm:px-3 py-1 border border-gray-300 text-xs sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                                            >
+                                                Previous
+                                            </button>
+                                            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                                                const pageNum = Math.max(1, Math.min(totalPages - 4, currentPage - 2)) + i;
+                                                return (
+                                                    <button
+                                                        key={pageNum}
+                                                        onClick={() => handlePageChange(pageNum)}
+                                                        className={`px-2 sm:px-3 py-1 border text-xs sm:text-sm ${pageNum === currentPage
+                                                            ? 'bg-green-600 text-white border-green-600'
+                                                            : 'border-gray-300 hover:bg-gray-50'
+                                                            }`}
+                                                    >
+                                                        {pageNum}
+                                                    </button>
+                                                );
+                                            })}
+                                            <button
+                                                onClick={() => handlePageChange(currentPage + 1)}
+                                                disabled={currentPage === totalPages}
+                                                className="px-2 sm:px-3 py-1 border border-gray-300 text-xs sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                                            >
+                                                Next
+                                            </button>
+                                        </div>
                                     </div>
-                                </div>
-                            );
+                                );
                             })()}
                         </>
                     )}
@@ -679,27 +750,27 @@ const Merchants = () => {
 
             {/* Merchants Map Modal */}
             {showMapModal && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white shadow-xl max-w-6xl w-full mx-4 max-h-[90vh] overflow-hidden">
-                        <div className="flex items-center justify-between p-6 border-b border-gray-200">
-                            <div>
-                                <h2 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white shadow-xl max-w-6xl w-full max-h-[90vh] overflow-hidden rounded-lg">
+                        <div className="flex items-center justify-between p-4 sm:p-6 border-b border-gray-200">
+                            <div className="flex-1 min-w-0">
+                                <h2 className="text-lg sm:text-xl font-semibold text-gray-900 flex items-center gap-2">
                                     <Map size={20} />
-                                    Grojet Merchants Map View
+                                    <span className="truncate">Grojet Merchants Map View</span>
                                 </h2>
-                                <p className="text-sm text-gray-600 mt-1">
-                                    🟢 Green markers: Merchants with coordinates | 🔴 Red markers: Location not set (edit to add coordinates)
+                                <p className="text-xs sm:text-sm text-gray-600 mt-1">
+                                    🟢 Green markers: Merchants with coordinates | 🔴 Red markers: Location not set
                                 </p>
                             </div>
                             <button
                                 onClick={() => setShowMapModal(false)}
-                                className="p-2 hover:bg-gray-100"
+                                className="p-2 hover:bg-gray-100 ml-2 flex-shrink-0"
                             >
                                 <X size={20} />
                             </button>
                         </div>
-                        <div className="p-6">
-                            <div className="h-[600px] w-full overflow-hidden border border-gray-200">
+                        <div className="p-4 sm:p-6">
+                            <div className="h-[50vh] sm:h-[600px] w-full overflow-hidden border border-gray-200 rounded">
                                 <GoogleMap
                                     center={getMapCenterAndZoom().center}
                                     zoom={getMapCenterAndZoom().zoom}
@@ -795,8 +866,8 @@ const Merchants = () => {
                                     })}
                                 </GoogleMap>
                             </div>
-                            <div className="mt-4 flex items-center justify-between">
-                                <div className="text-sm text-gray-600">
+                            <div className="mt-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+                                <div className="text-xs sm:text-sm text-gray-600 text-center sm:text-left">
                                     Showing {filteredMerchants.length} merchants on map
                                     {filteredMerchants.filter(m => m.operationalInfo?.storeAddress?.coordinates?.latitude).length > 0 && (
                                         <span className="ml-2 text-green-600">
@@ -806,7 +877,7 @@ const Merchants = () => {
                                 </div>
                                 <button
                                     onClick={() => setShowMapModal(false)}
-                                    className="px-4 py-2 bg-gray-600 text-white hover:bg-gray-700"
+                                    className="px-4 py-2 bg-gray-600 text-white hover:bg-gray-700 w-full sm:w-auto"
                                 >
                                     Close Map
                                 </button>
