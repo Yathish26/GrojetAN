@@ -102,6 +102,21 @@ const AddMerchant = () => {
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [uploadingBanner, setUploadingBanner] = useState(false);
 
+  // Validate if location is properly selected
+  const isLocationValid = () => {
+    if (isManualEntry) {
+      return formData.storeAddress.coordinates.latitude && formData.storeAddress.coordinates.longitude;
+    }
+    return selectedLocation !== null;
+  };
+
+  // Check if form is valid for submission
+  const isFormValid = () => {
+    const hasRequiredFields = formData.merchantId && formData.legalName && formData.displayName &&
+                             formData.fullName && formData.mobile && formData.email && formData.password;
+    return hasRequiredFields && isLocationValid();
+  };
+
   // Handle location search
   const handlePlaceSelect = (placeData) => {
     if (placeData) {
@@ -221,6 +236,17 @@ const AddMerchant = () => {
     const form = e.target;
     if (!form.checkValidity()) {
       form.reportValidity();
+      return;
+    }
+
+    // Validate location selection
+    if (!isManualEntry && !selectedLocation) {
+      toast.error('Please select a valid business location from the search results or enable manual entry.');
+      return;
+    }
+
+    if (isManualEntry && (!formData.storeAddress.coordinates.latitude || !formData.storeAddress.coordinates.longitude)) {
+      toast.error('Please enter both latitude and longitude for manual location entry.');
       return;
     }
 
@@ -789,10 +815,28 @@ const AddMerchant = () => {
                         </div>
                       </div>
 
+                      {isManualEntry && (!formData.storeAddress.coordinates.latitude || !formData.storeAddress.coordinates.longitude) && (
+                        <div className="mt-2 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+                          <div className="flex items-center gap-2 text-yellow-700">
+                            <Navigation size={16} />
+                            <span className="text-sm font-medium">Coordinates Required</span>
+                          </div>
+                          <p className="text-sm text-yellow-600 mt-1">
+                            Please enter both latitude and longitude coordinates for the business location.
+                          </p>
+                        </div>
+                      )}
+
                       {!isManualEntry && !selectedLocation && (
-                        <p className="text-sm text-gray-500">
-                          Search for your business above or check "Not on Google Maps" to enter coordinates manually.
-                        </p>
+                        <div className="mt-2 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+                          <div className="flex items-center gap-2 text-yellow-700">
+                            <MapPin size={16} />
+                            <span className="text-sm font-medium">Location Required</span>
+                          </div>
+                          <p className="text-sm text-yellow-600 mt-1">
+                            Please search and select a valid business location from the dropdown above, or enable manual entry to enter coordinates directly.
+                          </p>
+                        </div>
                       )}
                     </div>
                   </div>
@@ -1036,7 +1080,7 @@ const AddMerchant = () => {
           <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end">
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || !isFormValid()}
               className="px-6 py-2 bg-green-600 text-white hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
             >
               {loading ? (
