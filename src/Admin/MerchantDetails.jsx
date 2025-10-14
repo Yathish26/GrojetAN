@@ -322,40 +322,42 @@ const MerchantDetails = () => {
 
   return (
     <Layout title="Merchant Details">
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex items-center gap-4">
             <button
               onClick={() => navigate('/merchants')}
-              className="flex items-center gap-2 px-3 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+              className="flex items-center gap-2 px-3 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors"
             >
               <ArrowLeft size={16} />
-              Back to Merchants
+              <span className="hidden sm:inline">Back to Merchants</span>
+              <span className="sm:hidden">Back</span>
             </button>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">{businessInfo.displayName || merchant.displayName || 'N/A'}</h1>
-              <p className="text-gray-600">Merchant ID: {businessInfo.merchantId || merchant.merchantId || 'N/A'}</p>
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-900">{businessInfo.displayName || merchant.displayName || 'N/A'}</h1>
+              <p className="text-sm sm:text-base text-gray-600">Merchant ID: {businessInfo.merchantId || merchant.merchantId || 'N/A'}</p>
             </div>
           </div>
-          <div className="flex gap-3">
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
             <button
               onClick={handleClearDeviceLogin}
-              className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white hover:bg-red-700"
+              className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-red-600 text-white hover:bg-red-700 rounded-md transition-colors text-sm sm:text-base"
             >
               <Settings size={16} />
-              Clear Device Login
+              <span className="hidden sm:inline">Clear Device Login</span>
+              <span className="sm:hidden">Clear Login</span>
             </button>
             <button
               onClick={() => navigate(`/merchants/${id}/inventory`)}
-              className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white hover:bg-green-700"
+              className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-green-600 text-white hover:bg-green-700 rounded-md transition-colors text-sm sm:text-base"
             >
               <Package size={16} />
               Inventory
             </button>
             <button
               onClick={handleEdit}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white hover:bg-blue-700"
+              className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-md transition-colors text-sm sm:text-base"
             >
               <Edit size={16} />
               Edit Merchant
@@ -364,15 +366,15 @@ const MerchantDetails = () => {
         </div>
 
         {/* Status Banner */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className={`p-4 border ${getStatusColor(merchant.status)}`}>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
+          <div className={`p-3 sm:p-4 border ${getStatusColor(merchant.status)} rounded-lg`}>
             <div className="flex items-center gap-3">
               {getStatusIcon(merchant.status)}
-              <div>
-                <h3 className="font-semibold capitalize">
+              <div className="min-w-0 flex-1">
+                <h3 className="font-semibold text-sm sm:text-base capitalize truncate">
                   Account: {merchant.status?.replace('_', ' ') || 'Unknown'}
                 </h3>
-                <p className="text-sm">
+                <p className="text-xs sm:text-sm mt-1">
                   {merchant.status === 'active' && 'This merchant is active and can receive orders.'}
                   {merchant.status === 'hold' && 'This merchant account is on hold.'}
                   {merchant.status === 'banned' && 'This merchant account has been banned.'}
@@ -382,14 +384,14 @@ const MerchantDetails = () => {
           </div>
 
           {merchant.storeStatus && (
-            <div className={`p-4 border ${getStoreStatusColor(merchant.storeStatus)}`}>
+            <div className={`p-3 sm:p-4 border ${getStoreStatusColor(merchant.storeStatus)} rounded-lg`}>
               <div className="flex items-center gap-3">
-                <Store className="w-5 h-5" />
-                <div>
-                  <h3 className="font-semibold capitalize">
+                <Store className="w-5 h-5 flex-shrink-0" />
+                <div className="min-w-0 flex-1">
+                  <h3 className="font-semibold text-sm sm:text-base capitalize truncate">
                     Store: {merchant.storeStatus?.replace('_', ' ') || 'Unknown'}
                   </h3>
-                  <p className="text-sm">
+                  <p className="text-xs sm:text-sm mt-1">
                     {merchant.storeStatus === 'open' && 'Store is currently open'}
                     {merchant.storeStatus === 'closed' && 'Store is currently closed'}
                   </p>
@@ -400,20 +402,20 @@ const MerchantDetails = () => {
         </div>
 
         {/* Basic Information */}
-        <div className="bg-white shadow-sm border border-gray-200 p-6">
+        <div className="bg-white shadow-sm border border-gray-200 p-4 sm:p-6 rounded-lg">
           <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
             <Building className="w-5 h-5" />
             Basic Information
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {brandingInfo.logoUrl && (
-              <div>
+              <div className="sm:col-span-2 lg:col-span-1">
                 <label className="text-sm font-medium text-gray-500">Store Logo</label>
                 <div className="mt-2">
                   <img
                     src={brandingInfo.logoUrl}
                     alt="Store Logo"
-                    className="w-16 h-16 object-cover border border-gray-200"
+                    className="w-16 h-16 sm:w-20 sm:h-20 object-cover border border-gray-200 rounded-lg"
                     onError={(e) => {
                       e.target.style.display = 'none';
                     }}
@@ -421,60 +423,60 @@ const MerchantDetails = () => {
                 </div>
               </div>
             )}
-            <div>
+            <div className={brandingInfo.logoUrl ? "" : "sm:col-span-2"}>
               <label className="text-sm font-medium text-gray-500">Display Name</label>
-              <p className="text-gray-900">{businessInfo.displayName || merchant.displayName || 'N/A'}</p>
+              <p className="text-gray-900 text-sm sm:text-base break-words">{businessInfo.displayName || merchant.displayName || 'N/A'}</p>
             </div>
             <div>
               <label className="text-sm font-medium text-gray-500">Merchant ID</label>
-              <p className="text-gray-900">{businessInfo.merchantId || merchant.merchantId || 'N/A'}</p>
+              <p className="text-gray-900 text-sm sm:text-base font-mono">{businessInfo.merchantId || merchant.merchantId || 'N/A'}</p>
             </div>
             <div>
               <label className="text-sm font-medium text-gray-500">Established Year</label>
-              <p className="text-gray-900">{businessInfo.establishedYear || 'N/A'}</p>
+              <p className="text-gray-900 text-sm sm:text-base">{businessInfo.establishedYear || 'N/A'}</p>
             </div>
-            <div>
+            <div className="sm:col-span-2 lg:col-span-3 xl:col-span-4">
               <label className="text-sm font-medium text-gray-500">Store Description</label>
-              <p className="text-gray-900">{merchant.brandingInfo?.storeDescription || 'No store description available'}</p>
+              <p className="text-gray-900 text-sm sm:text-base">{merchant.brandingInfo?.storeDescription || 'No store description available'}</p>
             </div>
             <div>
               <label className="text-sm font-medium text-gray-500">Registration Date</label>
-              <p className="text-gray-900">{formatDate(merchant.registrationDate)}</p>
+              <p className="text-gray-900 text-sm sm:text-base">{formatDate(merchant.registrationDate)}</p>
             </div>
             <div>
               <label className="text-sm font-medium text-gray-500">Last Login</label>
-              <p className="text-gray-900">{formatDate(merchant.lastLogin)}</p>
+              <p className="text-gray-900 text-sm sm:text-base">{formatDate(merchant.lastLogin)}</p>
             </div>
             <div>
               <label className="text-sm font-medium text-gray-500">Last Updated</label>
-              <p className="text-gray-900">{formatDate(merchant.updatedAt)}</p>
+              <p className="text-gray-900 text-sm sm:text-base">{formatDate(merchant.updatedAt)}</p>
             </div>
             <div>
               <label className="text-sm font-medium text-gray-500">Device ID</label>
-              <p className="text-gray-900">{merchant.deviceId || 'Not logged in'}</p>
+              <p className="text-gray-900 text-sm sm:text-base font-mono break-all">{merchant.deviceId || 'Not logged in'}</p>
             </div>
             <div>
               <label className="text-sm font-medium text-gray-500">Device Platform</label>
-              <p className="text-gray-900">{merchant.deviceInfo?.platform || 'N/A'}</p>
+              <p className="text-gray-900 text-sm sm:text-base">{merchant.deviceInfo?.platform || 'N/A'}</p>
             </div>
             <div>
               <label className="text-sm font-medium text-gray-500">Device Name</label>
-              <p className="text-gray-900">{merchant.deviceInfo?.deviceName || 'N/A'}</p>
+              <p className="text-gray-900 text-sm sm:text-base break-words">{merchant.deviceInfo?.deviceName || 'N/A'}</p>
             </div>
             <div>
               <label className="text-sm font-medium text-gray-500">Device Last Login</label>
-              <p className="text-gray-900">{merchant.deviceInfo?.lastLogin ? formatDate(merchant.deviceInfo.lastLogin) : 'N/A'}</p>
+              <p className="text-gray-900 text-sm sm:text-base">{merchant.deviceInfo?.lastLogin ? formatDate(merchant.deviceInfo.lastLogin) : 'N/A'}</p>
             </div>
-            <div>
+            <div className="sm:col-span-2">
               <label className="text-sm font-medium text-gray-500">Push Token</label>
-              <p className="text-gray-900">{merchant.deviceInfo?.pushToken || 'Not available'}</p>
+              <p className="text-gray-900 text-xs sm:text-sm font-mono break-all bg-gray-50 p-2 rounded">{merchant.deviceInfo?.pushToken || 'Not available'}</p>
             </div>
             {businessInfo.website && (
-              <div>
+              <div className="sm:col-span-2">
                 <label className="text-sm font-medium text-gray-500">Website</label>
                 <a href={businessInfo.website} target="_blank" rel="noopener noreferrer" 
-                   className="text-blue-600 hover:text-blue-800 flex items-center gap-1">
-                  <Globe className="w-4 h-4" />
+                   className="text-blue-600 hover:text-blue-800 flex items-center gap-1 text-sm sm:text-base break-all">
+                  <Globe className="w-4 h-4 flex-shrink-0" />
                   {businessInfo.website}
                 </a>
               </div>
@@ -483,34 +485,34 @@ const MerchantDetails = () => {
         </div>
 
         {/* Owner Information */}
-        <div className="bg-white shadow-sm border border-gray-200 p-6">
+        <div className="bg-white shadow-sm border border-gray-200 p-4 sm:p-6 rounded-lg">
           <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
             <User className="w-5 h-5" />
             Owner Information
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="text-sm font-medium text-gray-500">Full Name</label>
-              <p className="text-gray-900">{ownerInfo.fullName || 'N/A'}</p>
+              <p className="text-gray-900 text-sm sm:text-base break-words">{ownerInfo.fullName || 'N/A'}</p>
             </div>
             <div>
               <label className="text-sm font-medium text-gray-500">Email</label>
-              <p className="text-gray-900 flex items-center gap-2">
-                <Mail className="w-4 h-4" />
-                {ownerInfo.email || merchant.email || 'N/A'}
+              <p className="text-gray-900 flex items-center gap-2 text-sm sm:text-base">
+                <Mail className="w-4 h-4 flex-shrink-0" />
+                <span className="break-all">{ownerInfo.email || merchant.email || 'N/A'}</span>
               </p>
             </div>
             <div>
               <label className="text-sm font-medium text-gray-500">Phone</label>
-              <p className="text-gray-900 flex items-center gap-2">
-                <Phone className="w-4 h-4" />
+              <p className="text-gray-900 flex items-center gap-2 text-sm sm:text-base">
+                <Phone className="w-4 h-4 flex-shrink-0" />
                 {ownerInfo.mobile || merchant.mobile || 'N/A'}
               </p>
             </div>
             <div>
               <label className="text-sm font-medium text-gray-500">Alternate Phone</label>
-              <p className="text-gray-900 flex items-center gap-2">
-                <Phone className="w-4 h-4" />
+              <p className="text-gray-900 flex items-center gap-2 text-sm sm:text-base">
+                <Phone className="w-4 h-4 flex-shrink-0" />
                 {ownerInfo.alternateMobile || 'N/A'}
               </p>
             </div>
@@ -518,32 +520,34 @@ const MerchantDetails = () => {
         </div>
 
         {/* Store Address */}
-        <div className="bg-white shadow-sm border border-gray-200 p-6">
+        <div className="bg-white shadow-sm border border-gray-200 p-4 sm:p-6 rounded-lg">
           <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
             <MapPin className="w-5 h-5" />
             Store Address
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="md:col-span-2">
+          <div className="space-y-4">
+            <div>
               <label className="text-sm font-medium text-gray-500">Address</label>
-              <p className="text-gray-900 flex items-start gap-2">
-                <MapPin className="w-4 h-4 mt-0.5" />
-                {operationalInfo.storeAddress ? 
-                  `${operationalInfo.storeAddress.street || ''}, ${operationalInfo.storeAddress.area || ''}, ${operationalInfo.storeAddress.city || ''}, ${operationalInfo.storeAddress.state || ''} - ${operationalInfo.storeAddress.pincode || ''}` 
-                  : merchant.address || 'Address not available'
-                }
+              <p className="text-gray-900 flex items-start gap-2 text-sm sm:text-base mt-1">
+                <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                <span className="break-words">
+                  {operationalInfo.storeAddress ? 
+                    `${operationalInfo.storeAddress.street || ''}, ${operationalInfo.storeAddress.area || ''}, ${operationalInfo.storeAddress.city || ''}, ${operationalInfo.storeAddress.state || ''} - ${operationalInfo.storeAddress.pincode || ''}` 
+                    : merchant.address || 'Address not available'
+                  }
+                </span>
               </p>
             </div>
             {operationalInfo.storeAddress?.landmark && (
               <div>
                 <label className="text-sm font-medium text-gray-500">Landmark</label>
-                <p className="text-gray-900">{operationalInfo.storeAddress.landmark}</p>
+                <p className="text-gray-900 text-sm sm:text-base break-words">{operationalInfo.storeAddress.landmark}</p>
               </div>
             )}
             {operationalInfo.storeAddress?.coordinates && (
-              <div className="md:col-span-2">
+              <div>
                 <label className="text-sm font-medium text-gray-500">Coordinates</label>
-                <p className="text-gray-900">
+                <p className="text-gray-900 text-sm sm:text-base font-mono">
                   Latitude: {operationalInfo.storeAddress.coordinates.latitude || 'N/A'}, 
                   Longitude: {operationalInfo.storeAddress.coordinates.longitude || 'N/A'}
                 </p>
@@ -555,7 +559,7 @@ const MerchantDetails = () => {
           {operationalInfo.storeAddress?.coordinates?.latitude && operationalInfo.storeAddress?.coordinates?.longitude && (
             <div className="mt-6">
               <label className="text-sm font-medium text-gray-500 mb-2 block">Store Location</label>
-              <div className="w-full h-64 overflow-hidden border border-gray-200 relative">
+              <div className="w-full h-48 sm:h-64 lg:h-80 overflow-hidden border border-gray-200 rounded-lg relative">
                 <GoogleMap
                   center={{
                     lat: parseFloat(operationalInfo.storeAddress.coordinates.latitude),
@@ -599,30 +603,30 @@ const MerchantDetails = () => {
         </div>
 
         {/* Operating Hours */}
-        <div className="bg-white shadow-sm border border-gray-200 p-6">
+        <div className="bg-white shadow-sm border border-gray-200 p-4 sm:p-6 rounded-lg">
           <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
             <Clock className="w-5 h-5" />
             Operating Hours
           </h2>
-          <div className="flex items-center gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
             <div className="flex items-center gap-2">
-              <Clock className="w-5 h-5 text-green-600" />
+              <Clock className="w-5 h-5 text-green-600 flex-shrink-0" />
               <div>
                 <p className="text-sm font-medium text-gray-500">Opening Time</p>
-                <p className="text-gray-900">{operationalInfo.openingTime || 'Not set'}</p>
+                <p className="text-gray-900 text-sm sm:text-base">{operationalInfo.openingTime || 'Not set'}</p>
               </div>
             </div>
-            <div className="text-gray-400">—</div>
+            <div className="hidden sm:block text-gray-400">—</div>
             <div className="flex items-center gap-2">
-              <Clock className="w-5 h-5 text-red-600" />
+              <Clock className="w-5 h-5 text-red-600 flex-shrink-0" />
               <div>
                 <p className="text-sm font-medium text-gray-500">Closing Time</p>
-                <p className="text-gray-900">{operationalInfo.closingTime || 'Not set'}</p>
+                <p className="text-gray-900 text-sm sm:text-base">{operationalInfo.closingTime || 'Not set'}</p>
               </div>
             </div>
           </div>
           {(operationalInfo.openingTime && operationalInfo.closingTime) && (
-            <div className="mt-3 p-3 bg-gray-50">
+            <div className="mt-3 p-3 bg-gray-50 rounded-lg">
               <p className="text-sm text-gray-600">
                 Store operates daily from {operationalInfo.openingTime} to {operationalInfo.closingTime}
               </p>
@@ -631,21 +635,21 @@ const MerchantDetails = () => {
         </div>
 
         {/* Operational Information */}
-        <div className="bg-white shadow-sm border border-gray-200 p-6">
+        <div className="bg-white shadow-sm border border-gray-200 p-4 sm:p-6 rounded-lg">
           <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
             <Settings className="w-5 h-5" />
             Operational Information
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <div>
               <label className="text-sm font-medium text-gray-500">Store Type</label>
-              <p className="text-gray-900">
+              <p className="text-gray-900 text-sm sm:text-base break-words">
                 {operationalInfo.storeType || 'N/A'}
               </p>
             </div>
             <div>
               <label className="text-sm font-medium text-gray-500">Product Categories</label>
-              <p className="text-gray-900">
+              <p className="text-gray-900 text-sm sm:text-base break-words">
                 {operationalInfo.productCategories?.length > 0
                   ? operationalInfo.productCategories.join(', ')
                   : 'N/A'
@@ -657,12 +661,12 @@ const MerchantDetails = () => {
 
         {/* Branding Information */}
         {brandingInfo && Object.keys(brandingInfo).length > 0 && (
-          <div className="bg-white shadow-sm border border-gray-200 p-6">
+          <div className="bg-white shadow-sm border border-gray-200 p-4 sm:p-6 rounded-lg">
             <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
               <Award className="w-5 h-5" />
               Branding Information
             </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {brandingInfo.logo && (
                 <div className="p-4 border border-gray-200">
                   <div className="flex items-center justify-between mb-2">
@@ -808,111 +812,111 @@ const MerchantDetails = () => {
         )}
 
         {/* Performance Metrics */}
-        <div className="bg-white shadow-sm border border-gray-200 p-6">
+        <div className="bg-white shadow-sm border border-gray-200 p-4 sm:p-6 rounded-lg">
           <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
             <TrendingUp className="w-5 h-5" />
             Performance Metrics
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-gradient-to-r from-blue-50 to-blue-100 p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Total Orders</p>
-                  <p className="text-2xl font-bold text-gray-900">{performance.totalOrders || merchant.totalOrders || 0}</p>
-                  <p className="text-xs text-gray-500">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+            <div className="bg-gradient-to-r from-blue-50 to-blue-100 p-4 sm:p-6 rounded-lg">
+              <div className="flex items-center justify-between mb-3">
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium text-gray-600 mb-1">Total Orders</p>
+                  <p className="text-xl sm:text-2xl font-bold text-gray-900">{performance.totalOrders || merchant.totalOrders || 0}</p>
+                  <p className="text-xs text-gray-500 mt-1">
                     {performance.completedOrders || 0} completed, {performance.cancelledOrders || 0} cancelled
                   </p>
                 </div>
-                <Package className="w-8 h-8 text-blue-600" />
+                <Package className="w-8 h-8 text-blue-600 flex-shrink-0 ml-2" />
               </div>
             </div>
-            <div className="bg-gradient-to-r from-green-50 to-green-100 p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Total Revenue</p>
-                  <p className="text-2xl font-bold text-green-600">{formatCurrency(performance.totalRevenue || merchant.totalRevenue || 0)}</p>
-                  <p className="text-xs text-gray-500">
+            <div className="bg-gradient-to-r from-green-50 to-green-100 p-4 sm:p-6 rounded-lg">
+              <div className="flex items-center justify-between mb-3">
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium text-gray-600 mb-1">Total Revenue</p>
+                  <p className="text-xl sm:text-2xl font-bold text-green-600">{formatCurrency(performance.totalRevenue || merchant.totalRevenue || 0)}</p>
+                  <p className="text-xs text-gray-500 mt-1">
                     Avg: {formatCurrency(performance.averageOrderValue || 0)}
                   </p>
                 </div>
-                <DollarSign className="w-8 h-8 text-green-600" />
+                <DollarSign className="w-8 h-8 text-green-600 flex-shrink-0 ml-2" />
               </div>
             </div>
-            <div className="bg-gradient-to-r from-yellow-50 to-yellow-100 p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Average Rating</p>
-                  <div className="flex items-center gap-1">
+            <div className="bg-gradient-to-r from-yellow-50 to-yellow-100 p-4 sm:p-6 rounded-lg sm:col-span-2 lg:col-span-1">
+              <div className="flex items-center justify-between mb-3">
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium text-gray-600 mb-1">Average Rating</p>
+                  <div className="flex items-center gap-1 mb-1">
                     {getRatingStars(performance.rating)}
-                    <span className="text-2xl font-bold text-yellow-600 ml-1">
+                    <span className="text-xl sm:text-2xl font-bold text-yellow-600 ml-1">
                       {performance.rating ? performance.rating.toFixed(1) : merchant.averageRating ? merchant.averageRating.toFixed(1) : 'N/A'}
                     </span>
                   </div>
                   <p className="text-xs text-gray-500">{performance.totalRatings || 0} reviews</p>
                 </div>
-                <Star className="w-8 h-8 text-yellow-600" />
+                <Star className="w-8 h-8 text-yellow-600 flex-shrink-0 ml-2" />
               </div>
             </div>
-            <div className="bg-gradient-to-r from-purple-50 to-purple-100 p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Avg Delivery Time</p>
-                  <p className="text-2xl font-bold text-purple-600">{performance.averageDeliveryTime?.toFixed(0) || 0} min</p>
-                  <p className="text-xs text-gray-500">
+            <div className="bg-gradient-to-r from-purple-50 to-purple-100 p-4 sm:p-6 rounded-lg">
+              <div className="flex items-center justify-between mb-3">
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium text-gray-600 mb-1">Avg Delivery Time</p>
+                  <p className="text-xl sm:text-2xl font-bold text-purple-600">{performance.averageDeliveryTime?.toFixed(0) || 0} min</p>
+                  <p className="text-xs text-gray-500 mt-1">
                     Response: {performance.responseTime?.toFixed(0) || 0} min
                   </p>
                 </div>
-                <Timer className="w-8 h-8 text-purple-600" />
+                <Timer className="w-8 h-8 text-purple-600 flex-shrink-0 ml-2" />
               </div>
             </div>
-            <div className="bg-gradient-to-r from-indigo-50 to-indigo-100 p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Customer Satisfaction</p>
-                  <p className="text-2xl font-bold text-indigo-600">{performance.customerSatisfaction || 0}%</p>
+            <div className="bg-gradient-to-r from-indigo-50 to-indigo-100 p-4 sm:p-6 rounded-lg">
+              <div className="flex items-center justify-between mb-3">
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium text-gray-600 mb-1">Customer Satisfaction</p>
+                  <p className="text-xl sm:text-2xl font-bold text-indigo-600">{performance.customerSatisfaction || 0}%</p>
                 </div>
-                <Users className="w-8 h-8 text-indigo-600" />
+                <Users className="w-8 h-8 text-indigo-600 flex-shrink-0 ml-2" />
               </div>
             </div>
-            <div className="bg-gradient-to-r from-teal-50 to-teal-100 p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Completion Rate</p>
-                  <p className="text-2xl font-bold text-teal-600">
+            <div className="bg-gradient-to-r from-teal-50 to-teal-100 p-4 sm:p-6 rounded-lg">
+              <div className="flex items-center justify-between mb-3">
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium text-gray-600 mb-1">Completion Rate</p>
+                  <p className="text-xl sm:text-2xl font-bold text-teal-600">
                     {performance.totalOrders > 0 
                       ? ((performance.completedOrders / performance.totalOrders) * 100).toFixed(1) 
                       : 0
                     }%
                   </p>
                 </div>
-                <CheckCircle className="w-8 h-8 text-teal-600" />
+                <CheckCircle className="w-8 h-8 text-teal-600 flex-shrink-0 ml-2" />
               </div>
             </div>
           </div>
         </div>
 
         {/* Documents Section */}
-        <div className="bg-white shadow-sm border border-gray-200 p-6">
+        <div className="bg-white shadow-sm border border-gray-200 p-4 sm:p-6 rounded-lg">
           <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
             <FileText className="w-5 h-5" />
             Documents & Verification
           </h2>
 
           {/* Google Drive Documents Link */}
-          <div className="border-t pt-4">
+          <div className="border-t border-gray-200 pt-4">
             <h3 className="text-md font-semibold text-gray-900 mb-3">Documents Link</h3>
             {documents.documentsLink ? (
-              <div className="flex items-center gap-2">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2">
                 <a
                   href={documents.documentsLink.startsWith('http') ? documents.documentsLink : `https://drive.google.com/drive/folders/${documents.documentsLink}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-blue-600 hover:text-blue-700 text-sm flex items-center gap-1"
+                  className="text-blue-600 hover:text-blue-700 text-sm sm:text-base flex items-center gap-1 break-all"
                 >
-                  <Eye className="w-4 h-4" />
+                  <Eye className="w-4 h-4 flex-shrink-0" />
                   View Documents Folder
                 </a>
-                <CheckCircle className="w-5 h-5 text-green-500" />
+                <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
               </div>
             ) : (
               <span className="text-sm text-red-600">No documents link provided</span>
@@ -922,27 +926,27 @@ const MerchantDetails = () => {
 
         {/* Banking Information */}
         {((bankingInfo && Object.keys(bankingInfo).length > 0) || merchant.bankDetails) && (
-          <div className="bg-white shadow-sm border border-gray-200 p-6">
+          <div className="bg-white shadow-sm border border-gray-200 p-4 sm:p-6 rounded-lg">
             <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
               <CreditCard className="w-5 h-5" />
               Banking Information
             </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="text-sm font-medium text-gray-500">Account Holder Name</label>
-                <p className="text-gray-900">{bankingInfo.accountHolderName || merchant.bankDetails?.accountHolderName || 'Not provided'}</p>
+                <p className="text-gray-900 text-sm sm:text-base break-words">{bankingInfo.accountHolderName || merchant.bankDetails?.accountHolderName || 'Not provided'}</p>
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-500">Account Number</label>
-                <p className="text-gray-900">{bankingInfo.accountNumber || merchant.bankDetails?.accountNumber || 'Not provided'}</p>
+                <p className="text-gray-900 text-sm sm:text-base font-mono">{bankingInfo.accountNumber || merchant.bankDetails?.accountNumber || 'Not provided'}</p>
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-500">Bank Name</label>
-                <p className="text-gray-900">{bankingInfo.bankName || merchant.bankDetails?.bankName || 'Not provided'}</p>
+                <p className="text-gray-900 text-sm sm:text-base break-words">{bankingInfo.bankName || merchant.bankDetails?.bankName || 'Not provided'}</p>
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-500">IFSC Code</label>
-                <p className="text-gray-900">{bankingInfo.ifscCode || merchant.bankDetails?.ifscCode || 'Not provided'}</p>
+                <p className="text-gray-900 text-sm sm:text-base font-mono">{bankingInfo.ifscCode || merchant.bankDetails?.ifscCode || 'Not provided'}</p>
               </div>
             </div>
           </div>

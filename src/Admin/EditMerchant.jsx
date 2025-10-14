@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, Save, X, Store, Phone, Mail, MapPin,
   FileText, CreditCard, Building, Globe, Users,
   Upload, Eye, Download, Image as ImageIcon,
-  CheckCircle, XCircle, AlertTriangle, Search, Navigation
+  CheckCircle, XCircle, AlertTriangle, Search, Navigation,
+  Trash2
 } from 'lucide-react';
 import Layout from '../Components/Layout';
 import { AddressSearch } from '../Components/GoogleMapComponents';
@@ -18,6 +19,41 @@ const EditMerchant = () => {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
   const [uploadingFiles, setUploadingFiles] = useState({});
+
+  // Authentication state
+  const [currentUser, setCurrentUser] = useState(null);
+  const [checkingUser, setCheckingUser] = useState(true);
+
+  // Delete modal state
+  const [deleteModal, setDeleteModal] = useState({ open: false, merchantName: '' });
+  const [deleteConfirmation, setDeleteConfirmation] = useState('');
+
+  // Fetch current user
+  const fetchCurrentUser = useCallback(async () => {
+    try {
+      const local = localStorage.getItem('adminUser');
+      if (local) {
+        setCurrentUser(JSON.parse(local));
+      } else {
+        const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/auth/profile`, { credentials: 'include' });
+        const data = await response.json();
+        if (data.tokenValid === false) {
+          navigate('/login', { replace: true });
+          return;
+        }
+        if (response.ok && data.admin) {
+          setCurrentUser(data.admin);
+          localStorage.setItem('adminUser', JSON.stringify(data.admin));
+        }
+      }
+    } catch (err) {
+      console.error('Failed to fetch current user', err);
+    } finally {
+      setCheckingUser(false);
+    }
+  }, [navigate]);
+
+  useEffect(() => { fetchCurrentUser(); }, [fetchCurrentUser]);
 
   // Location search state
   const [locationSearchQuery, setLocationSearchQuery] = useState('');
@@ -50,6 +86,14 @@ const EditMerchant = () => {
       setSelectedLocation(null);
       setLocationSearchQuery('');
     }
+  };
+
+  // Validate if location is properly selected
+  const isLocationValid = () => {
+    if (isManualEntry) {
+      return formData.storeAddress.coordinates.latitude && formData.storeAddress.coordinates.longitude;
+    }
+    return selectedLocation !== null;
   };
 
   // Form state
@@ -244,6 +288,15 @@ const EditMerchant = () => {
             status: merchant.status || 'pending_verification',
             storeStatus: merchant.storeStatus || 'closed'
           });
+
+          // Set selected location if coordinates exist (for existing merchants)
+          if (merchant.operationalInfo?.storeAddress?.coordinates?.latitude && merchant.operationalInfo?.storeAddress?.coordinates?.longitude) {
+            setSelectedLocation({
+              lat: parseFloat(merchant.operationalInfo.storeAddress.coordinates.latitude),
+              lng: parseFloat(merchant.operationalInfo.storeAddress.coordinates.longitude),
+              address: `${merchant.operationalInfo?.storeAddress?.street || ''}, ${merchant.operationalInfo?.storeAddress?.city || ''}, ${merchant.operationalInfo?.storeAddress?.state || ''} ${merchant.operationalInfo?.storeAddress?.pincode || ''}`.replace(/^, |, $/, '')
+            });
+          }
         } else {
           throw new Error(data.message || 'Failed to fetch merchant details');
         }
@@ -461,6 +514,24 @@ const EditMerchant = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    // Check if form is valid
+    const form = e.target;
+    if (!form.checkValidity()) {
+      form.reportValidity();
+      return;
+    }
+
+    // Validate location selection
+    if (!isManualEntry && !selectedLocation) {
+      toast.error('Please select a valid business location from the search results or enable manual entry.');
+      return;
+    }
+
+    if (isManualEntry && (!formData.storeAddress.coordinates.latitude || !formData.storeAddress.coordinates.longitude)) {
+      toast.error('Please enter both latitude and longitude for manual location entry.');
+      return;
+    }
+
     try {
       setSaving(true);
 
@@ -549,6 +620,52 @@ const EditMerchant = () => {
     }
   };
 
+  // Delete merchant functions
+  const handleDeleteMerchant = (merchantName) => {
+    if (currentUser?.role !== 'super_admin') {
+      toast.error('Only super admin can delete merchants');
+      return;
+    }
+    setDeleteModal({ open: true, merchantName });
+    setDeleteConfirmation('');
+  };
+
+  const confirmDeleteMerchant = async () => {
+    if (deleteConfirmation !== deleteModal.merchantName) {
+      toast.error('Please type the exact merchant name to confirm');
+      return;
+    }
+
+    try {
+      const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/merchant-stores/${id}`, {
+        method: 'DELETE',
+        credentials: 'include'
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete merchant');
+      }
+
+      toast.success('Merchant deleted successfully');
+      setDeleteModal({ open: false, merchantName: '' });
+      navigate('/merchants');
+    } catch (err) {
+      console.error('Error deleting merchant:', err);
+      toast.error('Failed to delete merchant');
+    }
+  };
+
+  if (checkingUser) {
+    return (
+      <Layout title="Edit Merchant">
+        <div className="flex flex-col items-center justify-center min-h-96">
+          <div className="animate-spin h-12 w-12 border-4 border-green-200 border-t-green-600 rounded-full"></div>
+          <span className="mt-4 text-gray-600">Checking permissions...</span>
+        </div>
+      </Layout>
+    );
+  }
+
   if (loading) {
     return (
       <Layout title="Edit Merchant">
@@ -605,6 +722,16 @@ const EditMerchant = () => {
             >
               Cancel
             </button>
+            {currentUser?.role === 'super_admin' && (
+              <button
+                type="button"
+                onClick={() => handleDeleteMerchant(formData.displayName)}
+                className="flex items-center justify-center gap-2 px-4 py-2 sm:px-4 sm:py-2 bg-red-600 text-white hover:bg-red-700 w-full sm:w-auto"
+              >
+                <Trash2 size={16} />
+                Delete Merchant
+              </button>
+            )}
             <button
               type="submit"
               form="merchant-form"
@@ -1545,6 +1672,59 @@ const EditMerchant = () => {
           </div>
         </form>
       </div>
+
+      {/* Delete Merchant Modal */}
+      {deleteModal.open && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <div className="flex items-center mb-4">
+              <div className="flex-shrink-0 w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                <Trash2 className="w-6 h-6 text-red-600" />
+              </div>
+              <div className="ml-4">
+                <h3 className="text-lg font-medium text-gray-900">Delete Merchant</h3>
+                <p className="text-sm text-gray-500">This action cannot be undone</p>
+              </div>
+            </div>
+
+            <div className="mb-4">
+              <p className="text-sm text-gray-700 mb-2">
+                Are you sure you want to permanently delete the merchant <strong>{deleteModal.merchantName}</strong>?
+              </p>
+              <p className="text-sm text-gray-600 mb-4">
+                This will permanently remove all merchant data, store information, and associated records. This action cannot be reversed.
+              </p>
+
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Type the merchant name "{deleteModal.merchantName}" to confirm:
+              </label>
+              <input
+                type="text"
+                value={deleteConfirmation}
+                onChange={(e) => setDeleteConfirmation(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-red-500 focus:border-red-500"
+                placeholder={`Type "${deleteModal.merchantName}" here`}
+              />
+            </div>
+
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setDeleteModal({ open: false, merchantName: '' })}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDeleteMerchant}
+                disabled={deleteConfirmation !== deleteModal.merchantName}
+                className="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700 focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Delete Merchant
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </Layout>
   );
 };

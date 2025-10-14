@@ -312,13 +312,33 @@ export default function OrderDetails() {
             </div>
             <div className="p-6">
               <div className="space-y-4">
-                {order.items?.map((item, index) => (
+                {order.items?.map((item, index) => {
+                  const imageUrl = item.image || item.productId?.images?.[0] || item.productId?.thumbnail;
+                  const fullImageUrl = imageUrl?.startsWith('http') ? imageUrl : `${import.meta.env.VITE_SERVER}${imageUrl}`;
+                  
+                  return (
                   <div key={index} className="flex items-center gap-4 p-4 border border-gray-100 rounded-lg">
-                    <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center">
-                      <Package className="w-6 h-6 text-gray-400" />
+                    <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden">
+                      {imageUrl ? (
+                        <img
+                          src={fullImageUrl}
+                          alt={item.productId?.name || 'Product'}
+                          className="w-full h-full object-cover rounded-lg"
+                          onError={(e) => {
+                            // Try without server prefix if it failed
+                            if (fullImageUrl !== imageUrl) {
+                              e.target.src = imageUrl;
+                            } else {
+                              e.target.style.display = 'none';
+                              e.target.nextSibling.style.display = 'flex';
+                            }
+                          }}
+                        />
+                      ) : null}
+                      <Package className="w-6 h-6 text-gray-400" style={{ display: imageUrl ? 'none' : 'block' }} />
                     </div>
                     <div className="flex-1">
-                      <h3 className="font-medium text-gray-800">{item.productId?.name || 'Product Name'}</h3>
+                      <h3 className="font-medium text-gray-800">{item.productId?.name || item.name || 'Product Name'}</h3>
                       <p className="text-sm text-gray-600">Qty: {item.quantity}</p>
                       <p className="text-sm text-gray-500">Unit Price: ₹{item.price}</p>
                     </div>
@@ -326,7 +346,8 @@ export default function OrderDetails() {
                       <p className="font-semibold text-gray-800">₹{item.quantity * item.price}</p>
                     </div>
                   </div>
-                )) || (
+                  );
+                }) || (
                   <p className="text-gray-500 text-center py-8">No items found</p>
                 )}
               </div>

@@ -30,6 +30,7 @@ import Careers from './Admin/Careers.jsx'
 import RequestedProducts from './Admin/RequestedProducts.jsx'
 import Offers from './Admin/Offers.jsx'
 import MarketArea from './Admin/MarketArea.jsx'
+import DeleteRequests from './Admin/DeleteRequests.jsx'
 
 function App() {
   return (
@@ -80,6 +81,7 @@ function App() {
           {/* User Management */}
           <Route path="/users" element={<Users />} />
           <Route path="/users/:id" element={<UserData />} />
+          <Route path="/delete-requests" element={<DeleteRequests />} />
           
           {/* Merchant Management */}
           <Route path="/merchant-enquiries" element={<MerchantEnq />} />

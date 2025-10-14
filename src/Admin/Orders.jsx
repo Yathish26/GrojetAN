@@ -168,6 +168,14 @@ const Orders = () => {
     return icons[status] || <AlertCircle size={16} />;
   };
 
+  const formatStatusText = (status) => {
+    return status
+      .replace(/_/g, ' ')
+      .split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
+  };
+
   const StatCard = ({ title, value, icon: Icon, color = 'text-gray-600' }) => (
     <div className="bg-white shadow-sm border border-gray-200 p-4 sm:p-6">
       <div className="flex items-center justify-between">
@@ -406,7 +414,7 @@ const Orders = () => {
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(order.status.current)}`}>
                             {getStatusIcon(order.status.current)}
-                            {order.status.current.replace('_', ' ')}
+                            {formatStatusText(order.status.current)}
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
@@ -488,7 +496,7 @@ const Orders = () => {
                             </div>
                             <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ml-2 flex-shrink-0 ${getStatusColor(order.status.current)}`}>
                               {getStatusIcon(order.status.current)}
-                              {order.status.current.replace('_', ' ')}
+                              {formatStatusText(order.status.current)}
                             </span>
                           </div>
 

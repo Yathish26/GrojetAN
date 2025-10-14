@@ -347,23 +347,6 @@ function RequestedProducts() {
                             )}
                             Reject
                           </button>
-                          {(() => {
-                            console.log('Rendering delete button check:', currentAdmin?.role, currentAdmin?.role === 'super_admin');
-                            return currentAdmin?.role === 'super_admin' && (
-                              <button
-                                onClick={() => handleDeleteClick(request.id)}
-                                disabled={updating === request.id}
-                                className="px-3 py-1 bg-gray-600 hover:bg-gray-700 text-white text-sm rounded flex items-center gap-1 disabled:opacity-50"
-                              >
-                                {updating === request.id ? (
-                                  <Loader2 className="animate-spin" size={14} />
-                                ) : (
-                                  <Trash2 size={14} />
-                                )}
-                                Delete
-                              </button>
-                            );
-                          })()}
                         </div>
                       )}
 

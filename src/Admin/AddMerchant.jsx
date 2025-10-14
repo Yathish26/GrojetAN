@@ -146,14 +146,20 @@ const AddMerchant = () => {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     if (name.includes('.')) {
-      const [parent, child] = name.split('.');
-      setFormData(prev => ({
-        ...prev,
-        [parent]: {
-          ...prev[parent],
-          [child]: value
-        }
-      }));
+      const keys = name.split('.');
+      setFormData(prev => {
+        const updateNested = (obj, keys, value) => {
+          if (keys.length === 1) {
+            return { ...obj, [keys[0]]: value };
+          }
+          const [current, ...rest] = keys;
+          return {
+            ...obj,
+            [current]: updateNested(obj[current] || {}, rest, value)
+          };
+        };
+        return updateNested(prev, keys, value);
+      });
     } else {
       setFormData(prev => ({
         ...prev,
