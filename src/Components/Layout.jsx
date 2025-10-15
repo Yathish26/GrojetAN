@@ -4,7 +4,7 @@ import {
   Home, Package, Plus, Users, Store, ChartBarStacked,
   Truck, MapPin, BarChart3, Settings, LogOut, User,
   Menu, X, Shield, ShoppingCart, Bell, Gift,
-  TabletSmartphone, Briefcase
+  TabletSmartphone, Briefcase, Smartphone
 } from 'lucide-react';
 import { MdAdminPanelSettings } from 'react-icons/md';
 import toast from 'react-hot-toast';
@@ -13,6 +13,8 @@ const Layout = ({ children, title }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [currentAdmin, setCurrentAdmin] = useState(null);
+  const [updateNotes, setUpdateNotes] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
   const navRef = useRef(null);
   const mainRef = useRef(null);
   const notificationsRef = useRef(null);
@@ -46,6 +48,24 @@ const Layout = ({ children, title }) => {
 
       fetchAdminProfile();
     }
+  }, []);
+
+  // Fetch update notes for notifications
+  const fetchUpdateNotes = async () => {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/update-notes/public/latest?limit=5`);
+      if (response.ok) {
+        const data = await response.json();
+        setUpdateNotes(data.updateNotes || []);
+        setUnreadCount(data.updateNotes?.length || 0);
+      }
+    } catch (error) {
+      console.error('Failed to fetch update notes:', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchUpdateNotes();
   }, []);
 
   // Preserve sidebar scroll position across navigations
@@ -96,6 +116,13 @@ const Layout = ({ children, title }) => {
     };
   }, [notificationsOpen]);
 
+  const handleNotificationClick = () => {
+    setNotificationsOpen(!notificationsOpen);
+    if (!notificationsOpen && unreadCount > 0) {
+      // Mark as read when opening
+      setUnreadCount(0);
+    }
+  };
 
   const handleLogout = async () => {
     try {
@@ -121,7 +148,7 @@ const Layout = ({ children, title }) => {
     { name: 'Categories', icon: ChartBarStacked, path: '/categories', roles: ['super_admin', 'admin', 'inventory_manager'] },
     { name: 'Careers', icon: Briefcase, path: '/careers', roles: ['super_admin', 'admin'] },
     { name: 'Users', icon: Users, path: '/users', roles: ['super_admin', 'admin'] },
-    { name: 'Delete Requests', icon: Shield, path: '/delete-requests', roles: ['super_admin', 'admin'] },
+    { name: 'Delete Requests', icon: Shield, path: '/delete-requests', roles: ['super_admin'] },
     { name: 'Merchant Enquiries', icon: Store, path: '/merchant-enquiries', roles: ['super_admin', 'admin'] },
     { name: 'Merchants', icon: Store, path: '/merchants', roles: ['super_admin', 'admin'] },
     { name: 'Delivery Agents', icon: Truck, path: '/delivery-agents', roles: ['super_admin', 'admin', 'delivery_manager'] },
@@ -131,6 +158,7 @@ const Layout = ({ children, title }) => {
     { name: 'Analytics', icon: BarChart3, path: '/analytics', roles: ['super_admin', 'admin'] },
     { name: 'App Controls', icon: TabletSmartphone, path: '/app-controls', roles: ['super_admin', 'admin'] },
     { name: 'Admin Management', icon: Shield, path: '/admin-management', roles: ['super_admin'] },
+    { name: 'Update Notes', icon: Bell, path: '/update-notes', roles: ['super_admin'] },
   ];
 
   const filteredMenuItems = menuItems.filter(item =>
@@ -250,26 +278,79 @@ const Layout = ({ children, title }) => {
           <div className="flex items-center gap-4">
             <div className="relative" ref={notificationsRef}>
               <button 
-                onClick={() => setNotificationsOpen(!notificationsOpen)}
+                onClick={handleNotificationClick}
                 className="p-2 hover:bg-neutral-100 cursor-pointer relative"
               >
                 <Bell size={20} className="text-neutral-600" />
-                <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full"></span>
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-medium">
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </span>
+                )}
               </button>
 
               {/* Notifications Panel */}
               {notificationsOpen && (
-                <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-neutral-200 z-50">
+                <div className="absolute right-0 mt-2 w-96 bg-white rounded-lg shadow-lg border border-neutral-200 z-50 max-h-96 overflow-hidden">
                   <div className="p-4 border-b border-neutral-200">
-                    <h3 className="text-lg font-semibold text-neutral-900">Notifications</h3>
+                    <h3 className="text-lg font-semibold text-neutral-900">App Updates</h3>
+                    <p className="text-sm text-neutral-600">Latest features and improvements</p>
                   </div>
-                  <div className="p-4">
-                    <div className="text-center py-8">
-                      <Bell size={48} className="text-neutral-400 mx-auto mb-4" />
-                      <p className="text-neutral-500 text-sm">No notifications</p>
-                      <p className="text-neutral-400 text-xs mt-1">You're all caught up!</p>
+                  <div className="max-h-80 overflow-y-auto">
+                    {updateNotes.length > 0 ? (
+                      <div className="divide-y divide-neutral-100">
+                        {updateNotes.map((note) => (
+                          <div key={note._id} className="p-4 hover:bg-neutral-50 cursor-pointer transition-colors">
+                            <div className="flex items-start gap-3">
+                              <div className="flex-shrink-0 w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                                {note.app === 'admin_panel' && <TabletSmartphone size={16} className="text-green-600" />}
+                                {note.app === 'customer_app' && <Smartphone size={16} className="text-blue-600" />}
+                                {note.app === 'merchant_app' && <Store size={16} className="text-purple-600" />}
+                                {note.app === 'delivery_agent_app' && <Truck size={16} className="text-orange-600" />}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <span className="text-sm font-medium text-neutral-900 capitalize">
+                                    {note.app.replace('_', ' ')}
+                                  </span>
+                                  <span className="text-xs text-neutral-500">v{note.version}</span>
+                                </div>
+                                <p className="text-sm text-neutral-600 mb-2 line-clamp-2">
+                                  {note.features.length > 0 ? note.features[0] : 'New update available'}
+                                  {note.features.length > 1 && ` +${note.features.length - 1} more features`}
+                                </p>
+                                <p className="text-xs text-neutral-500">
+                                  {new Date(note.releaseDate).toLocaleDateString()}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="p-4 text-center">
+                        <Bell size={48} className="text-neutral-400 mx-auto mb-4" />
+                        <p className="text-neutral-500 text-sm">No updates available</p>
+                        <p className="text-neutral-400 text-xs mt-1">Check back later for new features!</p>
+                      </div>
+                    )}
+                  </div>
+                  {updateNotes.length > 0 && (
+                    <div className="p-3 border-t border-neutral-200 bg-neutral-50">
+                      <button
+                        onClick={() => {
+                          setNotificationsOpen(false);
+                          // Navigate to update notes page if user is super admin
+                          if (currentAdmin?.role === 'super_admin') {
+                            navigate('/update-notes');
+                          }
+                        }}
+                        className="w-full text-center text-sm text-green-600 hover:text-green-700 font-medium"
+                      >
+                        View All Updates
+                      </button>
                     </div>
-                  </div>
+                  )}
                 </div>
               )}
             </div>

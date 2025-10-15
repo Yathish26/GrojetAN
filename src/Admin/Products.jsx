@@ -589,7 +589,7 @@ export default function Products() {
 
   return (
     <Layout title="Products">
-      <div className="min-h-screen bg-gray-50 p-4 md:p-6">
+      <div className="min-h-screen bg-gray-50 p-2 md:p-6">
 
         {/* Delete Modal */}
         <Modal
@@ -597,7 +597,7 @@ export default function Products() {
           onRequestClose={() => !isDeleting && setConfirmDeleteVisible(false)}
           className="fixed inset-0 flex items-center justify-center p-4"
         >
-          <div className="bg-red-50 border border-red-500 shadow-xl p-6 w-full max-w-sm">
+          <div className="bg-red-50 border border-red-500 shadow-xl p-4 md:p-6 w-full max-w-sm mx-4">
             <h2 className="text-xl font-bold text-red-700 mb-2">Danger Zone</h2>
             <p className="text-red-600 mb-1 font-semibold">This action is critical and cannot be undone.</p>
             <p className="text-red-500 mb-6">Are you sure you want to delete this product? This will permanently remove it from the system.</p>
@@ -695,8 +695,8 @@ export default function Products() {
               <Search size={18} />
             </button>
           </div>
-          <div className="flex items-center gap-3">
-            <div className="relative">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+            <div className="relative w-full sm:w-auto">
               <select
                 className="w-full p-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500"
                 value={filters.category}
@@ -710,7 +710,7 @@ export default function Products() {
                 ))}
               </select>
             </div>
-            <div className="relative">
+            <div className="relative w-full sm:w-auto">
               <select
                 className="w-full p-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500"
                 value={filters.status}
@@ -722,7 +722,7 @@ export default function Products() {
                 <option value="no_photos">No Photos</option>
               </select>
             </div>
-            <div className="relative">
+            <div className="relative w-full sm:w-auto">
               <select
                 className="w-full p-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500"
                 value={filters.startsWith}
@@ -736,7 +736,7 @@ export default function Products() {
                 ))}
               </select>
             </div>
-            <div className="relative">
+            <div className="relative w-full sm:w-auto">
               <select
                 className="w-full p-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500"
                 value={filters.sort}
@@ -776,7 +776,8 @@ export default function Products() {
         {
           !loading && products.length > 0 && (
             <>
-              <div className="bg-white  shadow overflow-hidden border border-gray-200">
+              {/* Desktop Table View */}
+              <div className="hidden md:block bg-white shadow overflow-hidden border border-gray-200">
                 <div className="overflow-x-auto">
                   <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
@@ -852,9 +853,76 @@ export default function Products() {
                   </table>
                 </div>
               </div>
+
+              {/* Mobile Card View */}
+              <div className="md:hidden space-y-4">
+                {products.map((product) => (
+                  <div key={product._id} className="bg-white shadow border border-gray-200 rounded-none p-4">
+                    <div className="flex items-start space-x-3">
+                      {product.thumbnail && (
+                        <img 
+                          className="h-16 w-16 rounded-none object-cover cursor-pointer hover:opacity-80 transition-opacity flex-shrink-0" 
+                          src={product.thumbnail} 
+                          alt={product.name}
+                          onClick={() => openImageViewer(product.thumbnail)}
+                        />
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex-1 min-w-0">
+                            <h3 className="text-sm font-medium text-gray-900 break-words pr-2">{product.name}</h3>
+                            <p className="text-sm text-gray-500 break-words pr-2">{product.brand}</p>
+                            <p className="text-sm text-gray-600 mt-1 break-words pr-2">
+                              {product.category_string || product.category?.name || 'Uncategorized'}
+                            </p>
+                          </div>
+                          <div className="flex flex-col items-end space-y-2 flex-shrink-0 max-w-[100px]">
+                            <span className={`px-1.5 py-0.5 inline-flex text-xs leading-4 font-semibold rounded-full text-center
+                              ${product.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                              {product.isActive ? 'Active' : 'Inactive'}
+                            </span>
+                            <div className="text-sm font-medium text-gray-900 text-right">
+                              ₹{product.pricing?.mrp?.toFixed(2) ?? '0.00'}
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="mt-3 flex items-center justify-between">
+                          <div className="text-xs text-gray-500 break-words flex-1 min-w-0 pr-2">
+                            HSN: {product.hsnCode || '—'}
+                          </div>
+                          <div className="flex space-x-2 flex-shrink-0">
+                            <button
+                              onClick={() => openEditModal(product)}
+                              className="text-green-600 hover:text-green-900 p-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                              title="Edit"
+                              disabled={confirmDeleteVisible}
+                            >
+                              <Edit size={16} />
+                            </button>
+                            {currentUser?.role === 'super_admin' && (
+                              <button
+                                onClick={() => {
+                                  setProductIdToDelete(product._id);
+                                  setConfirmDeleteVisible(true);
+                                }}
+                                className="text-red-600 hover:text-red-900 p-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                                title="Delete"
+                                disabled={confirmDeleteVisible}
+                              >
+                                <Trash2 size={16} />
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
               {/* Pagination controls */}
-              <div className="flex justify-between items-center mt-4">
-                <div className="text-sm text-gray-600">
+              <div className="flex flex-col sm:flex-row justify-between items-center mt-4 gap-2">
+                <div className="text-sm text-gray-600 text-center sm:text-left">
                   Showing {products.length ? ((page - 1) * PAGE_SIZE + 1) : 0}
                   -
                   {products.length ? ((page - 1) * PAGE_SIZE + products.length) : 0}
@@ -864,18 +932,18 @@ export default function Products() {
                   <button
                     disabled={page === 1}
                     onClick={() => handlePageChange(page - 1)}
-                    className="px-3 py-1 bg-gray-200 hover:bg-gray-300 text-gray-600 rounded disabled:opacity-50 flex items-center"
+                    className="px-3 py-1 bg-gray-200 hover:bg-gray-300 text-gray-600 rounded disabled:opacity-50 flex items-center text-sm"
                   >
                     <ChevronLeft size={16} />
-                    Prev
+                    <span className="hidden sm:inline ml-1">Prev</span>
                   </button>
-                  <span className="px-2">{page} / {totalPages}</span>
+                  <span className="px-2 text-sm">{page} / {totalPages}</span>
                   <button
                     disabled={page === totalPages}
                     onClick={() => handlePageChange(page + 1)}
-                    className="px-3 py-1 bg-gray-200 hover:bg-gray-300 text-gray-600 rounded disabled:opacity-50 flex items-center"
+                    className="px-3 py-1 bg-gray-200 hover:bg-gray-300 text-gray-600 rounded disabled:opacity-50 flex items-center text-sm"
                   >
-                    Next
+                    <span className="hidden sm:inline mr-1">Next</span>
                     <ChevronRight size={16} />
                   </button>
                 </div>
@@ -888,7 +956,7 @@ export default function Products() {
         <Modal
           isOpen={editModalIsOpen}
           onRequestClose={closeEditModal}
-          className="relative bg-white  p-6 shadow-xl max-w-4xl mx-auto my-8 max-h-[90vh] overflow-y-auto"
+          className="relative bg-white p-3 md:p-6 shadow-xl max-w-full md:max-w-4xl mx-2 md:mx-auto my-2 md:my-8 max-h-[95vh] md:max-h-[90vh] overflow-y-auto w-full md:w-auto"
         >
           <div className="flex justify-between items-center mb-4 sticky top-0 bg-white py-2 z-10">
             <h2 className="text-xl font-bold text-gray-800">Edit Product</h2>
@@ -902,7 +970,7 @@ export default function Products() {
               {/* Basic Information Section */}
               <div className="bg-gray-50 p-4 ">
                 <h3 className="text-lg font-medium text-gray-800 mb-4">Basic Information</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <EditInput
                     label="Product Name*"
                     name="name"
@@ -986,7 +1054,7 @@ export default function Products() {
               {/* Pricing Section */}
               <div className="bg-gray-50 p-4 ">
                 <h3 className="text-lg font-medium text-gray-800 mb-4">Pricing</h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <EditInput
                     label="MRP (₹)*"
                     name="pricing.mrp"
@@ -998,9 +1066,9 @@ export default function Products() {
                     disabled={isSaving || currentUser?.role === 'inventory_manager'}
                     required
                   />
-                  <div className="md:col-span-2">
+                  <div className="sm:col-span-2">
                     <label className="block text-gray-700 text-sm font-medium mb-1">Tax</label>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <EditInput
                         label="GST Rate (%)"
                         name="tax.gstRate"
@@ -1033,7 +1101,7 @@ export default function Products() {
               {/* Media Section */}
               <div className="bg-gray-50 p-4 ">
                 <h3 className="text-lg font-medium text-gray-800 mb-4">Media</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-gray-700 text-sm font-medium mb-1">Thumbnail</label>
                     
@@ -1213,11 +1281,11 @@ export default function Products() {
       <Modal
         isOpen={imageViewerVisible}
         onRequestClose={closeImageViewer}
-        className="fixed inset-0 flex items-center justify-center p-4 z-50"
+        className="fixed inset-0 flex items-center justify-center p-2 md:p-4 z-50"
         overlayClassName="fixed inset-0 bg-black bg-opacity-75 z-40"
         contentLabel="Product Image Viewer"
       >
-        <div className="relative max-w-4xl max-h-full bg-white rounded-lg overflow-hidden">
+        <div className="relative max-w-full md:max-w-4xl max-h-full bg-white rounded-lg overflow-hidden">
           <div className="flex justify-end p-2">
             <button
               onClick={closeImageViewer}
@@ -1227,12 +1295,12 @@ export default function Products() {
               <X size={24} />
             </button>
           </div>
-          <div className="p-4">
+          <div className="p-2 md:p-4">
             {selectedImageUrl && (
               <img
                 src={selectedImageUrl}
                 alt="Product"
-                className="max-w-full max-h-96 object-contain mx-auto"
+                className="max-w-full max-h-80 md:max-h-96 object-contain mx-auto"
                 style={{ maxHeight: '70vh' }}
               />
             )}

@@ -332,6 +332,32 @@ export default function Analytics() {
     ]
   };
 
+  const revenuePieOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'bottom',
+        labels: {
+          padding: 20,
+          usePointStyle: true,
+          pointStyle: 'circle'
+        }
+      },
+      tooltip: {
+        callbacks: {
+          label: function(context) {
+            const label = context.label || '';
+            const value = context.parsed;
+            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+            const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
+            return `${label}: ₹${value.toLocaleString()} (${percentage}%)`;
+          }
+        }
+      }
+    }
+  };
+
   // Line chart for orders & revenue trend
   const ordersLineData = {
     labels: chartLabels,
@@ -567,27 +593,27 @@ export default function Analytics() {
           </div>
           <div className="p-6">
             <div className="h-64 flex items-center justify-center">
-              <Pie data={revenuePieData} />
+              <Pie data={revenuePieData} options={revenuePieOptions} />
             </div>
             {/* Revenue Categories */}
             <div className="mt-6 space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
                   <span className="text-sm text-gray-600">Product Sales</span>
                 </div>
                 <span className="font-medium">₹{metrics.productRevenue.toLocaleString()}</span>
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                   <span className="text-sm text-gray-600">Delivery Fees</span>
                 </div>
                 <span className="font-medium">₹{metrics.deliveryRevenue.toLocaleString()}</span>
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
+                  <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
                   <span className="text-sm text-gray-600">Service Charges</span>
                 </div>
                 <span className="font-medium">₹{metrics.serviceRevenue.toLocaleString()}</span>

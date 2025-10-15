@@ -31,6 +31,7 @@ import RequestedProducts from './Admin/RequestedProducts.jsx'
 import Offers from './Admin/Offers.jsx'
 import MarketArea from './Admin/MarketArea.jsx'
 import DeleteRequests from './Admin/DeleteRequests.jsx'
+import UpdateNotesAdmin from './Admin/UpdateNotesAdmin.jsx'
 
 function App() {
   return (
@@ -111,6 +112,7 @@ function App() {
           {/* Admin Management (Super Admin only) */}
           <Route path="/admin-management" element={<AdminManagement />} />
           <Route path="/admin-register" element={<AdminRegister />} />
+          <Route path="/update-notes" element={<UpdateNotesAdmin />} />
           
           {/* Settings & Profile */}
           <Route path="/profile" element={<Profile />} />

@@ -64,7 +64,10 @@ function RequestedProducts() {
   const updateRequestStatus = async (requestId, status, rejectionReason = null) => {
     try {
       setUpdating(requestId);
-      const body = { status };
+      const body = {
+        status,
+        actionBy: currentAdmin?.name || 'Unknown Admin'
+      };
       if (status === 'rejected' && rejectionReason) {
         body.rejectionReason = rejectionReason;
       }
@@ -210,19 +213,19 @@ function RequestedProducts() {
 
   return (
     <Layout title="Requested Products">
-      <div className="min-h-screen bg-gray-50 p-4 md:p-6">
+      <div className="min-h-screen bg-gray-50 p-2 md:p-6">
         {/* Header */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-          <div className="flex items-center gap-4">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 md:mb-6 gap-4">
+          <div className="flex items-center gap-2 md:gap-4">
             <button
               onClick={() => navigate('/products')}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              className="p-2 hover:bg-gray-100 rounded-none transition-colors"
             >
               <ChevronLeft size={24} />
             </button>
             <div>
-              <h1 className="text-2xl md:text-3xl font-bold text-green-700">Requested Products</h1>
-              <p className="text-gray-600 mt-1">Manage product requests from merchants</p>
+              <h1 className="text-xl md:text-2xl lg:text-3xl font-bold text-green-700">Requested Products</h1>
+              <p className="text-gray-600 mt-1 text-sm md:text-base">Manage product requests from merchants</p>
             </div>
           </div>
         </div>
@@ -234,7 +237,7 @@ function RequestedProducts() {
             <span className="ml-2 text-gray-600">Loading requested products...</span>
           </div>
         ) : requestedProducts.length === 0 ? (
-          <div className="bg-white rounded-lg shadow-sm p-12 text-center">
+          <div className="bg-white rounded-none shadow-sm p-12 text-center">
             <FileText size={48} className="mx-auto text-gray-400 mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">No product requests</h3>
             <p className="text-gray-500">There are no product requests from merchants at the moment.</p>
@@ -242,35 +245,35 @@ function RequestedProducts() {
         ) : (
           <>
             {/* Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-              <div className="bg-white rounded-lg shadow-sm p-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4 mb-4 md:mb-6">
+              <div className="bg-white rounded-none shadow-sm p-3 md:p-4">
                 <div className="flex items-center">
-                  <Clock className="text-yellow-500" size={24} />
-                  <div className="ml-3">
-                    <p className="text-sm font-medium text-gray-600">Pending</p>
-                    <p className="text-2xl font-bold text-gray-900">
+                  <Clock className="text-yellow-500 flex-shrink-0" size={20} />
+                  <div className="ml-2 md:ml-3">
+                    <p className="text-xs md:text-sm font-medium text-gray-600">Pending</p>
+                    <p className="text-xl md:text-2xl font-bold text-gray-900">
                       {requestedProducts.filter(r => r.status === 'pending').length}
                     </p>
                   </div>
                 </div>
               </div>
-              <div className="bg-white rounded-lg shadow-sm p-4">
+              <div className="bg-white rounded-none shadow-sm p-3 md:p-4">
                 <div className="flex items-center">
-                  <CheckCircle className="text-green-500" size={24} />
-                  <div className="ml-3">
-                    <p className="text-sm font-medium text-gray-600">Approved</p>
-                    <p className="text-2xl font-bold text-gray-900">
+                  <CheckCircle className="text-green-500 flex-shrink-0" size={20} />
+                  <div className="ml-2 md:ml-3">
+                    <p className="text-xs md:text-sm font-medium text-gray-600">Approved</p>
+                    <p className="text-xl md:text-2xl font-bold text-gray-900">
                       {requestedProducts.filter(r => r.status === 'approved').length}
                     </p>
                   </div>
                 </div>
               </div>
-              <div className="bg-white rounded-lg shadow-sm p-4">
+              <div className="bg-white rounded-none shadow-sm p-3 md:p-4">
                 <div className="flex items-center">
-                  <XCircle className="text-red-500" size={24} />
-                  <div className="ml-3">
-                    <p className="text-sm font-medium text-gray-600">Rejected</p>
-                    <p className="text-2xl font-bold text-gray-900">
+                  <XCircle className="text-red-500 flex-shrink-0" size={20} />
+                  <div className="ml-2 md:ml-3">
+                    <p className="text-xs md:text-sm font-medium text-gray-600">Rejected</p>
+                    <p className="text-xl md:text-2xl font-bold text-gray-900">
                       {requestedProducts.filter(r => r.status === 'rejected').length}
                     </p>
                   </div>
@@ -279,25 +282,25 @@ function RequestedProducts() {
             </div>
 
             {/* Products List */}
-            <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-              <div className="px-6 py-4 border-b border-gray-200">
-                <h2 className="text-lg font-medium text-gray-900">Product Requests</h2>
+            <div className="bg-white rounded-none shadow-sm overflow-hidden">
+              <div className="px-4 md:px-6 py-3 md:py-4 border-b border-gray-200">
+                <h2 className="text-base md:text-lg font-medium text-gray-900">Product Requests</h2>
               </div>
 
               <div className="divide-y divide-gray-200">
                 {requestedProducts.map((request) => (
-                  <div key={request.id} className="p-6 hover:bg-gray-50">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <h3 className="text-lg font-medium text-gray-900">{request.productName}</h3>
-                          <div className={`flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full border ${getStatusColor(request.status)}`}>
+                  <div key={request.id} className="p-4 md:p-6 hover:bg-gray-50">
+                    <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mb-2">
+                          <h3 className="text-base md:text-lg font-medium text-gray-900 break-words">{request.productName}</h3>
+                          <div className={`flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-none border self-start ${getStatusColor(request.status)}`}>
                             {getStatusIcon(request.status)}
                             {request.status.charAt(0).toUpperCase() + request.status.slice(1)}
                           </div>
                         </div>
 
-                        <div className="text-sm text-gray-600 mb-2">
+                        <div className="text-sm text-gray-600 mb-2 break-words">
                           <span className="font-medium">Requested by:</span> {request.merchantBusinessName}
                           {request.merchantName && (
                             <span className="text-gray-500"> ({request.merchantName})</span>
@@ -315,57 +318,65 @@ function RequestedProducts() {
                         </div>
 
                         {request.status === 'rejected' && request.rejectionReason && (
-                          <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded text-sm text-red-800">
+                          <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded-none text-sm text-red-800 break-words">
                             <span className="font-medium">Rejection Reason:</span> {request.rejectionReason}
+                          </div>
+                        )}
+
+                        {(request.status === 'approved' || request.status === 'rejected') && request.actionBy && (
+                          <div className="mt-2 p-2 bg-gray-50 border border-gray-200 rounded-none text-sm text-gray-700 break-words">
+                            <span className="font-medium">{request.status === 'approved' ? 'Approved' : 'Rejected'} by:</span> {request.actionBy}
                           </div>
                         )}
                       </div>
 
-                      {request.status === 'pending' && (
-                        <div className="flex gap-2 ml-4">
-                          <button
-                            onClick={() => updateRequestStatus(request.id, 'approved')}
-                            disabled={updating === request.id}
-                            className="px-3 py-1 bg-green-600 hover:bg-green-700 text-white text-sm rounded flex items-center gap-1 disabled:opacity-50"
-                          >
-                            {updating === request.id ? (
-                              <Loader2 className="animate-spin" size={14} />
-                            ) : (
-                              <CheckCircle size={14} />
-                            )}
-                            Approve
-                          </button>
-                          <button
-                            onClick={() => handleRejectClick(request.id)}
-                            disabled={updating === request.id}
-                            className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-sm rounded flex items-center gap-1 disabled:opacity-50"
-                          >
-                            {updating === request.id ? (
-                              <Loader2 className="animate-spin" size={14} />
-                            ) : (
-                              <XCircle size={14} />
-                            )}
-                            Reject
-                          </button>
-                        </div>
-                      )}
+                      <div className="flex flex-col gap-2 md:ml-4">
+                        {request.status === 'pending' && (
+                          <div className="flex flex-col sm:flex-row gap-2">
+                            <button
+                              onClick={() => updateRequestStatus(request.id, 'approved')}
+                              disabled={updating === request.id}
+                              className="px-3 py-2 bg-green-600 hover:bg-green-700 text-white text-sm rounded-none flex items-center justify-center gap-1 disabled:opacity-50"
+                            >
+                              {updating === request.id ? (
+                                <Loader2 className="animate-spin" size={14} />
+                              ) : (
+                                <CheckCircle size={14} />
+                              )}
+                              Approve
+                            </button>
+                            <button
+                              onClick={() => handleRejectClick(request.id)}
+                              disabled={updating === request.id}
+                              className="px-3 py-2 bg-red-600 hover:bg-red-700 text-white text-sm rounded-none flex items-center justify-center gap-1 disabled:opacity-50"
+                            >
+                              {updating === request.id ? (
+                                <Loader2 className="animate-spin" size={14} />
+                              ) : (
+                                <XCircle size={14} />
+                              )}
+                              Reject
+                            </button>
+                          </div>
+                        )}
 
-                      {currentAdmin?.role === 'super_admin' && (
-                        <div className="flex gap-2 ml-4">
-                          <button
-                            onClick={() => handleDeleteClick(request.id)}
-                            disabled={updating === request.id}
-                            className="px-3 py-1 bg-gray-600 hover:bg-gray-700 text-white text-sm rounded flex items-center gap-1 disabled:opacity-50"
-                          >
-                            {updating === request.id ? (
-                              <Loader2 className="animate-spin" size={14} />
-                            ) : (
-                              <Trash2 size={14} />
-                            )}
-                            Delete
-                          </button>
-                        </div>
-                      )}
+                        {currentAdmin?.role === 'super_admin' && (
+                          <div className="flex justify-center md:justify-start">
+                            <button
+                              onClick={() => handleDeleteClick(request.id)}
+                              disabled={updating === request.id}
+                              className="px-3 py-2 bg-gray-600 hover:bg-gray-700 text-white text-sm rounded-none flex items-center justify-center gap-1 disabled:opacity-50 w-full sm:w-auto"
+                            >
+                              {updating === request.id ? (
+                                <Loader2 className="animate-spin" size={14} />
+                              ) : (
+                                <Trash2 size={14} />
+                              )}
+                              Delete
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -374,26 +385,28 @@ function RequestedProducts() {
 
             {/* Pagination */}
             {totalPages > 1 && (
-              <div className="flex justify-center items-center mt-6 gap-2">
-                <button
-                  onClick={() => fetchRequestedProducts(page - 1)}
-                  disabled={page <= 1}
-                  className="px-3 py-2 border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 flex items-center gap-1"
-                >
-                  <ChevronLeft size={16} />
-                  Previous
-                </button>
-                <span className="px-4 py-2 text-sm text-gray-600">
-                  Page {page} of {totalPages}
-                </span>
-                <button
-                  onClick={() => fetchRequestedProducts(page + 1)}
-                  disabled={page >= totalPages}
-                  className="px-3 py-2 border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 flex items-center gap-1"
-                >
-                  Next
-                  <ChevronRight size={16} />
-                </button>
+              <div className="flex flex-col sm:flex-row justify-center items-center mt-4 md:mt-6 gap-2">
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => fetchRequestedProducts(page - 1)}
+                    disabled={page <= 1}
+                    className="px-3 py-2 border border-gray-300 rounded-none disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 flex items-center gap-1 text-sm"
+                  >
+                    <ChevronLeft size={16} />
+                    <span className="hidden sm:inline">Previous</span>
+                  </button>
+                  <span className="px-3 py-2 text-sm text-gray-600 flex items-center">
+                    Page {page} of {totalPages}
+                  </span>
+                  <button
+                    onClick={() => fetchRequestedProducts(page + 1)}
+                    disabled={page >= totalPages}
+                    className="px-3 py-2 border border-gray-300 rounded-none disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 flex items-center gap-1 text-sm"
+                  >
+                    <span className="hidden sm:inline">Next</span>
+                    <ChevronRight size={16} />
+                  </button>
+                </div>
               </div>
             )}
           </>
@@ -402,8 +415,8 @@ function RequestedProducts() {
 
       {/* Rejection Reason Modal */}
       {showRejectModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-none p-4 md:p-6 w-full max-w-md mx-auto">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Reject Product Request</h3>
             <p className="text-sm text-gray-600 mb-4">
               Please provide a reason for rejecting this product request:
@@ -423,7 +436,7 @@ function RequestedProducts() {
                   <button
                     key={reason}
                     onClick={() => setRejectionReason(reason)}
-                    className="px-3 py-1 text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-full transition-colors"
+                    className="px-3 py-1 text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-none transition-colors"
                   >
                     {reason}
                   </button>
@@ -435,24 +448,24 @@ function RequestedProducts() {
               value={rejectionReason}
               onChange={(e) => setRejectionReason(e.target.value)}
               placeholder="Enter rejection reason..."
-              className="w-full p-3 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+              className="w-full p-3 border border-gray-300 rounded-none resize-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
               rows={4}
               maxLength={500}
             />
             <div className="text-xs text-gray-500 mt-1 mb-4">
               {rejectionReason.length}/500 characters
             </div>
-            <div className="flex gap-3 justify-end">
+            <div className="flex flex-col sm:flex-row gap-3 justify-end">
               <button
                 onClick={handleRejectCancel}
-                className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-none transition-colors order-2 sm:order-1"
               >
                 Cancel
               </button>
               <button
                 onClick={handleRejectConfirm}
                 disabled={!rejectionReason.trim() || updating === rejectingRequest}
-                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-none disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 order-1 sm:order-2"
               >
                 {updating === rejectingRequest && <Loader2 className="animate-spin" size={14} />}
                 Reject Request
@@ -464,16 +477,16 @@ function RequestedProducts() {
 
       {/* Delete Confirmation Modal */}
       {showDeleteModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-none p-4 md:p-6 w-full max-w-md mx-auto">
             <div className="text-center">
-              <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
+              <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-none bg-red-100 mb-4">
                 <Trash2 className="h-6 w-6 text-red-600" />
               </div>
               <h3 className="text-lg font-semibold text-gray-900 mb-2">
                 {deleteStep === 1 ? 'Delete Product Request?' : 'Confirm Deletion'}
               </h3>
-              <p className="text-sm text-gray-600 mb-6">
+              <p className="text-sm text-gray-600 mb-6 break-words">
                 {deleteStep === 1
                   ? 'This action cannot be undone. Are you sure you want to delete this product request?'
                   : 'This will permanently remove the product request from the system. Type "DELETE" to confirm.'
@@ -483,7 +496,7 @@ function RequestedProducts() {
                 <input
                   type="text"
                   placeholder="Type DELETE to confirm"
-                  className="w-full p-3 border border-gray-300 rounded-lg mb-4 focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  className="w-full p-3 border border-gray-300 rounded-none mb-4 focus:ring-2 focus:ring-red-500 focus:border-red-500"
                   onChange={(e) => {
                     if (e.target.value === 'DELETE') {
                       handleDeleteConfirm();
@@ -491,17 +504,17 @@ function RequestedProducts() {
                   }}
                 />
               )}
-              <div className="flex gap-3 justify-center">
+              <div className="flex flex-col sm:flex-row gap-3 justify-center">
                 <button
                   onClick={handleDeleteCancel}
-                  className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                  className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-none transition-colors order-2 sm:order-1"
                 >
                   Cancel
                 </button>
                 {deleteStep === 1 && (
                   <button
                     onClick={handleDeleteConfirm}
-                    className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg"
+                    className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-none order-1 sm:order-2"
                   >
                     Delete
                   </button>

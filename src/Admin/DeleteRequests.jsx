@@ -18,7 +18,7 @@ export default function DeleteRequests() {
   const navigate = useNavigate();
   const [currentUser, setCurrentUser] = useState(null);
   const [checkingUser, setCheckingUser] = useState(true);
-  const allowedRoles = ['super_admin', 'admin'];
+  const allowedRoles = ['super_admin'];
 
   // Modal states
   const [approveModal, setApproveModal] = useState({ open: false, userId: null, userName: '' });

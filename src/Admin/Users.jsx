@@ -16,11 +16,21 @@ export default function Users() {
   const [currentPage, setCurrentPage] = useState(1);
   const [usersPerPage] = useState(10);
   const [searching, setSearching] = useState(false);
+  const [searchLoading, setSearchLoading] = useState(false);
 
   const navigate = useNavigate();
   const [currentUser, setCurrentUser] = useState(null);
   const [checkingUser, setCheckingUser] = useState(true);
   const allowedRoles = ['super_admin', 'admin'];
+
+  // Helper function to format date as DD/MM/YYYY
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
+  };
 
   const fetchCurrentUser = useCallback( async () => {
     try {
@@ -156,7 +166,7 @@ export default function Users() {
       return;
     }
     try {
-      setLoading(true);
+      setSearchLoading(true);
       setSearching(true);
       const response = await fetch(
         `${import.meta.env.VITE_SERVER}/admin/users/search?q=${encodeURIComponent(searchTerm)}`,
@@ -186,7 +196,7 @@ export default function Users() {
       console.error('Error searching users:', error);
       toast.error(error.message);
     } finally {
-      setLoading(false);
+      setSearchLoading(false);
     }
   };
 
@@ -200,43 +210,43 @@ export default function Users() {
 
   return (
     <Layout title="Users">
-      <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
+      <div className="p-1 sm:p-4 lg:p-6 space-y-2 sm:space-y-4 lg:space-y-6">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 flex items-center">
-              <FiUsers className="mr-2 sm:mr-3 text-green-600" size={24} />
+            <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 flex items-center">
+              <FiUsers className="mr-2 sm:mr-3 text-green-600" size={20} />
               <span className="hidden sm:inline">Users Management</span>
               <span className="sm:hidden">Users</span>
             </h1>
-            <p className="text-gray-600 mt-1 text-sm sm:text-base">Manage all registered users</p>
+            <p className="text-gray-600 mt-1 text-xs sm:text-sm lg:text-base">Manage all registered users</p>
           </div>
-          <div className="bg-white px-3 py-2 sm:px-4 sm:py-3 shadow border border-gray-200 flex items-center gap-2">
-            <FiUser className="text-green-500" size={18} />
-            <span className="text-gray-700 text-sm sm:text-base">
+          <div className="bg-white px-3 py-2 sm:px-4 sm:py-3 shadow-sm border border-gray-200 flex items-center gap-2 self-start sm:self-auto">
+            <FiUser className="text-green-500" size={16} />
+            <span className="text-gray-700 text-xs sm:text-sm lg:text-base">
               <span className="font-bold">{totalUsers}</span> Users
             </span>
           </div>
         </div>
 
         {/* Search */}
-        <div className="bg-white p-4 sm:p-6 shadow-sm border border-gray-200">
+        <div className="bg-white p-2 sm:p-4 lg:p-6 shadow-sm border border-gray-200">
           <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-3 sm:gap-4">
             <div className="relative flex-grow">
               <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <FiSearch className="text-gray-400" size={18} />
+                <FiSearch className="text-gray-400" size={16} />
               </span>
               <input
                 type="text"
                 placeholder="Search by name or email"
-                className="pl-10 pr-4 py-2 sm:py-3 w-full border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors duration-200"
+                className="pl-9 sm:pl-10 pr-4 py-2 sm:py-3 w-full border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors duration-200 text-sm sm:text-base"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
             <button
               type="submit"
-              className="px-4 py-2 sm:py-3 bg-green-600 text-white hover:bg-green-700 transition-colors duration-200 whitespace-nowrap"
+              className="px-4 py-2 sm:py-3 bg-green-600 text-white hover:bg-green-700 transition-colors duration-200 whitespace-nowrap text-sm sm:text-base"
             >
               Search
             </button>
@@ -245,14 +255,14 @@ export default function Users() {
 
         {/* Users Table */}
         <div className="bg-white shadow-sm border border-gray-200 overflow-hidden">
-          {loading ? (
-            <div className="flex justify-center items-center p-8 sm:p-12">
-              <div className="animate-spin h-8 w-8 sm:h-12 sm:w-12 border-t-2 border-b-2 rounded-full border-green-500"></div>
+          {(loading || searchLoading) ? (
+            <div className="flex justify-center items-center p-4 sm:p-8 lg:p-12">
+              <div className="animate-spin h-6 w-6 sm:h-8 sm:w-8 lg:h-12 lg:w-12 border-t-2 border-b-2 rounded-full border-green-500"></div>
             </div>
           ) : users.length === 0 ? (
-            <div className="p-8 sm:p-12 text-center text-gray-500">
-              <FiUsers size={40} className="mx-auto mb-4 text-gray-300" />
-              <p className="text-sm sm:text-base">No users found. Try adjusting your search.</p>
+            <div className="p-4 sm:p-8 lg:p-12 text-center text-gray-500">
+              <FiUsers size={32} className="mx-auto mb-4 text-gray-300" />
+              <p className="text-xs sm:text-sm lg:text-base">No users found. Try adjusting your search.</p>
             </div>
           ) : (
             <>
@@ -271,8 +281,8 @@ export default function Users() {
                   <tbody className="bg-white divide-y divide-gray-200">
                     {currentUsers.map((user) => (
                       <tr key={user._id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{user.personalInfo.name}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{user.personalInfo.phone || 'N/A'}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{user.personalInfo?.name || 'N/A'}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{user.personalInfo?.phone || 'N/A'}</td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span className={`px-2 py-1 inline-flex text-xs font-semibold ${
                             user.status.isActive
@@ -283,7 +293,7 @@ export default function Users() {
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {new Date(user.createdAt).toLocaleDateString()}
+                          {formatDate(user.createdAt)}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
                           <div className="flex justify-center items-center gap-2">
@@ -305,22 +315,22 @@ export default function Users() {
               <div className="md:hidden">
                 <div className="divide-y divide-gray-200">
                   {currentUsers.map((user) => (
-                    <div key={user._id} className="p-4 hover:bg-gray-50">
+                    <div key={user._id} className="p-2 sm:p-4 hover:bg-gray-50">
                       <div className="flex items-start gap-3">
-                        <div className="flex-shrink-0 w-10 h-10">
+                        <div className="flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12">
                           <div className="w-full h-full rounded-full bg-gray-200 flex items-center justify-center">
-                            <FiUser className="w-5 h-5 text-gray-400" />
+                            <FiUser className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
                           </div>
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-start justify-between mb-2">
-                            <div className="flex-1 min-w-0">
-                              <h3 className="text-sm font-medium text-gray-900 truncate">{user.personalInfo.name}</h3>
-                              <p className="text-xs text-gray-500 mt-0.5">
-                                {user.personalInfo.phone || 'No phone'}
+                            <div className="flex-1 min-w-0 mr-2">
+                              <h3 className="text-sm sm:text-base font-medium text-gray-900 truncate">{user.personalInfo?.name || 'N/A'}</h3>
+                              <p className="text-xs sm:text-sm text-gray-500 mt-0.5">
+                                {user.personalInfo?.phone || 'No phone'}
                               </p>
                             </div>
-                            <span className={`inline-flex px-2 py-1 text-xs font-semibold ml-2 flex-shrink-0 ${
+                            <span className={`inline-flex px-2 py-1 text-xs font-semibold flex-shrink-0 ${
                               user.status.isActive
                                 ? 'bg-green-100 text-green-800'
                                 : 'bg-red-100 text-red-800'
@@ -329,16 +339,13 @@ export default function Users() {
                             </span>
                           </div>
 
-                          <div className="flex items-center justify-between mb-3">
-                            <div className="text-xs text-gray-500">
-                              Joined: {new Date(user.createdAt).toLocaleDateString()}
+                          <div className="flex items-center justify-between">
+                            <div className="text-xs sm:text-sm text-gray-500">
+                              Joined: {formatDate(user.createdAt)}
                             </div>
-                          </div>
-
-                          <div className="flex justify-end">
                             <button
                               onClick={() => navigate(`/users/${user._id}`)}
-                              className="px-3 py-2 bg-blue-600 text-white text-xs hover:bg-blue-700 transition-colors duration-200"
+                              className="px-3 py-1.5 sm:px-4 sm:py-2 bg-blue-600 text-white text-xs sm:text-sm hover:bg-blue-700 transition-colors duration-200 ml-2"
                             >
                               View Details
                             </button>
@@ -352,27 +359,27 @@ export default function Users() {
 
               {/* Pagination */}
               {!searching && (
-                <div className="px-4 py-3 flex items-center justify-between border-t border-gray-200">
+                <div className="px-2 sm:px-4 py-3 flex items-center justify-between border-t border-gray-200">
                   <div className="flex-1 flex justify-between sm:hidden">
                     <button
                       onClick={() => paginate(Math.max(1, currentPage - 1))}
                       disabled={currentPage === 1}
-                      className="relative inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+                      className="relative inline-flex items-center px-3 py-2 border border-gray-300 text-xs sm:text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
                     >
-                      <FiChevronLeft className="h-4 w-4 mr-1" />
+                      <FiChevronLeft className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
                       Previous
                     </button>
                     <button
                       onClick={() => paginate(Math.min(totalPages, currentPage + 1))}
                       disabled={currentPage === totalPages}
-                      className="ml-3 relative inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+                      className="ml-3 relative inline-flex items-center px-3 py-2 border border-gray-300 text-xs sm:text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
                     >
                       Next
-                      <FiChevronRight className="h-4 w-4 ml-1" />
+                      <FiChevronRight className="h-3 w-3 sm:h-4 sm:w-4 ml-1" />
                     </button>
                   </div>
                   <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-                    <div className="text-sm text-gray-700">
+                    <div className="text-xs sm:text-sm text-gray-700">
                       Showing <span className="font-medium">{indexOfFirstUser + 1}</span> to{' '}
                       <span className="font-medium">{Math.min(indexOfLastUser, totalUsers)}</span> of{' '}
                       <span className="font-medium">{totalUsers}</span> users
@@ -387,7 +394,7 @@ export default function Users() {
                             : 'text-gray-500 hover:bg-gray-50 border-gray-300'
                         } transition-colors duration-200`}
                       >
-                        <FiChevronLeft className="h-5 w-5" />
+                        <FiChevronLeft className="h-4 w-4 sm:h-5 sm:w-5" />
                       </button>
                       {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                         let pageNum;
@@ -404,7 +411,7 @@ export default function Users() {
                           <button
                             key={pageNum}
                             onClick={() => paginate(pageNum)}
-                            className={`px-4 py-2 border-t border-b bg-white text-sm font-medium ${
+                            className={`px-3 sm:px-4 py-2 border-t border-b bg-white text-xs sm:text-sm font-medium ${
                               currentPage === pageNum
                                 ? 'z-10 bg-green-50 border-green-500 text-green-600'
                                 : 'border-gray-300 text-gray-500 hover:bg-gray-50'
@@ -427,7 +434,7 @@ export default function Users() {
                             : 'text-gray-500 hover:bg-gray-50 border-gray-300'
                         } transition-colors duration-200`}
                       >
-                        <FiChevronRight className="h-5 w-5" />
+                        <FiChevronRight className="h-4 w-4 sm:h-5 sm:w-5" />
                       </button>
                     </nav>
                   </div>

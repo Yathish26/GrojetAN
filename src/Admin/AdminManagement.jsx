@@ -235,19 +235,23 @@ export default function AdminManagement() {
 
   if (!isSuperAdmin) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen">
-        <Shield className="w-16 h-16 text-red-500 mb-4" />
-        <h2 className="text-xl font-semibold text-gray-800 mb-2">Access Denied</h2>
-        <p className="text-gray-600">Only Super Admins can access admin management.</p>
-      </div>
+      <Layout title="Admin Management">
+        <div className="flex flex-col items-center justify-center py-12">
+          <Shield className="w-16 h-16 text-red-500 mb-4" />
+          <h2 className="text-xl font-semibold text-gray-800 mb-2">Access Denied</h2>
+          <p className="text-gray-600">Only Super Admins can access admin management.</p>
+        </div>
+      </Layout>
     );
   }
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin h-12 w-12 border-4 border-green-200 border-t-green-600 rounded-full"></div>
-      </div>
+      <Layout title="Admin Management">
+        <div className="flex items-center justify-center py-12">
+          <div className="animate-spin h-12 w-12 border-4 border-green-200 border-t-green-600 rounded-full"></div>
+        </div>
+      </Layout>
     );
   }
 
