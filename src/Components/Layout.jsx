@@ -291,31 +291,31 @@ const Layout = ({ children, title }) => {
 
               {/* Notifications Panel */}
               {notificationsOpen && (
-                <div className="absolute right-0 mt-2 w-96 bg-white rounded-lg shadow-lg border border-neutral-200 z-50 max-h-96 overflow-hidden">
-                  <div className="p-4 border-b border-neutral-200">
-                    <h3 className="text-lg font-semibold text-neutral-900">App Updates</h3>
-                    <p className="text-sm text-neutral-600">Latest features and improvements</p>
+                <div className="absolute right-0 top-full mt-2 w-80 sm:w-96 max-w-[calc(100vw-1rem)] sm:max-w-[calc(100vw-2rem)] bg-white rounded-lg shadow-lg border border-neutral-200 z-50 max-h-96 overflow-hidden">
+                  <div className="p-3 sm:p-4 border-b border-neutral-200">
+                    <h3 className="text-base sm:text-lg font-semibold text-neutral-900">App Updates</h3>
+                    <p className="text-xs sm:text-sm text-neutral-600">Latest features and improvements</p>
                   </div>
                   <div className="max-h-80 overflow-y-auto">
                     {updateNotes.length > 0 ? (
                       <div className="divide-y divide-neutral-100">
                         {updateNotes.map((note) => (
-                          <div key={note._id} className="p-4 hover:bg-neutral-50 cursor-pointer transition-colors">
-                            <div className="flex items-start gap-3">
-                              <div className="flex-shrink-0 w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                                {note.app === 'admin_panel' && <TabletSmartphone size={16} className="text-green-600" />}
-                                {note.app === 'customer_app' && <Smartphone size={16} className="text-blue-600" />}
-                                {note.app === 'merchant_app' && <Store size={16} className="text-purple-600" />}
-                                {note.app === 'delivery_agent_app' && <Truck size={16} className="text-orange-600" />}
+                          <div key={note._id} className="p-3 sm:p-4 hover:bg-neutral-50 cursor-pointer transition-colors">
+                            <div className="flex items-start gap-2 sm:gap-3">
+                              <div className="flex-shrink-0 w-6 h-6 sm:w-8 sm:h-8 bg-green-100 rounded-full flex items-center justify-center">
+                                {note.app === 'admin_panel' && <TabletSmartphone size={12} className="text-green-600 sm:w-4 sm:h-4" />}
+                                {note.app === 'customer_app' && <Smartphone size={12} className="text-blue-600 sm:w-4 sm:h-4" />}
+                                {note.app === 'merchant_app' && <Store size={12} className="text-purple-600 sm:w-4 sm:h-4" />}
+                                {note.app === 'delivery_agent_app' && <Truck size={12} className="text-orange-600 sm:w-4 sm:h-4" />}
                               </div>
                               <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2 mb-1">
-                                  <span className="text-sm font-medium text-neutral-900 capitalize">
+                                <div className="flex items-center gap-1 sm:gap-2 mb-1">
+                                  <span className="text-xs sm:text-sm font-medium text-neutral-900 capitalize">
                                     {note.app.replace('_', ' ')}
                                   </span>
                                   <span className="text-xs text-neutral-500">v{note.version}</span>
                                 </div>
-                                <p className="text-sm text-neutral-600 mb-2 line-clamp-2">
+                                <p className="text-xs sm:text-sm text-neutral-600 mb-1 sm:mb-2 line-clamp-2">
                                   {note.features.length > 0 ? note.features[0] : 'New update available'}
                                   {note.features.length > 1 && ` +${note.features.length - 1} more features`}
                                 </p>
@@ -336,7 +336,7 @@ const Layout = ({ children, title }) => {
                     )}
                   </div>
                   {updateNotes.length > 0 && (
-                    <div className="p-3 border-t border-neutral-200 bg-neutral-50">
+                    <div className="p-2 sm:p-3 border-t border-neutral-200 bg-neutral-50">
                       <button
                         onClick={() => {
                           setNotificationsOpen(false);
@@ -345,7 +345,7 @@ const Layout = ({ children, title }) => {
                             navigate('/update-notes');
                           }
                         }}
-                        className="w-full text-center text-sm text-green-600 hover:text-green-700 font-medium"
+                        className="w-full text-center text-xs sm:text-sm text-green-600 hover:text-green-700 font-medium"
                       >
                         View All Updates
                       </button>
