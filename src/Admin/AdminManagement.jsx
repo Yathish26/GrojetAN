@@ -31,6 +31,15 @@ const roleHierarchy = {
   inventory_manager: 'Inventory Manager'
 };
 
+// Helper function to format date as DD/MM/YYYY
+const formatDate = (dateString) => {
+  const date = new Date(dateString);
+  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const year = date.getFullYear();
+  return `${day}/${month}/${year}`;
+};
+
 export default function AdminManagement() {
   const navigate = useNavigate();
   const [admins, setAdmins] = useState([]);
@@ -388,7 +397,7 @@ export default function AdminManagement() {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {admin.lastLogin ? new Date(admin.lastLogin).toLocaleDateString() : 'Never'}
+                      {admin.lastLogin ? formatDate(admin.lastLogin) : 'Never'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <div className="flex items-center gap-2">

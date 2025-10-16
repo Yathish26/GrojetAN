@@ -28,6 +28,15 @@ export default function UpdateNotesAdmin() {
   const [filterApp, setFilterApp] = useState('all');
   const [submitting, setSubmitting] = useState(false);
 
+  // Helper function to format date as DD/MM/YYYY
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
+  };
+
   // Form states
   const [formData, setFormData] = useState({
     app: '',
@@ -376,7 +385,7 @@ export default function UpdateNotesAdmin() {
               <div className="p-6 space-y-4">
                 <div className="flex items-center gap-2 text-sm text-gray-600">
                   <FiCalendar className="text-gray-400" />
-                  <span>Released: {new Date(note.releaseDate).toLocaleDateString()}</span>
+                  <span>Released: {formatDate(note.releaseDate)}</span>
                 </div>
 
                 <div>
@@ -397,7 +406,7 @@ export default function UpdateNotesAdmin() {
                 </div>
 
                 <div className="text-xs text-gray-500 pt-2 border-t">
-                  Created: {new Date(note.createdAt).toLocaleDateString()}
+                  Created: {formatDate(note.createdAt)}
                 </div>
               </div>
             </div>
