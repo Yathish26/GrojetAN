@@ -209,69 +209,6 @@ export default function Admin() {
                         icon={CircleCheck}
                     />
                 </div>
-
-                {/* Management Links */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    <div className="bg-white border border-gray-200 p-5" style={{ borderRadius: '0.25rem', boxShadow: 'none' }}>
-                        <h4 className="font-semibold text-green-800 mb-3">Inventory Management</h4>
-                        <div className="space-y-2">
-                            <button
-                                onClick={() => navigate('/products')}
-                                className="flex cursor-pointer items-center gap-2 text-gray-700 hover:text-green-700 transition-colors"
-                            >
-                                <Package size={16} />
-                                View All Products
-                            </button>
-                            <button
-                                onClick={() => navigate('/categories')}
-                                className="flex cursor-pointer items-center gap-2 text-gray-700 hover:text-green-700 transition-colors"
-                            >
-                                <ChartBarStacked size={16} />
-                                Manage Categories
-                            </button>
-                        </div>
-                    </div>
-
-                    <div className="bg-white border border-gray-200 p-5" style={{ borderRadius: '0.25rem', boxShadow: 'none' }}>
-                        <h4 className="font-semibold text-green-800 mb-3">User Management</h4>
-                        <div className="space-y-2">
-                            <button
-                                onClick={() => navigate('/users')}
-                                className="flex items-center gap-2 cursor-pointer text-gray-700 hover:text-green-700 transition-colors"
-                            >
-                                <Users size={16} />
-                                Customer Accounts
-                            </button>
-                            <button
-                                onClick={() => navigate('/merchant-enquiries')}
-                                className="flex items-center gap-2 cursor-pointer text-gray-700 hover:text-green-700 transition-colors"
-                            >
-                                <Store size={16} />
-                                Merchant Enquiries
-                            </button>
-                        </div>
-                    </div>
-
-                    <div className="bg-white border border-gray-200 p-5" style={{ borderRadius: '0.25rem', boxShadow: 'none' }}>
-                        <h4 className="font-semibold text-green-800 mb-3">Delivery Operations</h4>
-                        <div className="space-y-2">
-                            <button
-                                onClick={() => navigate('/delivery-agents')}
-                                className="flex items-center cursor-pointer gap-2 text-gray-700 hover:text-green-700 transition-colors"
-                            >
-                                <Truck size={16} />
-                                Delivery Agents
-                            </button>
-                            <button
-                                onClick={() => navigate('/delivery-zones')}
-                                className="flex items-center cursor-pointer gap-2 text-gray-700 hover:text-green-700 transition-colors"
-                            >
-                                <MapPin size={16} />
-                                Delivery Zones
-                            </button>
-                        </div>
-                    </div>
-                </div>
             </div>
         </Layout>
     );

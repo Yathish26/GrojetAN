@@ -47,12 +47,13 @@ export default function AddProduct() {
     brand: '',
     category: '',
   hsnCode: '',
+    // Weight/Dimension field
+    weightDimension: {
+      value: '',
+      unit: ''
+    },
     pricing: {
       mrp: 0,
-    },
-    tax: {
-      gstRate: 0,
-      includedInPrice: true
     },
     isActive: true,
     isFeatured: false,
@@ -235,6 +236,14 @@ export default function AddProduct() {
         searchKeywords: formData.searchKeywords.filter(kw => kw.trim() !== '')
       };
 
+      // Only include weightDimension if both value and unit are provided
+      if (formData.weightDimension?.value && formData.weightDimension?.unit) {
+        payload.weightDimension = {
+          value: parseFloat(formData.weightDimension.value),
+          unit: formData.weightDimension.unit
+        };
+      }
+
       const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/products`, {
         method: 'POST',
         headers: {
@@ -268,12 +277,13 @@ export default function AddProduct() {
           brand: '',
           category: '',
           hsnCode: '',
+          // Weight/Dimension field
+          weightDimension: {
+            value: '',
+            unit: ''
+          },
           pricing: {
             mrp: 0,
-          },
-          tax: {
-            gstRate: 0,
-            includedInPrice: true
           },
           isActive: true,
           isFeatured: false,
@@ -487,6 +497,39 @@ export default function AddProduct() {
                   placeholder="Brand name"
                 />
               </div>
+
+              {/* Weight/Dimension */}
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700">
+                  Weight/Dimension
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <input
+                    type="number"
+                    name="weightDimension.value"
+                    className="px-3 py-2.5 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    value={formData.weightDimension.value}
+                    onChange={(e) => handleNestedChange('weightDimension', 'value', e.target.value)}
+                    placeholder="e.g. 500"
+                    min="0"
+                    step="0.01"
+                  />
+                  <select
+                    name="weightDimension.unit"
+                    className="px-3 py-2.5 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    value={formData.weightDimension.unit}
+                    onChange={(e) => handleNestedChange('weightDimension', 'unit', e.target.value)}
+                  >
+                    <option value="">Select Unit</option>
+                    {unitOptions.map(option => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <p className="text-xs text-gray-500">e.g. 500ml, 1kg, 250g, 1pack</p>
+              </div>
             </div>
           </div>
 
@@ -543,63 +586,27 @@ export default function AddProduct() {
             </div>
           </div>
 
-          {/* Pricing and Tax */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-800 border-b pb-2">Pricing</h3>
+          {/* Pricing */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-gray-800 border-b pb-2">Pricing</h3>
 
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">
-                  MRP (Maximum Retail Price) *
-                </label>
-                <div className="relative">
-                  <input
-                    type="number"
-                    name="pricing.mrp"
-                    className="w-full pl-10 pr-4 py-2.5 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                    value={formData.pricing.mrp}
-                    onChange={(e) => handleNestedChange('pricing', 'mrp', e.target.value)}
-                    placeholder="e.g. 299"
-                    required
-                    min="0"
-                    step="0.01"
-                  />
-                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">₹</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-800 border-b pb-2">Tax</h3>
-
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">
-                  GST Rate (%)
-                </label>
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">
+                MRP (Maximum Retail Price) *
+              </label>
+              <div className="relative">
                 <input
                   type="number"
-                  name="tax.gstRate"
-                  className="w-full px-4 py-2.5 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                  value={formData.tax.gstRate}
-                  onChange={(e) => handleNestedChange('tax', 'gstRate', e.target.value)}
-                  placeholder="e.g. 18"
+                  name="pricing.mrp"
+                  className="w-full pl-10 pr-4 py-2.5 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  value={formData.pricing.mrp}
+                  onChange={(e) => handleNestedChange('pricing', 'mrp', e.target.value)}
+                  placeholder="e.g. 299"
+                  required
                   min="0"
-                  max="100"
+                  step="0.01"
                 />
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  name="tax.includedInPrice"
-                  id="taxIncluded"
-                  checked={formData.tax.includedInPrice}
-                  onChange={(e) => handleNestedChange('tax', 'includedInPrice', e.target.checked)}
-                  className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
-                />
-                <label htmlFor="taxIncluded" className="text-sm text-gray-700">
-                  Tax included in price
-                </label>
+                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">₹</span>
               </div>
             </div>
           </div>

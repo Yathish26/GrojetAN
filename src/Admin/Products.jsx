@@ -510,7 +510,14 @@ export default function Products() {
         body: JSON.stringify({
           ...editProduct,
           thumbnail: finalThumbnail,
-          images: finalImages
+          images: finalImages,
+          // Only include weightDimension if both value and unit are provided
+          weightDimension: (editProduct.weightDimension?.value && editProduct.weightDimension?.unit) 
+            ? {
+                value: parseFloat(editProduct.weightDimension.value),
+                unit: editProduct.weightDimension.unit
+              }
+            : undefined
         }),
       });
       if (response.status === 401) {
@@ -784,6 +791,7 @@ export default function Products() {
                       <tr>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">HSN</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Weight/Dim</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
                         <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
                         <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
@@ -812,6 +820,11 @@ export default function Products() {
                             </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{product.hsnCode || '—'}</td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {product.weightDimension?.value && product.weightDimension?.unit 
+                              ? `${product.weightDimension.value}${product.weightDimension.unit}` 
+                              : '—'}
+                          </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                             {product.category_string || product.category?.name || 'Uncategorized'}
                           </td>
@@ -889,7 +902,10 @@ export default function Products() {
                         
                         <div className="mt-3 flex items-center justify-between">
                           <div className="text-xs text-gray-500 break-words flex-1 min-w-0 pr-2">
-                            HSN: {product.hsnCode || '—'}
+                            HSN: {product.hsnCode || '—'} | 
+                            Weight: {product.weightDimension?.value && product.weightDimension?.unit 
+                              ? `${product.weightDimension.value}${product.weightDimension.unit}` 
+                              : '—'}
                           </div>
                           <div className="flex space-x-2 flex-shrink-0">
                             <button
@@ -1001,6 +1017,60 @@ export default function Products() {
                     onChange={handleEditChange}
                     disabled={isSaving || currentUser?.role === 'inventory_manager'}
                   />
+                  {/* Weight/Dimension */}
+                  <div>
+                    <label className="block text-gray-700 text-sm font-medium mb-1">Weight/Dimension</label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <input
+                        type="number"
+                        name="weightDimension.value"
+                        value={editProduct.weightDimension?.value || ''}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          setEditProduct(prev => ({
+                            ...prev,
+                            weightDimension: {
+                              ...prev.weightDimension,
+                              value: value
+                            }
+                          }));
+                        }}
+                        className="px-3 py-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500"
+                        disabled={isSaving || currentUser?.role === 'inventory_manager'}
+                        placeholder="e.g. 500"
+                        min="0"
+                        step="0.01"
+                      />
+                      <select
+                        name="weightDimension.unit"
+                        value={editProduct.weightDimension?.unit || ''}
+                        onChange={(e) => {
+                          const unit = e.target.value;
+                          setEditProduct(prev => ({
+                            ...prev,
+                            weightDimension: {
+                              ...prev.weightDimension,
+                              unit: unit
+                            }
+                          }));
+                        }}
+                        className="px-3 py-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500"
+                        disabled={isSaving || currentUser?.role === 'inventory_manager'}
+                      >
+                        <option value="">Select Unit</option>
+                        <option value="g">Gram</option>
+                        <option value="kg">Kilogram</option>
+                        <option value="ml">Milliliter</option>
+                        <option value="l">Liter</option>
+                        <option value="pack">Pack</option>
+                        <option value="piece">Piece</option>
+                        <option value="unit">Unit</option>
+                        <option value="dozen">Dozen</option>
+                        <option value="other">Other</option>
+                      </select>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">e.g. 500ml, 1kg, 250g, 1pack</p>
+                  </div>
                   <div>
                     <label className="block text-gray-700 text-sm font-medium mb-1">Category</label>
                     <select
@@ -1066,35 +1136,6 @@ export default function Products() {
                     disabled={isSaving || currentUser?.role === 'inventory_manager'}
                     required
                   />
-                  <div className="sm:col-span-2">
-                    <label className="block text-gray-700 text-sm font-medium mb-1">Tax</label>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <EditInput
-                        label="GST Rate (%)"
-                        name="tax.gstRate"
-                        value={editProduct.tax?.gstRate}
-                        onChange={handleEditChange}
-                        type="number"
-                        min="0"
-                        max="100"
-                        disabled={isSaving || currentUser?.role === 'inventory_manager'}
-                      />
-                      <div className="flex items-center">
-                        <input
-                          type="checkbox"
-                          id="includedInPrice"
-                          name="tax.includedInPrice"
-                          checked={!!editProduct.tax?.includedInPrice}
-                          onChange={handleEditChange}
-                          className="h-4 w-4 text-blue-600 focus:ring-blue-500"
-                          disabled={isSaving || currentUser?.role === 'inventory_manager'}
-                        />
-                        <label htmlFor="includedInPrice" className="ml-2 text-sm text-gray-700">
-                          Included in Price
-                        </label>
-                      </div>
-                    </div>
-                  </div>
                 </div>
               </div>
 
