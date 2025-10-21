@@ -152,7 +152,7 @@ export default function UserData() {
             'Content-Type': 'application/json',
           },
           credentials: 'include',
-          body: JSON.stringify({ 
+          body: JSON.stringify({
             status: 'suspended',
             reason: suspensionReason
           }),
@@ -227,7 +227,7 @@ export default function UserData() {
             'Content-Type': 'application/json',
           },
           credentials: 'include',
-          body: JSON.stringify({ 
+          body: JSON.stringify({
             status: selectedStatus,
             reason: statusReason
           }),
@@ -313,35 +313,21 @@ export default function UserData() {
         {/* User Profile Header */}
         <div className="bg-white shadow-lg overflow-hidden">
           <div className="bg-gradient-to-r from-green-500 to-blue-500 px-6 py-8">
-            <div className="flex items-center gap-4">
-              <div className="w-20 h-20 bg-white flex items-center justify-center shadow-lg">
-                {user.personalInfo?.avatar ? (
-                  <img
-                    src={user.personalInfo.avatar}
-                    alt={user.personalInfo?.name}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <FiUser className="text-3xl text-gray-400" />
-                )}
-              </div>
-              <div className="text-white">
-                <h1 className="text-2xl font-bold">{user.personalInfo?.name || 'N/A'}</h1>
-                <p className="text-green-100">{user.personalInfo?.email || user.personalInfo?.phone || 'N/A'}</p>
-                <div className="flex items-center gap-4 mt-2">
-                  <span className={`px-3 py-1 text-xs font-semibold ${
-                    user.status?.accountStatus === 'active' ? 'bg-green-100 text-green-800' :
+            <div className="text-white">
+              <h1 className="text-2xl font-bold">{user.personalInfo?.name || 'N/A'}</h1>
+              <p className="text-green-100">{user.personalInfo?.email || user.personalInfo?.phone || 'N/A'}</p>
+              <div className="flex items-center gap-4 mt-2">
+                <span className={`px-3 py-1 text-xs font-semibold ${user.status?.accountStatus === 'active' ? 'bg-green-100 text-green-800' :
                     user.status?.accountStatus === 'inactive' ? 'bg-gray-100 text-gray-800' :
-                    user.status?.accountStatus === 'suspended' ? 'bg-red-100 text-red-800' :
-                    user.status?.accountStatus === 'banned' ? 'bg-red-100 text-red-800' :
-                    'bg-gray-100 text-gray-800'
+                      user.status?.accountStatus === 'suspended' ? 'bg-red-100 text-red-800' :
+                        user.status?.accountStatus === 'banned' ? 'bg-red-100 text-red-800' :
+                          'bg-gray-100 text-gray-800'
                   }`}>
-                    {user.status?.accountStatus ? user.status.accountStatus.charAt(0).toUpperCase() + user.status.accountStatus.slice(1) : 'Unknown'}
-                  </span>
-                  <span className="text-green-100 text-sm">
-                    Joined {new Date(user.createdAt).toLocaleDateString()}
-                  </span>
-                </div>
+                  {user.status?.accountStatus ? user.status.accountStatus.charAt(0).toUpperCase() + user.status.accountStatus.slice(1) : 'Unknown'}
+                </span>
+                <span className="text-green-100 text-sm">
+                  Joined {new Date(user.createdAt).toLocaleDateString('en-IN')}
+                </span>
               </div>
             </div>
           </div>
@@ -430,7 +416,7 @@ export default function UserData() {
                       <p className="text-sm text-gray-600">Date of Birth</p>
                       <p className="font-medium">
                         {user.personalInfo?.dateOfBirth
-                          ? new Date(user.personalInfo.dateOfBirth).toLocaleDateString()
+                          ? new Date(user.personalInfo.dateOfBirth).toLocaleDateString('en-IN')
                           : 'Not provided'
                         }
                       </p>
@@ -479,7 +465,7 @@ export default function UserData() {
                   <div className="flex items-center justify-between p-3 bg-gray-50">
                     <span className="text-gray-600">Last Login</span>
                     <span className="font-medium">
-                      {user.authentication?.lastLogin ? new Date(user.authentication.lastLogin).toLocaleString() : 'Never'}
+                      {user.authentication?.lastLogin ? new Date(user.authentication.lastLogin).toLocaleString('en-IN') : 'Never'}
                     </span>
                   </div>
                   <div className="flex items-center justify-between p-3 bg-gray-50">
@@ -527,7 +513,7 @@ export default function UserData() {
                   <div className="flex justify-between items-center p-3 bg-gray-50">
                     <span className="text-gray-600">Last Order Date</span>
                     <span className="font-medium">
-                      {user.orderHistory?.lastOrderDate ? new Date(user.orderHistory.lastOrderDate).toLocaleDateString() : 'No orders yet'}
+                      {user.orderHistory?.lastOrderDate ? new Date(user.orderHistory.lastOrderDate).toLocaleDateString('en-IN') : 'No orders yet'}
                     </span>
                   </div>
                   <div className="flex justify-between items-center p-3 bg-gray-50">
@@ -588,54 +574,6 @@ export default function UserData() {
               </div>
             )}
 
-            {/* Payment Methods */}
-            {user.paymentMethods && (
-              <div className="bg-white shadow-lg">
-                <div className="px-6 py-4 border-b bg-gradient-to-r from-indigo-50 to-blue-50">
-                  <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-                    <FiCreditCard className="text-indigo-600" />
-                    Payment Methods
-                  </h3>
-                </div>
-                <div className="p-6">
-                  {user.paymentMethods.cards && user.paymentMethods.cards.length > 0 ? (
-                    <div className="space-y-3">
-                      {user.paymentMethods.cards.map((card, index) => (
-                        <div key={index} className="flex items-center justify-between p-3 bg-gray-50">
-                          <div className="flex items-center gap-3">
-                            <FiCreditCard className="text-gray-400" />
-                            <div>
-                              <p className="font-medium capitalize">{card.brand} ****{card.last4}</p>
-                              <p className="text-sm text-gray-600">
-                                {card.nameOnCard} • Expires {card.expiryMonth}/{card.expiryYear}
-                              </p>
-                            </div>
-                          </div>
-                          {card.isDefault && (
-                            <span className="px-2 py-1 bg-green-100 text-green-800 text-xs">Default</span>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-gray-500 text-center py-4">No saved cards</p>
-                  )}
-
-                  {user.paymentMethods.upi && user.paymentMethods.upi.id && (
-                    <div className="mt-4 p-3 bg-gray-50">
-                      <div className="flex items-center gap-3">
-                        <FiDollarSign className="text-gray-400" />
-                        <div>
-                          <p className="font-medium">UPI ID</p>
-                          <p className="text-sm text-gray-600">{user.paymentMethods.upi.id}</p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
             {/* Preferences & Notifications */}
             <div className="bg-white shadow-lg">
               <div className="px-6 py-4 border-b bg-gradient-to-r from-teal-50 to-cyan-50">
@@ -646,21 +584,6 @@ export default function UserData() {
               </div>
               <div className="p-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-3">
-                    <h4 className="font-medium text-gray-800">General Preferences</h4>
-                    <div className="flex justify-between items-center p-2 bg-gray-50">
-                      <span className="text-gray-600">Language</span>
-                      <span className="font-medium uppercase">{user.preferences?.language || 'EN'}</span>
-                    </div>
-                    <div className="flex justify-between items-center p-2 bg-gray-50">
-                      <span className="text-gray-600">Currency</span>
-                      <span className="font-medium">{user.preferences?.currency || 'INR'}</span>
-                    </div>
-                    <div className="flex justify-between items-center p-2 bg-gray-50">
-                      <span className="text-gray-600">Delivery Instructions</span>
-                      <span className="font-medium text-sm">{user.preferences?.deliveryInstructions || 'None'}</span>
-                    </div>
-                  </div>
 
                   <div className="space-y-3">
                     <h4 className="font-medium text-gray-800">Notification Settings</h4>
@@ -739,14 +662,13 @@ export default function UserData() {
               <div className="p-6 space-y-3">
                 <div className="flex justify-between items-center p-2 bg-gray-50">
                   <span className="text-gray-600 text-sm">Account Status</span>
-                  <span className={`font-medium text-sm px-2 py-1 ${
-                    user.status?.accountStatus === 'active' ? 'bg-green-100 text-green-800' :
-                    user.status?.accountStatus === 'active' ? 'bg-green-100 text-green-800' :
-                    user.status?.accountStatus === 'inactive' ? 'bg-gray-100 text-gray-800' :
-                    user.status?.accountStatus === 'suspended' ? 'bg-red-100 text-red-800' :
-                    user.status?.accountStatus === 'banned' ? 'bg-red-100 text-red-800' :
-                    'bg-gray-100 text-gray-800'
-                  }`}>
+                  <span className={`font-medium text-sm px-2 py-1 ${user.status?.accountStatus === 'active' ? 'bg-green-100 text-green-800' :
+                      user.status?.accountStatus === 'active' ? 'bg-green-100 text-green-800' :
+                        user.status?.accountStatus === 'inactive' ? 'bg-gray-100 text-gray-800' :
+                          user.status?.accountStatus === 'suspended' ? 'bg-red-100 text-red-800' :
+                            user.status?.accountStatus === 'banned' ? 'bg-red-100 text-red-800' :
+                              'bg-gray-100 text-gray-800'
+                    }`}>
                     {user.status?.accountStatus || 'active'}
                   </span>
                 </div>
@@ -764,11 +686,11 @@ export default function UserData() {
                 )}
                 <div className="flex justify-between items-center p-2 bg-gray-50">
                   <span className="text-gray-600 text-sm">Member Since</span>
-                  <span className="font-medium text-sm">{new Date(user.createdAt).toLocaleDateString()}</span>
+                  <span className="font-medium text-sm">{new Date(user.createdAt).toLocaleDateString('en-IN')}</span>
                 </div>
                 <div className="flex justify-between items-center p-2 bg-gray-50">
                   <span className="text-gray-600 text-sm">Last Updated</span>
-                  <span className="font-medium text-sm">{new Date(user.updatedAt).toLocaleDateString()}</span>
+                  <span className="font-medium text-sm">{new Date(user.updatedAt).toLocaleDateString('en-IN')}</span>
                 </div>
               </div>
             </div>
@@ -792,7 +714,7 @@ export default function UserData() {
                             By: {warning.addedBy?.name || 'Admin'}
                           </p>
                           <p className="text-xs text-gray-500">
-                            {new Date(warning.addedAt).toLocaleDateString()}
+                            {new Date(warning.addedAt).toLocaleDateString('en-IN')}
                           </p>
                         </div>
                       </div>
@@ -826,12 +748,11 @@ export default function UserData() {
                     {user.support.tickets.slice(0, 3).map((ticket, index) => (
                       <div key={index} className="flex items-center justify-between p-2 bg-gray-50">
                         <span className="text-sm font-medium">#{ticket.ticketNumber || ticket._id}</span>
-                        <span className={`text-xs px-2 py-1 ${
-                          ticket.status === 'open' ? 'bg-green-100 text-green-800' :
-                          ticket.status === 'open' ? 'bg-green-100 text-green-800' :
-                          ticket.status === 'closed' ? 'bg-gray-100 text-gray-800' :
-                          'bg-yellow-100 text-yellow-800'
-                        }`}>
+                        <span className={`text-xs px-2 py-1 ${ticket.status === 'open' ? 'bg-green-100 text-green-800' :
+                            ticket.status === 'open' ? 'bg-green-100 text-green-800' :
+                              ticket.status === 'closed' ? 'bg-gray-100 text-gray-800' :
+                                'bg-yellow-100 text-yellow-800'
+                          }`}>
                           {ticket.status}
                         </span>
                       </div>
@@ -860,7 +781,7 @@ export default function UserData() {
                             By: {note.addedBy?.name || 'Admin'}
                           </p>
                           <p className="text-xs text-gray-500">
-                            {new Date(note.addedAt).toLocaleDateString()}
+                            {new Date(note.addedAt).toLocaleDateString('en-IN')}
                           </p>
                         </div>
                       </div>
@@ -965,7 +886,7 @@ export default function UserData() {
               <p className="text-gray-600 mb-4">
                 Select the new status for this user:
               </p>
-              
+
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Status

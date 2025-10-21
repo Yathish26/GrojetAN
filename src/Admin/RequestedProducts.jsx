@@ -308,7 +308,7 @@ function RequestedProducts() {
                         </div>
 
                         <div className="text-xs text-gray-500">
-                          {new Date(request.createdAt).toLocaleDateString('en-US', {
+                          {new Date(request.createdAt).toLocaleDateString('en-IN', {
                             year: 'numeric',
                             month: 'long',
                             day: 'numeric',

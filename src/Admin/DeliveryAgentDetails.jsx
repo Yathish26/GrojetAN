@@ -1811,11 +1811,17 @@ export default function DeliveryAgentDetails() {
                           Account Number
                         </label>
                         <input
-                          type="text"
+                          type="number"
                           value={bankAccountEdit.accountNumber}
                           onChange={(e) => setBankAccountEdit(prev => ({ ...prev, accountNumber: e.target.value }))}
+                          onInput={(e) => {
+                            // Remove any non-numeric characters
+                            e.target.value = e.target.value.replace(/[^0-9]/g, '');
+                          }}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                           placeholder="Enter account number"
+                          min="0"
+                          step="1"
                         />
                       </div>
                       <div>

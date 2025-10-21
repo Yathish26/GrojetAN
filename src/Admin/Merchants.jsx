@@ -22,6 +22,8 @@ const Merchants = () => {
     const [totalPages, setTotalPages] = useState(1);
     const [totalMerchants, setTotalMerchants] = useState(0);
     const [showMapModal, setShowMapModal] = useState(false);
+    const [allMerchantsForMap, setAllMerchantsForMap] = useState([]);
+    const [loadingMap, setLoadingMap] = useState(false);
     const [stats, setStats] = useState({
         totalMerchants: 0,
         openMerchants: 0,
@@ -33,7 +35,9 @@ const Merchants = () => {
 
     // Calculate map center and zoom based on merchant locations
     const getMapCenterAndZoom = () => {
-        const merchantsWithCoords = filteredMerchants.filter(merchant =>
+        // Use all merchants for map view, filtered merchants for other calculations
+        const merchantsToUse = showMapModal ? allMerchantsForMap : filteredMerchants;
+        const merchantsWithCoords = merchantsToUse.filter(merchant =>
             merchant.operationalInfo?.storeAddress?.coordinates?.latitude &&
             merchant.operationalInfo?.storeAddress?.coordinates?.longitude
         );
@@ -186,6 +190,67 @@ const Merchants = () => {
         }
     };
 
+    // Fetch all merchants for map view
+    const fetchAllMerchantsForMap = async () => {
+        try {
+            setLoadingMap(true);
+
+            // Fetch all merchants with a high limit (set to 10000 to get all)
+            const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/merchant-stores?page=1&limit=10000`, {
+                method: 'GET',
+                credentials: 'include',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                if (data.tokenValid === false) {
+                    navigate('/login', { replace: true });
+                    return;
+                }
+                if (data.success) {
+                    // Transform API data to match component expectations
+                    const transformedMerchants = data.merchants.map(merchant => ({
+                        id: merchant.id,
+                        merchantId: merchant.merchantId,
+                        name: merchant.displayName,
+                        email: merchant.email,
+                        phone: merchant.mobile,
+                        address: merchant.city ? `${merchant.city}, India` : 'Address not available',
+                        status: merchant.status,
+                        storeStatus: merchant.storeStatus,
+                        rating: 0, // Will be calculated from reviews later
+                        totalOrders: merchant.totalOrders,
+                        totalRevenue: merchant.totalRevenue,
+                        joinDate: merchant.registrationDate ? new Date(merchant.registrationDate).toISOString().split('T')[0] : 'N/A',
+                        profileImage: null,
+                        brandingInfo: merchant.brandingInfo || null,
+                        operationalInfo: merchant.operationalInfo || null,
+                        documents: {
+                            gst: null,
+                            fssai: null,
+                            pan: null
+                        }
+                    }));
+
+                    setAllMerchantsForMap(transformedMerchants);
+                } else {
+                    throw new Error(data.message || 'Failed to fetch merchants for map');
+                }
+            } else {
+                throw new Error('Failed to fetch merchants for map');
+            }
+        } catch (error) {
+            console.error('Error fetching merchants for map:', error);
+            toast.error(error.message || 'Failed to load merchants for map');
+            setAllMerchantsForMap([]);
+        } finally {
+            setLoadingMap(false);
+        }
+    };
+
     // Handle search
     const handleSearch = () => {
         setCurrentSearch(searchInput);
@@ -270,16 +335,16 @@ const Merchants = () => {
 
             // Create CSV headers - all fields except password
             const headers = [
-                'Merchant ID', 'Legal Name', 'Display Name', 'Website', 'Established Year',
+                'Merchant ID', 'Display Name', 'Website', 'Established Year',
                 'Owner Full Name', 'Owner Mobile', 'Owner Alternate Mobile', 'Owner Email',
                 'Account Number', 'IFSC Code', 'Bank Name', 'Branch Name', 'Account Holder Name',
                 'Store Street', 'Store City', 'Store State', 'Store Pincode', 'Store Country', 'Store Landmark', 'Store Latitude', 'Store Longitude',
                 'Opening Time', 'Closing Time', 'Store Type', 'Delivery Type',
                 'Logo URL', 'Banner URL', 'Tagline', 'Store Description', 'Facebook URL', 'Instagram URL', 'Twitter URL', 'WhatsApp URL', 'Google Business URL',
                 'Documents Link', 'Store Banner',
-                'KYC Status', 'Commission Percentage', 'Commission Settlement Cycle', 'Commission Minimum Settlement', 'KYC Remarks',
+                'Commission Percentage', 'Commission Minimum Settlement',
                 'Status', 'Store Status',
-                'Rating', 'Total Ratings', 'Total Orders', 'Completed Orders', 'Cancelled Orders', 'Total Revenue', 'Average Order Value', 'Average Delivery Time', 'Customer Satisfaction', 'Response Time',
+                'Rating', 'Total Ratings', 'Total Orders', 'Completed Orders', 'Cancelled Orders', 'Total Revenue', 'Average Order Value', 'Response Time',
                 'Registration Date', 'Last Login', 'Updated At',
                 'Device Platform', 'Device Name', 'Last Device Login'
             ];
@@ -289,7 +354,6 @@ const Merchants = () => {
                 headers.join(','),
                 ...merchants.map(merchant => [
                     `"${merchant.merchantId}"`,
-                    `"${merchant.legalName}"`,
                     `"${merchant.displayName}"`,
                     `"${merchant.website}"`,
                     `"${merchant.establishedYear}"`,
@@ -325,11 +389,8 @@ const Merchants = () => {
                     `"${merchant.googleBusinessUrl}"`,
                     `"${merchant.documentsLink}"`,
                     `"${merchant.storeBanner}"`,
-                    `"${merchant.kycStatus}"`,
                     `"${merchant.commissionPercentage}"`,
-                    `"${merchant.commissionSettlementCycle}"`,
                     `"${merchant.commissionMinimumSettlement}"`,
-                    `"${merchant.kycRemarks}"`,
                     `"${merchant.status}"`,
                     `"${merchant.storeStatus}"`,
                     `"${merchant.rating}"`,
@@ -339,8 +400,6 @@ const Merchants = () => {
                     `"${merchant.cancelledOrders}"`,
                     `"${merchant.totalRevenue}"`,
                     `"${merchant.averageOrderValue}"`,
-                    `"${merchant.averageDeliveryTime}"`,
-                    `"${merchant.customerSatisfaction}"`,
                     `"${merchant.responseTime}"`,
                     `"${merchant.registrationDate}"`,
                     `"${merchant.lastLogin}"`,
@@ -383,7 +442,10 @@ const Merchants = () => {
                     </div>
                     <div className="flex gap-3 flex-wrap">
                         <button
-                            onClick={() => setShowMapModal(true)}
+                            onClick={() => {
+                                setShowMapModal(true);
+                                fetchAllMerchantsForMap();
+                            }}
                             className="flex items-center justify-center gap-2 px-3 py-2 bg-blue-600 text-white hover:bg-blue-700 text-sm"
                         >
                             <Map size={16} />
@@ -751,7 +813,7 @@ const Merchants = () => {
             {/* Merchants Map Modal */}
             {showMapModal && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-                    <div className="bg-white shadow-xl max-w-6xl w-full max-h-[90vh] overflow-hidden rounded-lg">
+                    <div className="bg-white shadow-xl max-w-6xl w-full max-h-[90vh] overflow-hidden rounded-none">
                         <div className="flex items-center justify-between p-4 sm:p-6 border-b border-gray-200">
                             <div className="flex-1 min-w-0">
                                 <h2 className="text-lg sm:text-xl font-semibold text-gray-900 flex items-center gap-2">
@@ -770,13 +832,21 @@ const Merchants = () => {
                             </button>
                         </div>
                         <div className="p-4 sm:p-6">
-                            <div className="h-[50vh] sm:h-[600px] w-full overflow-hidden border border-gray-200 rounded">
-                                <GoogleMap
-                                    center={getMapCenterAndZoom().center}
-                                    zoom={getMapCenterAndZoom().zoom}
-                                    style={{ height: '100%', width: '100%' }}
-                                >
-                                    {filteredMerchants.map((merchant) => {
+                            {loadingMap ? (
+                                <div className="flex items-center justify-center py-12 h-[50vh] sm:h-[600px]">
+                                    <div className="text-center">
+                                        <div className="animate-spin h-8 w-8 border-4 border-green-200 border-t-green-600 rounded-full mx-auto mb-4"></div>
+                                        <span className="text-gray-600">Loading all merchants for map...</span>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="h-[50vh] sm:h-[600px] w-full overflow-hidden border border-gray-200 rounded">
+                                    <GoogleMap
+                                        center={getMapCenterAndZoom().center}
+                                        zoom={getMapCenterAndZoom().zoom}
+                                        style={{ height: '100%', width: '100%' }}
+                                    >
+                                        {allMerchantsForMap.map((merchant) => {
                                         const hasCoordinates = merchant.operationalInfo?.storeAddress?.coordinates?.latitude && 
                                                               merchant.operationalInfo?.storeAddress?.coordinates?.longitude;
 
@@ -866,12 +936,13 @@ const Merchants = () => {
                                     })}
                                 </GoogleMap>
                             </div>
+                            )}
                             <div className="mt-4 flex flex-col sm:flex-row items-center justify-between gap-3">
                                 <div className="text-xs sm:text-sm text-gray-600 text-center sm:text-left">
-                                    Showing {filteredMerchants.length} merchants on map
-                                    {filteredMerchants.filter(m => m.operationalInfo?.storeAddress?.coordinates?.latitude).length > 0 && (
+                                    Showing {allMerchantsForMap.length} merchants on map
+                                    {allMerchantsForMap.filter(m => m.operationalInfo?.storeAddress?.coordinates?.latitude).length > 0 && (
                                         <span className="ml-2 text-green-600">
-                                            ({filteredMerchants.filter(m => m.operationalInfo?.storeAddress?.coordinates?.latitude).length} with coordinates)
+                                            ({allMerchantsForMap.filter(m => m.operationalInfo?.storeAddress?.coordinates?.latitude).length} with coordinates)
                                         </span>
                                     )}
                                 </div>

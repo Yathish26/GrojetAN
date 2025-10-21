@@ -1058,10 +1058,18 @@ export default function Products() {
                         disabled={isSaving || currentUser?.role === 'inventory_manager'}
                       >
                         <option value="">Select Unit</option>
+                        {/* Weight units */}
                         <option value="g">Gram</option>
                         <option value="kg">Kilogram</option>
                         <option value="ml">Milliliter</option>
                         <option value="l">Liter</option>
+                        {/* Dimension units */}
+                        <option value="cm">Centimeter</option>
+                        <option value="mm">Millimeter</option>
+                        <option value="inch">Inch</option>
+                        <option value="feet">Feet</option>
+                        <option value="meter">Meter</option>
+                        {/* Quantity units */}
                         <option value="pack">Pack</option>
                         <option value="piece">Piece</option>
                         <option value="unit">Unit</option>
@@ -1069,7 +1077,7 @@ export default function Products() {
                         <option value="other">Other</option>
                       </select>
                     </div>
-                    <p className="text-xs text-gray-500 mt-1">e.g. 500ml, 1kg, 250g, 1pack</p>
+                    <p className="text-xs text-gray-500 mt-1">e.g. 500ml, 1kg, 250g, 12inch, 30cm, 1pack</p>
                   </div>
                   <div>
                     <label className="block text-gray-700 text-sm font-medium mb-1">Category</label>

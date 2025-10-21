@@ -140,9 +140,8 @@ const Orders = () => {
 
   const getStatusColor = (status) => {
     const colors = {
-      placed: 'bg-blue-100 text-blue-800',
       confirmed: 'bg-green-100 text-green-800',
-      preparing: 'bg-yellow-100 text-yellow-800',
+      packing: 'bg-yellow-100 text-yellow-800',
       ready_for_pickup: 'bg-purple-100 text-purple-800',
       picked_up: 'bg-indigo-100 text-indigo-800',
       out_for_delivery: 'bg-orange-100 text-orange-800',
@@ -155,9 +154,8 @@ const Orders = () => {
 
   const getStatusIcon = (status) => {
     const icons = {
-      placed: <ShoppingCart size={16} />,
       confirmed: <CircleCheck size={16} />,
-      preparing: <Clock size={16} />,
+      packing: <Clock size={16} />,
       ready_for_pickup: <Package size={16} />,
       picked_up: <Truck size={16} />,
       out_for_delivery: <MapPin size={16} />,
@@ -313,9 +311,8 @@ const Orders = () => {
                   className="flex-1 px-3 py-2 sm:py-3 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors duration-200"
                 >
                   <option value="">All Status</option>
-                  <option value="placed">Placed</option>
                   <option value="confirmed">Confirmed</option>
-                  <option value="preparing">Preparing</option>
+                  <option value="packing">Packing</option>
                   <option value="ready_for_pickup">Ready for Pickup</option>
                   <option value="picked_up">Picked Up</option>
                   <option value="out_for_delivery">Out for Delivery</option>
@@ -372,6 +369,9 @@ const Orders = () => {
                         Customer
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Merchant
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Status
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -394,7 +394,7 @@ const Orders = () => {
                               #{order.orderNumber}
                             </div>
                             <div className="text-sm text-gray-500">
-                              {new Date(order.createdAt).toLocaleDateString()}
+                              {new Date(order.createdAt).toLocaleDateString('en-IN')}
                             </div>
                             <div className="text-xs text-gray-400">
                               {order.items.length} item(s)
@@ -412,7 +412,15 @@ const Orders = () => {
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(order.status.current)}`}>
+                          <div className="text-sm font-medium text-gray-900">
+                            {order.store?.storeId?.businessInfo?.displayName || 'N/A'}
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            {order.store?.storeId?.ownerInfo?.mobile || ''}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-none text-xs font-medium ${getStatusColor(order.status.current)}`}>
                             {getStatusIcon(order.status.current)}
                             {formatStatusText(order.status.current)}
                           </span>
@@ -454,11 +462,10 @@ const Orders = () => {
                             <select
                               value={order.status.current}
                               onChange={(e) => updateOrderStatus(order._id, e.target.value)}
-                              className="text-xs border border-gray-300 rounded px-2 py-1 focus:ring-2 focus:ring-green-500"
+                              className="text-xs border border-gray-300 rounded-none px-2 py-1 focus:ring-2 focus:ring-green-500"
                             >
-                              <option value="placed">Placed</option>
                               <option value="confirmed">Confirmed</option>
-                              <option value="preparing">Preparing</option>
+                              <option value="packing">Packing</option>
                               <option value="ready_for_pickup">Ready for Pickup</option>
                               <option value="picked_up">Picked Up</option>
                               <option value="out_for_delivery">Out for Delivery</option>
@@ -480,7 +487,7 @@ const Orders = () => {
                     <div key={order._id} className="p-4 hover:bg-gray-50">
                       <div className="flex items-start gap-3">
                         <div className="flex-shrink-0 w-12 h-12">
-                          <div className="w-full h-full rounded-full bg-gray-200 flex items-center justify-center">
+                          <div className="w-full h-full rounded-none bg-gray-200 flex items-center justify-center">
                             <ShoppingCart className="w-6 h-6 text-gray-400" />
                           </div>
                         </div>
@@ -491,10 +498,10 @@ const Orders = () => {
                                 #{order.orderNumber}
                               </h3>
                               <p className="text-xs text-gray-500 mt-0.5">
-                                {new Date(order.createdAt).toLocaleDateString()} • {order.items.length} item(s)
+                                {new Date(order.createdAt).toLocaleDateString('en-IN')} • {order.items.length} item(s)
                               </p>
                             </div>
-                            <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ml-2 flex-shrink-0 ${getStatusColor(order.status.current)}`}>
+                            <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-none text-xs font-medium ml-2 flex-shrink-0 ${getStatusColor(order.status.current)}`}>
                               {getStatusIcon(order.status.current)}
                               {formatStatusText(order.status.current)}
                             </span>
@@ -508,6 +515,16 @@ const Orders = () => {
                               </div>
                               <div className="text-gray-600">{order.customer.phone || 'N/A'}</div>
                             </div>
+                            <div className="text-xs">
+                              <span className="text-gray-500">Merchant:</span>
+                              <div className="font-medium text-gray-900 truncate">
+                                {order.store?.storeId?.businessInfo?.displayName || 'N/A'}
+                              </div>
+                              <div className="text-gray-600">{order.store?.storeId?.ownerInfo?.mobile || ''}</div>
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-1 gap-3 mb-3">
                             <div className="text-xs">
                               <span className="text-gray-500">Amount:</span>
                               <div className="font-medium text-gray-900">₹{order.pricing.totalAmount}</div>
@@ -532,11 +549,10 @@ const Orders = () => {
                               <select
                                 value={order.status.current}
                                 onChange={(e) => updateOrderStatus(order._id, e.target.value)}
-                                className="text-xs border border-gray-300 rounded px-2 py-1 focus:ring-2 focus:ring-green-500"
+                                className="text-xs border border-gray-300 rounded-none px-2 py-1 focus:ring-2 focus:ring-green-500"
                               >
-                                <option value="placed">Placed</option>
                                 <option value="confirmed">Confirmed</option>
-                                <option value="preparing">Preparing</option>
+                                <option value="packing">Packing</option>
                                 <option value="ready_for_pickup">Ready for Pickup</option>
                                 <option value="picked_up">Picked Up</option>
                                 <option value="out_for_delivery">Out for Delivery</option>
@@ -569,7 +585,7 @@ const Orders = () => {
                     <button
                       onClick={() => setPagination(prev => ({ ...prev, page: prev.page - 1 }))}
                       disabled={pagination.page === 1}
-                      className="px-3 py-1.5 text-xs sm:text-sm border border-gray-300 rounded-md bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                      className="px-3 py-1.5 text-xs sm:text-sm border border-gray-300 rounded-none bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed focus:ring-2 focus:ring-green-500 focus:border-green-500"
                     >
                       Previous
                     </button>
@@ -581,7 +597,7 @@ const Orders = () => {
                           <button
                             key={pageNum}
                             onClick={() => setPagination(prev => ({ ...prev, page: pageNum }))}
-                            className={`px-2.5 py-1.5 text-xs sm:text-sm border rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500 ${
+                            className={`px-2.5 py-1.5 text-xs sm:text-sm border rounded-none focus:ring-2 focus:ring-green-500 focus:border-green-500 ${
                               pagination.page === pageNum
                                 ? 'bg-green-500 text-white border-green-500'
                                 : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
@@ -595,7 +611,7 @@ const Orders = () => {
                     <button
                       onClick={() => setPagination(prev => ({ ...prev, page: prev.page + 1 }))}
                       disabled={pagination.page === pagination.totalPages}
-                      className="px-3 py-1.5 text-xs sm:text-sm border border-gray-300 rounded-md bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                      className="px-3 py-1.5 text-xs sm:text-sm border border-gray-300 rounded-none bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed focus:ring-2 focus:ring-green-500 focus:border-green-500"
                     >
                       Next
                     </button>

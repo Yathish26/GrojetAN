@@ -466,7 +466,7 @@ export default function Settings() {
         <div className="flex items-center gap-3">
           <button
             onClick={exportSettings}
-            className="flex items-center gap-2 px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+            className="flex items-center gap-2 px-4 py-2 text-gray-700 border border-gray-300 rounded-none hover:bg-gray-50 transition-colors"
           >
             <Download className="w-4 h-4" />
             Export
@@ -485,7 +485,7 @@ export default function Settings() {
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${
+                    className={`w-full flex items-center gap-3 px-3 py-2 rounded-none text-left transition-colors ${
                       activeTab === tab.id
                         ? 'bg-green-100 text-green-700'
                         : 'text-gray-600 hover:bg-gray-50'
@@ -518,7 +518,7 @@ export default function Settings() {
                 </div>
                 <div className="p-6 space-y-6">
                   {/* Website FAQ */}
-                  <div className="border border-gray-200 rounded-lg p-6">
+                  <div className="border border-gray-200 rounded-none p-6">
                     <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
                       <Globe className="w-5 h-5 text-blue-600" />
                       Website FAQ
@@ -534,7 +534,7 @@ export default function Settings() {
                   </div>
 
                   {/* Mobile App FAQ */}
-                  <div className="border border-gray-200 rounded-lg p-6">
+                  <div className="border border-gray-200 rounded-none p-6">
                     <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
                       <Smartphone className="w-5 h-5 text-green-600" />
                       Mobile App FAQ
@@ -550,7 +550,7 @@ export default function Settings() {
                   </div>
 
                   {/* Merchant App FAQ */}
-                  <div className="border border-gray-200 rounded-lg p-6">
+                  <div className="border border-gray-200 rounded-none p-6">
                     <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
                       <Truck className="w-5 h-5 text-purple-600" />
                       Merchant App FAQ
@@ -566,7 +566,7 @@ export default function Settings() {
                   </div>
 
                   {/* Delivery Agent App FAQ */}
-                  <div className="border border-gray-200 rounded-lg p-6">
+                  <div className="border border-gray-200 rounded-none p-6">
                     <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
                       <MapPin className="w-5 h-5 text-orange-600" />
                       Delivery Agent App FAQ
@@ -598,19 +598,19 @@ export default function Settings() {
                 </div>
                 <div className="p-6 space-y-6">
                   {/* Website Terms */}
-                  <div className="border border-gray-200 rounded-lg p-4">
+                  <div className="border border-gray-200 rounded-none p-4">
                     <div className="flex items-center justify-between mb-4">
                       <h3 className="text-md font-medium text-gray-800">Website Terms</h3>
                       <button
                         onClick={() => setTermsEdit({ ...termsEdit, website: !termsEdit.website })}
-                        className="px-3 py-1 text-sm bg-green-100 text-green-700 rounded-lg hover:bg-green-200"
+                        className="px-3 py-1 text-sm bg-green-100 text-green-700 rounded-none hover:bg-green-200"
                       >
                         {termsEdit.website ? 'Cancel' : 'Edit'}
                       </button>
                     </div>
                     {termsEdit.website ? (
                       <div className="space-y-4">
-                        <div className="border border-gray-300 rounded-lg">
+                        <div className="border border-gray-300 rounded-none">
                           <ReactQuill
                             value={settings.terms.website.content}
                             onChange={(content) => setSettings(prev => ({
@@ -630,13 +630,13 @@ export default function Settings() {
                           <button
                             onClick={() => handleSaveTerms('website')}
                             disabled={saving}
-                            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
+                            className="px-4 py-2 bg-green-600 text-white rounded-none hover:bg-green-700 disabled:opacity-50"
                           >
                             {saving ? 'Saving...' : 'Save'}
                           </button>
                           <button
                             onClick={() => setTermsEdit({ ...termsEdit, website: false })}
-                            className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600"
+                            className="px-4 py-2 bg-gray-500 text-white rounded-none hover:bg-gray-600"
                           >
                             Cancel
                           </button>
@@ -657,7 +657,7 @@ export default function Settings() {
                   </div>
 
                   {/* Mobile App Terms */}
-                  <div className="border border-gray-200 rounded-lg p-4">
+                  <div className="border border-gray-200 rounded-none p-4">
                     <div className="flex items-center justify-between mb-4">
                       <h3 className="text-md font-medium text-gray-800">Mobile App Terms</h3>
                       <button

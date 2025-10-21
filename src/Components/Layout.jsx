@@ -320,7 +320,7 @@ const Layout = ({ children, title }) => {
                                   {note.features.length > 1 && ` +${note.features.length - 1} more features`}
                                 </p>
                                 <p className="text-xs text-neutral-500">
-                                  {new Date(note.releaseDate).toLocaleDateString()}
+                                  {new Date(note.releaseDate).toLocaleDateString('en-IN')}
                                 </p>
                               </div>
                             </div>

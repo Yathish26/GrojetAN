@@ -188,7 +188,7 @@ export default function DeleteRequests() {
         </div>
 
         {/* Stats Card */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+        <div className="bg-white rounded-none shadow-sm border border-gray-200 p-6 mb-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">Total Delete Requests</p>
@@ -199,7 +199,7 @@ export default function DeleteRequests() {
         </div>
 
         {/* Search and Filters */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+        <div className="bg-white rounded-none shadow-sm border border-gray-200 p-6 mb-6">
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="flex-1">
               <div className="relative">
@@ -210,14 +210,14 @@ export default function DeleteRequests() {
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
                 />
               </div>
             </div>
             <button
               onClick={handleSearch}
               disabled={searching}
-              className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              className="px-6 py-2 bg-red-600 text-white rounded-none hover:bg-red-700 focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
             >
               {searching ? <Loader className="w-4 h-4 animate-spin" /> : <FiSearch className="w-4 h-4" />}
               Search
@@ -226,7 +226,7 @@ export default function DeleteRequests() {
         </div>
 
         {/* Delete Requests Table */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div className="bg-white rounded-none shadow-sm border border-gray-200 overflow-hidden">
           {loading ? (
             <div className="flex items-center justify-center py-12">
               <Loader className="w-8 h-8 animate-spin text-red-500" />
@@ -264,7 +264,7 @@ export default function DeleteRequests() {
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center">
                             <div className="flex-shrink-0 h-10 w-10">
-                              <div className="h-10 w-10 rounded-full bg-red-100 flex items-center justify-center">
+                              <div className="h-10 w-10 rounded-none bg-red-100 flex items-center justify-center">
                                 <FiUserX className="h-5 w-5 text-red-600" />
                               </div>
                             </div>
@@ -286,10 +286,10 @@ export default function DeleteRequests() {
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm text-gray-900 flex items-center gap-1">
                             <Calendar className="w-4 h-4 text-gray-400" />
-                            {new Date(request.requestedAt).toLocaleDateString()}
+                            {new Date(request.requestedAt).toLocaleDateString('en-IN')}
                           </div>
                           <div className="text-sm text-gray-500">
-                            {new Date(request.requestedAt).toLocaleTimeString()}
+                            {new Date(request.requestedAt).toLocaleTimeString('en-IN')}
                           </div>
                         </td>
                         <td className="px-6 py-4">
@@ -301,14 +301,14 @@ export default function DeleteRequests() {
                           <div className="flex items-center gap-2">
                             <button
                               onClick={() => handleApproveDelete(request.userId?._id, request.userId?.personalInfo?.name || 'Unknown User')}
-                              className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 hover:bg-green-200 focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+                              className="inline-flex items-center px-3 py-1 rounded-none text-xs font-medium bg-green-100 text-green-800 hover:bg-green-200 focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
                             >
                               <FiCheck className="w-3 h-3 mr-1" />
                               Approve
                             </button>
                             <button
                               onClick={() => handleRejectDelete(request.userId?._id, request.userId?.personalInfo?.name || 'Unknown User')}
-                              className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 hover:bg-red-200 focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                              className="inline-flex items-center px-3 py-1 rounded-none text-xs font-medium bg-red-100 text-red-800 hover:bg-red-200 focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
                             >
                               <FiX className="w-3 h-3 mr-1" />
                               Reject
@@ -328,14 +328,14 @@ export default function DeleteRequests() {
                     <button
                       onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
                       disabled={currentPage === 1}
-                      className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-none text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       Previous
                     </button>
                     <button
                       onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
                       disabled={currentPage === totalPages}
-                      className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-none text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       Next
                     </button>
@@ -355,7 +355,7 @@ export default function DeleteRequests() {
                         <button
                           onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
                           disabled={currentPage === 1}
-                          className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="relative inline-flex items-center px-2 py-2 rounded-l-none border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           <FiChevronLeft className="w-4 h-4" />
                         </button>
@@ -378,7 +378,7 @@ export default function DeleteRequests() {
                         <button
                           onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
                           disabled={currentPage === totalPages}
-                          className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="relative inline-flex items-center px-2 py-2 rounded-r-none border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           <FiChevronRight className="w-4 h-4" />
                         </button>
@@ -395,9 +395,9 @@ export default function DeleteRequests() {
       {/* Approve Delete Modal */}
       {approveModal.open && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+          <div className="bg-white rounded-none p-6 max-w-md w-full mx-4">
             <div className="flex items-center mb-4">
-              <div className="flex-shrink-0 w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+              <div className="flex-shrink-0 w-12 h-12 bg-red-100 rounded-none flex items-center justify-center">
                 <FiUserX className="w-6 h-6 text-red-600" />
               </div>
               <div className="ml-4">
@@ -421,7 +421,7 @@ export default function DeleteRequests() {
                 type="text"
                 value={deleteConfirmation}
                 onChange={(e) => setDeleteConfirmation(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-red-500 focus:border-red-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-none focus:ring-red-500 focus:border-red-500"
                 placeholder="Type DELETE here"
               />
             </div>
@@ -429,14 +429,14 @@ export default function DeleteRequests() {
             <div className="flex justify-end gap-3">
               <button
                 onClick={() => setApproveModal({ open: false, userId: null, userName: '' })}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+                className="w-full px-3 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-none hover:bg-gray-200 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
               >
                 Cancel
               </button>
               <button
                 onClick={confirmApproveDelete}
                 disabled={deleteConfirmation !== 'DELETE'}
-                className="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700 focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-none hover:bg-red-700 focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Delete Account
               </button>
@@ -448,9 +448,9 @@ export default function DeleteRequests() {
       {/* Reject Delete Modal */}
       {rejectModal.open && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+          <div className="bg-white rounded-none p-6 max-w-md w-full mx-4">
             <div className="flex items-center mb-4">
-              <div className="flex-shrink-0 w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center">
+              <div className="flex-shrink-0 w-12 h-12 bg-yellow-100 rounded-none flex items-center justify-center">
                 <FiX className="w-6 h-6 text-yellow-600" />
               </div>
               <div className="ml-4">
@@ -471,7 +471,7 @@ export default function DeleteRequests() {
                 value={rejectModal.reason}
                 onChange={(e) => setRejectModal({ ...rejectModal, reason: e.target.value })}
                 rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-yellow-500 focus:border-yellow-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-none focus:ring-yellow-500 focus:border-yellow-500"
                 placeholder="Enter reason for rejecting this request..."
               />
             </div>
@@ -479,7 +479,7 @@ export default function DeleteRequests() {
             <div className="flex justify-end gap-3">
               <button
                 onClick={() => setRejectModal({ open: false, userId: null, userName: '', reason: '' })}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-none hover:bg-gray-200 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
               >
                 Cancel
               </button>

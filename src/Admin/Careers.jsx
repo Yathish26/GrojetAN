@@ -316,9 +316,9 @@ export default function Careers() {
                       </div>
                       <p className="text-gray-600 mt-2">{job.description}</p>
                       <p className="text-sm text-gray-400 mt-2">
-                        Created: {new Date(job.createdAt).toLocaleDateString()}
+                        Created: {new Date(job.createdAt).toLocaleDateString('en-IN')}
                         {job.updatedAt !== job.createdAt && (
-                          <span> | Updated: {new Date(job.updatedAt).toLocaleDateString()}</span>
+                          <span> | Updated: {new Date(job.updatedAt).toLocaleDateString('en-IN')}</span>
                         )}
                       </p>
                     </div>

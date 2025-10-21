@@ -857,27 +857,6 @@ const MerchantDetails = () => {
                 <Star className="w-8 h-8 text-yellow-600 flex-shrink-0 ml-2" />
               </div>
             </div>
-            <div className="bg-gradient-to-r from-purple-50 to-purple-100 p-4 sm:p-6 rounded-lg">
-              <div className="flex items-center justify-between mb-3">
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium text-gray-600 mb-1">Avg Delivery Time</p>
-                  <p className="text-xl sm:text-2xl font-bold text-purple-600">{performance.averageDeliveryTime?.toFixed(0) || 0} min</p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    Response: {performance.responseTime?.toFixed(0) || 0} min
-                  </p>
-                </div>
-                <Timer className="w-8 h-8 text-purple-600 flex-shrink-0 ml-2" />
-              </div>
-            </div>
-            <div className="bg-gradient-to-r from-indigo-50 to-indigo-100 p-4 sm:p-6 rounded-lg">
-              <div className="flex items-center justify-between mb-3">
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium text-gray-600 mb-1">Customer Satisfaction</p>
-                  <p className="text-xl sm:text-2xl font-bold text-indigo-600">{performance.customerSatisfaction || 0}%</p>
-                </div>
-                <Users className="w-8 h-8 text-indigo-600 flex-shrink-0 ml-2" />
-              </div>
-            </div>
             <div className="bg-gradient-to-r from-teal-50 to-teal-100 p-4 sm:p-6 rounded-lg">
               <div className="flex items-center justify-between mb-3">
                 <div className="min-w-0 flex-1">

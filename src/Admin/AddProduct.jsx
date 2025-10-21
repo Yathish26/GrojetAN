@@ -71,12 +71,20 @@ export default function AddProduct() {
   const [uploadingImages, setUploadingImages] = useState(false);
 
   const unitOptions = [
+    // Weight units
     { value: 'kg', label: 'Kilogram' },
+    { value: 'g', label: 'Gram' },
     { value: 'liter', label: 'Liter' },
+    { value: 'ml', label: 'Milliliter' },
+    // Dimension units
+    { value: 'cm', label: 'Centimeter' },
+    { value: 'mm', label: 'Millimeter' },
+    { value: 'inch', label: 'Inch' },
+    { value: 'feet', label: 'Feet' },
+    { value: 'meter', label: 'Meter' },
+    // Quantity units
     { value: 'pack', label: 'Pack' },
     { value: 'piece', label: 'Piece' },
-    { value: 'g', label: 'Gram' },
-    { value: 'ml', label: 'Milliliter' },
     { value: 'unit', label: 'Unit' },
     { value: 'dozen', label: 'Dozen' },
     { value: 'other', label: 'Other' }
@@ -528,7 +536,7 @@ export default function AddProduct() {
                     ))}
                   </select>
                 </div>
-                <p className="text-xs text-gray-500">e.g. 500ml, 1kg, 250g, 1pack</p>
+                <p className="text-xs text-gray-500">e.g. 500ml, 1kg, 250g, 12inch, 30cm, 1pack</p>
               </div>
             </div>
           </div>

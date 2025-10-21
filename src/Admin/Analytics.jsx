@@ -107,7 +107,6 @@ export default function Analytics() {
     productRevenue: 0,
     deliveryRevenue: 0,
     serviceRevenue: 0,
-    averageDeliveryTime: 0,
     onTimeDeliveryRate: 0,
     activeAgents: 0,
     averageAgentRating: 0,
@@ -117,7 +116,6 @@ export default function Analytics() {
     successRateChange: 0,
     newCustomers: 0,
     returningCustomers: 0,
-    customerSatisfaction: 0,
     topAreas: [],
     recentActivity: []
   });
@@ -231,7 +229,6 @@ export default function Analytics() {
       productRevenue: 0,
       deliveryRevenue: 0,
       serviceRevenue: 0,
-      averageDeliveryTime: 0,
       onTimeDeliveryRate: 0,
       activeAgents: 0,
       averageAgentRating: 0,
@@ -241,7 +238,6 @@ export default function Analytics() {
       successRateChange: 0,
       newCustomers: 0,
       returningCustomers: 0,
-      customerSatisfaction: 0,
       topAreas: [],
       recentActivity: []
     }));
@@ -652,10 +648,6 @@ export default function Analytics() {
           </div>
           <div className="p-6 space-y-4">
             <div className="flex items-center justify-between">
-              <span className="text-gray-600">Average Delivery Time</span>
-              <span className="font-medium">{metrics.averageDeliveryTime} min</span>
-            </div>
-            <div className="flex items-center justify-between">
               <span className="text-gray-600">On-time Delivery Rate</span>
               <span className="font-medium text-green-600">{metrics.onTimeDeliveryRate}%</span>
             </div>
@@ -693,13 +685,6 @@ export default function Analytics() {
             <div className="flex items-center justify-between">
               <span className="text-gray-600">Average Order Value</span>
               <span className="font-medium">₹{metrics.averageOrderValue}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-gray-600">Customer Satisfaction</span>
-              <div className="flex items-center gap-1">
-                <Star className="w-4 h-4 text-yellow-500 fill-current" />
-                <span className="font-medium">{metrics.customerSatisfaction}</span>
-              </div>
             </div>
           </div>
         </div>
@@ -764,7 +749,7 @@ export default function Analytics() {
                   </div>
                   <div className="flex-1">
                     <p className="font-medium text-gray-800">{activity.description}</p>
-                    <p className="text-sm text-gray-600">{new Date(activity.timestamp).toLocaleString()}</p>
+                    <p className="text-sm text-gray-600">{new Date(activity.timestamp).toLocaleString('en-IN')}</p>
                   </div>
                   {activity.value && (
                     <div className="text-right">

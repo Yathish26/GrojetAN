@@ -10,6 +10,8 @@ import {
 import Layout from '../Components/Layout';
 import { AddressSearch } from '../Components/GoogleMapComponents';
 import toast from 'react-hot-toast';
+import { INDIAN_STATES } from '../utils/states';
+import { INDIAN_BANKS } from '../utils/banks';
 
 const EditMerchant = () => {
   const { id } = useParams();
@@ -100,7 +102,6 @@ const EditMerchant = () => {
   const [formData, setFormData] = useState({
     // Business Info
     merchantId: '',
-    legalName: '',
     displayName: '',
     website: '',
     establishedYear: '',
@@ -162,15 +163,12 @@ const EditMerchant = () => {
       },
       commissionStructure: {
         percentage: 10,
-        settlementCycle: 'weekly',
         minimumSettlement: 1000
       },
       digitalSignature: {
         signatureUrl: '',
         ipAddress: ''
-      },
-      kycStatus: 'pending',
-      kycRemarks: ''
+      }
     },
 
     // Status
@@ -206,7 +204,6 @@ const EditMerchant = () => {
           setFormData({
             // Business Info
             merchantId: merchant.businessInfo?.merchantId || '',
-            legalName: merchant.businessInfo?.legalName || '',
             displayName: merchant.businessInfo?.displayName || '',
             website: merchant.businessInfo?.website || '',
             establishedYear: merchant.businessInfo?.establishedYear || '',
@@ -273,15 +270,12 @@ const EditMerchant = () => {
               },
               commissionStructure: {
                 percentage: merchant.complianceInfo?.commissionStructure?.percentage || 10,
-                settlementCycle: merchant.complianceInfo?.commissionStructure?.settlementCycle || 'weekly',
                 minimumSettlement: merchant.complianceInfo?.commissionStructure?.minimumSettlement || 1000
               },
               digitalSignature: {
                 signatureUrl: merchant.complianceInfo?.digitalSignature?.signatureUrl || '',
                 ipAddress: merchant.complianceInfo?.digitalSignature?.ipAddress || ''
-              },
-              kycStatus: merchant.complianceInfo?.kycStatus || 'pending',
-              kycRemarks: merchant.complianceInfo?.kycRemarks || ''
+              }
             },
 
             // Status
@@ -539,7 +533,6 @@ const EditMerchant = () => {
       const submitData = {
         businessInfo: {
           merchantId: formData.merchantId,
-          legalName: formData.legalName,
           displayName: formData.displayName,
           website: formData.website,
           establishedYear: formData.establishedYear ? parseInt(formData.establishedYear) : null
@@ -583,9 +576,7 @@ const EditMerchant = () => {
           digitalSignature: {
             signatureUrl: formData.complianceInfo.digitalSignature.signatureUrl,
             ipAddress: formData.complianceInfo.digitalSignature.ipAddress
-          },
-          kycStatus: formData.complianceInfo.kycStatus,
-          kycRemarks: formData.complianceInfo.kycRemarks
+          }
         },
         status: formData.status,
         storeStatus: formData.storeStatus
@@ -778,20 +769,6 @@ const EditMerchant = () => {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Legal Name *
-                </label>
-                <input
-                  type="text"
-                  name="legalName"
-                  value={formData.legalName}
-                  onChange={handleInputChange}
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                  placeholder="Enter legal name"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
                   Display Name *
                 </label>
                 <input
@@ -926,13 +903,19 @@ const EditMerchant = () => {
                   Account Number *
                 </label>
                 <input
-                  type="text"
+                  type="number"
                   name="accountNumber"
                   value={formData.bankDetails.accountNumber}
                   onChange={handleBankDetailsChange}
+                  onInput={(e) => {
+                    // Remove any non-numeric characters
+                    e.target.value = e.target.value.replace(/[^0-9]/g, '');
+                  }}
                   required
                   className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   placeholder="Enter account number"
+                  min="0"
+                  step="1"
                 />
               </div>
               <div>
@@ -949,114 +932,39 @@ const EditMerchant = () => {
                   <option value="">Select Bank</option>
                   {/* Public Sector Banks */}
                   <optgroup label="Public Sector Banks">
-                    <option value="Bank of Baroda">Bank of Baroda</option>
-                    <option value="Bank of India">Bank of India</option>
-                    <option value="Bank of Maharashtra">Bank of Maharashtra</option>
-                    <option value="Canara Bank">Canara Bank</option>
-                    <option value="Central Bank of India">Central Bank of India</option>
-                    <option value="Indian Bank">Indian Bank</option>
-                    <option value="Indian Overseas Bank">Indian Overseas Bank</option>
-                    <option value="Punjab & Sind Bank">Punjab & Sind Bank</option>
-                    <option value="Punjab National Bank">Punjab National Bank</option>
-                    <option value="State Bank of India">State Bank of India</option>
-                    <option value="UCO Bank">UCO Bank</option>
-                    <option value="Union Bank of India">Union Bank of India</option>
+                    {INDIAN_BANKS.publicSector.map(bank => (
+                      <option key={bank} value={bank}>{bank}</option>
+                    ))}
                   </optgroup>
                   {/* Private Sector Banks */}
                   <optgroup label="Private Sector Banks">
-                    <option value="Axis Bank Ltd.">Axis Bank Ltd.</option>
-                    <option value="Bandhan Bank Ltd.">Bandhan Bank Ltd.</option>
-                    <option value="CSB Bank Ltd.">CSB Bank Ltd.</option>
-                    <option value="City Union Bank Ltd.">City Union Bank Ltd.</option>
-                    <option value="DCB Bank Ltd.">DCB Bank Ltd.</option>
-                    <option value="Dhanlaxmi Bank Ltd.">Dhanlaxmi Bank Ltd.</option>
-                    <option value="Federal Bank Ltd.">Federal Bank Ltd.</option>
-                    <option value="HDFC Bank Ltd.">HDFC Bank Ltd.</option>
-                    <option value="ICICI Bank Ltd.">ICICI Bank Ltd.</option>
-                    <option value="Induslnd Bank Ltd.">Induslnd Bank Ltd.</option>
-                    <option value="IDFC First Bank Ltd.">IDFC First Bank Ltd.</option>
-                    <option value="Jammu & Kashmir Bank Ltd.">Jammu & Kashmir Bank Ltd.</option>
-                    <option value="Karnataka Bank Ltd.">Karnataka Bank Ltd.</option>
-                    <option value="Karur Vysya Bank Ltd.">Karur Vysya Bank Ltd.</option>
-                    <option value="Kotak Mahindra Bank Ltd.">Kotak Mahindra Bank Ltd.</option>
-                    <option value="Nainital Bank Ltd.">Nainital Bank Ltd.</option>
-                    <option value="RBL Bank Ltd.">RBL Bank Ltd.</option>
-                    <option value="South Indian Bank Ltd.">South Indian Bank Ltd.</option>
-                    <option value="Tamilnad Mercantile Bank Ltd.">Tamilnad Mercantile Bank Ltd.</option>
-                    <option value="YES Bank Ltd.">YES Bank Ltd.</option>
-                    <option value="IDBI Bank Ltd.">IDBI Bank Ltd.</option>
+                    {INDIAN_BANKS.privateSector.map(bank => (
+                      <option key={bank} value={bank}>{bank}</option>
+                    ))}
                   </optgroup>
                   {/* Small Finance Banks */}
                   <optgroup label="Small Finance Banks">
-                    <option value="Au Small Finance Bank Limited">Au Small Finance Bank Limited</option>
-                    <option value="Capital Small Finance Bank Limited">Capital Small Finance Bank Limited</option>
-                    <option value="Equitas Small Finance Bank Limited">Equitas Small Finance Bank Limited</option>
-                    <option value="Suryoday Small Finance Bank Limited">Suryoday Small Finance Bank Limited</option>
-                    <option value="Ujjivan Small Finance Bank Limited">Ujjivan Small Finance Bank Limited</option>
-                    <option value="Utkarsh Small Finance Bank Limited">Utkarsh Small Finance Bank Limited</option>
-                    <option value="ESAF Small Finance Bank Limited">ESAF Small Finance Bank Limited</option>
-                    <option value="Fincare Small Finance Bank Limited">Fincare Small Finance Bank Limited</option>
-                    <option value="Jana Small Finance Bank Limited">Jana Small Finance Bank Limited</option>
-                    <option value="North East Small Finance Bank Limited">North East Small Finance Bank Limited</option>
-                    <option value="Shivalik Small Finance Bank Limited">Shivalik Small Finance Bank Limited</option>
-                    <option value="Unity Small Finance Bank Limited">Unity Small Finance Bank Limited</option>
+                    {INDIAN_BANKS.smallFinance.map(bank => (
+                      <option key={bank} value={bank}>{bank}</option>
+                    ))}
                   </optgroup>
                   {/* Payments Banks */}
                   <optgroup label="Payments Banks">
-                    <option value="India Post Payments Bank Limited">India Post Payments Bank Limited</option>
-                    <option value="Fino Payments Bank Limited">Fino Payments Bank Limited</option>
-                    <option value="Paytm Payments Bank Limited">Paytm Payments Bank Limited</option>
-                    <option value="Airtel Payments Bank Limited">Airtel Payments Bank Limited</option>
+                    {INDIAN_BANKS.payments.map(bank => (
+                      <option key={bank} value={bank}>{bank}</option>
+                    ))}
                   </optgroup>
                   {/* Regional Rural Banks */}
                   <optgroup label="Regional Rural Banks">
-                    <option value="Andhra Pragathi Grameena Bank">Andhra Pragathi Grameena Bank</option>
-                    <option value="Andhra Pradesh Grameena Vikas Bank">Andhra Pradesh Grameena Vikas Bank</option>
-                    <option value="Arunachal Pradesh Rural Bank">Arunachal Pradesh Rural Bank</option>
-                    <option value="Aryavart Bank">Aryavart Bank</option>
-                    <option value="Assam Gramin Vikash Bank">Assam Gramin Vikash Bank</option>
-                    <option value="Bangiya Gramin Vikas Bank">Bangiya Gramin Vikas Bank</option>
-                    <option value="Baroda Gujarat Gramin Bank">Baroda Gujarat Gramin Bank</option>
-                    <option value="Baroda Rajasthan Kshetriya Gramin Bank">Baroda Rajasthan Kshetriya Gramin Bank</option>
-                    <option value="Baroda UP Bank">Baroda UP Bank</option>
-                    <option value="Chaitanya Godavari Grameena Bank">Chaitanya Godavari Grameena Bank</option>
-                    <option value="Chhattisgarh Rajya Gramin Bank">Chhattisgarh Rajya Gramin Bank</option>
-                    <option value="Dakshin Bihar Gramin Bank">Dakshin Bihar Gramin Bank</option>
-                    <option value="Ellaquai Dehati Bank">Ellaquai Dehati Bank</option>
-                    <option value="Himachal Pradesh Gramin Bank">Himachal Pradesh Gramin Bank</option>
-                    <option value="J&K Grameen Bank">J&K Grameen Bank</option>
-                    <option value="Jharkhand Rajya Gramin Bank">Jharkhand Rajya Gramin Bank</option>
-                    <option value="Karnataka Gramin Bank">Karnataka Gramin Bank</option>
-                    <option value="Karnataka Vikas Grameena Bank">Karnataka Vikas Grameena Bank</option>
-                    <option value="Kerala Gramin Bank">Kerala Gramin Bank</option>
-                    <option value="Madhya Pradesh Gramin Bank">Madhya Pradesh Gramin Bank</option>
-                    <option value="Madhyanchal Gramin Bank">Madhyanchal Gramin Bank</option>
-                    <option value="Maharashtra Gramin Bank">Maharashtra Gramin Bank</option>
-                    <option value="Manipur Rural Bank">Manipur Rural Bank</option>
-                    <option value="Meghalaya Rural Bank">Meghalaya Rural Bank</option>
-                    <option value="Mizoram Rural Bank">Mizoram Rural Bank</option>
-                    <option value="Nagaland Rural Bank">Nagaland Rural Bank</option>
-                    <option value="Odisha Gramya Bank">Odisha Gramya Bank</option>
-                    <option value="Paschim Banga Gramin Bank">Paschim Banga Gramin Bank</option>
-                    <option value="Prathama UP Gramin Bank">Prathama UP Gramin Bank</option>
-                    <option value="Puduvai Bharathiar Grama Bank">Puduvai Bharathiar Grama Bank</option>
-                    <option value="Punjab Gramin Bank">Punjab Gramin Bank</option>
-                    <option value="Rajasthan Marudhara Gramin Bank">Rajasthan Marudhara Gramin Bank</option>
-                    <option value="Saptagiri Grameena Bank">Saptagiri Grameena Bank</option>
-                    <option value="Sarva Haryana Gramin Bank">Sarva Haryana Gramin Bank</option>
-                    <option value="Saurashtra Gramin Bank">Saurashtra Gramin Bank</option>
-                    <option value="Tamil Nadu Grama Bank">Tamil Nadu Grama Bank</option>
-                    <option value="Telangana Grameena Bank">Telangana Grameena Bank</option>
-                    <option value="Tripura Gramin Bank">Tripura Gramin Bank</option>
-                    <option value="Utkal Grameen Bank">Utkal Grameen Bank</option>
-                    <option value="Uttar Bihar Gramin Bank">Uttar Bihar Gramin Bank</option>
-                    <option value="Uttarakhand Gramin Bank">Uttarakhand Gramin Bank</option>
-                    <option value="Uttarbanga Kshetriya Gramin Bank">Uttarbanga Kshetriya Gramin Bank</option>
-                    <option value="Vidharbha Konkan Gramin Bank">Vidharbha Konkan Gramin Bank</option>
+                    {INDIAN_BANKS.regionalRural.map(bank => (
+                      <option key={bank} value={bank}>{bank}</option>
+                    ))}
                   </optgroup>
                   {/* Other */}
                   <optgroup label="Other">
-                    <option value="Other">Other Bank</option>
+                    {INDIAN_BANKS.other.map(bank => (
+                      <option key={bank} value={bank}>{bank}</option>
+                    ))}
                   </optgroup>
                 </select>
               </div>
@@ -1131,14 +1039,17 @@ const EditMerchant = () => {
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     State *
                   </label>
-                  <input
-                    type="text"
+                  <select
                     value={formData.storeAddress.state}
                     onChange={(e) => handleNestedInputChange('storeAddress', 'state', e.target.value)}
                     required
                     className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                    placeholder="Enter state"
-                  />
+                  >
+                    <option value="">Select State</option>
+                    {INDIAN_STATES.map(state => (
+                      <option key={state} value={state}>{state}</option>
+                    ))}
+                  </select>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -1386,21 +1297,6 @@ const EditMerchant = () => {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  KYC Status
-                </label>
-                <select
-                  value={formData.complianceInfo.kycStatus}
-                  onChange={(e) => handleNestedInputChange('complianceInfo', 'kycStatus', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                >
-                  <option value="pending">Pending</option>
-                  <option value="under_review">Under Review</option>
-                  <option value="approved">Approved</option>
-                  <option value="rejected">Rejected</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
                   Commission Percentage (%)
                 </label>
                 <input
@@ -1413,18 +1309,6 @@ const EditMerchant = () => {
                   placeholder="10"
                 />
               </div>
-            </div>
-            <div className="mt-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                KYC Remarks
-              </label>
-              <textarea
-                value={formData.complianceInfo.kycRemarks}
-                onChange={(e) => handleNestedInputChange('complianceInfo', 'kycRemarks', e.target.value)}
-                rows={3}
-                className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                placeholder="Enter KYC remarks"
-              />
             </div>
           </div>
 
