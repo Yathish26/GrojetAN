@@ -74,7 +74,7 @@ export default function AddProduct() {
     // Weight units
     { value: 'kg', label: 'Kilogram' },
     { value: 'g', label: 'Gram' },
-    { value: 'liter', label: 'Liter' },
+    { value: 'l', label: 'Liter' },
     { value: 'ml', label: 'Milliliter' },
     // Dimension units
     { value: 'cm', label: 'Centimeter' },
