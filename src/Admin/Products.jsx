@@ -11,7 +11,7 @@ Modal.setAppElement('#root');
 
 const PAGE_SIZE = 20;
 
-function EditInput({ label, name, value, onChange, type = 'text', disabled, required = false, step, min, max }) {
+function EditInput({ label, name, value, onChange, type = 'text', disabled, required = false, step, min, max, onWheel }) {
   return (
     <div className="mb-4">
       <label className="block text-gray-700 text-sm font-medium mb-1">{label}</label>
@@ -26,6 +26,7 @@ function EditInput({ label, name, value, onChange, type = 'text', disabled, requ
         step={step}
         min={min}
         max={max}
+        onWheel={onWheel}
       />
     </div>
   );
@@ -1040,6 +1041,7 @@ export default function Products() {
                         placeholder="e.g. 500"
                         min="0"
                         step="0.01"
+                        onWheel={(e) => e.target.blur()}
                       />
                       <select
                         name="weightDimension.unit"
@@ -1143,6 +1145,7 @@ export default function Products() {
                     min="0"
                     disabled={isSaving || currentUser?.role === 'inventory_manager'}
                     required
+                    onWheel={(e) => e.target.blur()}
                   />
                 </div>
               </div>
