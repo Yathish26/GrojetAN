@@ -157,10 +157,8 @@ const DeliveryAgents = () => {
   const getStatusColor = (status) => {
     const colors = {
       pending: 'bg-yellow-100 text-yellow-800',
-      under_review: 'bg-blue-100 text-blue-800',
       approved: 'bg-green-100 text-green-800',
-      rejected: 'bg-red-100 text-red-800',
-      suspended: 'bg-gray-100 text-gray-800'
+      rejected: 'bg-red-100 text-red-800'
     };
     return colors[status] || 'bg-gray-100 text-gray-800';
   };
@@ -168,10 +166,8 @@ const DeliveryAgents = () => {
   const getStatusIcon = (status) => {
     const icons = {
       pending: <Clock size={16} />,
-      under_review: <AlertCircle size={16} />,
       approved: <CircleCheck size={16} />,
-      rejected: <XCircle size={16} />,
-      suspended: <Shield size={16} />
+      rejected: <XCircle size={16} />
     };
     return icons[status] || <AlertCircle size={16} />;
   };
@@ -277,13 +273,13 @@ const DeliveryAgents = () => {
               title="Active Agents"
               value={stats.active || 0}
               icon={CircleCheck}
-              color="text-green-600"
+              color="text-yellow-600"
             />
             <StatCard
               title="Online Now"
               value={stats.online || 0}
               icon={MapPin}
-              color="text-orange-600"
+              color="text-green-600"
             />
             <StatCard
               title="Total Deliveries"
@@ -321,10 +317,8 @@ const DeliveryAgents = () => {
                 >
                   <option value="">All Applications</option>
                   <option value="pending">Pending</option>
-                  <option value="under_review">Under Review</option>
                   <option value="approved">Approved</option>
                   <option value="rejected">Rejected</option>
-                  <option value="suspended">Suspended</option>
                 </select>
 
                 <select
@@ -392,11 +386,6 @@ const DeliveryAgents = () => {
                       <tr key={agent._id} className="hover:bg-gray-50">
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center">
-                            <div className="h-10 w-10 flex-shrink-0">
-                              <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
-                                <User className="h-6 w-6 text-gray-400" />
-                              </div>
-                            </div>
                             <div className="ml-4">
                               <div className="text-sm font-medium text-gray-900">
                                 {agent.personalInfo.firstName} {agent.personalInfo.lastName}
@@ -629,10 +618,8 @@ const DeliveryAgents = () => {
                       className="w-full border border-gray-300 px-3 py-2 sm:py-3 focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors duration-200"
                     >
                       <option value="pending">Pending</option>
-                      <option value="under_review">Under Review</option>
                       <option value="approved">Approved</option>
                       <option value="rejected">Rejected</option>
-                      <option value="suspended">Suspended</option>
                     </select>
                   </div>
 

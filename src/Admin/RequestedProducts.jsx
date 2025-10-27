@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FileText, ChevronLeft, ChevronRight, CheckCircle, XCircle, Clock, Loader2, Trash2 } from 'lucide-react';
-import toast, { Toaster } from 'react-hot-toast';
+import toast from 'react-hot-toast';
 import Layout from '../Components/Layout';
 
 function RequestedProducts() {
@@ -16,6 +16,7 @@ function RequestedProducts() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deletingRequest, setDeletingRequest] = useState(null);
   const [deleteStep, setDeleteStep] = useState(1); // 1 for first confirmation, 2 for second
+  const [deleteConfirmationText, setDeleteConfirmationText] = useState('');
   const [currentAdmin, setCurrentAdmin] = useState(null);
   const navigate = useNavigate();
 
@@ -134,10 +135,12 @@ function RequestedProducts() {
     if (deleteStep === 1) {
       setDeleteStep(2);
     } else {
+      // This is now called when the delete button is clicked in step 2
       deleteRequest(deletingRequest);
       setShowDeleteModal(false);
       setDeletingRequest(null);
       setDeleteStep(1);
+      setDeleteConfirmationText('');
     }
   };
 
@@ -146,6 +149,7 @@ function RequestedProducts() {
     setShowDeleteModal(false);
     setDeletingRequest(null);
     setDeleteStep(1);
+    setDeleteConfirmationText('');
   };
 
   // Delete request function
@@ -496,12 +500,9 @@ function RequestedProducts() {
                 <input
                   type="text"
                   placeholder="Type DELETE to confirm"
+                  value={deleteConfirmationText}
+                  onChange={(e) => setDeleteConfirmationText(e.target.value)}
                   className="w-full p-3 border border-gray-300 rounded-none mb-4 focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                  onChange={(e) => {
-                    if (e.target.value === 'DELETE') {
-                      handleDeleteConfirm();
-                    }
-                  }}
                 />
               )}
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
@@ -519,13 +520,20 @@ function RequestedProducts() {
                     Delete
                   </button>
                 )}
+                {deleteStep === 2 && deleteConfirmationText === 'DELETE' && (
+                  <button
+                    onClick={handleDeleteConfirm}
+                    className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-none order-1 sm:order-2"
+                  >
+                    Confirm Delete
+                  </button>
+                )}
               </div>
             </div>
           </div>
         </div>
       )}
 
-      <Toaster />
     </Layout>
   );
 }

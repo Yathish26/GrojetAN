@@ -773,8 +773,6 @@ export default function DeliveryAgentDetails() {
         return <CircleCheck className="w-5 h-5 text-green-500" />;
       case 'inactive':
         return <XCircle className="w-5 h-5 text-gray-500" />;
-      case 'suspended':
-        return <XCircle className="w-5 h-5 text-red-500" />;
       case 'rejected':
         return <XCircle className="w-5 h-5 text-red-500" />;
       default:
@@ -791,7 +789,6 @@ export default function DeliveryAgentDetails() {
         return 'bg-green-100 text-green-800 border-green-200';
       case 'inactive':
         return 'bg-gray-100 text-gray-800 border-gray-200';
-      case 'suspended':
       case 'rejected':
         return 'bg-red-100 text-red-800 border-red-200';
       default:
@@ -1446,20 +1443,10 @@ export default function DeliveryAgentDetails() {
                               Last updated: {formatISTTime(agent.status.currentLocation.lastUpdated)}
                             </p>
                           )}
-                          {agent.status.currentLocation.lastUpdated && (
-                            (() => {
-                              const now = new Date();
-                              const lastUpdate = new Date(agent.status.currentLocation.lastUpdated);
-                              const hoursDiff = (now - lastUpdate) / (1000 * 60 * 60);
-
-                              if (hoursDiff < 1) {
-                                return <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Live</span>;
-                              } else if (hoursDiff < 24) {
-                                return <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">Recent</span>;
-                              } else {
-                                return <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">Old</span>;
-                              }
-                            })()
+                          {agent.status?.isOnline ? (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Live</span>
+                          ) : (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">Offline</span>
                           )}
                         </div>
                       </div>
@@ -1488,6 +1475,11 @@ export default function DeliveryAgentDetails() {
                           lng: agent.status.currentLocation.longitude
                         }}
                         title={`${agent.name || 'Delivery Agent'} - ${agent.agentId || ''}`}
+                        icon={{
+                          url: '/assets/bikerider.png',
+                          scaledSize: new window.google.maps.Size(40, 40),
+                          anchor: new window.google.maps.Point(20, 40)
+                        }}
                         infoContent={`
                           <div style="max-width: 200px;">
                             <h4 style="margin: 0 0 8px 0; font-weight: bold;">${agent.name || 'Delivery Agent'}</h4>
@@ -2019,79 +2011,6 @@ export default function DeliveryAgentDetails() {
                 <span className="text-gray-600">This Month</span>
                 <span className="font-medium">₹{agent.status?.earnings?.thisMonth || 0}</span>
               </div>
-            </div>
-          </div>
-
-          {/* Online Tracking Stats */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-            <div className="p-6 border-b border-gray-200">
-              <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-                  <Clock className="w-5 h-5" />
-                  Online Tracking
-                </h2>
-                <button
-                  onClick={fetchAgentStats}
-                  disabled={refreshingStats}
-                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
-                  title="Refresh data"
-                >
-                  <RefreshCw className={`w-5 h-5 text-gray-600 ${refreshingStats ? 'animate-spin' : ''}`} />
-                </button>
-              </div>
-            </div>
-            <div className="p-6 space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-gray-600">Current Status</span>
-                <div className="flex items-center gap-2">
-                  <div className={`w-3 h-3 rounded-full ${agentStats?.onlineStats?.isOnline ? 'bg-green-500' : 'bg-gray-400'}`}></div>
-                  <span className={`font-medium ${agentStats?.onlineStats?.isOnline ? 'text-green-600' : 'text-gray-600'}`}>
-                    {agentStats?.onlineStats?.isOnline ? 'Online' : 'Offline'}
-                  </span>
-                </div>
-              </div>
-
-              {agentStats?.onlineStats?.isOnline && (
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-600">Current Session</span>
-                  <span className="font-medium text-blue-600">
-                    {formatTime(agentStats.onlineStats.currentSessionDuration)}
-                  </span>
-                </div>
-              )}
-
-              <div className="flex items-center justify-between">
-                <span className="text-gray-600">Today</span>
-                <span className="font-medium">{formatTime(agentStats?.onlineStats?.todayHours || 0)}</span>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <span className="text-gray-600">This Week</span>
-                <span className="font-medium">{formatTime(agentStats?.onlineStats?.weekHours || 0)}</span>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <span className="text-gray-600">This Month</span>
-                <span className="font-medium">{formatTime(agentStats?.onlineStats?.monthHours || 0)}</span>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <span className="text-gray-600">Total Hours</span>
-                <span className="font-medium">{formatTime(agentStats?.onlineStats?.totalHours || 0)}</span>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <span className="text-gray-600">Sessions Today</span>
-                <span className="font-medium">{agentStats?.onlineStats?.sessionCount || 0}</span>
-              </div>
-
-              {agentStats?.onlineStats?.lastUpdate && (
-                <div className="pt-2 border-t border-gray-100">
-                  <p className="text-xs text-gray-500 text-center">
-                    Last updated: {formatISTTime(agentStats.onlineStats.lastUpdate)}
-                  </p>
-                </div>
-              )}
             </div>
           </div>
 

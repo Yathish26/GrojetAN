@@ -32,6 +32,7 @@ import Offers from './Admin/Offers.jsx'
 import MarketArea from './Admin/MarketArea.jsx'
 import DeleteRequests from './Admin/DeleteRequests.jsx'
 import UpdateNotesAdmin from './Admin/UpdateNotesAdmin.jsx'
+import HomeAds from './Admin/HomeAds.jsx'
 
 function App() {
   return (
@@ -105,6 +106,9 @@ function App() {
           <Route path="/market-area" element={<MarketArea />} />
           <Route path="/delivery-signup" element={<DeliveryAgentSignup />} />
           <Route path="/offers" element={<Offers />} />
+          
+          {/* Home Ads Management */}
+          <Route path="/home-ads" element={<HomeAds />} />
           
           {/* Analytics & Reports */}
           <Route path="/analytics" element={<Analytics />} />

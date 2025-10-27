@@ -155,6 +155,7 @@ const Layout = ({ children, title }) => {
     { name: 'Delivery Zones', icon: MapPin, path: '/delivery-zones', roles: ['super_admin', 'admin', 'delivery_manager'] },
     { name: 'Market Area', icon: MapPin, path: '/market-area', roles: ['super_admin', 'admin'] },
     { name: 'Offers', icon: Gift, path: '/offers', roles: ['super_admin', 'admin'] },
+    { name: 'Home Ads', icon: Smartphone, path: '/home-ads', roles: ['super_admin'] },
     { name: 'Analytics', icon: BarChart3, path: '/analytics', roles: ['super_admin', 'admin'] },
     { name: 'App Controls', icon: TabletSmartphone, path: '/app-controls', roles: ['super_admin', 'admin'] },
     { name: 'Admin Management', icon: Shield, path: '/admin-management', roles: ['super_admin'] },

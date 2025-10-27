@@ -2,10 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../Components/Layout';
 import {
-    Package, Store, ChartBarStacked,
-    ShoppingCart, Truck, MapPin, TrendingUp,
-    Users, Clock, CircleCheck,
-    IndianRupee
+    Package, Truck, Clock, CircleCheck
 } from 'lucide-react';
 import LoaderSpinner from '../Components/Loader';
 
@@ -14,9 +11,7 @@ export default function Admin() {
     const [dashboardStats, setDashboardStats] = useState({
         inventoryCount: null,
         orders: {},
-        agents: {},
-        users: {},
-        revenue: {}
+        agents: {}
     });
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -28,30 +23,26 @@ export default function Admin() {
             try {
                 setLoading(true);
 
-                const [inventoryRes, ordersRes, agentsRes, usersRes] = await Promise.all([
+                const [inventoryRes, ordersRes, agentsRes] = await Promise.all([
                     fetch(`${import.meta.env.VITE_SERVER}/admin/products/count`, { credentials: 'include' }),
                     fetch(`${import.meta.env.VITE_SERVER}/admin/orders/stats/overview`, { credentials: 'include' }),
-                    fetch(`${import.meta.env.VITE_SERVER}/admin/delivery-agents/stats/overview`, { credentials: 'include' }),
-                    fetch(`${import.meta.env.VITE_SERVER}/admin/users/count`, { credentials: 'include' })
+                    fetch(`${import.meta.env.VITE_SERVER}/admin/delivery-agents/stats/overview`, { credentials: 'include' })
                 ]);
 
-                if (inventoryRes.status === 401 || ordersRes.status === 401 ||
-                    agentsRes.status === 401 || usersRes.status === 401) {
+                if (inventoryRes.status === 401 || ordersRes.status === 401 || agentsRes.status === 401) {
                     setRedirecting(true);
                     navigate('/login', { replace: true });
                     return;
                 }
 
-                const [inventoryData, ordersData, agentsData, usersData] = await Promise.all([
+                const [inventoryData, ordersData, agentsData] = await Promise.all([
                     inventoryRes.json(),
                     ordersRes.json(),
-                    agentsRes.json(),
-                    usersRes.json()
+                    agentsRes.json()
                 ]);
 
                 // Check for token validation in responses
-                if (inventoryData.tokenValid === false || ordersData.tokenValid === false ||
-                    agentsData.tokenValid === false || usersData.tokenValid === false) {
+                if (inventoryData.tokenValid === false || ordersData.tokenValid === false || agentsData.tokenValid === false) {
                     setRedirecting(true);
                     navigate('/login', { replace: true });
                     return;
@@ -60,12 +51,7 @@ export default function Admin() {
                 setDashboardStats({
                     inventoryCount: inventoryData.success ? inventoryData.count : 0,
                     orders: ordersData.success ? ordersData.stats : {},
-                    agents: agentsData.success ? agentsData.stats : {},
-                    users: usersData.success ? { count: usersData.count } : {},
-                    revenue: ordersData.success ? {
-                        total: ordersData.stats.totalRevenue,
-                        today: ordersData.stats.todayRevenue
-                    } : {}
+                    agents: agentsData.success ? agentsData.stats : {}
                 });
             } catch (e) {
                 console.error('Dashboard fetch error:', e);
@@ -160,7 +146,7 @@ export default function Admin() {
                 </div>
 
                 {/* Stats Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
                     <StatCard
                         title="Total Products"
                         value={dashboardStats.inventoryCount}
@@ -168,35 +154,16 @@ export default function Admin() {
                         onClick={() => navigate('/products')}
                     />
                     <StatCard
-                        title="Total Orders"
-                        value={dashboardStats.orders.totalOrders || 0}
-                        icon={ShoppingCart}
-                        trend={`${dashboardStats.orders.todayOrders || 0} today`}
-                        onClick={() => navigate('/orders')}
-                    />
-                    <StatCard
-                        title="Active Agents"
+                        title="Total Agents"
                         value={dashboardStats.agents.active || 0}
                         icon={Truck}
                         trend={`${dashboardStats.agents.online || 0} online`}
                         onClick={() => navigate('/delivery-agents')}
                     />
-                    <StatCard
-                        title="Total Users"
-                        value={dashboardStats.users.count || 0}
-                        icon={Users}
-                        onClick={() => navigate('/users')}
-                    />
                 </div>
 
                 {/* Revenue & Performance */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-8">
-                    <StatCard
-                        title="Total Revenue"
-                        value={`₹${(dashboardStats.revenue.total || 0).toLocaleString()}`}
-                        icon={IndianRupee}
-                        trend={`₹${(dashboardStats.revenue.today || 0).toLocaleString()} today`}
-                    />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
                     <StatCard
                         title="Pending Orders"
                         value={dashboardStats.orders.pendingOrders || 0}
