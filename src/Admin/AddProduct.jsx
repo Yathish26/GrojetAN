@@ -359,6 +359,7 @@ export default function AddProduct() {
                 <div className="relative">
                   <input
                     type="text"
+                    maxLength={100}
                     name="name"
                     className="w-full pl-10 pr-4 py-2.5 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-green-500"
                     value={formData.name}
@@ -376,6 +377,7 @@ export default function AddProduct() {
                 </label>
                 <textarea
                   name="description"
+                  maxLength={200}
                   rows={3}
                   className="w-full px-4 py-2.5 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-green-500"
                   value={formData.description}
@@ -498,6 +500,7 @@ export default function AddProduct() {
                 </label>
                 <input
                   type="text"
+                  maxLength={50}
                   name="brand"
                   className="w-full px-4 py-2.5 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-green-500"
                   value={formData.brand}

@@ -990,6 +990,7 @@ export default function Products() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <EditInput
                     label="Product Name*"
+                    maxLength={100}
                     name="name"
                     value={editProduct.name}
                     onChange={handleEditChange}
@@ -1000,6 +1001,7 @@ export default function Products() {
                     <label className="block text-gray-700 text-sm font-medium mb-1">HSN Code</label>
                     <input
                       type="text"
+                      maxLength={20}
                       name="hsnCode"
                       className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500"
                       value={editProduct.hsnCode || ''}
@@ -1013,6 +1015,7 @@ export default function Products() {
                   </div>
                   <EditInput
                     label="Brand"
+                    maxLength={50}
                     name="brand"
                     value={editProduct.brand}
                     onChange={handleEditChange}
@@ -1137,6 +1140,7 @@ export default function Products() {
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <EditInput
                     label="MRP (₹)*"
+                    maxLength={6}
                     name="pricing.mrp"
                     value={editProduct.pricing?.mrp}
                     onChange={handleEditChange}
