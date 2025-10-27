@@ -277,6 +277,7 @@ export default function DeliveryAgentSignup() {
                   </label>
                   <input
                     type="text"
+                    maxLength={100}
                     required
                     value={formData.personalInfo.firstName}
                     onChange={(e) => handleInputChange('personalInfo', 'firstName', e.target.value)}
@@ -290,6 +291,7 @@ export default function DeliveryAgentSignup() {
                   </label>
                   <input
                     type="text"
+                    maxLength={100}
                     value={formData.personalInfo.lastName}
                     onChange={(e) => handleInputChange('personalInfo', 'lastName', e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
@@ -302,6 +304,7 @@ export default function DeliveryAgentSignup() {
                   </label>
                   <input
                     type="email"
+                    maxLength={200}
                     required
                     value={formData.personalInfo.email}
                     onChange={(e) => handleInputChange('personalInfo', 'email', e.target.value)}
@@ -315,6 +318,7 @@ export default function DeliveryAgentSignup() {
                   </label>
                   <input
                     type="tel"
+                    maxLength={10}
                     required
                     value={formData.personalInfo.phone}
                     onChange={(e) => handleInputChange('personalInfo', 'phone', e.target.value)}
@@ -361,6 +365,7 @@ export default function DeliveryAgentSignup() {
                     </label>
                     <input
                       type="text"
+                      maxLength={200}
                       required
                       value={formData.address.street}
                       onChange={(e) => handleInputChange('address', 'street', e.target.value)}
@@ -374,6 +379,7 @@ export default function DeliveryAgentSignup() {
                     </label>
                     <input
                       type="text"
+                      maxLength={100}
                       required
                       value={formData.address.city}
                       onChange={(e) => handleInputChange('address', 'city', e.target.value)}
@@ -387,6 +393,7 @@ export default function DeliveryAgentSignup() {
                     </label>
                     <input
                       type="text"
+                      maxLength={100}
                       required
                       value={formData.address.state}
                       onChange={(e) => handleInputChange('address', 'state', e.target.value)}
@@ -400,6 +407,7 @@ export default function DeliveryAgentSignup() {
                     </label>
                     <input
                       type="text"
+                      maxLength={20}
                       required
                       value={formData.address.zipCode}
                       onChange={(e) => handleInputChange('address', 'zipCode', e.target.value)}
@@ -413,6 +421,7 @@ export default function DeliveryAgentSignup() {
                     </label>
                     <input
                       type="text"
+                      maxLength={100}
                       value={formData.address.landmark}
                       onChange={(e) => handleInputChange('address', 'landmark', e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
@@ -476,6 +485,7 @@ export default function DeliveryAgentSignup() {
                     </label>
                     <input
                       type="text"
+                      maxLength={100}
                       required
                       value={formData.emergencyContact.name}
                       onChange={(e) => handleInputChange('emergencyContact', 'name', e.target.value)}
@@ -489,6 +499,7 @@ export default function DeliveryAgentSignup() {
                     </label>
                     <input
                       type="tel"
+                      maxLength={10}
                       required
                       value={formData.emergencyContact.phone}
                       onChange={(e) => handleInputChange('emergencyContact', 'phone', e.target.value)}
@@ -548,6 +559,7 @@ export default function DeliveryAgentSignup() {
                   </label>
                   <input
                     type="text"
+                    maxLength={10}
                     required
                     value={formData.vehicleInfo.vehicleNumber}
                     onChange={(e) => handleInputChange('vehicleInfo', 'vehicleNumber', e.target.value)}
@@ -572,6 +584,7 @@ export default function DeliveryAgentSignup() {
                     </label>
                     <input
                       type="text"
+                      maxLength={20}
                       value={formData.documents.bankAccount.accountNumber}
                       onChange={(e) => handleInputChange('documents', 'bankAccount.accountNumber', e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
@@ -585,6 +598,7 @@ export default function DeliveryAgentSignup() {
                     </label>
                     <input
                       type="text"
+                      maxLength={20}
                       value={formData.documents.bankAccount.ifscCode}
                       onChange={(e) => handleInputChange('documents', 'bankAccount.ifscCode', e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
@@ -722,6 +736,7 @@ export default function DeliveryAgentSignup() {
                     </label>
                     <input
                       type="text"
+                      maxLength={100}
                       value={formData.documents.bankAccount.accountHolderName}
                       onChange={(e) => handleInputChange('documents', 'bankAccount.accountHolderName', e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
@@ -764,6 +779,7 @@ export default function DeliveryAgentSignup() {
                     </label>
                     <input
                       type="number"
+                      maxLength={2}
                       value={formData.workInfo.experience}
                       onChange={(e) => handleInputChange('workInfo', 'experience', e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"

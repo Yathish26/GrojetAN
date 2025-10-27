@@ -496,6 +496,7 @@ export default function UpdateNotesAdmin() {
                     <div key={index} className="flex gap-2 mb-2">
                       <input
                         type="text"
+                        maxLength={200}
                         value={feature}
                         onChange={(e) => updateFeature(index, e.target.value)}
                         placeholder="Enter feature description"

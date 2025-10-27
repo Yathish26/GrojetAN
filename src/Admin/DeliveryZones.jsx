@@ -817,6 +817,7 @@ export default function DeliveryZones() {
                   </label>
                   <input
                     type="text"
+                    maxLength={100}
                     required
                     value={createForm.name}
                     onChange={(e) => setCreateForm({ ...createForm, name: e.target.value })}
@@ -834,6 +835,7 @@ export default function DeliveryZones() {
                     className="w-full px-3 py-2 border border-gray-300  focus:ring-2 focus:ring-green-500 focus:border-green-500"
                     rows="3"
                     placeholder="Brief description of the delivery zone"
+                    maxLength={500}
                   />
                 </div>
                 <div>
@@ -1113,6 +1115,7 @@ export default function DeliveryZones() {
                   <label className="block text-sm font-medium text-gray-700 mb-1">Zone Name *</label>
                   <input
                     type="text"
+                    maxLength={200}
                     required
                     value={editForm.name}
                     onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
@@ -1126,6 +1129,7 @@ export default function DeliveryZones() {
                     onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-green-500"
                     rows="3"
+                    maxLength={500}
                   />
                 </div>
                 <div>

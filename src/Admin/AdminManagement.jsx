@@ -448,6 +448,7 @@ export default function AdminManagement() {
                     <label className="block text-sm font-medium text-gray-700 mb-1">Full Name *</label>
                     <input
                       type="text"
+                      maxLength={100}
                       required
                       value={createForm.name}
                       onChange={(e) => setCreateForm({ ...createForm, name: e.target.value })}
@@ -458,6 +459,7 @@ export default function AdminManagement() {
                     <label className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
                     <input
                       type="email"
+                      maxLength={100}
                       required
                       value={createForm.email}
                       onChange={(e) => setCreateForm({ ...createForm, email: e.target.value })}
@@ -487,6 +489,7 @@ export default function AdminManagement() {
                     <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
                     <input
                       type="tel"
+                      maxLength={10}
                       value={createForm.phone}
                       onChange={(e) => setCreateForm({ ...createForm, phone: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300  focus:ring-2 focus:ring-green-500 focus:border-green-500"
@@ -509,6 +512,7 @@ export default function AdminManagement() {
                     <label className="block text-sm font-medium text-gray-700 mb-1">Department</label>
                     <input
                       type="text"
+                      maxLength={100}
                       value={createForm.department}
                       onChange={(e) => setCreateForm({ ...createForm, department: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300  focus:ring-2 focus:ring-green-500 focus:border-green-500"
@@ -555,6 +559,7 @@ export default function AdminManagement() {
                     <label className="block text-sm font-medium text-gray-700 mb-1">Full Name *</label>
                     <input
                       type="text"
+                      maxLength={100}
                       required
                       value={editForm.name}
                       onChange={e => setEditForm({ ...editForm, name: e.target.value })}
@@ -565,6 +570,7 @@ export default function AdminManagement() {
                     <label className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
                     <input
                       type="email"
+                      maxLength={100}
                       required
                       value={editForm.email}
                       onChange={e => setEditForm({ ...editForm, email: e.target.value })}
@@ -575,6 +581,7 @@ export default function AdminManagement() {
                     <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
                     <input
                       type="tel"
+                      maxLength={10}
                       value={editForm.phone}
                       onChange={e => setEditForm({ ...editForm, phone: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300  focus:ring-2 focus:ring-green-500 focus:border-green-500"
@@ -597,6 +604,7 @@ export default function AdminManagement() {
                     <label className="block text-sm font-medium text-gray-700 mb-1">Department</label>
                     <input
                       type="text"
+                      maxLength={100}
                       value={editForm.department}
                       onChange={e => setEditForm({ ...editForm, department: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300  focus:ring-2 focus:ring-green-500 focus:border-green-500"

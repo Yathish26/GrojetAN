@@ -11,7 +11,7 @@ Modal.setAppElement('#root');
 
 const PAGE_SIZE = 20;
 
-function EditInput({ label, name, value, onChange, type = 'text', disabled, required = false, step, min, max, onWheel }) {
+function EditInput({ label, name, value, onChange, type = 'text', disabled, required = false, step, min, max, onWheel,maxLength }) {
   return (
     <div className="mb-4">
       <label className="block text-gray-700 text-sm font-medium mb-1">{label}</label>
@@ -27,6 +27,7 @@ function EditInput({ label, name, value, onChange, type = 'text', disabled, requ
         min={min}
         max={max}
         onWheel={onWheel}
+        maxLength={maxLength} 
       />
     </div>
   );
@@ -1015,7 +1016,7 @@ export default function Products() {
                   </div>
                   <EditInput
                     label="Brand"
-                    maxLength={50}
+                    maxLength={100}
                     name="brand"
                     value={editProduct.brand}
                     onChange={handleEditChange}

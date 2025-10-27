@@ -584,6 +584,7 @@ export default function AddProduct() {
               </label>
               <input
                 type="text"
+                maxLength={20}
                 name="hsnCode"
                 className="w-full px-4 py-2.5 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-green-500"
                 value={formData.hsnCode}
@@ -609,11 +610,17 @@ export default function AddProduct() {
               <div className="relative">
                 <input
                   type="number"
+                  max="6"
                   name="pricing.mrp"
                   className="w-full pl-10 pr-4 py-2.5 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-green-500"
                   value={formData.pricing.mrp}
                   onChange={(e) => handleNestedChange('pricing', 'mrp', e.target.value)}
                   onWheel={(e) => e.target.blur()} // Prevent scroll from changing value
+                  onInput={(e) => {
+                      if (e.target.value.length > 6) {
+                        e.target.value = e.target.value.slice(0, 6);
+                    }
+                  }}
                   placeholder="e.g. 299"
                   required
                   min="0"

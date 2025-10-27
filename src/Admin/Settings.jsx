@@ -1195,6 +1195,7 @@ export default function Settings() {
                         </label>
                         <input
                           type="tel"
+                          maxLength={10}
                           value={settings.support.merchant.number}
                           onChange={(e) => {
                             const sanitizedValue = e.target.value.replace(/[^0-9+]/g, '');
@@ -1462,12 +1463,14 @@ function FaqManager({ faqs, onUpdate, appType }) {
         <div className="space-y-3">
           <input
             type="text"
+            maxLength={100}
             value={newQuestion}
             onChange={(e) => setNewQuestion(e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
             placeholder="Enter question"
           />
           <textarea
+          maxLength={500}
             value={newAnswer}
             onChange={(e) => setNewAnswer(e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"

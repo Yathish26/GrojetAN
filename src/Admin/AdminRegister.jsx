@@ -356,6 +356,7 @@ export default function AdminRegister() {
                   </label>
                   <input
                     type="text"
+                    maxLength={100}
                     required
                     value={formData.name}
                     onChange={(e) => handleInputChange('name', e.target.value)}
@@ -371,6 +372,7 @@ export default function AdminRegister() {
                   </label>
                   <input
                     type="email"
+                    maxLength={100}
                     required
                     value={formData.email}
                     onChange={(e) => handleInputChange('email', e.target.value)}
@@ -386,6 +388,7 @@ export default function AdminRegister() {
                   </label>
                   <input
                     type="tel"
+                    maxLength={10}
                     required
                     value={formData.phone}
                     onChange={(e) => handleInputChange('phone', e.target.value)}
@@ -400,6 +403,7 @@ export default function AdminRegister() {
                   </label>
                   <input
                     type="text"
+                    maxLength={100}
                     value={formData.department}
                     onChange={(e) => handleInputChange('department', e.target.value)}
                     className="w-full px-4 py-3 border border-gray-300  focus:ring-2 focus:ring-green-500 focus:border-green-500"

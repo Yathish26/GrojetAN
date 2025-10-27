@@ -1089,6 +1089,7 @@ export default function DeliveryAgentDetails() {
                         <div className="flex flex-col gap-2">
                           <input
                             type="text"
+                            maxLength={100}
                             value={fullNameEdit.firstName}
                             onChange={(e) => setFullNameEdit(prev => ({ ...prev, firstName: e.target.value }))}
                             className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
@@ -1096,6 +1097,7 @@ export default function DeliveryAgentDetails() {
                           />
                           <input
                             type="text"
+                            maxLength={100}
                             value={fullNameEdit.lastName}
                             onChange={(e) => setFullNameEdit(prev => ({ ...prev, lastName: e.target.value }))}
                             className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
@@ -1175,6 +1177,7 @@ export default function DeliveryAgentDetails() {
                       <div className="flex items-center gap-2 mt-1">
                         <input
                           type="tel"
+                          maxLength={10}
                           value={editValue}
                           onChange={(e) => setEditValue(e.target.value)}
                           className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
@@ -1236,6 +1239,7 @@ export default function DeliveryAgentDetails() {
                         <div className="grid grid-cols-2 gap-2">
                           <input
                             type="text"
+                            maxLength={100}
                             placeholder="City"
                             value={addressEdit.city}
                             onChange={(e) => setAddressEdit(prev => ({ ...prev, city: e.target.value }))}
@@ -1243,6 +1247,7 @@ export default function DeliveryAgentDetails() {
                           />
                           <input
                             type="text"
+                            maxLength={100}
                             placeholder="State"
                             value={addressEdit.state}
                             onChange={(e) => setAddressEdit(prev => ({ ...prev, state: e.target.value }))}
@@ -1252,6 +1257,7 @@ export default function DeliveryAgentDetails() {
                         <div className="grid grid-cols-2 gap-2">
                           <input
                             type="text"
+                            maxLength={20}
                             placeholder="ZIP Code"
                             value={addressEdit.zipCode}
                             onChange={(e) => setAddressEdit(prev => ({ ...prev, zipCode: e.target.value }))}
@@ -1259,6 +1265,7 @@ export default function DeliveryAgentDetails() {
                           />
                           <input
                             type="text"
+                            maxLength={100}
                             placeholder="Landmark (optional)"
                             value={addressEdit.landmark}
                             onChange={(e) => setAddressEdit(prev => ({ ...prev, landmark: e.target.value }))}
@@ -1323,6 +1330,7 @@ export default function DeliveryAgentDetails() {
                       <div className="space-y-3 mt-2">
                         <input
                           type="text"
+                          maxLength={100}
                           placeholder="Contact Name"
                           value={emergencyContactEdit.name}
                           onChange={(e) => setEmergencyContactEdit(prev => ({ ...prev, name: e.target.value }))}
@@ -1330,6 +1338,7 @@ export default function DeliveryAgentDetails() {
                         />
                         <input
                           type="tel"
+                          maxLength={10}
                           placeholder="Contact Phone"
                           value={emergencyContactEdit.phone}
                           onChange={(e) => setEmergencyContactEdit(prev => ({ ...prev, phone: e.target.value }))}
@@ -1570,6 +1579,7 @@ export default function DeliveryAgentDetails() {
                       <div className="flex items-center gap-2 mt-1">
                         <input
                           type="text"
+                          maxLength={10}
                           value={editValue}
                           onChange={(e) => setEditValue(e.target.value)}
                           className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
@@ -1729,6 +1739,7 @@ export default function DeliveryAgentDetails() {
                         </label>
                         <input
                           type="text"
+                          maxLength={100}
                           value={bankAccountEdit.accountHolderName}
                           onChange={(e) => setBankAccountEdit(prev => ({ ...prev, accountHolderName: e.target.value }))}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
@@ -1804,12 +1815,14 @@ export default function DeliveryAgentDetails() {
                         </label>
                         <input
                           type="number"
+                          maxLength={20}
                           value={bankAccountEdit.accountNumber}
                           onChange={(e) => setBankAccountEdit(prev => ({ ...prev, accountNumber: e.target.value }))}
                           onInput={(e) => {
                             // Remove any non-numeric characters
                             e.target.value = e.target.value.replace(/[^0-9]/g, '');
                           }}
+                          
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                           placeholder="Enter account number"
                           min="0"
@@ -1822,6 +1835,7 @@ export default function DeliveryAgentDetails() {
                         </label>
                         <input
                           type="text"
+                          maxLength={20}
                           value={bankAccountEdit.ifscCode}
                           onChange={(e) => setBankAccountEdit(prev => ({ ...prev, ifscCode: e.target.value }))}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"

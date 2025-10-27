@@ -98,6 +98,7 @@ export default function AdminLogin() {
               </div>
               <input
                 type="email"
+                maxLength={100}
                 id="email"
                 name="email"
                 className="block w-full pl-10 pr-3 py-3 border border-gray-300  focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"

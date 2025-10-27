@@ -759,6 +759,7 @@ const EditMerchant = () => {
                 </label>
                 <input
                   type="text"
+                  maxLength={20}
                   name="merchantId"
                   value={formData.merchantId}
                   onChange={handleInputChange}
@@ -773,6 +774,7 @@ const EditMerchant = () => {
                 </label>
                 <input
                   type="text"
+                  maxLength={100}
                   name="displayName"
                   value={formData.displayName}
                   onChange={handleInputChange}
@@ -800,6 +802,7 @@ const EditMerchant = () => {
                 </label>
                 <input
                   type="number"
+                  maxLength={4}
                   name="establishedYear"
                   value={formData.establishedYear}
                   onChange={handleInputChange}
@@ -825,6 +828,7 @@ const EditMerchant = () => {
                 </label>
                 <input
                   type="text"
+                  maxLength={100}
                   name="fullName"
                   value={formData.fullName}
                   onChange={handleInputChange}
@@ -839,6 +843,7 @@ const EditMerchant = () => {
                 </label>
                 <input
                   type="tel"
+                  maxLength={10}
                   name="mobile"
                   value={formData.mobile}
                   onChange={handleInputChange}
@@ -853,6 +858,7 @@ const EditMerchant = () => {
                 </label>
                 <input
                   type="tel"
+                  maxLength={10}
                   name="alternateMobile"
                   value={formData.alternateMobile}
                   onChange={handleInputChange}
@@ -866,6 +872,7 @@ const EditMerchant = () => {
                 </label>
                 <input
                   type="email"
+                  maxLength={100}
                   name="email"
                   value={formData.email}
                   onChange={handleInputChange}
@@ -890,6 +897,7 @@ const EditMerchant = () => {
                 </label>
                 <input
                   type="text"
+                  maxLength={100}
                   name="accountHolderName"
                   value={formData.bankDetails.accountHolderName}
                   onChange={handleBankDetailsChange}
@@ -904,6 +912,7 @@ const EditMerchant = () => {
                 </label>
                 <input
                   type="number"
+                  maxLength={20}
                   name="accountNumber"
                   value={formData.bankDetails.accountNumber}
                   onChange={handleBankDetailsChange}
@@ -974,6 +983,7 @@ const EditMerchant = () => {
                 </label>
                 <input
                   type="text"
+                  maxLength={100}
                   name="branchName"
                   value={formData.bankDetails.branchName}
                   onChange={handleBankDetailsChange}
@@ -987,6 +997,7 @@ const EditMerchant = () => {
                 </label>
                 <input
                   type="text"
+                  maxLength={20}
                   name="ifscCode"
                   value={formData.bankDetails.ifscCode}
                   onChange={handleBankDetailsChange}
@@ -1015,6 +1026,7 @@ const EditMerchant = () => {
                   </label>
                   <input
                     type="text"
+                    maxLength={200}
                     value={formData.storeAddress.street}
                     onChange={(e) => handleNestedInputChange('storeAddress', 'street', e.target.value)}
                     required
@@ -1028,6 +1040,7 @@ const EditMerchant = () => {
                   </label>
                   <input
                     type="text"
+                    maxLength={100}
                     value={formData.storeAddress.city}
                     onChange={(e) => handleNestedInputChange('storeAddress', 'city', e.target.value)}
                     required
@@ -1057,6 +1070,7 @@ const EditMerchant = () => {
                   </label>
                   <input
                     type="text"
+                    maxLength={20}
                     value={formData.storeAddress.pincode}
                     onChange={(e) => handleNestedInputChange('storeAddress', 'pincode', e.target.value)}
                     required
@@ -1070,6 +1084,7 @@ const EditMerchant = () => {
                   </label>
                   <input
                     type="text"
+                    maxLength={100}
                     value={formData.storeAddress.landmark}
                     onChange={(e) => handleNestedInputChange('storeAddress', 'landmark', e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
@@ -1531,6 +1546,7 @@ const EditMerchant = () => {
                   rows={3}
                   className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   placeholder="Enter store description"
+                  maxLength={200}
                 />
               </div>
             </div>

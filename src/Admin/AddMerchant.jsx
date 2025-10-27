@@ -322,6 +322,7 @@ const AddMerchant = () => {
                     <input
                       type="text"
                       name="merchantId"
+                      maxLength={20}
                       value={formData.merchantId}
                       onChange={handleInputChange}
                       className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
@@ -337,6 +338,7 @@ const AddMerchant = () => {
                     </label>
                     <input
                       type="text"
+                      maxLength={100}
                       name="displayName"
                       value={formData.displayName}
                       onChange={handleInputChange}
@@ -359,6 +361,7 @@ const AddMerchant = () => {
                       <input
                         type="text"
                         name="fullName"
+                        maxLength={100}
                         value={formData.fullName}
                         onChange={handleInputChange}
                         className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
@@ -374,6 +377,7 @@ const AddMerchant = () => {
                       <input
                         type="tel"
                         name="mobile"
+                        maxLength={10}
                         value={formData.mobile}
                         onChange={(e) => {
                           const value = e.target.value.replace(/\D/g, ''); // Only allow digits
@@ -396,6 +400,7 @@ const AddMerchant = () => {
                       </label>
                       <input
                         type="email"
+                        maxLength={200}
                         name="email"
                         value={formData.email}
                         onChange={handleInputChange}
@@ -448,6 +453,7 @@ const AddMerchant = () => {
                       </label>
                       <input
                         type="number"
+                        maxLength={50}
                         name="accountNumber"
                         value={formData.accountNumber}
                         onChange={handleInputChange}
@@ -469,6 +475,7 @@ const AddMerchant = () => {
                       </label>
                       <input
                         type="text"
+                        maxLength={50}
                         name="ifscCode"
                         value={formData.ifscCode}
                         onChange={handleInputChange}
@@ -537,6 +544,7 @@ const AddMerchant = () => {
                       </label>
                       <input
                         type="text"
+                        maxLength={100}
                         name="accountHolderName"
                         value={formData.accountHolderName}
                         onChange={handleInputChange}
@@ -592,6 +600,7 @@ const AddMerchant = () => {
                       </label>
                       <input
                         type="text"
+                        maxLength={200}
                         name="storeAddress.street"
                         value={formData.storeAddress.street}
                         onChange={handleInputChange}
@@ -607,6 +616,7 @@ const AddMerchant = () => {
                       </label>
                       <input
                         type="text"
+                        maxLength={100}
                         name="storeAddress.city"
                         value={formData.storeAddress.city}
                         onChange={handleInputChange}
@@ -641,6 +651,7 @@ const AddMerchant = () => {
                       </label>
                       <input
                         type="text"
+                        maxLength={20}
                         name="storeAddress.pincode"
                         value={formData.storeAddress.pincode}
                         onChange={handleInputChange}
@@ -657,6 +668,7 @@ const AddMerchant = () => {
                       </label>
                       <input
                         type="text"
+                        maxLength={100}
                         name="storeAddress.landmark"
                         value={formData.storeAddress.landmark}
                         onChange={handleInputChange}
@@ -869,6 +881,7 @@ const AddMerchant = () => {
                       </label>
                       <textarea
                         name="storeDescription"
+                        maxLength={200}
                         value={formData.storeDescription}
                         onChange={handleInputChange}
                         rows={3}

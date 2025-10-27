@@ -656,9 +656,9 @@ export default function Categories() {
                   </label>
                   <input
                     type="text"
+                    maxLength={100}
                     id="name"
                     name="name"
-                    maxLength={30}
                     value={formData.name}
                     onChange={handleInputChange}
                     className="w-full px-4 py-2 border border-gray-300  focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200"

@@ -96,6 +96,7 @@ export default function AppControls() {
                 Notification Text
               </label>
               <textarea
+              maxLength={500}
                 value={notificationText}
                 onChange={(e) => setNotificationText(e.target.value)}
                 placeholder="Enter the notification message..."
@@ -111,6 +112,7 @@ export default function AppControls() {
               </label>
               <input
                 type="text"
+                maxLength={200}
                 value={pushToken}
                 onChange={(e) => setPushToken(e.target.value)}
                 placeholder="ExponentPushToken[your_token_here]"

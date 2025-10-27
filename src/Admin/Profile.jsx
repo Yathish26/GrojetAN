@@ -184,19 +184,19 @@ export default function Profile() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
-                <input type="text" value={editForm.name} onChange={e=>setEditForm({...editForm, name:e.target.value})} className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-green-500" required />
+                <input type="text" maxLength={100} value={editForm.name} onChange={e=>setEditForm({...editForm, name:e.target.value})} className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-green-500" required />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                <input type="email" value={editForm.email} onChange={e=>setEditForm({...editForm, email:e.target.value})} className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-green-500" required />
+                <input type="email" maxLength={100} value={editForm.email} onChange={e=>setEditForm({...editForm, email:e.target.value})} className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-green-500" required />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
-                <input type="tel" value={editForm.phone} onChange={e=>setEditForm({...editForm, phone:e.target.value})} className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-green-500" />
+                <input type="tel" maxLength={10} value={editForm.phone} onChange={e=>setEditForm({...editForm, phone:e.target.value})} className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-green-500" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Department</label>
-                <input type="text" value={editForm.department} onChange={e=>setEditForm({...editForm, department:e.target.value})} className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-green-500" />
+                <input type="text"  maxLength={100} value={editForm.department} onChange={e=>setEditForm({...editForm, department:e.target.value})} className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-green-500" />
               </div>
             </div>
             <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4">
