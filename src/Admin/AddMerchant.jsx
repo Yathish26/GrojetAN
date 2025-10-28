@@ -388,7 +388,7 @@ const AddMerchant = () => {
                         }}
                         className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
                         placeholder="10-digit number"
-                        maxLength={10}
+                        
                         required
                       />
                     </div>

@@ -1127,6 +1127,7 @@ export default function Settings() {
                         </label>
                         <input
                           type="email"
+                          maxLength={100}
                           value={settings.support.app.email}
                           onChange={(e) => updateSetting('support', 'app', { ...settings.support.app, email: e.target.value })}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
@@ -1141,6 +1142,7 @@ export default function Settings() {
                         </label>
                         <input
                           type="tel"
+                          maxLength={13}
                           value={settings.support.app.number}
                           onChange={(e) => {
                             const sanitizedValue = e.target.value.replace(/[^0-9+]/g, '');
@@ -1181,6 +1183,7 @@ export default function Settings() {
                         </label>
                         <input
                           type="email"
+                          maxLength={100}
                           value={settings.support.merchant.email}
                           onChange={(e) => updateSetting('support', 'merchant', { ...settings.support.merchant, email: e.target.value })}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
@@ -1236,6 +1239,7 @@ export default function Settings() {
                         </label>
                         <input
                           type="email"
+                          maxLength={100}
                           value={settings.support.delivery.email}
                           onChange={(e) => updateSetting('support', 'delivery', { ...settings.support.delivery, email: e.target.value })}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
@@ -1250,6 +1254,7 @@ export default function Settings() {
                         </label>
                         <input
                           type="tel"
+                          maxLength={13}
                           value={settings.support.delivery.number}
                           onChange={(e) => {
                             const sanitizedValue = e.target.value.replace(/[^0-9+]/g, '');
