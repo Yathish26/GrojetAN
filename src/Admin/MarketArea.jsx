@@ -15,7 +15,7 @@ const ZonePolygon = ({ map, zone }) => {
 
     const polygon = new window.google.maps.Polygon({
       paths: path,
-      fillColor: '#10B981', // green for active zones
+      fillColor: '#10B981',
       fillOpacity: 0.25,
       strokeColor: '#10B981',
       strokeWeight: 2,
