@@ -53,7 +53,7 @@ export default function AddProduct() {
       unit: ''
     },
     pricing: {
-      mrp: 0,
+      mrp: "",
     },
     isActive: true,
     isFeatured: false,
@@ -234,7 +234,7 @@ export default function AddProduct() {
   };
 
   // Upload image to Cloudinary
-  const uploadImage = async (file, folder = 'products') => {
+  const uploadImage = async (file = 'products') => {
     const formDataUpload = new FormData();
     formDataUpload.append('image', file);
 
@@ -765,7 +765,6 @@ export default function AddProduct() {
                   onWheel={(e) => e.target.blur()} // Prevent scroll from changing value
                   placeholder="e.g. 299"
                   required
-                  min="0"
                   step="0.01"
                 />
                 <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">₹</span>
