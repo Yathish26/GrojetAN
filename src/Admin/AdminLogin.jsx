@@ -65,7 +65,7 @@ export default function AdminLogin() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#d6e04d] to-green-300 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-[#d6e04d] to-yellow-600 flex items-center justify-center p-4">
       <div className="bg-white p-8 shadow-xl border border-gray-200 w-full max-w-md">
         {/* Header */}
         <div className="flex flex-col items-center mb-8">
