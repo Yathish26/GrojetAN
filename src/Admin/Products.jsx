@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Plus, Edit, Trash2, X, Loader2, ChevronLeft, ChevronRight, Shield, Download } from 'lucide-react';
+import { Search, Plus, Edit, Trash2, X, Loader2, ChevronLeft, ChevronRight, Shield, Download, Package, Image, CircleCheck, XCircle } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
 import Modal from 'react-modal';
 import ChipInput from '../Components/ChipInput';
@@ -61,7 +61,12 @@ export default function Products() {
   const [selectedImageFiles, setSelectedImageFiles] = useState([]);
   const [originalThumbnailUrl, setOriginalThumbnailUrl] = useState(null);
   const [originalImageUrls, setOriginalImageUrls] = useState([]);
+  const [initialOriginalImageUrls, setInitialOriginalImageUrls] = useState([]); // For Cloudinary deletion tracking
   const [uploadingImages, setUploadingImages] = useState(false);
+
+  // Preview states for edit modal
+  const [selectedThumbnailPreview, setSelectedThumbnailPreview] = useState(null);
+  const [selectedImagePreviews, setSelectedImagePreviews] = useState([]);
 
   const navigate = useNavigate();
 
@@ -353,8 +358,11 @@ export default function Products() {
     setEditProduct(JSON.parse(JSON.stringify(product)));
     setOriginalThumbnailUrl(product.thumbnail || null);
     setOriginalImageUrls([...(product.images || [])]);
+    setInitialOriginalImageUrls([...(product.images || [])]); // Store initial state for deletion tracking
     setSelectedThumbnailFile(null);
     setSelectedImageFiles([]);
+    setSelectedThumbnailPreview(null);
+    setSelectedImagePreviews([]);
     setEditModalIsOpen(true);
   };
   const closeEditModal = () => {
@@ -364,6 +372,9 @@ export default function Products() {
     setSelectedImageFiles([]);
     setOriginalThumbnailUrl(null);
     setOriginalImageUrls([]);
+    setInitialOriginalImageUrls([]);
+    setSelectedThumbnailPreview(null);
+    setSelectedImagePreviews([]);
     setUploadingImages(false);
   };
 
@@ -412,18 +423,63 @@ export default function Products() {
   // File upload handlers for edit modal
   const handleThumbnailFileSelect = (file) => {
     setSelectedThumbnailFile(file);
-    // Clear URL if file is selected
     if (file) {
-      setEditProduct(prev => ({ ...prev, thumbnail: '' }));
+      setSelectedThumbnailPreview(URL.createObjectURL(file));
+    } else {
+      setSelectedThumbnailPreview(null);
     }
   };
 
   const handleImageFileSelect = (files) => {
     setSelectedImageFiles(files);
-    // Clear URL inputs if files are selected
     if (files && files.length > 0) {
-      setEditProduct(prev => ({ ...prev, images: [] }));
+      const newPreviews = files.map(file => URL.createObjectURL(file));
+      setSelectedImagePreviews(newPreviews);
+    } else {
+      setSelectedImagePreviews([]);
     }
+  };
+
+  // Drag and drop handlers for edit modal
+  const handleThumbnailDragOver = (e) => {
+    e.preventDefault();
+  };
+
+  const handleThumbnailDrop = (e) => {
+    e.preventDefault();
+    const files = Array.from(e.dataTransfer.files);
+    if (files.length > 0) {
+      const file = files[0];
+      if (file.type.startsWith('image/')) {
+        handleThumbnailFileSelect(file);
+      }
+    }
+  };
+
+  const handleImageDragOver = (e) => {
+    e.preventDefault();
+  };
+
+  const handleImageDrop = (e) => {
+    e.preventDefault();
+    const files = Array.from(e.dataTransfer.files);
+    const imageFiles = files.filter(file => file.type.startsWith('image/'));
+    if (imageFiles.length > 0) {
+      const currentFiles = selectedImageFiles || [];
+      const currentPreviews = selectedImagePreviews || [];
+      setSelectedImageFiles([...currentFiles, ...imageFiles]);
+      const newPreviews = imageFiles.map(file => URL.createObjectURL(file));
+      setSelectedImagePreviews([...currentPreviews, ...newPreviews]);
+    }
+  };
+
+  const removeThumbnail = () => {
+    setSelectedThumbnailFile(null);
+    setSelectedThumbnailPreview(null);
+  };
+
+  const removeOriginalImage = (index) => {
+    setOriginalImageUrls(prev => prev.filter((_, i) => i !== index));
   };
 
   // Upload image to Cloudinary
@@ -452,28 +508,12 @@ export default function Products() {
     setUploadingImages(true);
     
     try {
-      let finalThumbnail = editProduct.thumbnail;
-      let finalImages = [...(editProduct.images || [])];
+      let finalThumbnail = originalThumbnailUrl;
+      let finalImages = [...(originalImageUrls || [])];
 
       // Upload thumbnail if file selected
       if (selectedThumbnailFile) {
         const uploadedUrl = await uploadImage(selectedThumbnailFile, 'products');
-        
-        // Delete old thumbnail if it exists
-        if (originalThumbnailUrl) {
-          try {
-            await fetch(`${import.meta.env.VITE_SERVER}/image/delete/cloudinary`, {
-              method: 'DELETE',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({ imageUrl: originalThumbnailUrl }),
-            });
-          } catch (deleteError) {
-            console.warn('Failed to delete old thumbnail:', deleteError);
-          }
-        }
-        
         finalThumbnail = uploadedUrl;
       }
 
@@ -482,25 +522,39 @@ export default function Products() {
         const uploadedUrls = await Promise.all(
           selectedImageFiles.map(file => uploadImage(file, 'products'))
         );
-        
-        // Delete old images if they exist
-        if (originalImageUrls && originalImageUrls.length > 0) {
-          for (const oldImageUrl of originalImageUrls) {
-            try {
-              await fetch(`${import.meta.env.VITE_SERVER}/image/delete/cloudinary`, {
-                method: 'DELETE',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ imageUrl: oldImageUrl }),
-              });
-            } catch (deleteError) {
-              console.warn('Failed to delete old image:', deleteError);
-            }
+        finalImages = uploadedUrls;
+      }
+
+      // Delete images that are no longer needed
+      const imagesToDelete = [];
+
+      // Check if thumbnail was removed or replaced
+      if (originalThumbnailUrl && finalThumbnail !== originalThumbnailUrl) {
+        imagesToDelete.push(originalThumbnailUrl);
+      }
+
+      // Check which original images are no longer in finalImages
+      if (initialOriginalImageUrls && initialOriginalImageUrls.length > 0) {
+        for (const originalUrl of initialOriginalImageUrls) {
+          if (!finalImages.includes(originalUrl)) {
+            imagesToDelete.push(originalUrl);
           }
         }
-        
-        finalImages = uploadedUrls;
+      }
+
+      // Delete images from Cloudinary
+      for (const imageUrl of imagesToDelete) {
+        try {
+          await fetch(`${import.meta.env.VITE_SERVER}/image/delete/cloudinary`, {
+            method: 'DELETE',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ imageUrl }),
+          });
+        } catch (deleteError) {
+          console.warn('Failed to delete image from Cloudinary:', deleteError);
+        }
       }
 
       const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/products/${editProduct._id}`, {
@@ -1162,97 +1216,190 @@ export default function Products() {
                   <div>
                     <label className="block text-gray-700 text-sm font-medium mb-1">Thumbnail</label>
                     
-                    {/* File Upload Option */}
-                    <div className="space-y-2 mb-2">
+                    {/* Modern File Upload */}
+                    <div className="space-y-3">
+                      {!selectedThumbnailFile && !selectedThumbnailPreview ? (
+                        <div
+                          onDragOver={handleThumbnailDragOver}
+                          onDrop={handleThumbnailDrop}
+                          className="border-2 border-dashed border-gray-300 hover:border-green-400 transition-colors duration-200 p-6 text-center cursor-pointer bg-gray-50 hover:bg-gray-100"
+                          onClick={() => document.getElementById('thumbnail-file-input-edit').click()}
+                        >
+                          <Package className="mx-auto h-8 w-8 text-gray-400 mb-2" />
+                          <p className="text-sm text-gray-600">Drop thumbnail image here or click to browse</p>
+                          <p className="text-xs text-gray-500 mt-1">PNG, JPG, GIF up to 10MB</p>
+                        </div>
+                      ) : (
+                        <div className="relative">
+                          <div className="flex items-center space-x-3 p-3 bg-green-50 border border-green-200 rounded-lg">
+                            <CircleCheck className="h-5 w-5 text-green-600 flex-shrink-0" />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-green-800 truncate">
+                                {selectedThumbnailFile?.name || 'Thumbnail selected'}
+                              </p>
+                              <p className="text-xs text-green-600">Ready to upload</p>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={removeThumbnail}
+                              className="flex-shrink-0 p-1 hover:bg-green-100 rounded-full transition-colors"
+                            >
+                              <XCircle className="h-4 w-4 text-green-600" />
+                            </button>
+                          </div>
+                          {selectedThumbnailPreview && (
+                            <div className="mt-2">
+                              <img
+                                src={selectedThumbnailPreview}
+                                alt="Thumbnail preview"
+                                className="h-20 w-20 object-cover border rounded"
+                              />
+                            </div>
+                          )}
+                        </div>
+                      )}
+                      
                       <input
+                        id="thumbnail-file-input-edit"
                         type="file"
                         accept="image/*"
                         onChange={(e) => handleThumbnailFileSelect(e.target.files[0])}
-                        className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                        className="hidden"
                         disabled={isSaving || uploadingImages}
                       />
-                      {selectedThumbnailFile && (
-                        <p className="text-sm text-green-600">Selected: {selectedThumbnailFile.name}</p>
+                      
+                      {originalThumbnailUrl && !selectedThumbnailFile && (
+                        <div className="mt-2">
+                          <div className="flex items-center gap-2">
+                            <p className="text-xs text-gray-500">Current thumbnail:</p>
+                            <button
+                              type="button"
+                              onClick={() => setOriginalThumbnailUrl(null)}
+                              className="text-xs text-red-600 hover:text-red-800 underline"
+                            >
+                              Remove
+                            </button>
+                          </div>
+                          <div className="relative inline-block mt-1">
+                            <img
+                              src={originalThumbnailUrl}
+                              alt="Current thumbnail"
+                              className="h-20 w-20 object-cover border rounded"
+                              onError={(e) => { e.target.src = 'https://via.placeholder.com/100?text=Image+not+found'; }}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setOriginalThumbnailUrl(null)}
+                              className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          </div>
+                        </div>
                       )}
-                      <p className="text-xs text-gray-500">Or enter URL below</p>
                     </div>
-
-                    {/* URL Input Option */}
-                    <input
-                      type="url"
-                      name="thumbnail"
-                      value={editProduct.thumbnail}
-                      onChange={handleEditChange}
-                      className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500"
-                      disabled={isSaving || uploadingImages || selectedThumbnailFile}
-                      placeholder="https://example.com/image.jpg"
-                    />
-                    {(editProduct.thumbnail || selectedThumbnailFile) && (
-                      <div className="mt-2">
-                        <img
-                          src={selectedThumbnailFile ? URL.createObjectURL(selectedThumbnailFile) : editProduct.thumbnail}
-                          alt="Thumbnail preview"
-                          className="h-20 object-contain border"
-                          onError={(e) => { e.target.src = 'https://via.placeholder.com/100?text=Image+not+found'; }}
-                        />
-                      </div>
-                    )}
                   </div>
                   <div>
                     <label className="block text-gray-700 text-sm font-medium mb-1">Additional Images</label>
                     
-                    {/* File Upload Option */}
-                    <div className="space-y-2 mb-2">
+                    {/* Modern File Upload */}
+                    <div className="space-y-3">
+                      <div
+                        onDragOver={handleImageDragOver}
+                        onDrop={handleImageDrop}
+                        className="border-2 border-dashed border-gray-300 hover:border-green-400 transition-colors duration-200 p-6 text-center cursor-pointer bg-gray-50 hover:bg-gray-100"
+                        onClick={() => document.getElementById('images-file-input-edit').click()}
+                      >
+                        <Image className="mx-auto h-8 w-8 text-gray-400 mb-2" />
+                        <p className="text-sm text-gray-600">Drop additional images here or click to browse</p>
+                        <p className="text-xs text-gray-500 mt-1">PNG, JPG, GIF up to 10MB each</p>
+                      </div>
+                      
                       <input
+                        id="images-file-input-edit"
                         type="file"
                         accept="image/*"
                         multiple
                         onChange={(e) => handleImageFileSelect(Array.from(e.target.files))}
-                        className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                        className="hidden"
                         disabled={isSaving || uploadingImages}
                       />
+                      
+                      {/* Selected Files Display */}
                       {selectedImageFiles && selectedImageFiles.length > 0 && (
-                        <p className="text-sm text-green-600">
-                          Selected: {selectedImageFiles.length} file{selectedImageFiles.length > 1 ? 's' : ''}
-                        </p>
+                        <div className="space-y-2">
+                          <p className="text-sm font-medium text-gray-700">Selected Files:</p>
+                          {selectedImageFiles.map((file, index) => (
+                            <div key={index} className="flex items-center space-x-3 p-2 bg-green-50 border border-green-200 rounded-lg">
+                              <CircleCheck className="h-4 w-4 text-green-600 flex-shrink-0" />
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium text-green-800 truncate">{file.name}</p>
+                                <p className="text-xs text-green-600">
+                                  {(file.size / 1024 / 1024).toFixed(2)} MB
+                                </p>
+                              </div>
+                              {selectedImagePreviews[index] && (
+                                <img
+                                  src={selectedImagePreviews[index]}
+                                  alt={`Preview ${index}`}
+                                  className="h-8 w-8 object-cover border rounded flex-shrink-0"
+                                />
+                              )}
+                              <button
+                                type="button"
+                                onClick={() => removeImage(index)}
+                                className="flex-shrink-0 p-1 hover:bg-green-100 rounded-full transition-colors"
+                              >
+                                <XCircle className="h-4 w-4 text-green-600" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
                       )}
-                      <p className="text-xs text-gray-500">Or enter URLs below</p>
-                    </div>
-
-                    {/* URL Input Option */}
-                    <textarea
-                      name="images"
-                      value={editProduct.images?.join(', ') || ''}
-                      onChange={(e) => setEditProduct({
-                        ...editProduct,
-                        images: e.target.value.split(',').map(url => url.trim()).filter(Boolean)
-                      })}
-                      className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500"
-                      disabled={isSaving || uploadingImages || selectedImageFiles.length > 0}
-                      placeholder="https://example.com/image1.jpg, https://example.com/image2.jpg"
-                      rows={3}
-                    />
-                    <div className="flex flex-wrap gap-2 mt-2">
-                      {selectedImageFiles && selectedImageFiles.length > 0 ? (
-                        selectedImageFiles.map((file, index) => (
-                          <img
-                            key={index}
-                            src={URL.createObjectURL(file)}
-                            alt={`Selected ${index}`}
-                            className="h-12 object-contain border"
-                            onError={(e) => { e.target.src = 'https://via.placeholder.com/50?text=Image+not+found'; }}
-                          />
-                        ))
-                      ) : (
-                        editProduct.images?.map((img, index) => (
-                          <img
-                            key={index}
-                            src={img}
-                            alt={`Product ${index}`}
-                            className="h-12 object-contain border"
-                            onError={(e) => { e.target.src = 'https://via.placeholder.com/50?text=Image+not+found'; }}
-                          />
-                        ))
+                      
+                      <input
+                        id="images-file-input-edit"
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        onChange={(e) => handleImageFileSelect(Array.from(e.target.files))}
+                        className="hidden"
+                        disabled={isSaving || uploadingImages}
+                      />
+                      
+                      {/* Current Images Display */}
+                      {originalImageUrls && originalImageUrls.length > 0 && !selectedImageFiles?.length && (
+                        <div className="mt-2">
+                          <div className="flex items-center gap-2 mb-2">
+                            <p className="text-xs text-gray-500">Current images:</p>
+                            <button
+                              type="button"
+                              onClick={() => setOriginalImageUrls([])}
+                              className="text-xs text-red-600 hover:text-red-800 underline"
+                            >
+                              Remove all
+                            </button>
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            {originalImageUrls.map((img, index) => (
+                              <div key={index} className="relative">
+                                <img
+                                  src={img}
+                                  alt={`Current ${index}`}
+                                  className="h-12 w-12 object-cover border rounded"
+                                  onError={(e) => { e.target.src = 'https://via.placeholder.com/50?text=Image+not+found'; }}
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => removeOriginalImage(index)}
+                                  className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-0.5 hover:bg-red-600 transition-colors"
+                                >
+                                  <X className="h-2 w-2" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
                       )}
                     </div>
                   </div>

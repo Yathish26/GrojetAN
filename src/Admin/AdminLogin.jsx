@@ -65,14 +65,14 @@ export default function AdminLogin() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-900 to-green-300 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-[#d6e04d] to-green-300 flex items-center justify-center p-4">
       <div className="bg-white p-8 shadow-xl border border-gray-200 w-full max-w-md">
         {/* Header */}
         <div className="flex flex-col items-center mb-8">
           <div className="w-fit h-fit flex items-center justify-center mb-4">
             <img draggable="false" className='w-24 h-24 object-contain' src="/grojet.png" alt="Grojet" />
           </div>
-          <h1 className="text-2xl font-bold text-gray-800 mb-2">Admin Portal</h1>
+          <h1 className="text-2xl font-bold text-gray-800 mb-2">Control Center</h1>
           <p className="text-gray-500 text-center">
             Delivery management system
           </p>

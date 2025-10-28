@@ -69,6 +69,8 @@ export default function AddProduct() {
   const [selectedThumbnailFile, setSelectedThumbnailFile] = useState(null);
   const [selectedImageFiles, setSelectedImageFiles] = useState([]);
   const [uploadingImages, setUploadingImages] = useState(false);
+  const [selectedThumbnailPreview, setSelectedThumbnailPreview] = useState(null);
+  const [selectedImagePreviews, setSelectedImagePreviews] = useState([]);
 
   const unitOptions = [
     // Weight units
@@ -174,17 +176,60 @@ export default function AddProduct() {
   // File upload handlers
   const handleThumbnailFileSelect = (file) => {
     setSelectedThumbnailFile(file);
-    // Clear URL if file is selected
     if (file) {
-      setFormData(prev => ({ ...prev, thumbnail: '' }));
+      try {
+        const url = URL.createObjectURL(file);
+        setSelectedThumbnailPreview(url);
+      } catch (err) {
+        setSelectedThumbnailPreview(null);
+      }
     }
   };
 
   const handleImageFileSelect = (files) => {
     setSelectedImageFiles(files);
-    // Clear URL inputs if files are selected
     if (files && files.length > 0) {
-      setFormData(prev => ({ ...prev, images: [] }));
+      try {
+        const previews = files.map(f => URL.createObjectURL(f));
+        setSelectedImagePreviews(previews);
+      } catch (err) {
+        setSelectedImagePreviews([]);
+      }
+    } else {
+      setSelectedImagePreviews([]);
+    }
+  };
+
+  // Drag and drop handlers
+  const handleThumbnailDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleThumbnailDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (uploadingImages) return;
+
+    const files = Array.from(e.dataTransfer.files).filter(file => file.type.startsWith('image/'));
+    if (files.length > 0) {
+      handleThumbnailFileSelect(files[0]);
+    }
+  };
+
+  const handleImagesDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleImagesDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (uploadingImages) return;
+
+    const files = Array.from(e.dataTransfer.files).filter(file => file.type.startsWith('image/'));
+    if (files.length > 0) {
+      handleImageFileSelect(files);
     }
   };
 
@@ -309,6 +354,8 @@ export default function AddProduct() {
       setUploadingImages(false);
       setSelectedThumbnailFile(null);
       setSelectedImageFiles([]);
+      setSelectedThumbnailPreview(null);
+      setSelectedImagePreviews([]);
     }
   };
 
@@ -404,34 +451,91 @@ export default function AddProduct() {
                 <label className="block text-sm font-medium text-gray-700">
                   Thumbnail Image *
                 </label>
-                
-                {/* File Upload Option */}
+
+                {/* Modern File Upload Option */}
                 <div className="space-y-2">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => handleThumbnailFileSelect(e.target.files[0])}
-                    className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                    disabled={uploadingImages}
-                  />
+                  <div
+                    className={`relative border-2 border-dashed p-6 text-center transition-colors ${
+                      selectedThumbnailFile
+                        ? 'border-green-300 bg-green-50'
+                        : 'border-gray-300 hover:border-gray-400 hover:bg-gray-50'
+                    } ${uploadingImages ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                    onClick={() => !uploadingImages && document.getElementById('thumbnail-file-input').click()}
+                    onDragOver={handleThumbnailDragOver}
+                    onDrop={handleThumbnailDrop}
+                  >
+                    <input
+                      id="thumbnail-file-input"
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => handleThumbnailFileSelect(e.target.files[0])}
+                      className="hidden"
+                      disabled={uploadingImages}
+                    />
+
+                    <div className="flex flex-col items-center">
+                      {selectedThumbnailFile ? (
+                        <>
+                          <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mb-3">
+                            <Image className="w-6 h-6 text-green-600" />
+                          </div>
+                          <p className="text-sm font-medium text-green-700 mb-1">File Selected</p>
+                          <p className="text-xs text-green-600">{selectedThumbnailFile.name}</p>
+                          <p className="text-xs text-gray-500 mt-1">
+                            {(selectedThumbnailFile.size / 1024 / 1024).toFixed(2)} MB
+                          </p>
+                        </>
+                      ) : (
+                        <>
+                          <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mb-3">
+                            <Image className="w-6 h-6 text-gray-400" />
+                          </div>
+                          <p className="text-sm font-medium text-gray-700 mb-1">Click to upload thumbnail</p>
+                          <p className="text-xs text-gray-500">or drag and drop • PNG, JPG, JPEG up to 5MB</p>
+                        </>
+                      )}
+                    </div>
+                  </div>
+
                   {selectedThumbnailFile && (
-                    <p className="text-sm text-green-600">Selected: {selectedThumbnailFile.name}</p>
+                    <div className="flex items-center justify-between bg-gray-50 p-3 rounded-lg">
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 bg-green-100 rounded flex items-center justify-center">
+                          <CircleCheck className="w-4 h-4 text-green-600" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-900">{selectedThumbnailFile.name}</p>
+                          <p className="text-xs text-gray-500">
+                            {(selectedThumbnailFile.size / 1024 / 1024).toFixed(2)} MB • Ready to upload
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedThumbnailFile(null);
+                          setSelectedThumbnailPreview(null);
+                        }}
+                        className="text-red-500 hover:text-red-700 p-1"
+                        disabled={uploadingImages}
+                      >
+                        <XCircle className="w-4 h-4" />
+                      </button>
+                    </div>
                   )}
-                  <p className="text-xs text-gray-500">Or enter URL below</p>
+
                 </div>
 
-                {/* URL Input Option */}
-                <div className="relative">
-                  <input
-                    type="text"
-                    name="thumbnail"
-                    className="w-full pl-10 pr-4 py-2.5 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                    value={formData.thumbnail}
-                    onChange={handleChange}
-                    placeholder="https://example.com/image.jpg"
-                    disabled={uploadingImages || selectedThumbnailFile}
-                  />
-                  <Image className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+                {/* Preview */}
+                <div className="mt-3">
+                  {selectedThumbnailPreview && (
+                    <div className="flex items-start gap-3">
+                      <img src={selectedThumbnailPreview} alt="thumbnail-preview" className="w-24 h-24 object-cover rounded border" />
+                      <div>
+                        <p className="text-sm text-gray-700">Preview of selected file</p>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -439,59 +543,103 @@ export default function AddProduct() {
                 <label className="block text-sm font-medium text-gray-700">
                   Additional Images
                 </label>
-                
-                {/* File Upload Option */}
+
+                {/* Modern File Upload Option */}
                 <div className="space-y-2">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    onChange={(e) => handleImageFileSelect(Array.from(e.target.files))}
-                    className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                    disabled={uploadingImages}
-                  />
+                  <div
+                    className={`relative border-2 border-dashed p-6 text-center transition-colors ${
+                      selectedImageFiles && selectedImageFiles.length > 0
+                        ? 'border-green-300 bg-green-50'
+                        : 'border-gray-300 hover:border-gray-400 hover:bg-gray-50'
+                    } ${uploadingImages ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                    onClick={() => !uploadingImages && document.getElementById('images-file-input').click()}
+                    onDragOver={handleImagesDragOver}
+                    onDrop={handleImagesDrop}
+                  >
+                    <input
+                      id="images-file-input"
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      onChange={(e) => handleImageFileSelect(Array.from(e.target.files))}
+                      className="hidden"
+                      disabled={uploadingImages}
+                    />
+
+                    <div className="flex flex-col items-center">
+                      {selectedImageFiles && selectedImageFiles.length > 0 ? (
+                        <>
+                          <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mb-3">
+                            <Image className="w-6 h-6 text-green-600" />
+                          </div>
+                          <p className="text-sm font-medium text-green-700 mb-1">
+                            {selectedImageFiles.length} file{selectedImageFiles.length > 1 ? 's' : ''} selected
+                          </p>
+                          <p className="text-xs text-green-600">
+                            {(selectedImageFiles.reduce((total, file) => total + file.size, 0) / 1024 / 1024).toFixed(2)} MB total
+                          </p>
+                        </>
+                      ) : (
+                        <>
+                          <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mb-3">
+                            <Image className="w-6 h-6 text-gray-400" />
+                          </div>
+                          <p className="text-sm font-medium text-gray-700 mb-1">Click to upload additional images</p>
+                          <p className="text-xs text-gray-500">or drag and drop • PNG, JPG, JPEG up to 5MB each</p>
+                        </>
+                      )}
+                    </div>
+                  </div>
+
                   {selectedImageFiles && selectedImageFiles.length > 0 && (
-                    <p className="text-sm text-green-600">
-                      Selected: {selectedImageFiles.length} file{selectedImageFiles.length > 1 ? 's' : ''}
-                    </p>
+                    <div className="space-y-2">
+                      {selectedImageFiles.map((file, index) => (
+                        <div key={index} className="flex items-center justify-between bg-gray-50 p-3 rounded-lg">
+                          <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 bg-green-100 rounded flex items-center justify-center">
+                              <CircleCheck className="w-4 h-4 text-green-600" />
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium text-gray-900">{file.name}</p>
+                              <p className="text-xs text-gray-500">
+                                {(file.size / 1024 / 1024).toFixed(2)} MB • Ready to upload
+                              </p>
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const newFiles = selectedImageFiles.filter((_, i) => i !== index);
+                              const newPreviews = selectedImagePreviews.filter((_, i) => i !== index);
+                              setSelectedImageFiles(newFiles);
+                              setSelectedImagePreviews(newPreviews);
+                              if (newFiles.length === 0) {
+                                // Clear URL inputs if no files left
+                                setFormData(prev => ({ ...prev, images: [] }));
+                              }
+                            }}
+                            className="text-red-500 hover:text-red-700 p-1"
+                            disabled={uploadingImages}
+                          >
+                            <XCircle className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
                   )}
-                  <p className="text-xs text-gray-500">Or enter URLs below</p>
+
                 </div>
 
-                {/* URL Input Options */}
-                {formData.images.map((image, index) => (
-                  <div key={index} className="flex items-center space-x-2">
-                    <div className="flex-1">
-                      <input
-                        type="text"
-                        className="w-full pl-10 pr-4 py-2.5 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                        value={image}
-                        onChange={(e) => handleArrayChange('images', index, e.target.value)}
-                        placeholder="Image URL"
-                        disabled={uploadingImages || selectedImageFiles.length > 0}
-                      />
-                    </div>
-                    {formData.images.length > 1 && (
-                      <button
-                        type="button"
-                        onClick={() => removeArrayItem('images', index)}
-                        className="p-2 text-red-500 hover:bg-red-50 transition-colors"
-                        disabled={uploadingImages}
-                      >
-                        <XCircle size={18} />
-                      </button>
-                    )}
+                {/* Previews for selected image files */}
+                {selectedImagePreviews && selectedImagePreviews.length > 0 && (
+                  <div className="mt-3 flex flex-wrap gap-3">
+                    {selectedImagePreviews.map((p, i) => (
+                      <div key={i} className="w-20 h-20 rounded overflow-hidden border">
+                        <img src={p} alt={`preview-${i}`} className="w-full h-full object-cover" />
+                      </div>
+                    ))}
                   </div>
-                ))}
-                <button
-                  type="button"
-                  onClick={() => addArrayItem('images')}
-                  className="flex items-center text-sm text-green-600 hover:text-green-700 mt-2"
-                  disabled={uploadingImages || selectedImageFiles.length > 0}
-                >
-                  <Plus size={16} className="mr-1" />
-                  Add another image URL
-                </button>
+                )}
               </div>
 
               <div className="space-y-2">
