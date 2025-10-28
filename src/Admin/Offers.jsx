@@ -697,6 +697,11 @@ const Offers = () => {
                         value={formData.minimumOrderValue}
                         onChange={(e) => setFormData(prev => ({ ...prev, minimumOrderValue: parseFloat(e.target.value) || 0 }))}
                         className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                         onKeyDown={(e) => {
+                            if (['e', 'E', '+', '-'].includes(e.key)) {
+                           e.preventDefault();
+                           }
+                           }}
                         min="0"
                       />
                     </div>
@@ -713,6 +718,11 @@ const Offers = () => {
                             onChange={(e) => setFormData(prev => ({ ...prev, discountValue: parseFloat(e.target.value) || 0 }))}
                             className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
                             min="0"
+                             onKeyDown={(e) => {
+                            if (['e', 'E', '+', '-'].includes(e.key)) {
+                           e.preventDefault();
+                           }
+                           }}
                           />
                         </div>
 
@@ -724,6 +734,11 @@ const Offers = () => {
                             onChange={(e) => setFormData(prev => ({ ...prev, maxDiscount: parseFloat(e.target.value) || 0 }))}
                             className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
                             min="0"
+                             onKeyDown={(e) => {
+                            if (['e', 'E', '+', '-'].includes(e.key)) {
+                           e.preventDefault();
+                           }
+                           }}
                           />
                         </div>
                       </>

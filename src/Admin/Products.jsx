@@ -1066,6 +1066,11 @@ export default function Products() {
                       }}
                       disabled={isSaving || currentUser?.role === 'inventory_manager'}
                       placeholder="e.g. 08081000"
+                      onKeyDown={(e) => {
+                      if (['e', 'E', '+', '-'].includes(e.key)) {
+                       e.preventDefault();
+                        }
+                      }}
                     />
                   </div>
                   <EditInput
@@ -1100,6 +1105,11 @@ export default function Products() {
                         min="0"
                         step="0.01"
                         onWheel={(e) => e.target.blur()}
+                        onKeyDown={(e) => {
+                       if (['e', 'E', '+', '-'].includes(e.key)) {
+                        e.preventDefault();
+                         }
+                         }}
                       />
                       <select
                         name="weightDimension.unit"
@@ -1205,6 +1215,11 @@ export default function Products() {
                     disabled={isSaving || currentUser?.role === 'inventory_manager'}
                     required
                     onWheel={(e) => e.target.blur()}
+                    onKeyDown={(e) => {
+    if (['e', 'E', '+', '-'].includes(e.key)) {
+      e.preventDefault();
+    }
+  }}
                   />
                 </div>
               </div>

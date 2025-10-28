@@ -1176,12 +1176,17 @@ export default function DeliveryAgentDetails() {
                     {editingField === 'personalInfo.phone' ? (
                       <div className="flex items-center gap-2 mt-1">
                         <input
-                          type="tel"
+                          type="number"
                           maxLength={10}
                           value={editValue}
                           onChange={(e) => setEditValue(e.target.value)}
                           className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                           placeholder="Phone"
+                           onKeyDown={(e) => {
+                           if (['e', 'E', '+', '-'].includes(e.key)) {
+                           e.preventDefault();
+                                 }
+                              }}
                         />
                         <button
                           onClick={saveEditing}
@@ -1337,12 +1342,17 @@ export default function DeliveryAgentDetails() {
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                         />
                         <input
-                          type="tel"
+                          type="number"
                           maxLength={10}
                           placeholder="Contact Phone"
                           value={emergencyContactEdit.phone}
                           onChange={(e) => setEmergencyContactEdit(prev => ({ ...prev, phone: e.target.value }))}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                           onKeyDown={(e) => {
+                            if (['e', 'E', '+', '-'].includes(e.key)) {
+                           e.preventDefault();
+                           }
+                           }}
                         />
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-1">

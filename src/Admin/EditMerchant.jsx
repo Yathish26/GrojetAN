@@ -810,6 +810,11 @@ const EditMerchant = () => {
                   max={new Date().getFullYear()}
                   className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   placeholder="2020"
+                  onKeyDown={(e) => {
+                   if (['e', 'E', '+', '-'].includes(e.key)) {
+                   e.preventDefault();
+                    }
+                   }}
                 />
               </div>
             </div>
@@ -842,7 +847,7 @@ const EditMerchant = () => {
                   Mobile Number *
                 </label>
                 <input
-                  type="tel"
+                  type="number"
                   maxLength={10}
                   name="mobile"
                   value={formData.mobile}
@@ -850,6 +855,11 @@ const EditMerchant = () => {
                   required
                   className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   placeholder="Enter mobile number"
+                  onKeyDown={(e) => {
+                  if (['e', 'E', '+', '-'].includes(e.key)) {
+                  e.preventDefault();
+                    }
+                  }}
                 />
               </div>
               <div>
@@ -857,9 +867,14 @@ const EditMerchant = () => {
                   Alternate Mobile
                 </label>
                 <input
-                  type="tel"
+                  type="number"
                   maxLength={10}
                   name="alternateMobile"
+                  onKeyDown={(e) => {
+                  if (['e', 'E', '+', '-'].includes(e.key)) {
+                  e.preventDefault();
+                    }
+                  }}
                   value={formData.alternateMobile}
                   onChange={handleInputChange}
                   className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
@@ -1322,6 +1337,11 @@ const EditMerchant = () => {
                   max="50"
                   className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   placeholder="10"
+                  onKeyDown={(e) => {
+                  if (['e', 'E', '+', '-'].includes(e.key)) {
+                  e.preventDefault();
+                    }
+                  }}
                 />
               </div>
             </div>

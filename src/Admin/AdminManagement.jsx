@@ -488,9 +488,14 @@ export default function AdminManagement() {
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
                     <input
-                      type="tel"
+                      type="number"
                       maxLength={10}
                       value={createForm.phone}
+                       onKeyDown={(e) => {
+                       if (['e', 'E', '+', '-'].includes(e.key)) {
+                       e.preventDefault();
+                        }
+                          }}
                       onChange={(e) => setCreateForm({ ...createForm, phone: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300  focus:ring-2 focus:ring-green-500 focus:border-green-500"
                     />
@@ -580,8 +585,13 @@ export default function AdminManagement() {
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
                     <input
-                      type="tel"
+                      type="number"
                       maxLength={10}
+                       onKeyDown={(e) => {
+                      if (['e', 'E', '+', '-'].includes(e.key)) {
+                    e.preventDefault();
+                     }
+                      }}
                       value={editForm.phone}
                       onChange={e => setEditForm({ ...editForm, phone: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300  focus:ring-2 focus:ring-green-500 focus:border-green-500"

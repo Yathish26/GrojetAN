@@ -650,7 +650,7 @@ const AddMerchant = () => {
                         Pincode <span className="text-red-500">*</span>
                       </label>
                       <input
-                        type="text"
+                        type="number"
                         maxLength={20}
                         name="storeAddress.pincode"
                         value={formData.storeAddress.pincode}
@@ -658,6 +658,11 @@ const AddMerchant = () => {
                         className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
                         placeholder="6-digit pincode"
                         required
+                        onKeyDown={(e) => {
+                        if (['e', 'E', '+', '-'].includes(e.key)) {
+                       e.preventDefault();
+         }
+  }}
                       />
                     </div>
 
@@ -992,6 +997,11 @@ const AddMerchant = () => {
                         className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
                         min="0"
                         max="50"
+                        onKeyDown={(e) => {
+                        if (['e', 'E', '+', '-'].includes(e.key)) {
+                        e.preventDefault();
+                           }
+                           }}
                       />
                     </div>
                   </div>

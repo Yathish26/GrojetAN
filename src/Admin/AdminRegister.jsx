@@ -387,13 +387,18 @@ export default function AdminRegister() {
                     Phone Number *
                   </label>
                   <input
-                    type="tel"
+                    type="number"
                     maxLength={10}
                     required
                     value={formData.phone}
                     onChange={(e) => handleInputChange('phone', e.target.value)}
                     className="w-full px-4 py-3 border border-gray-300  focus:ring-2 focus:ring-green-500 focus:border-green-500"
                     placeholder="Enter phone number"
+                     onKeyDown={(e) => {
+                   if (['e', 'E', '+', '-'].includes(e.key)) {
+                    e.preventDefault();
+                      }
+                    }}
                   />
                 </div>
 

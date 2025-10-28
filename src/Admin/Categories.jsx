@@ -722,6 +722,11 @@ export default function Categories() {
                     value={formData.order}
                     onChange={handleInputChange}
                     className="w-full px-4 py-2 border border-gray-300  focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200"
+                    onKeyDown={(e) => {
+                    if (['e', 'E', '+', '-'].includes(e.key)) {
+                    e.preventDefault();
+                        }
+                     }}
                   />
                 </div>
 

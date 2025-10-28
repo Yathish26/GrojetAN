@@ -317,9 +317,14 @@ export default function DeliveryAgentSignup() {
                     Phone Number *
                   </label>
                   <input
-                    type="tel"
+                    type="number"
                     maxLength={10}
                     required
+                    onKeyDown={(e) => {
+                    if (['e', 'E', '+', '-'].includes(e.key)) {
+                    e.preventDefault();
+                     }
+                  }}
                     value={formData.personalInfo.phone}
                     onChange={(e) => handleInputChange('personalInfo', 'phone', e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
@@ -406,9 +411,14 @@ export default function DeliveryAgentSignup() {
                       ZIP Code *
                     </label>
                     <input
-                      type="text"
+                      type="number"
                       maxLength={20}
                       required
+                      onKeyDown={(e) => {
+                      if (['e', 'E', '+', '-'].includes(e.key)) {
+                      e.preventDefault();
+                      }
+                    }}
                       value={formData.address.zipCode}
                       onChange={(e) => handleInputChange('address', 'zipCode', e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
@@ -498,12 +508,17 @@ export default function DeliveryAgentSignup() {
                       Contact Phone *
                     </label>
                     <input
-                      type="tel"
+                      type="number"
                       maxLength={10}
                       required
                       value={formData.emergencyContact.phone}
                       onChange={(e) => handleInputChange('emergencyContact', 'phone', e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                      onKeyDown={(e) => {
+                      if (['e', 'E', '+', '-'].includes(e.key)) {
+                      e.preventDefault();
+                         }
+                       }}
                     />
                   </div>
 
@@ -583,9 +598,14 @@ export default function DeliveryAgentSignup() {
                       Account Number <span className="text-red-500">*</span>
                     </label>
                     <input
-                      type="text"
+                      type="number"
                       maxLength={20}
                       value={formData.documents.bankAccount.accountNumber}
+                      onKeyDown={(e) => {
+                      if (['e', 'E', '+', '-'].includes(e.key)) {
+                      e.preventDefault();
+                           }
+                      }}
                       onChange={(e) => handleInputChange('documents', 'bankAccount.accountNumber', e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
                       placeholder="Enter account number"
@@ -786,6 +806,11 @@ export default function DeliveryAgentSignup() {
                       min="0"
                       max="20"
                       step="0.5"
+                      onKeyDown={(e) => {
+                      if (['e', 'E', '+', '-'].includes(e.key)) {
+                       e.preventDefault();
+                        }
+                       }}
                     />
                   </div>
                 </div>

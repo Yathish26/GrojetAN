@@ -1197,7 +1197,12 @@ export default function Settings() {
                           Number
                         </label>
                         <input
-                          type="tel"
+                          type="number"
+                           onKeyDown={(e) => {
+                            if (['e', 'E', '+', '-'].includes(e.key)) {
+                           e.preventDefault();
+                           }
+                           }}
                           maxLength={10}
                           value={settings.support.merchant.number}
                           onChange={(e) => {
@@ -1253,7 +1258,12 @@ export default function Settings() {
                           Number
                         </label>
                         <input
-                          type="tel"
+                          type="number"
+                           onKeyDown={(e) => {
+                            if (['e', 'E', '+', '-'].includes(e.key)) {
+                           e.preventDefault();
+                           }
+                           }}
                           maxLength={13}
                           value={settings.support.delivery.number}
                           onChange={(e) => {
