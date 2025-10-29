@@ -396,8 +396,19 @@ export default function AdminManagement() {
                         </span>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {admin.lastLogin ? formatDate(admin.lastLogin) : 'Never'}
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                      {admin.lastLogin ? (
+                        <div className="flex flex-col leading-tight">
+                          <span className="font-medium text-gray-800">
+                            {admin.lastLogin.split(',')[0]} {/* Date */}
+                          </span>
+                          <span className="text-xs text-gray-500">
+                            {admin.lastLogin.split(',')[1]?.trim()} {/* Time */}
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-gray-400 italic">Never</span>
+                      )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <div className="flex items-center gap-2">
@@ -491,11 +502,11 @@ export default function AdminManagement() {
                       type="number"
                       maxLength={10}
                       value={createForm.phone}
-                       onKeyDown={(e) => {
-                       if (['e', 'E', '+', '-'].includes(e.key)) {
-                       e.preventDefault();
+                      onKeyDown={(e) => {
+                        if (['e', 'E', '+', '-'].includes(e.key)) {
+                          e.preventDefault();
                         }
-                          }}
+                      }}
                       onChange={(e) => setCreateForm({ ...createForm, phone: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300  focus:ring-2 focus:ring-green-500 focus:border-green-500"
                     />
@@ -587,10 +598,10 @@ export default function AdminManagement() {
                     <input
                       type="number"
                       maxLength={10}
-                       onKeyDown={(e) => {
-                      if (['e', 'E', '+', '-'].includes(e.key)) {
-                    e.preventDefault();
-                     }
+                      onKeyDown={(e) => {
+                        if (['e', 'E', '+', '-'].includes(e.key)) {
+                          e.preventDefault();
+                        }
                       }}
                       value={editForm.phone}
                       onChange={e => setEditForm({ ...editForm, phone: e.target.value })}
