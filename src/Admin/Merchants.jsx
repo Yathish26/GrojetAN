@@ -145,7 +145,7 @@ const Merchants = () => {
                         address: merchant.city ? `${merchant.city}, India` : 'Address not available',
                         status: merchant.status,
                         storeStatus: merchant.storeStatus,
-                        rating: 0, // Will be calculated from reviews later
+                        rating: merchant.rating || 0, // Rating from backend
                         totalOrders: merchant.totalOrders,
                         totalRevenue: merchant.totalRevenue,
                         joinDate: merchant.registrationDate ? new Date(merchant.registrationDate).toISOString().split('T')[0] : 'N/A',
@@ -221,7 +221,7 @@ const Merchants = () => {
                         address: merchant.city ? `${merchant.city}, India` : 'Address not available',
                         status: merchant.status,
                         storeStatus: merchant.storeStatus,
-                        rating: 0, // Will be calculated from reviews later
+                        rating: merchant.rating || 0, // Rating from backend
                         totalOrders: merchant.totalOrders,
                         totalRevenue: merchant.totalRevenue,
                         joinDate: merchant.registrationDate ? new Date(merchant.registrationDate).toISOString().split('T')[0] : 'N/A',

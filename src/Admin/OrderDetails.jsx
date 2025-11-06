@@ -950,36 +950,32 @@ export default function OrderDetails() {
             <div className="p-6 space-y-3">
               <div className="flex justify-between">
                 <span className="text-gray-600">Items Total</span>
-                <span className="font-medium">₹{order.pricing?.itemsTotal || 0}</span>
+                <span className="font-medium">₹{(order.pricing?.itemsTotal || 0).toFixed(2)}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">Delivery Fee</span>
-                <span className="font-medium">₹{order.pricing?.deliveryFee || 0}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Platform Fee</span>
-                <span className="font-medium">₹{order.pricing?.platformFee || 0}</span>
+                <span className="font-medium">₹{(order.pricing?.deliveryFee || 0).toFixed(2)}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">Taxes</span>
-                <span className="font-medium">₹{order.pricing?.taxes || 0}</span>
+                <span className="font-medium">₹{(order.pricing?.taxes || 0).toFixed(2)}</span>
               </div>
               {order.pricing?.tip > 0 && (
                 <div className="flex justify-between text-blue-600">
                   <span>Tip</span>
-                  <span>₹{order.pricing.tip}</span>
+                  <span>₹{(order.pricing?.tip || 0).toFixed(2)}</span>
                 </div>
               )}
               {order.pricing?.discount > 0 && (
                 <div className="flex justify-between text-green-600">
                   <span>Discount</span>
-                  <span>-₹{order.pricing.discount}</span>
+                  <span>-₹{(order.pricing?.discount || 0).toFixed(2)}</span>
                 </div>
               )}
               {order.pricing?.couponDiscount > 0 && (
                 <div className="flex justify-between text-green-600">
                   <span>Coupon Discount</span>
-                  <span>-₹{order.pricing.couponDiscount}</span>
+                  <span>-₹{(order.pricing?.couponDiscount || 0).toFixed(2)}</span>
                 </div>
               )}
               {order.pricing?.couponCode && (
@@ -991,7 +987,7 @@ export default function OrderDetails() {
               <hr className="my-3" />
               <div className="flex justify-between text-lg font-semibold">
                 <span>Total Amount</span>
-                <span>₹{order.pricing?.totalAmount || order.totalAmount || 0}</span>
+                <span>₹{(order.pricing?.totalAmount || order.totalAmount || 0).toFixed(2)}</span>
               </div>
 
               <div className="mt-4 space-y-3">
@@ -1748,10 +1744,6 @@ export default function OrderDetails() {
                             <span>₹${(order?.pricing?.deliveryFee || 0).toFixed(2)}</span>
                           </div>
                           <div class="flex justify-between items-center mb-2">
-                            <span class="font-medium">Platform Fee:</span>
-                            <span>₹${(order?.pricing?.platformFee || 0).toFixed(2)}</span>
-                          </div>
-                          <div class="flex justify-between items-center mb-2">
                             <span class="font-medium">Tax:</span>
                             <span>₹${(order?.pricing?.taxes || 0).toFixed(2)}</span>
                           </div>
@@ -1986,12 +1978,6 @@ export default function OrderDetails() {
                 <div className="flex justify-between text-sm">
                   <span>Delivery Charge:</span>
                   <span>₹{order?.pricing?.deliveryFee?.toFixed(2) || '0.00'}</span>
-                </div>
-              )}
-              {order?.pricing?.platformFee > 0 && (
-                <div className="flex justify-between text-sm">
-                  <span>Platform Fee:</span>
-                  <span>₹{order?.pricing?.platformFee?.toFixed(2) || '0.00'}</span>
                 </div>
               )}
               {order?.pricing?.tip > 0 && (

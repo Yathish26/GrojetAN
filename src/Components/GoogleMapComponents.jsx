@@ -553,70 +553,195 @@ export const Marker = ({
   position,
   title = '',
   icon = null,
+  rotation = 0,
   infoContent = null,
   onClick = null,
   map = null
 }) => {
   const markerRef = useRef(null);
+  const overlayRef = useRef(null);
   const infoWindowRef = useRef(null);
 
   useEffect(() => {
     if (!map || !window.google || !window.google.maps) return;
 
-    // Create marker
-    const marker = new window.google.maps.Marker({
-      position,
-      map,
-      title,
-      icon: icon || {
-        url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
-          <svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
-            <path d="M20 2C14.48 2 10 6.48 10 12c0 7.74 8.5 16.5 9.5 17.5L20 32l.5-.5C21.5 28.5 30 19.74 30 12c0-5.52-4.48-10-10-10z" fill="#dc2626" stroke="white" stroke-width="2"/>
-            <circle cx="20" cy="12" r="4" fill="white"/>
-          </svg>
-        `),
-        scaledSize: new window.google.maps.Size(40, 40),
-        anchor: new window.google.maps.Point(20, 32)
+    // Clean up previous markers/overlays
+    if (overlayRef.current) {
+      overlayRef.current.setMap(null);
+      overlayRef.current = null;
+    }
+    if (markerRef.current) {
+      markerRef.current.setMap(null);
+      markerRef.current = null;
+    }
+    if (infoWindowRef.current) {
+      infoWindowRef.current.close();
+      infoWindowRef.current = null;
+    }
+
+    // If custom icon is provided, use custom overlay (rotatable if rotation is valid)
+    if (icon) {
+      // Create custom overlay for rotatable marker
+      class RotatableMarker extends window.google.maps.OverlayView {
+        constructor(position, icon, rotation, title, onClick) {
+          super();
+          this.position = position;
+          this.icon = icon;
+          this.rotation = rotation;
+          this.title = title;
+          this.onClick = onClick;
+          this.div = null;
+        }
+
+        onAdd() {
+          this.div = document.createElement('div');
+          this.div.style.position = 'absolute';
+          this.div.style.cursor = 'pointer';
+          this.div.title = this.title;
+
+          const img = document.createElement('img');
+          img.src = this.icon.url;
+          img.style.width = `${this.icon.scaledSize.width}px`;
+          img.style.height = `${this.icon.scaledSize.height}px`;
+          img.style.transform = `rotate(${this.rotation}deg)`;
+          img.style.transformOrigin = 'center center';
+
+          this.div.appendChild(img);
+          this.getPanes().overlayMouseTarget.appendChild(this.div);
+
+          // Add click listener
+          this.div.addEventListener('click', () => {
+            if (this.onClick) {
+              this.onClick();
+            }
+          });
+        }
+
+        draw() {
+          const overlayProjection = this.getProjection();
+          if (!overlayProjection) return; // Projection not ready yet
+
+          const position = overlayProjection.fromLatLngToDivPixel(this.position);
+
+          if (this.div) {
+            this.div.style.left = `${position.x - this.icon.anchor.x}px`;
+            this.div.style.top = `${position.y - this.icon.anchor.y}px`;
+          }
+        }
+
+        onRemove() {
+          if (this.div) {
+            this.div.parentNode.removeChild(this.div);
+            this.div = null;
+          }
+        }
+
+        setRotation(rotation) {
+          this.rotation = rotation;
+          if (this.div && this.div.firstChild && typeof rotation === 'number' && !isNaN(rotation)) {
+            this.div.firstChild.style.transform = `rotate(${rotation}deg)`;
+            console.log('🔄 Rotated marker to:', rotation, 'degrees');
+          }
+        }
+
+        setPosition(position) {
+          this.position = position;
+          // Try to redraw if projection is available
+          if (this.getProjection()) {
+            this.draw();
+          }
+        }
       }
-    });
 
-    markerRef.current = marker;
-
-    // Create info window if content provided
-    if (infoContent) {
-      const infoWindow = new window.google.maps.InfoWindow({
-        content: infoContent
+      const rotatableMarker = new RotatableMarker(position, icon, rotation, title, () => {
+        if (onClick) onClick();
+        if (infoWindowRef.current && infoContent) {
+          infoWindowRef.current.setPosition(position);
+          infoWindowRef.current.open(map);
+        }
       });
-      infoWindowRef.current = infoWindow;
+      rotatableMarker.setMap(map);
+      overlayRef.current = rotatableMarker;
 
-      // Add click listener to marker
-      marker.addListener('click', () => {
-        infoWindow.open(map, marker);
-        if (onClick) onClick(marker);
+      // Create info window if content provided
+      if (infoContent) {
+        const infoWindow = new window.google.maps.InfoWindow({
+          content: infoContent
+        });
+        infoWindowRef.current = infoWindow;
+      }
+
+    } else {
+      // Use regular Google Maps marker for non-rotated markers
+      const marker = new window.google.maps.Marker({
+        position,
+        map,
+        title,
+        icon: icon || {
+          url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
+            <svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+              <path d="M20 2C14.48 2 10 6.48 10 12c0 7.74 8.5 16.5 9.5 17.5L20 32l.5-.5C21.5 28.5 30 19.74 30 12c0-5.52-4.48-10-10-10z" fill="#dc2626" stroke="white" stroke-width="2"/>
+              <circle cx="20" cy="12" r="4" fill="white"/>
+            </svg>
+          `),
+          scaledSize: new window.google.maps.Size(40, 40),
+          anchor: new window.google.maps.Point(20, 32)
+        }
       });
+
+      markerRef.current = marker;
+
+      // Create info window if content provided
+      if (infoContent) {
+        const infoWindow = new window.google.maps.InfoWindow({
+          content: infoContent
+        });
+        infoWindowRef.current = infoWindow;
+
+        // Add click listener to marker
+        marker.addListener('click', () => {
+          infoWindow.open(map, marker);
+          if (onClick) onClick(marker);
+        });
+      }
     }
 
     return () => {
+      if (overlayRef.current) {
+        overlayRef.current.setMap(null);
+        overlayRef.current = null;
+      }
       if (markerRef.current) {
         markerRef.current.setMap(null);
+        markerRef.current = null;
       }
       if (infoWindowRef.current) {
         infoWindowRef.current.close();
+        infoWindowRef.current = null;
       }
     };
-  }, [map, position, title, icon, infoContent, onClick]);
+  }, [map, position, title, icon, rotation, infoContent, onClick]);
 
-  // Update marker position if it changes
+  // Handle rotation updates for rotatable markers
   useEffect(() => {
-    if (markerRef.current && position) {
-      markerRef.current.setPosition(position);
+    console.log('🔄 Marker rotation update:', rotation, 'overlay exists:', !!overlayRef.current, 'type:', typeof rotation);
+    if (overlayRef.current && typeof rotation === 'number' && !isNaN(rotation)) {
+      overlayRef.current.setRotation(rotation);
+      console.log('✅ Applied rotation:', rotation, 'degrees');
+    } else {
+      console.log('❌ Cannot apply rotation - overlay missing or invalid rotation');
+    }
+  }, [rotation]);
+
+  // Handle position updates for rotatable markers
+  useEffect(() => {
+    if (overlayRef.current) {
+      overlayRef.current.setPosition(position);
     }
   }, [position]);
 
   return null; // This component doesn't render anything visible
-};
-
-export const googleMapsApi = {
+};export const googleMapsApi = {
   // Geocode an address using backend
   async geocodeAddress(address) {
     try {

@@ -56,7 +56,6 @@ export default function AddProduct() {
       mrp: "",
     },
     isActive: true,
-    isFeatured: false,
     tags: [],
     searchKeywords: []
   });
@@ -339,7 +338,6 @@ export default function AddProduct() {
             mrp: 0,
           },
           isActive: true,
-          isFeatured: false,
           tags: [],
           searchKeywords: []
         });
@@ -828,20 +826,6 @@ export default function AddProduct() {
                   />
                   <label htmlFor="isActive" className="ml-2 text-sm text-gray-700">
                     Active
-                  </label>
-                </div>
-
-                <div className="flex items-center">
-                  <input
-                    type="checkbox"
-                    id="isFeatured"
-                    name="isFeatured"
-                    checked={formData.isFeatured}
-                    onChange={(e) => setFormData(prev => ({ ...prev, isFeatured: e.target.checked }))}
-                    className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
-                  />
-                  <label htmlFor="isFeatured" className="ml-2 text-sm text-gray-700">
-                    Featured
                   </label>
                 </div>
               </div>

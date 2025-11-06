@@ -32,6 +32,7 @@ export default function UserData() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [warnings, setWarnings] = useState([]);
+  const [ordersCount, setOrdersCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [showWarnModal, setShowWarnModal] = useState(false);
   const [warningText, setWarningText] = useState('');
@@ -46,6 +47,7 @@ export default function UserData() {
   useEffect(() => {
     fetchUserDetails();
     fetchUserWarnings();
+    fetchOrdersCount();
   }, [id]);
 
   const fetchUserDetails = async () => {
@@ -96,6 +98,24 @@ export default function UserData() {
       }
     } catch (error) {
       console.error('Error fetching user warnings:', error);
+    }
+  };
+
+  const fetchOrdersCount = async () => {
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_SERVER}/admin/users/${id}/orders/count`,
+        {
+          credentials: 'include',
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        setOrdersCount(data.count || 0);
+      }
+    } catch (error) {
+      console.error('Error fetching orders count:', error);
     }
   };
 
@@ -336,6 +356,15 @@ export default function UserData() {
           <div className="px-6 py-4 bg-gray-50 border-b">
             <div className="flex gap-2 flex-wrap">
               <button
+                onClick={() => navigate(`/users/${id}/orders`)}
+                className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white hover:bg-purple-700 transition disabled:opacity-50"
+                disabled={updatingStatus}
+              >
+                <FiShoppingBag className="text-sm" />
+                User Orders
+              </button>
+
+              <button
                 onClick={() => setShowWarnModal(true)}
                 className="flex items-center gap-2 px-4 py-2 bg-yellow-600 text-white hover:bg-yellow-700 transition disabled:opacity-50"
                 disabled={updatingStatus}
@@ -489,7 +518,7 @@ export default function UserData() {
                   <div className="text-center p-4 bg-gradient-to-br from-blue-50 to-blue-100">
                     <FiShoppingBag className="text-2xl text-blue-600 mx-auto mb-2" />
                     <p className="text-2xl font-bold text-gray-800">
-                      {user.orderHistory?.totalOrders || 0}
+                      {ordersCount}
                     </p>
                     <p className="text-sm text-gray-600">Total Orders</p>
                   </div>

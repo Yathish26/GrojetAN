@@ -732,8 +732,23 @@ const HomeAds = () => {
 
                     <div className="sm:col-span-2">
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Ad Image * (Recommended: 1200x400px)
+                        Ad Image *
                       </label>
+                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-3">
+                        <div className="flex items-start">
+                          <AlertCircle className="w-5 h-5 text-blue-600 mt-0.5 mr-2 flex-shrink-0" />
+                          <div className="text-sm text-blue-800">
+                            <p className="font-medium mb-1">Image Requirements:</p>
+                            <ul className="list-disc list-inside space-y-1 text-xs">
+                              <li>Recommended dimensions: <strong>1600 × 750 pixels</strong></li>
+                              <li>Aspect ratio: 16:7.5 (landscape banner format)</li>
+                              <li>Maximum file size: 5MB</li>
+                              <li>Supported formats: JPG, PNG, WebP</li>
+                              <li>High-quality images work best for banner display</li>
+                            </ul>
+                          </div>
+                        </div>
+                      </div>
                       <div className="space-y-2">
                         <input
                           type="file"

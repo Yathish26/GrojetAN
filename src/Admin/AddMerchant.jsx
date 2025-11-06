@@ -18,7 +18,6 @@ const AddMerchant = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     // Business Info
-    merchantId: '',
     displayName: '',
     description: '',
     website: '',
@@ -112,7 +111,7 @@ const AddMerchant = () => {
 
   // Check if form is valid for submission
   const isFormValid = () => {
-    const hasRequiredFields = formData.merchantId && formData.displayName &&
+    const hasRequiredFields = formData.displayName &&
                              formData.fullName && formData.mobile && formData.email && formData.password;
     return hasRequiredFields && isLocationValid();
   };
@@ -314,23 +313,6 @@ const AddMerchant = () => {
               <h3 className="text-lg font-semibold text-gray-900">Business & Owner Information</h3>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Merchant ID */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Merchant ID <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      name="merchantId"
-                      maxLength={20}
-                      value={formData.merchantId}
-                      onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                      placeholder="e.g., M001"
-                      required
-                    />
-                  </div>
-
                   {/* Display Name */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">

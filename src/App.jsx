@@ -7,6 +7,7 @@ import Products from './Admin/Products.jsx'
 import AddProduct from './Admin/AddProduct.jsx'
 import Users from './Admin/Users.jsx'
 import UserData from './Admin/UserData.jsx'
+import UserOrders from './Admin/UserOrders.jsx'
 import Orders from './Admin/Orders.jsx'
 import OrderDetails from './Admin/OrderDetails.jsx'
 import DeliveryAgents from './Admin/DeliveryAgents.jsx'
@@ -33,21 +34,24 @@ import MarketArea from './Admin/MarketArea.jsx'
 import DeleteRequests from './Admin/DeleteRequests.jsx'
 import UpdateNotesAdmin from './Admin/UpdateNotesAdmin.jsx'
 import HomeAds from './Admin/HomeAds.jsx'
+import BugReports from './Admin/BugReports.jsx'
+import { WebSocketProvider } from './context/WebSocketContext.jsx'
 
 function App() {
   return (
-    <Router>
-      <div className="min-h-screen bg-gray-50">
-        <Toaster 
-          position="top-center"
-          toastOptions={{
-            duration: 3000,
-            style: {
-              background: '#fff',
-              color: '#333',
-              border: '1px solid #e5e7eb',
-              padding: '16px',
-              boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)'
+    <WebSocketProvider>
+      <Router>
+        <div className="min-h-screen bg-gray-50">
+          <Toaster 
+            position="top-center"
+            toastOptions={{
+              duration: 3000,
+              style: {
+                background: '#fff',
+                color: '#333',
+                border: '1px solid #e5e7eb',
+                padding: '16px',
+                boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)'
             },
             success: {
               iconTheme: {
@@ -83,6 +87,7 @@ function App() {
           {/* User Management */}
           <Route path="/users" element={<Users />} />
           <Route path="/users/:id" element={<UserData />} />
+          <Route path="/users/:id/orders" element={<UserOrders />} />
           <Route path="/delete-requests" element={<DeleteRequests />} />
           
           {/* Merchant Management */}
@@ -117,6 +122,7 @@ function App() {
           <Route path="/admin-management" element={<AdminManagement />} />
           <Route path="/admin-register" element={<AdminRegister />} />
           <Route path="/update-notes" element={<UpdateNotesAdmin />} />
+          <Route path="/bug-reports" element={<BugReports />} />
           
           {/* Settings & Profile */}
           <Route path="/profile" element={<Profile />} />
@@ -128,6 +134,7 @@ function App() {
         </Routes>
       </div>
     </Router>
+    </WebSocketProvider>
   )
 }
 

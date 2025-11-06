@@ -17,6 +17,15 @@ export default function Profile() {
   const [passwordForm, setPasswordForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
   const [pinForm, setPinForm] = useState({ newPin: '', confirmPin: '' });
 
+  const calculateDaysJoined = (createdAt) => {
+    if (!createdAt) return 0;
+    const created = new Date(createdAt);
+    const now = new Date();
+    const diffTime = Math.abs(now - created);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays;
+  };
+
   useEffect(() => { fetchProfile(); }, []);
 
   const fetchProfile = async () => {
@@ -165,7 +174,7 @@ export default function Profile() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="flex items-center gap-3 break-all"><Mail className="w-5 h-5 text-gray-400" /><span className="text-gray-800">{profile.email}</span></div>
                 {profile.phone && <div className="flex items-center gap-3 break-all"><Phone className="w-5 h-5 text-gray-400" /><span className="text-gray-800">{profile.phone}</span></div>}
-                <div className="flex items-center gap-3"><Calendar className="w-5 h-5 text-gray-400" /><span className="text-gray-800">Joined {new Date(profile.createdAt).toLocaleDateString('en-IN')}</span></div>
+                <div className="flex items-center gap-3"><Calendar className="w-5 h-5 text-gray-400" /><span className="text-gray-800">Joined {new Date(profile.createdAt).toLocaleDateString('en-IN')} ({calculateDaysJoined(profile.createdAt)} days with Grojet)</span></div>
                 {profile.department && <div className="flex items-center gap-3 break-all"><SettingsIcon className="w-5 h-5 text-gray-400" /><span className="text-gray-800">{profile.department}</span></div>}
               </div>
               {profile.lastLogin && <div className="mt-4 p-3 bg-gray-50 border border-gray-200"><div className="flex items-center gap-2"><ScanFace className="w-4 h-4 text-green-500" /><span className="text-sm text-gray-700 break-all">Last login: {new Date(profile.lastLogin).toLocaleString('en-IN')}</span></div></div>}

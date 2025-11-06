@@ -101,7 +101,6 @@ const EditMerchant = () => {
   // Form state
   const [formData, setFormData] = useState({
     // Business Info
-    merchantId: '',
     displayName: '',
     website: '',
     establishedYear: '',
@@ -203,7 +202,6 @@ const EditMerchant = () => {
           // Populate form with existing data - mapping nested backend structure to flat form fields
           setFormData({
             // Business Info
-            merchantId: merchant.businessInfo?.merchantId || '',
             displayName: merchant.businessInfo?.displayName || '',
             website: merchant.businessInfo?.website || '',
             establishedYear: merchant.businessInfo?.establishedYear || '',
@@ -532,7 +530,6 @@ const EditMerchant = () => {
       // Transform flat form data back to nested structure for backend
       const submitData = {
         businessInfo: {
-          merchantId: formData.merchantId,
           displayName: formData.displayName,
           website: formData.website,
           establishedYear: formData.establishedYear ? parseInt(formData.establishedYear) : null
@@ -755,18 +752,11 @@ const EditMerchant = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Merchant ID *
+                  Merchant ID
                 </label>
-                <input
-                  type="text"
-                  maxLength={20}
-                  name="merchantId"
-                  value={formData.merchantId}
-                  onChange={handleInputChange}
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                  placeholder="Enter merchant ID"
-                />
+                <div className="w-full px-3 py-2 border border-gray-300 bg-gray-50 text-gray-700">
+                  {merchant?.businessInfo?.merchantId || 'Not available'}
+                </div>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">

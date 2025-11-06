@@ -32,11 +32,18 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { GoogleMap, Marker } from '../Components/GoogleMapComponents';
+import { useWebSocket } from '../context/WebSocketContext';
 import * as XLSX from 'xlsx';
 
 export default function DeliveryAgentDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { agentLocations, isConnected } = useWebSocket();
+
+  // Debug: Log when agentLocations changes
+  useEffect(() => {
+    console.log('🔄 DeliveryAgentDetails - agentLocations updated:', agentLocations);
+  }, [agentLocations]);
   const [agent, setAgent] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -46,6 +53,7 @@ export default function DeliveryAgentDetails() {
   const [agentStats, setAgentStats] = useState(null);
   const [refreshingStats, setRefreshingStats] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
+  const [mapCenter, setMapCenter] = useState(null);
   const [checkingUser, setCheckingUser] = useState(true);
   const allowedRoles = ['super_admin', 'admin'];
   const [availableZones, setAvailableZones] = useState([]);
@@ -136,6 +144,14 @@ export default function DeliveryAgentDetails() {
         return;
       }
       setAgent(data.agent);
+
+      // Set initial map center
+      if (data.agent?.status?.currentLocation) {
+        setMapCenter({
+          lat: data.agent.status.currentLocation.latitude,
+          lng: data.agent.status.currentLocation.longitude
+        });
+      }
 
       // Fetch zone name if delivery zone exists
       if (data.agent?.status?.deliveryZone) {
@@ -852,6 +868,14 @@ export default function DeliveryAgentDetails() {
     }
   };
 
+  const getDirectionFromHeading = (heading) => {
+    if (heading === null || heading === undefined) return '';
+    
+    const directions = ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW'];
+    const index = Math.round(heading / 22.5) % 16;
+    return directions[index];
+  };
+
   const fetchCurrentUser = useCallback(async () => {
     try {
       const local = localStorage.getItem('adminUser');
@@ -1455,6 +1479,15 @@ export default function DeliveryAgentDetails() {
                       <div>
                         <span className="text-sm font-medium text-gray-800">
                           Lat: {agent.status.currentLocation.latitude.toFixed(6)}, Lng: {agent.status.currentLocation.longitude.toFixed(6)}
+                          {
+                            (() => {
+                              const liveHeading = agentLocations[id]?.heading;
+                              if (typeof liveHeading === 'number' && !isNaN(liveHeading)) {
+                                return ` • Heading: ${liveHeading.toFixed(1)}° ${getDirectionFromHeading(liveHeading)}`;
+                              }
+                              return ' • Heading: N/A';
+                            })()
+                          }
                         </span>
                         <div className="flex items-center gap-2 mt-1">
                           {agent.status.currentLocation.lastUpdated && (
@@ -1479,9 +1512,35 @@ export default function DeliveryAgentDetails() {
                   </div>
 
                   {/* Map View */}
-                  <div className="h-64 border border-gray-200 rounded-lg overflow-hidden">
+                  <div className="h-64 border border-gray-200 rounded-lg overflow-hidden relative">
+                    {isConnected && agentLocations[id] && (
+                      <>
+                        <div className={`absolute top-2 right-2 z-10 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1 ${
+                          agentLocations[id]?.speed && agentLocations[id].speed > 1
+                            ? 'bg-orange-500 animate-pulse'
+                            : 'bg-green-500'
+                        }`}>
+                          <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+                          {agentLocations[id]?.speed && agentLocations[id].speed > 1 ? 'Moving' : 'Live'}
+                        </div>
+                        <button
+                          onClick={() => {
+                            if (agentLocations[id]) {
+                              setMapCenter({
+                                lat: agentLocations[id].latitude,
+                                lng: agentLocations[id].longitude
+                              });
+                            }
+                          }}
+                          className="absolute top-2 left-2 z-10 bg-blue-500 hover:bg-blue-600 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1 transition-colors"
+                        >
+                          <Navigation size={12} />
+                          Track
+                        </button>
+                      </>
+                    )}
                     <GoogleMap
-                      center={{
+                      center={mapCenter || {
                         lat: agent.status.currentLocation.latitude,
                         lng: agent.status.currentLocation.longitude
                       }}
@@ -1490,10 +1549,20 @@ export default function DeliveryAgentDetails() {
                     >
                       <Marker
                         position={{
-                          lat: agent.status.currentLocation.latitude,
-                          lng: agent.status.currentLocation.longitude
+                          lat: agentLocations[id]?.latitude || agent.status.currentLocation.latitude,
+                          lng: agentLocations[id]?.longitude || agent.status.currentLocation.longitude
                         }}
-                        title={`${agent.name || 'Delivery Agent'} - ${agent.agentId || ''}`}
+                        rotation={(() => {
+                          const heading = agentLocations[id]?.heading;
+                          const validHeading = (typeof heading === 'number' && heading >= 0 && heading <= 360) ? heading : 0;
+                          console.log(`🧭 Agent ${id} heading:`, heading, '-> valid:', validHeading);
+                          return validHeading;
+                        })()}
+                        title={`${agent.name || 'Delivery Agent'} - ${agent.agentId || ''} ${(() => {
+                          const agentLoc = agentLocations[id];
+                          const isLive = agentLoc && agentLoc.timestamp && (new Date() - new Date(agentLoc.timestamp)) < 300000; // 5 minutes
+                          return isLive ? '(LIVE)' : '(Last Known)';
+                        })()}`}
                         icon={{
                           url: '/assets/bikerider.png',
                           scaledSize: new window.google.maps.Size(40, 40),
@@ -1503,10 +1572,22 @@ export default function DeliveryAgentDetails() {
                           <div style="max-width: 200px;">
                             <h4 style="margin: 0 0 8px 0; font-weight: bold;">${agent.name || 'Delivery Agent'}</h4>
                             <p style="margin: 0 0 4px 0;">ID: ${agent.agentId || 'N/A'}</p>
-                            <p style="margin: 0 0 4px 0;">Lat: ${agent.status.currentLocation.latitude.toFixed(6)}</p>
-                            <p style="margin: 0 0 4px 0;">Lng: ${agent.status.currentLocation.longitude.toFixed(6)}</p>
+                            <p style="margin: 0 0 4px 0;">Status: ${(() => {
+                              const agentLoc = agentLocations[id];
+                              const isLive = agentLoc && agentLoc.timestamp && (new Date() - new Date(agentLoc.timestamp)) < 300000;
+                              return isLive ? '<span style="color: #10B981; font-weight: bold;">● LIVE</span>' : '<span style="color: #6B7280;">● Last Known</span>';
+                            })()}</p>
+                            <p style="margin: 0 0 4px 0;">Lat: ${(agentLocations[id]?.latitude || agent.status.currentLocation.latitude).toFixed(6)}</p>
+                            <p style="margin: 0 0 4px 0;">Lng: ${(agentLocations[id]?.longitude || agent.status.currentLocation.longitude).toFixed(6)}</p>
+                            ${agentLocations[id]?.accuracy ? `<p style="margin: 0 0 4px 0;">Accuracy: ±${agentLocations[id].accuracy.toFixed(1)}m</p>` : ''}
+                            ${agentLocations[id]?.speed ? `<p style="margin: 0 0 4px 0;">Speed: ${agentLocations[id].speed.toFixed(1)} km/h</p>` : ''}
+                            ${agentLocations[id]?.heading ? `<p style="margin: 0 0 4px 0;">Heading: ${agentLocations[id].heading.toFixed(1)}° ${getDirectionFromHeading(agentLocations[id].heading)}</p>` : ''}
                             <p style="margin: 0; font-size: 12px; color: #666;">
-                              Updated: ${formatISTTime(agent.status.currentLocation.lastUpdated)}
+                              Updated: ${(() => {
+                                const agentLoc = agentLocations[id];
+                                const isLive = agentLoc && agentLoc.timestamp && (new Date() - new Date(agentLoc.timestamp)) < 300000;
+                                return isLive ? 'Just now' : formatISTTime(agent.status.currentLocation.lastUpdated);
+                              })()}
                             </p>
                           </div>
                         `}
@@ -1517,10 +1598,21 @@ export default function DeliveryAgentDetails() {
               ) : (
                 <div className="text-center py-8">
                   <MapPin className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                  <p className="text-sm text-gray-500 mb-2">No location data available</p>
-                  <p className="text-xs text-gray-400">
-                    Location will be updated when the delivery agent logs in and grants location permissions
+                  <p className="text-sm text-gray-500 mb-2">
+                    {isConnected ? 'Agent currently offline' : 'No location data available'}
                   </p>
+                  <p className="text-xs text-gray-400 mb-4">
+                    {isConnected 
+                      ? 'Live location tracking is active. Location will appear when agent comes online.'
+                      : 'Location will be updated when the delivery agent logs in and grants location permissions'
+                    }
+                  </p>
+                  {isConnected && (
+                    <div className="flex items-center justify-center gap-2 mb-4">
+                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                      <span className="text-xs text-green-600">Live tracking active</span>
+                    </div>
+                  )}
                   {/* Empty map placeholder */}
                   <div className="h-32 border border-gray-200 rounded-lg mt-4 flex items-center justify-center bg-gray-50">
                     <p className="text-xs text-gray-400">Map will show location when available</p>

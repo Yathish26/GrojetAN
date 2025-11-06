@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Plus, Edit, Trash2, X, Loader2, ChevronLeft, ChevronRight, Shield, Download, Package, Image, CircleCheck, XCircle } from 'lucide-react';
+import { Search, Plus, Edit, Trash2, X, Loader2, ChevronLeft, ChevronRight, Shield, Download, Package, Image, CircleCheck, XCircle, ChevronDown } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
 import Modal from 'react-modal';
 import ChipInput from '../Components/ChipInput';
@@ -42,6 +42,7 @@ export default function Products() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [exportDropdownOpen, setExportDropdownOpen] = useState(false);
   const [productIdToDelete, setProductIdToDelete] = useState(null);
   const [imageViewerVisible, setImageViewerVisible] = useState(false);
   const [selectedImageUrl, setSelectedImageUrl] = useState(null);
@@ -223,8 +224,9 @@ export default function Products() {
   };
 
   // Handle export to Excel
-  const handleExport = async () => {
+  const handleExportExcel = async () => {
     setIsExporting(true);
+    setExportDropdownOpen(false);
     try {
       const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/products/export`, {
         credentials: 'include',
@@ -243,7 +245,70 @@ export default function Products() {
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
-      toast.success('Products exported successfully');
+      toast.success('Products exported to Excel successfully');
+    } catch (error) {
+      toast.error(error.message);
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  // Handle export to JSON
+  const handleExportJSON = async () => {
+    setIsExporting(true);
+    setExportDropdownOpen(false);
+    try {
+      const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/products/export/json`, {
+        credentials: 'include',
+      });
+      if (response.status === 401) {
+        navigate('/login');
+        return;
+      }
+      if (!response.ok) throw new Error('Failed to export products to JSON');
+      const data = await response.json();
+      const jsonString = JSON.stringify(data, null, 2);
+      const blob = new Blob([jsonString], { type: 'application/json' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'products.json';
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      toast.success('Products exported to JSON successfully');
+    } catch (error) {
+      toast.error(error.message);
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  // Handle export to CSV
+  const handleExportCSV = async () => {
+    setIsExporting(true);
+    setExportDropdownOpen(false);
+    try {
+      const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/products/export/csv`, {
+        credentials: 'include',
+      });
+      if (response.status === 401) {
+        navigate('/login');
+        return;
+      }
+      if (!response.ok) throw new Error('Failed to export products to CSV');
+      const csvText = await response.text();
+      const blob = new Blob([csvText], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'products.csv';
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      toast.success('Products exported to CSV successfully');
     } catch (error) {
       toast.error(error.message);
     } finally {
@@ -268,6 +333,20 @@ export default function Products() {
     }
     // eslint-disable-next-line
   }, [page, searchTerm, filters.category, filters.status, filters.sort, filters.startsWith, isAuthorized]);
+
+  // Close export dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (exportDropdownOpen && !event.target.closest('.export-dropdown')) {
+        setExportDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [exportDropdownOpen]);
 
   // Memoized categories for filter dropdown
   const categories = useMemo(() => {
@@ -704,27 +783,56 @@ export default function Products() {
               <span className="hidden xs:inline">Requested Products</span>
               <span className="xs:hidden">Requests</span>
             </button>
-            <button
-              onClick={handleExport}
-              disabled={isExporting}
-              className={`px-2 py-1.5 sm:px-4 sm:py-2 shadow flex items-center justify-center gap-1 sm:gap-2 text-sm sm:text-base ${
-                isExporting
-                  ? 'bg-purple-400 cursor-not-allowed'
-                  : 'bg-purple-600 hover:bg-purple-700 cursor-pointer'
-              } text-white`}
-            >
-              {isExporting ? (
-                <Loader2 size={16} className="sm:w-[18px] sm:h-[18px] animate-spin" />
-              ) : (
-                <Download size={16} className="sm:w-[18px] sm:h-[18px]" />
+            <div className="relative export-dropdown">
+              <button
+                onClick={() => setExportDropdownOpen(!exportDropdownOpen)}
+                disabled={isExporting}
+                className={`px-2 py-1.5 sm:px-4 sm:py-2 shadow flex items-center justify-center gap-1 sm:gap-2 text-sm sm:text-base ${
+                  isExporting
+                    ? 'bg-purple-400 cursor-not-allowed'
+                    : 'bg-purple-600 hover:bg-purple-700 cursor-pointer'
+                } text-white`}
+              >
+                {isExporting ? (
+                  <Loader2 size={16} className="sm:w-[18px] sm:h-[18px] animate-spin" />
+                ) : (
+                  <Download size={16} className="sm:w-[18px] sm:h-[18px]" />
+                )}
+                <span className="hidden xs:inline">
+                  {isExporting ? 'Exporting...' : 'Export'}
+                </span>
+                <span className="xs:hidden">
+                  {isExporting ? 'Exporting...' : 'Export'}
+                </span>
+                {!isExporting && (
+                  <ChevronDown size={16} className="sm:w-[18px] sm:h-[18px]" />
+                )}
+              </button>
+              {exportDropdownOpen && !isExporting && (
+                <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10 border border-gray-200">
+                  <div className="py-1">
+                    <button
+                      onClick={handleExportExcel}
+                      className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                    >
+                      📊 Export to Excel
+                    </button>
+                    <button
+                      onClick={handleExportJSON}
+                      className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                    >
+                      📄 Export to JSON
+                    </button>
+                    <button
+                      onClick={handleExportCSV}
+                      className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                    >
+                      📋 Export to CSV
+                    </button>
+                  </div>
+                </div>
               )}
-              <span className="hidden xs:inline">
-                {isExporting ? 'Exporting...' : 'Export to Excel'}
-              </span>
-              <span className="xs:hidden">
-                {isExporting ? 'Exporting...' : 'Export'}
-              </span>
-            </button>
+            </div>
             <button
               onClick={() => navigate('/products/add')}
               className="bg-green-600 hover:bg-green-700 text-white px-2 py-1.5 sm:px-4 sm:py-2 cursor-pointer shadow flex items-center justify-center gap-1 sm:gap-2 text-sm sm:text-base"
@@ -846,7 +954,7 @@ export default function Products() {
                     <thead className="bg-gray-50">
                       <tr>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">HSN</th>
+                        {/* <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">HSN</th> */}
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Weight/Dim</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
                         <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
@@ -875,7 +983,7 @@ export default function Products() {
                               </div>
                             </div>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{product.hsnCode || '—'}</td>
+                          {/* <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{product.hsnCode || '—'}</td> */}
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                             {product.weightDimension?.value && product.weightDimension?.unit 
                               ? `${product.weightDimension.value}${product.weightDimension.unit}` 
@@ -1179,20 +1287,6 @@ export default function Products() {
                       />
                       <label htmlFor="isActive" className="ml-2 text-sm text-gray-700">
                         Active
-                      </label>
-                    </div>
-                    <div className="flex items-center">
-                      <input
-                        type="checkbox"
-                        id="isFeatured"
-                        name="isFeatured"
-                        checked={!!editProduct.isFeatured}
-                        onChange={handleEditChange}
-                        className="h-4 w-4 text-blue-600 focus:ring-blue-500"
-                        disabled={isSaving || currentUser?.role === 'inventory_manager'}
-                      />
-                      <label htmlFor="isFeatured" className="ml-2 text-sm text-gray-700">
-                        Featured
                       </label>
                     </div>
                   </div>

@@ -18,6 +18,7 @@ const Orders = () => {
     status: '',
     paymentStatus: '',
     deliveryType: '',
+    dateRange: '',
     startDate: '',
     endDate: ''
   });
@@ -76,8 +77,12 @@ const Orders = () => {
 
   const fetchStats = async () => {
     try {
+      const queryParams = new URLSearchParams({
+        ...filters
+      });
+
       const response = await fetch(
-        `${import.meta.env.VITE_SERVER}/admin/orders/stats/overview`,
+        `${import.meta.env.VITE_SERVER}/admin/orders/stats/overview?${queryParams}`,
         { credentials: 'include' }
       );
 
@@ -103,7 +108,19 @@ const Orders = () => {
 
   const handleFilterChange = (key, value) => {
     if (!isAuthorized) return;
-    setFilters(prev => ({ ...prev, [key]: value }));
+    
+    if (key === 'dateRange') {
+      const dateRange = getDateRange(value);
+      setFilters(prev => ({ 
+        ...prev, 
+        dateRange: value,
+        startDate: dateRange.startDate,
+        endDate: dateRange.endDate
+      }));
+    } else {
+      setFilters(prev => ({ ...prev, [key]: value }));
+    }
+    
     setPagination(prev => ({ ...prev, page: 1 }));
   };
 
@@ -164,6 +181,49 @@ const Orders = () => {
       refunded: <RefreshCw size={16} />
     };
     return icons[status] || <AlertCircle size={16} />;
+  };
+
+  const getDateRange = (range) => {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    let startDate = '';
+    let endDate = '';
+
+    switch (range) {
+      case 'today':
+        startDate = today.toISOString().split('T')[0];
+        endDate = new Date(today.getTime() + 24 * 60 * 60 * 1000 - 1).toISOString().split('T')[0];
+        break;
+      case 'yesterday':
+        const yesterday = new Date(today.getTime() - 24 * 60 * 60 * 1000);
+        startDate = yesterday.toISOString().split('T')[0];
+        endDate = new Date(yesterday.getTime() + 24 * 60 * 60 * 1000 - 1).toISOString().split('T')[0];
+        break;
+      case 'last7days':
+        const last7Days = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+        startDate = last7Days.toISOString().split('T')[0];
+        endDate = new Date(today.getTime() + 24 * 60 * 60 * 1000 - 1).toISOString().split('T')[0];
+        break;
+      case 'last30days':
+        const last30Days = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
+        startDate = last30Days.toISOString().split('T')[0];
+        endDate = new Date(today.getTime() + 24 * 60 * 60 * 1000 - 1).toISOString().split('T')[0];
+        break;
+      case 'thisMonth':
+        startDate = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+        endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59).toISOString().split('T')[0];
+        break;
+      case 'lastMonth':
+        const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        startDate = lastMonth.toISOString().split('T')[0];
+        endDate = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59).toISOString().split('T')[0];
+        break;
+      default:
+        startDate = '';
+        endDate = '';
+    }
+
+    return { startDate, endDate };
   };
 
   const formatStatusText = (status) => {
@@ -257,18 +317,12 @@ const Orders = () => {
           </div>
 
           {/* Stats Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mt-4 sm:mt-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mt-4 sm:mt-6">
             <StatCard
               title="Total Orders"
               value={stats.totalOrders || 0}
               icon={ShoppingCart}
               color="text-blue-600"
-            />
-            <StatCard
-              title="Today's Orders"
-              value={stats.todayOrders || 0}
-              icon={Calendar}
-              color="text-green-600"
             />
             <StatCard
               title="Active Orders"
@@ -305,6 +359,20 @@ const Orders = () => {
 
               {/* Filters */}
               <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+                <select
+                  value={filters.dateRange}
+                  onChange={(e) => handleFilterChange('dateRange', e.target.value)}
+                  className="flex-1 px-3 py-2 sm:py-3 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors duration-200"
+                >
+                  <option value="">All Time</option>
+                  <option value="today">Today</option>
+                  <option value="yesterday">Yesterday</option>
+                  <option value="last7days">Last 7 Days</option>
+                  <option value="last30days">Last 30 Days</option>
+                  <option value="thisMonth">This Month</option>
+                  <option value="lastMonth">Last Month</option>
+                </select>
+
                 <select
                   value={filters.status}
                   onChange={(e) => handleFilterChange('status', e.target.value)}
