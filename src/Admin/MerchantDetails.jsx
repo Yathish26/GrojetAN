@@ -656,6 +656,29 @@ const MerchantDetails = () => {
                 }
               </p>
             </div>
+            <div>
+              <label className="text-sm font-medium text-gray-500">Commission Percentage</label>
+              <p className="text-gray-900 text-sm sm:text-base font-semibold text-green-600">
+                {complianceInfo?.commissionStructure?.percentage ? `${complianceInfo.commissionStructure.percentage}%` : 'N/A'}
+              </p>
+              {complianceInfo?.commissionStructure?.lastUpdated && (
+                <p className="text-xs text-gray-500 mt-1">
+                  Last updated: {new Date(complianceInfo.commissionStructure.lastUpdated).toLocaleString()}
+                </p>
+              )}
+            </div>
+            <div>
+              <label className="text-sm font-medium text-gray-500">Opening Time</label>
+              <p className="text-gray-900 text-sm sm:text-base break-words">
+                {operationalInfo.openingTime || 'N/A'}
+              </p>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-gray-500">Closing Time</label>
+              <p className="text-gray-900 text-sm sm:text-base break-words">
+                {operationalInfo.closingTime || 'N/A'}
+              </p>
+            </div>
           </div>
         </div>
 
@@ -927,6 +950,20 @@ const MerchantDetails = () => {
                 <label className="text-sm font-medium text-gray-500">IFSC Code</label>
                 <p className="text-gray-900 text-sm sm:text-base font-mono">{bankingInfo.ifscCode || merchant.bankDetails?.ifscCode || 'Not provided'}</p>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Audit Information */}
+        {merchant.lastUpdatedBy && (
+          <div className="bg-gray-50 shadow-sm border border-gray-200 p-4 sm:p-6 rounded-lg">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+              <Clock className="w-5 h-5" />
+              Last Updated
+            </h2>
+            <div className="text-sm text-gray-600">
+              <p>Last updated by <span className="font-semibold text-gray-900">{merchant.lastUpdatedBy.userName}</span> ({merchant.lastUpdatedBy.userRole})</p>
+              <p>at <span className="font-semibold text-gray-900">{new Date(merchant.lastUpdatedBy.updatedAt).toLocaleString()}</span></p>
             </div>
           </div>
         )}

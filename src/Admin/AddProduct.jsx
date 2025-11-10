@@ -120,7 +120,7 @@ export default function AddProduct() {
     };
 
     fetchCategories();
-    // eslint-disable-next-line
+     
   }, [navigate, isAuthorized]);
 
   const handleChange = (e) => {

@@ -101,6 +101,7 @@ const EditMerchant = () => {
   // Form state
   const [formData, setFormData] = useState({
     // Business Info
+    merchantId: '',
     displayName: '',
     website: '',
     establishedYear: '',
@@ -133,8 +134,6 @@ const EditMerchant = () => {
     deliveryPreferences: {
       deliveryType: 'platform_delivery'
     },
-    openingTime: '09:00 AM',
-    closingTime: '09:00 PM',
     productCategories: [],
     storeType: '',    // Documents (Text inputs)
     documents: {
@@ -202,6 +201,7 @@ const EditMerchant = () => {
           // Populate form with existing data - mapping nested backend structure to flat form fields
           setFormData({
             // Business Info
+            merchantId: merchant.businessInfo?.merchantId || '',
             displayName: merchant.businessInfo?.displayName || '',
             website: merchant.businessInfo?.website || '',
             establishedYear: merchant.businessInfo?.establishedYear || '',
@@ -237,8 +237,6 @@ const EditMerchant = () => {
             deliveryPreferences: {
               deliveryType: merchant.operationalInfo?.deliveryPreferences?.deliveryType || 'platform_delivery'
             },
-            openingTime: merchant.operationalInfo?.openingTime || '09:00 AM',
-            closingTime: merchant.operationalInfo?.closingTime || '09:00 PM',
             storeType: merchant.operationalInfo?.storeType || '',
             productCategories: merchant.operationalInfo?.productCategories || [],
 
@@ -530,6 +528,7 @@ const EditMerchant = () => {
       // Transform flat form data back to nested structure for backend
       const submitData = {
         businessInfo: {
+          merchantId: formData.merchantId,
           displayName: formData.displayName,
           website: formData.website,
           establishedYear: formData.establishedYear ? parseInt(formData.establishedYear) : null
@@ -550,8 +549,6 @@ const EditMerchant = () => {
         },
         operationalInfo: {
           storeAddress: formData.storeAddress,
-          openingTime: formData.openingTime,
-          closingTime: formData.closingTime,
           deliveryPreferences: {
             deliveryType: formData.deliveryPreferences.deliveryType
           },
@@ -1198,40 +1195,6 @@ const EditMerchant = () => {
                   </select>
                 </div>
               </div>
-            </div>
-
-            {/* Operating Hours */}
-            <div className="mb-6">
-              <h3 className="text-md font-medium text-gray-900 mb-4">Operating Hours</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Opening Time *
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.openingTime}
-                    onChange={(e) => handleInputChange({ target: { name: 'openingTime', value: e.target.value } })}
-                    className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                    placeholder="09:00 AM"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Closing Time *
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.closingTime}
-                    onChange={(e) => handleInputChange({ target: { name: 'closingTime', value: e.target.value } })}
-                    className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                    placeholder="09:00 PM"
-                  />
-                </div>
-              </div>
-              <p className="text-sm text-gray-500 mt-2">
-                Store operates daily from {formData.openingTime} to {formData.closingTime}
-              </p>
             </div>
 
             {/* Store Type */}

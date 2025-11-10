@@ -5,7 +5,7 @@ import {
   Truck, MapPin, BarChart3, Settings, LogOut, User,
   Menu, X, Shield, ShoppingCart, Bell, Gift,
   TabletSmartphone, Briefcase, Smartphone,
-  Bug
+  Bug, Headphones, Moon
 } from 'lucide-react';
 import { MdAdminPanelSettings } from 'react-icons/md';
 import toast from 'react-hot-toast';
@@ -152,6 +152,7 @@ const Layout = ({ children, title }) => {
     { name: 'Delete Requests', icon: Shield, path: '/delete-requests', roles: ['super_admin'] },
     { name: 'Merchant Enquiries', icon: Store, path: '/merchant-enquiries', roles: ['super_admin', 'admin'] },
     { name: 'Merchants', icon: Store, path: '/merchants', roles: ['super_admin', 'admin'] },
+    { name: 'Support', icon: Headphones, path: '/support', roles: ['super_admin', 'admin', 'customer_service'] },
     { name: 'Delivery Agents', icon: Truck, path: '/delivery-agents', roles: ['super_admin', 'admin', 'delivery_manager'] },
     { name: 'Delivery Zones', icon: MapPin, path: '/delivery-zones', roles: ['super_admin', 'admin', 'delivery_manager'] },
     { name: 'Market Area', icon: MapPin, path: '/market-area', roles: ['super_admin', 'admin'] },
@@ -162,6 +163,8 @@ const Layout = ({ children, title }) => {
     { name: 'Bug Reports', icon: Bug, path: '/bug-reports', roles: ['super_admin'] },
     { name: 'Admin Management', icon: Shield, path: '/admin-management', roles: ['super_admin'] },
     { name: 'Update Notes', icon: Bell, path: '/update-notes', roles: ['super_admin'] },
+    { name: 'Brands', icon: Store, path: '/brands', roles: ['super_admin', 'admin'] },
+    { name: 'Dark Store (Beta)', icon: Moon, path: '/dark-store', roles: ['super_admin', 'admin'] },
   ];
 
   const filteredMenuItems = menuItems.filter(item =>

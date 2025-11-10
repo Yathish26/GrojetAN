@@ -124,37 +124,6 @@ const Orders = () => {
     setPagination(prev => ({ ...prev, page: 1 }));
   };
 
-  const updateOrderStatus = async (orderId, newStatus) => {
-    if (!isAuthorized) return;
-    try {
-      const response = await fetch(
-        `${import.meta.env.VITE_SERVER}/admin/orders/${orderId}/status`,
-        {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({ status: newStatus })
-        }
-      );
-
-      if (response.ok) {
-        const data = await response.json();
-        if (data.tokenValid === false) {
-          navigate('/login', { replace: true });
-          return;
-        }
-        toast.success('Order status updated successfully');
-        fetchOrders();
-        fetchStats();
-      } else {
-        throw new Error('Failed to update order status');
-      }
-    } catch (error) {
-      console.error('Error updating order status:', error);
-      toast.error('Failed to update order status');
-    }
-  };
-
   const getStatusColor = (status) => {
     const colors = {
       confirmed: 'bg-green-100 text-green-800',
@@ -527,19 +496,10 @@ const Orders = () => {
                             >
                               <Eye size={16} />
                             </button>
-                            <select
-                              value={order.status.current}
-                              onChange={(e) => updateOrderStatus(order._id, e.target.value)}
-                              className="text-xs border border-gray-300 rounded-none px-2 py-1 focus:ring-2 focus:ring-green-500"
-                            >
-                              <option value="confirmed">Confirmed</option>
-                              <option value="packing">Packing</option>
-                              <option value="ready_for_pickup">Ready for Pickup</option>
-                              <option value="picked_up">Picked Up</option>
-                              <option value="out_for_delivery">Out for Delivery</option>
-                              <option value="delivered">Delivered</option>
-                              <option value="cancelled">Cancelled</option>
-                            </select>
+                            <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-none text-xs font-medium ${getStatusColor(order.status.current)}`}>
+                              {getStatusIcon(order.status.current)}
+                              {formatStatusText(order.status.current)}
+                            </span>
                           </div>
                         </td>
                       </tr>
@@ -614,19 +574,10 @@ const Orders = () => {
                               >
                                 <Eye size={16} />
                               </button>
-                              <select
-                                value={order.status.current}
-                                onChange={(e) => updateOrderStatus(order._id, e.target.value)}
-                                className="text-xs border border-gray-300 rounded-none px-2 py-1 focus:ring-2 focus:ring-green-500"
-                              >
-                                <option value="confirmed">Confirmed</option>
-                                <option value="packing">Packing</option>
-                                <option value="ready_for_pickup">Ready for Pickup</option>
-                                <option value="picked_up">Picked Up</option>
-                                <option value="out_for_delivery">Out for Delivery</option>
-                                <option value="delivered">Delivered</option>
-                                <option value="cancelled">Cancelled</option>
-                              </select>
+                              <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-none text-xs font-medium ${getStatusColor(order.status.current)}`}>
+                                {getStatusIcon(order.status.current)}
+                                {formatStatusText(order.status.current)}
+                              </span>
                             </div>
                             {order.delivery && order.delivery.agentName && (
                               <div className="text-xs text-gray-500 text-right">

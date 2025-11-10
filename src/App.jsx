@@ -36,6 +36,9 @@ import UpdateNotesAdmin from './Admin/UpdateNotesAdmin.jsx'
 import HomeAds from './Admin/HomeAds.jsx'
 import BugReports from './Admin/BugReports.jsx'
 import { WebSocketProvider } from './context/WebSocketContext.jsx'
+import Support from './Admin/Support.jsx'
+import Brands from './Admin/Brands.jsx'
+import DarkStore from './Admin/DarkStore.jsx'
 
 function App() {
   return (
@@ -98,6 +101,9 @@ function App() {
           <Route path="/merchants/:id/edit" element={<EditMerchant />} />
           <Route path="/merchants/:id/inventory" element={<MerchantInventory />} />
           
+          {/* Support Management */}
+          <Route path="/support" element={<Support />} />
+          
           {/* Category Management */}
           <Route path="/categories" element={<Categories />} />
           
@@ -114,6 +120,10 @@ function App() {
           
           {/* Home Ads Management */}
           <Route path="/home-ads" element={<HomeAds />} />
+          
+          {/* Brands & Dark Store */}
+          <Route path="/brands" element={<Brands />} />
+          <Route path="/dark-store" element={<DarkStore />} />
           
           {/* Analytics & Reports */}
           <Route path="/analytics" element={<Analytics />} />

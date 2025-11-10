@@ -56,31 +56,23 @@ export default function AdminLogin() {
     }
   };
 
-  // Demo credentials handler
-  const fillDemoCredentials = () => {
-    setFormData({
-      email: 'superadmin@grojet.com',
-      password: 'SuperAdmin@123'
-    });
-  };
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#d6e04d] to-yellow-600 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-tr from-[#d6e04d] to-white flex items-center justify-center p-4">
       <div className="bg-white p-8 shadow-xl border border-gray-200 w-full max-w-md">
         {/* Header */}
         <div className="flex flex-col items-center mb-8">
           <div className="w-fit h-fit flex items-center justify-center mb-4">
-            <img draggable="false" className='w-24 h-24 object-contain' src="/grojet.png" alt="Grojet" />
+            <img draggable="false" className='w-24 h-auto object-contain' src="/grojet.png" alt="Grojet" />
           </div>
-          <h1 className="text-2xl font-bold text-gray-800 mb-2">Control Center</h1>
+          <h1 className="text-2xl font-bold text-gray-800 mb-2">Panel Center</h1>
           <p className="text-gray-500 text-center">
-            Delivery management system
+            Your City Your Store but at your Hand !
           </p>
         </div>
 
         {/* Error Alert */}
         {error && (
-          <div className="flex items-center gap-2 bg-red-50 text-red-600 p-4  mb-6 border border-red-200">
+          <div className="flex items-center gap-2 bg-red-50 text-red-600 p-4 mb-6 border border-red-200">
             <AlertCircle className="w-5 h-5 flex-shrink-0" />
             <span className="text-sm">{error}</span>
           </div>
@@ -101,7 +93,7 @@ export default function AdminLogin() {
                 maxLength={100}
                 id="email"
                 name="email"
-                className="block w-full pl-10 pr-3 py-3 border border-gray-300  focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
+                className="block w-full pl-10 pr-3 py-3 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
                 placeholder="ID"
                 value={formData.email}
                 onChange={handleChange}
@@ -122,7 +114,7 @@ export default function AdminLogin() {
                 type="password"
                 id="password"
                 name="password"
-                className="block w-full pl-10 pr-3 py-3 border border-gray-300  focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
+                className="block w-full pl-10 pr-3 py-3 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
                 placeholder="••••••••"
                 value={formData.password}
                 onChange={handleChange}
@@ -134,7 +126,7 @@ export default function AdminLogin() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full flex justify-center items-center gap-2 py-3 px-4 border border-transparent  shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-70 transition-colors font-medium"
+            className="w-full flex justify-center items-center gap-2 py-3 px-4 border border-transparent shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-70 transition-colors font-medium"
           >
             {loading ? (
               <>
