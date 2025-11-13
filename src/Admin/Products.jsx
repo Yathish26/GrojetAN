@@ -882,7 +882,7 @@ export default function Products() {
               </select>
             </div>
             <div className="relative w-full sm:w-auto">
-              <select
+                <select
                 className="w-full p-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500"
                 value={filters.status}
                 onChange={handleStatusFilter}
@@ -890,7 +890,8 @@ export default function Products() {
                 <option value="all">All Statuses</option>
                 <option value="active">Active</option>
                 <option value="inactive">Inactive</option>
-                <option value="no_photos">No Photos</option>
+                  <option value="no_photos">No Photos</option>
+                  <option value="no_tags">No Tags</option>
               </select>
             </div>
             <div className="relative w-full sm:w-auto">
@@ -1545,22 +1546,7 @@ export default function Products() {
                     maxTags={10}
                     placeholder="Add tag and press Enter or comma"
                   />
-                  <ChipInput
-                    label="Highlights"
-                    values={editProduct.highlights || []}
-                    setValues={vals => setEditProduct({ ...editProduct, highlights: vals })}
-                    disabled={isSaving || currentUser?.role === 'inventory_manager'}
-                    maxTags={3}
-                    placeholder="Add highlight and press Enter or comma"
-                  />
-                  <ChipInput
-                    label="Search Keywords"
-                    values={editProduct.searchKeywords || []}
-                    setValues={vals => setEditProduct({ ...editProduct, searchKeywords: vals })}
-                    disabled={isSaving || currentUser?.role === 'inventory_manager'}
-                    maxTags={10}
-                    placeholder="Add keyword and press Enter or comma"
-                  />
+                  {/* Highlights and Search Keywords removed from product edit form */}
                 </div>
               </div>
             </div>

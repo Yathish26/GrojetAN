@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Search, Filter, ChevronDown, ChevronUp, Phone, Mail, MapPin, Briefcase, Trash2 } from 'lucide-react';
+import { Search, Filter, ChevronDown, ChevronUp, Phone, Mail, MapPin, Briefcase, Trash2, Clock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import Layout from '../Components/Layout';
@@ -237,6 +237,14 @@ export default function MerchantEnq() {
                                                         <div className="min-w-0 flex-1">
                                                             <p className="text-xs sm:text-sm font-medium text-gray-500">Region</p>
                                                             <p className="text-gray-900 text-sm sm:text-base break-words">{merchant.region}</p>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex items-start gap-3">
+                                                        <Clock className="text-gray-400 mt-0.5 flex-shrink-0" size={16} />
+                                                        <div className="min-w-0 flex-1">
+                                                            <p className="text-xs sm:text-sm font-medium text-gray-500">Submitted</p>
+                                                            <p className="text-gray-900 text-sm sm:text-base break-words">{new Date(merchant.registrationDate).toLocaleDateString('en-IN')}</p>
+                                                            <p className="text-gray-600 text-xs sm:text-sm break-words">{new Date(merchant.registrationDate).toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata' })}</p>
                                                         </div>
                                                     </div>
                                                 </div>

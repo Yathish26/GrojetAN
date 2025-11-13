@@ -152,6 +152,28 @@ const Orders = () => {
     return icons[status] || <AlertCircle size={16} />;
   };
 
+  const getPaymentStatusColor = (method) => {
+    const colors = {
+      cod: 'bg-blue-100 text-blue-800',
+      razorpay: 'bg-purple-100 text-purple-800',
+      paypal: 'bg-orange-100 text-orange-800',
+      stripe: 'bg-indigo-100 text-indigo-800',
+      upi: 'bg-green-100 text-green-800'
+    };
+    return colors[method?.toLowerCase()] || 'bg-gray-100 text-gray-800';
+  };
+
+  const getPaymentStatusIcon = (method) => {
+    const icons = {
+      cod: <DollarSign size={12} />,
+      razorpay: <CircleCheck size={12} />,
+      paypal: <CircleCheck size={12} />,
+      stripe: <CircleCheck size={12} />,
+      upi: <CircleCheck size={12} />
+    };
+    return icons[method?.toLowerCase()] || <AlertCircle size={12} />;
+  };
+
   const getDateRange = (range) => {
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -415,6 +437,9 @@ const Orders = () => {
                         Amount
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Payment Status
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Delivery Agent
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -466,12 +491,12 @@ const Orders = () => {
                           <div className="text-sm font-medium text-gray-900">
                             ₹{order.pricing.totalAmount}
                           </div>
-                          <div className={`text-xs ${
-                            order.payment.status === 'paid' ? 'text-green-600' : 
-                            order.payment.status === 'failed' ? 'text-red-600' : 'text-yellow-600'
-                          }`}>
-                            {order.payment.status}
-                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-none text-xs font-medium ${getPaymentStatusColor(order.payment.method)}`}>
+                            {getPaymentStatusIcon(order.payment.method)}
+                            {order.payment.method ? formatStatusText(order.payment.method) : 'N/A'}
+                          </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           {order.delivery && order.delivery.agentName ? (
@@ -552,16 +577,17 @@ const Orders = () => {
                             </div>
                           </div>
 
-                          <div className="grid grid-cols-1 gap-3 mb-3">
+                          <div className="grid grid-cols-2 gap-3 mb-3">
                             <div className="text-xs">
                               <span className="text-gray-500">Amount:</span>
                               <div className="font-medium text-gray-900">₹{order.pricing.totalAmount}</div>
-                              <div className={`text-xs ${
-                                order.payment.status === 'paid' ? 'text-green-600' : 
-                                order.payment.status === 'failed' ? 'text-red-600' : 'text-yellow-600'
-                              }`}>
-                                {order.payment.status}
-                              </div>
+                            </div>
+                            <div className="text-xs">
+                              <span className="text-gray-500">Payment:</span>
+                              <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-none text-xs font-medium ${getPaymentStatusColor(order.payment.method)}`}>
+                                {getPaymentStatusIcon(order.payment.method)}
+                                {order.payment.method ? formatStatusText(order.payment.method) : 'N/A'}
+                              </span>
                             </div>
                           </div>
 

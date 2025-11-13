@@ -40,8 +40,7 @@ export default function AddProduct() {
   const isAuthorized = allowedRoles.includes(currentUser?.role);
   const [formData, setFormData] = useState({
     name: '',
-    description: '',
-    highlights: [],
+  description: '',
     images: [],
     thumbnail: '',
     brand: '',
@@ -56,8 +55,7 @@ export default function AddProduct() {
       mrp: "",
     },
     isActive: true,
-    tags: [],
-    searchKeywords: []
+  tags: []
   });
 
   const [categories, setCategories] = useState([]);
@@ -283,9 +281,9 @@ export default function AddProduct() {
           mrp: parseFloat(formData.pricing.mrp),
         },
         tags: formData.tags,
-        highlights: formData.highlights.filter(h => h.trim() !== ''),
+  // highlights removed from product schema
         images: finalImages.filter(img => img.trim() !== ''),
-        searchKeywords: formData.searchKeywords.filter(kw => kw.trim() !== '')
+  // searchKeywords removed from product schema
       };
 
       // Only include weightDimension if both value and unit are provided
@@ -323,7 +321,7 @@ export default function AddProduct() {
         setFormData({
           name: '',
           description: '',
-          highlights: [],
+          // highlights removed
           images: [],
           thumbnail: '',
           brand: '',
@@ -338,8 +336,7 @@ export default function AddProduct() {
             mrp: 0,
           },
           isActive: true,
-          tags: [],
-          searchKeywords: []
+          tags: []
         });
       } else {
         throw new Error(data.message || 'Failed to add product');
@@ -431,14 +428,7 @@ export default function AddProduct() {
                 />
               </div>
 
-              <ChipInput
-                label="Highlights"
-                values={formData.highlights}
-                setValues={vals => setFormData(prev => ({ ...prev, highlights: vals }))}
-                disabled={loading}
-                placeholder="Add highlight and press Enter or comma"
-                maxTags={3}
-              />
+              {/* Highlights removed from product form */}
             </div>
 
             {/* Images and Brand */}
@@ -795,18 +785,7 @@ export default function AddProduct() {
               />
             </div>
 
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-800 border-b pb-2">Search Keywords</h3>
-
-              <ChipInput
-                label="Search Keywords"
-                values={formData.searchKeywords}
-                setValues={vals => setFormData(prev => ({ ...prev, searchKeywords: vals }))}
-                disabled={loading}
-                placeholder="Add keyword and press Enter or comma"
-                maxTags={10}
-              />
-            </div>
+            {/* Search Keywords removed from product form */}
           </div>
 
           {/* Status and Submit */}

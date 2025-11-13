@@ -111,7 +111,8 @@ const MerchantDetails = () => {
     return new Date(dateString).toLocaleDateString('en-IN', {
       year: 'numeric',
       month: 'long',
-      day: 'numeric'
+      day: 'numeric',
+      timeZone: 'Asia/Kolkata'
     });
   };
 
@@ -532,8 +533,8 @@ const MerchantDetails = () => {
                 <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0" />
                 <span className="break-words">
                   {operationalInfo.storeAddress ? 
-                    `${operationalInfo.storeAddress.street || ''}, ${operationalInfo.storeAddress.area || ''}, ${operationalInfo.storeAddress.city || ''}, ${operationalInfo.storeAddress.state || ''} - ${operationalInfo.storeAddress.pincode || ''}` 
-                    : merchant.address || 'Address not available'
+                    `${operationalInfo.storeAddress.street || ''}, ${operationalInfo.storeAddress.city || ''}, ${operationalInfo.storeAddress.state || ''} - ${operationalInfo.storeAddress.pincode || ''}` 
+                    : 'Address not available'
                   }
                 </span>
               </p>
@@ -591,7 +592,10 @@ const MerchantDetails = () => {
                     infoContent={`
                       <div style="max-width: 250px;">
                         <strong>${merchant?.businessInfo?.storeName || 'Store'} Location</strong><br/>
-                        ${operationalInfo.storeAddress.fullAddress || 'Address not available'}<br/>
+                        ${operationalInfo.storeAddress ? 
+                          `${operationalInfo.storeAddress.street || ''}, ${operationalInfo.storeAddress.city || ''}, ${operationalInfo.storeAddress.state || ''} - ${operationalInfo.storeAddress.pincode || ''}` 
+                          : 'Address not available'
+                        }<br/>
                         <small>Lat: ${operationalInfo.storeAddress.coordinates.latitude}, Lng: ${operationalInfo.storeAddress.coordinates.longitude}</small>
                       </div>
                     `}
@@ -663,7 +667,7 @@ const MerchantDetails = () => {
               </p>
               {complianceInfo?.commissionStructure?.lastUpdated && (
                 <p className="text-xs text-gray-500 mt-1">
-                  Last updated: {new Date(complianceInfo.commissionStructure.lastUpdated).toLocaleString()}
+                  Last updated: {new Date(complianceInfo.commissionStructure.lastUpdated).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}
                 </p>
               )}
             </div>
@@ -963,7 +967,7 @@ const MerchantDetails = () => {
             </h2>
             <div className="text-sm text-gray-600">
               <p>Last updated by <span className="font-semibold text-gray-900">{merchant.lastUpdatedBy.userName}</span> ({merchant.lastUpdatedBy.userRole})</p>
-              <p>at <span className="font-semibold text-gray-900">{new Date(merchant.lastUpdatedBy.updatedAt).toLocaleString()}</span></p>
+              <p>at <span className="font-semibold text-gray-900">{new Date(merchant.lastUpdatedBy.updatedAt).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}</span></p>
             </div>
           </div>
         )}

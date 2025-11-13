@@ -31,13 +31,11 @@ import Careers from './Admin/Careers.jsx'
 import RequestedProducts from './Admin/RequestedProducts.jsx'
 import Offers from './Admin/Offers.jsx'
 import MarketArea from './Admin/MarketArea.jsx'
-import DeleteRequests from './Admin/DeleteRequests.jsx'
 import UpdateNotesAdmin from './Admin/UpdateNotesAdmin.jsx'
 import HomeAds from './Admin/HomeAds.jsx'
 import BugReports from './Admin/BugReports.jsx'
 import { WebSocketProvider } from './context/WebSocketContext.jsx'
 import Support from './Admin/Support.jsx'
-import Brands from './Admin/Brands.jsx'
 import DarkStore from './Admin/DarkStore.jsx'
 
 function App() {
@@ -91,7 +89,6 @@ function App() {
           <Route path="/users" element={<Users />} />
           <Route path="/users/:id" element={<UserData />} />
           <Route path="/users/:id/orders" element={<UserOrders />} />
-          <Route path="/delete-requests" element={<DeleteRequests />} />
           
           {/* Merchant Management */}
           <Route path="/merchant-enquiries" element={<MerchantEnq />} />
@@ -121,8 +118,7 @@ function App() {
           {/* Home Ads Management */}
           <Route path="/home-ads" element={<HomeAds />} />
           
-          {/* Brands & Dark Store */}
-          <Route path="/brands" element={<Brands />} />
+          {/* Dark Store */}
           <Route path="/dark-store" element={<DarkStore />} />
           
           {/* Analytics & Reports */}
