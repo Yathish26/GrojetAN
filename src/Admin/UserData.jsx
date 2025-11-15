@@ -43,11 +43,13 @@ export default function UserData() {
   const [showStatusModal, setShowStatusModal] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState('');
   const [statusReason, setStatusReason] = useState('');
+  const [adminRole, setAdminRole] = useState('');
 
   useEffect(() => {
     fetchUserDetails();
     fetchUserWarnings();
     fetchOrdersCount();
+    fetchAdminRole();
   }, [id]);
 
   const fetchUserDetails = async () => {
@@ -116,6 +118,24 @@ export default function UserData() {
       }
     } catch (error) {
       console.error('Error fetching orders count:', error);
+    }
+  };
+
+  const fetchAdminRole = async () => {
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_SERVER}/admin/auth/profile`,
+        {
+          credentials: 'include',
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        setAdminRole(data.admin.role);
+      }
+    } catch (error) {
+      console.error('Error fetching admin role:', error);
     }
   };
 
@@ -272,6 +292,36 @@ export default function UserData() {
     }
   };
 
+  const handleDeleteUser = async () => {
+    if (!window.confirm('Are you sure you want to permanently delete this user? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      setUpdatingStatus(true);
+      const response = await fetch(
+        `${import.meta.env.VITE_SERVER}/admin/users/${id}`,
+        {
+          method: 'DELETE',
+          credentials: 'include',
+        }
+      );
+
+      if (response.ok) {
+        toast.success('User deleted successfully');
+        navigate('/users'); // Redirect to users list
+      } else {
+        const data = await response.json();
+        toast.error(data.message || 'Failed to delete user');
+      }
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      toast.error('Failed to delete user');
+    } finally {
+      setUpdatingStatus(false);
+    }
+  };
+
   if (loading) {
     return (
       <Layout title="User Details">
@@ -399,6 +449,17 @@ export default function UserData() {
                 >
                   <FiUserCheck className="text-sm" />
                   {updatingStatus ? 'Processing...' : 'Activate User'}
+                </button>
+              )}
+
+              {adminRole === 'super_admin' && (
+                <button
+                  onClick={handleDeleteUser}
+                  className="flex items-center gap-2 px-4 py-2 bg-red-800 text-white hover:bg-red-900 transition disabled:opacity-50"
+                  disabled={updatingStatus}
+                >
+                  <FiTrash2 className="text-sm" />
+                  {updatingStatus ? 'Deleting...' : 'Delete User'}
                 </button>
               )}
             </div>
@@ -822,156 +883,6 @@ export default function UserData() {
           </div>
         </div>
       </div>
-
-      {/* Warning Modal */}
-      {showWarnModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white max-w-md w-full">
-            <div className="px-6 py-4 border-b">
-              <h3 className="text-lg font-semibold text-gray-800">Issue Warning</h3>
-            </div>
-            <div className="p-6">
-              <textarea
-                value={warningText}
-                onChange={(e) => setWarningText(e.target.value)}
-                placeholder="Enter warning message..."
-                className="w-full h-24 p-3 border focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
-                disabled={submittingWarning}
-              />
-            </div>
-            <div className="px-6 py-4 border-t flex justify-end gap-2">
-              <button
-                onClick={() => {
-                  setShowWarnModal(false);
-                  setWarningText('');
-                }}
-                className="px-4 py-2 text-gray-600 hover:text-gray-800 transition"
-                disabled={submittingWarning}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleWarnUser}
-                disabled={submittingWarning}
-                className="px-4 py-2 bg-yellow-600 text-white hover:bg-yellow-700 transition disabled:opacity-50"
-              >
-                {submittingWarning ? 'Issuing...' : 'Issue Warning'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Suspension Modal */}
-      {showSuspendModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white max-w-md w-full">
-            <div className="px-6 py-4 border-b">
-              <h3 className="text-lg font-semibold text-gray-800">Suspend User</h3>
-            </div>
-            <div className="p-6">
-              <p className="text-gray-600 mb-4">
-                Please provide a reason for suspending this user:
-              </p>
-              <textarea
-                value={suspensionReason}
-                onChange={(e) => setSuspensionReason(e.target.value)}
-                placeholder="Enter suspension reason..."
-                className="w-full h-24 p-3 border focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                disabled={updatingStatus}
-              />
-            </div>
-            <div className="px-6 py-4 border-t flex justify-end gap-2">
-              <button
-                onClick={() => {
-                  setShowSuspendModal(false);
-                  setSuspensionReason('');
-                }}
-                className="px-4 py-2 text-gray-600 hover:text-gray-800 transition"
-                disabled={updatingStatus}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSuspendUser}
-                disabled={updatingStatus}
-                className="px-4 py-2 bg-red-600 text-white hover:bg-red-700 transition disabled:opacity-50"
-              >
-                {updatingStatus ? 'Suspending...' : 'Suspend User'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Status Update Modal */}
-      {showStatusModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white max-w-md w-full">
-            <div className="px-6 py-4 border-b">
-              <h3 className="text-lg font-semibold text-gray-800">Update User Status</h3>
-            </div>
-            <div className="p-6">
-              <p className="text-gray-600 mb-4">
-                Select the new status for this user:
-              </p>
-
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Status
-                </label>
-                <select
-                  value={selectedStatus}
-                  onChange={(e) => setSelectedStatus(e.target.value)}
-                  className="w-full p-3 border focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  disabled={updatingStatus}
-                >
-                  <option value="">Select Status</option>
-                  <option value="active">Active</option>
-                  <option value="inactive">Inactive</option>
-                  <option value="suspended">Suspended</option>
-                  <option value="banned">Banned</option>
-                </select>
-              </div>
-
-              {(selectedStatus === 'suspended' || selectedStatus === 'banned') && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Reason (Required)
-                  </label>
-                  <textarea
-                    value={statusReason}
-                    onChange={(e) => setStatusReason(e.target.value)}
-                    placeholder="Enter reason..."
-                    className="w-full h-24 p-3 border focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    disabled={updatingStatus}
-                  />
-                </div>
-              )}
-            </div>
-            <div className="px-6 py-4 border-t flex justify-end gap-2">
-              <button
-                onClick={() => {
-                  setShowStatusModal(false);
-                  setSelectedStatus('');
-                  setStatusReason('');
-                }}
-                className="px-4 py-2 text-gray-600 hover:text-gray-800 transition"
-                disabled={updatingStatus}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleUpdateUserStatus}
-                disabled={updatingStatus || !selectedStatus}
-                className="px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 transition disabled:opacity-50"
-              >
-                {updatingStatus ? 'Updating...' : 'Update Status'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Warning Modal */}
       {showWarnModal && (

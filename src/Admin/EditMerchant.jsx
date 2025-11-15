@@ -170,8 +170,7 @@ const EditMerchant = () => {
     },
 
     // Status
-    status: 'pending_verification',
-    storeStatus: 'closed'
+    status: 'pending_verification'
   });
 
   // Fetch merchant details
@@ -275,8 +274,7 @@ const EditMerchant = () => {
             },
 
             // Status
-            status: merchant.status || 'pending_verification',
-            storeStatus: merchant.storeStatus || 'closed'
+            status: merchant.status || 'pending_verification'
           });
 
           // Set selected location if coordinates exist (for existing merchants)
@@ -572,8 +570,7 @@ const EditMerchant = () => {
             ipAddress: formData.complianceInfo.digitalSignature.ipAddress
           }
         },
-        status: formData.status,
-        storeStatus: formData.storeStatus
+        status: formData.status
       };
 
       const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/merchant-stores/${id}`, {
@@ -1262,20 +1259,6 @@ const EditMerchant = () => {
                   <option value="active">Active</option>
                   <option value="hold">Hold</option>
                   <option value="banned">Banned</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Store Status
-                </label>
-                <select
-                  name="storeStatus"
-                  value={formData.storeStatus}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                >
-                  <option value="open">Open</option>
-                  <option value="closed">Closed</option>
                 </select>
               </div>
               <div>
