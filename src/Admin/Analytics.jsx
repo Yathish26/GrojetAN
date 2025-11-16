@@ -116,6 +116,7 @@ export default function Analytics() {
     successRateChange: 0,
     newCustomers: 0,
     returningCustomers: 0,
+    todaysOrders: 0,
     topAreas: [],
     recentActivity: []
   });
@@ -238,6 +239,7 @@ export default function Analytics() {
       successRateChange: 0,
       newCustomers: 0,
       returningCustomers: 0,
+      todaysOrders: 0,
       topAreas: [],
       recentActivity: []
     }));
@@ -485,7 +487,7 @@ export default function Analytics() {
       </div>
 
       {/* Key Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <div className="flex items-center justify-between">
             <div>
@@ -498,6 +500,20 @@ export default function Analytics() {
             </div>
             <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
               <ShoppingCart className="w-6 h-6 text-blue-600" />
+            </div>
+          </div>
+        </div>
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600">Today's Orders</p>
+              <p className="text-2xl font-bold text-gray-800">{metrics.todaysOrders}</p>
+              <div className="flex items-center gap-1 mt-1">
+                <span className="text-sm text-gray-500">Orders today</span>
+              </div>
+            </div>
+            <div className="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center">
+              <Package className="w-6 h-6 text-indigo-600" />
             </div>
           </div>
         </div>
@@ -737,7 +753,11 @@ export default function Analytics() {
           <div className="space-y-4">
             {metrics.recentActivity && metrics.recentActivity.length > 0 ? (
               metrics.recentActivity.slice(0, 8).map((activity, index) => (
-                <div key={index} className="flex items-center gap-4 p-3 border border-gray-100 rounded-lg">
+                <div 
+                  key={index} 
+                  className="flex items-center gap-4 p-3 border border-gray-100 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
+                  onClick={() => activity._id && navigate(`/orders/${activity._id}`)}
+                >
                   <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
                     activity.type === 'order' ? 'bg-blue-100' :
                     activity.type === 'delivery' ? 'bg-green-100' :

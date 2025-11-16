@@ -456,20 +456,6 @@ export default function OrderDetails() {
                     </h3>
 
                     <div className="space-y-3">
-                      {/* Debug Info */}
-                      <div className="p-3 bg-yellow-50 rounded-none border border-yellow-200 mb-4">
-                        <h4 className="text-sm font-medium text-yellow-800 mb-2">Debug Information:</h4>
-                        <div className="text-xs text-yellow-700 space-y-1">
-                          <p>Order ID: {order?.id}</p>
-                          <p>Has Tracking: {order?.tracking ? 'Yes' : 'No'}</p>
-                          <p>Status: {order?.status || 'N/A'}</p>
-                          <p>getStatusValue: {order?.status ? getStatusValue(order.status) : 'N/A'}</p>
-                          <p>Agent Location: {order?.tracking?.agentLocation ? 'Yes' : 'No'}</p>
-                          <p>Store Coords: {order?.merchantLandmark?.address?.coordinates ? 'Yes' : 'No'}</p>
-                          <p>Delivery Coords: {order?.deliveryAddress?.coordinates ? 'Yes' : 'No'}</p>
-                          <p>Delivery Lat/Lng: {order?.deliveryAddress?.coordinates ? `${order.deliveryAddress.coordinates.latitude}, ${order.deliveryAddress.coordinates.longitude}` : 'N/A'}</p>
-                        </div>
-                      </div>
                       <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-none">
                         <div className="w-6 h-6 bg-blue-100 rounded-none flex items-center justify-center">
                           <MapPin className="w-3 h-3 text-blue-600" />

@@ -702,6 +702,60 @@ export default function UserData() {
               </div>
             </div>
 
+            {/* Push Tokens & Device Info */}
+            {user.pushTokens && user.pushTokens.length > 0 && (
+              <div className="bg-white shadow-lg">
+                <div className="px-6 py-4 border-b bg-gradient-to-r from-blue-50 to-indigo-50">
+                  <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                    <FiBell className="text-blue-600" />
+                    Push Tokens & Devices ({user.pushTokens.length})
+                  </h3>
+                </div>
+                <div className="p-6 space-y-4">
+                  {user.pushTokens.map((tokenData, index) => (
+                    <div key={index} className="border border-gray-200 p-4">
+                      <div className="flex items-start gap-3">
+                        <FiBell className="text-gray-400 mt-1" />
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="font-medium">{tokenData.deviceInfo?.deviceName || 'Unknown Device'}</span>
+                            <span className={`px-2 py-1 text-xs ${tokenData.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                              {tokenData.isActive ? 'Active' : 'Inactive'}
+                            </span>
+                          </div>
+                          
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-gray-600 mb-2">
+                            <div>
+                              <span className="font-medium">Platform:</span> {tokenData.deviceInfo?.platform || 'Unknown'}
+                            </div>
+                            <div>
+                              <span className="font-medium">OS:</span> {tokenData.deviceInfo?.osName || 'Unknown'} {tokenData.deviceInfo?.osVersion || ''}
+                            </div>
+                            <div>
+                              <span className="font-medium">Model:</span> {tokenData.deviceInfo?.modelName || 'Unknown'}
+                            </div>
+                            <div>
+                              <span className="font-medium">App Version:</span> {tokenData.deviceInfo?.appVersion || 'Unknown'}
+                            </div>
+                          </div>
+                          
+                          <div className="text-xs text-gray-500 mb-2">
+                            <div>Device ID: {tokenData.deviceInfo?.deviceId || 'N/A'}</div>
+                            <div>Registered: {new Date(tokenData.registeredAt).toLocaleString('en-IN')}</div>
+                            <div>Last Updated: {new Date(tokenData.lastUpdated).toLocaleString('en-IN')}</div>
+                          </div>
+                          
+                          <div className="bg-gray-50 p-2 text-xs font-mono text-gray-700 break-all">
+                            <span className="font-medium">Token:</span> {tokenData.token}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Wishlist */}
             {user.wishlist && user.wishlist.length > 0 && (
               <div className="bg-white shadow-lg">

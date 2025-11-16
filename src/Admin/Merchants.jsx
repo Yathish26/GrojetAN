@@ -148,6 +148,8 @@ const Merchants = () => {
                         rating: merchant.rating || 0, // Rating from backend
                         totalOrders: merchant.totalOrders,
                         totalRevenue: merchant.totalRevenue,
+                        todaysOrders: merchant.todaysOrders || 0,
+                        todaysRevenue: merchant.todaysRevenue || 0,
                         joinDate: merchant.registrationDate ? new Date(merchant.registrationDate).toISOString().split('T')[0] : 'N/A',
                         profileImage: null,
                         brandingInfo: merchant.brandingInfo || null,
@@ -224,6 +226,8 @@ const Merchants = () => {
                         rating: merchant.rating || 0, // Rating from backend
                         totalOrders: merchant.totalOrders,
                         totalRevenue: merchant.totalRevenue,
+                        todaysOrders: merchant.todaysOrders || 0,
+                        todaysRevenue: merchant.todaysRevenue || 0,
                         joinDate: merchant.registrationDate ? new Date(merchant.registrationDate).toISOString().split('T')[0] : 'N/A',
                         profileImage: null,
                         brandingInfo: merchant.brandingInfo || null,
@@ -614,7 +618,7 @@ const Merchants = () => {
                                                 Status
                                             </th>
                                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                Performance
+                                                Today's Performance
                                             </th>
                                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                                 Actions
@@ -674,10 +678,10 @@ const Merchants = () => {
                                                     </td>
                                                     <td className="px-6 py-4 whitespace-nowrap">
                                                         <div className="text-sm text-gray-900">
-                                                            {merchant.totalOrders} orders
+                                                            {merchant.todaysOrders} orders today
                                                         </div>
                                                         <div className="text-sm text-gray-500">
-                                                            {formatCurrency(merchant.totalRevenue)}
+                                                            {formatCurrency(merchant.todaysRevenue)}
                                                         </div>
                                                     </td>
                                                     <td className="px-6 py-4 whitespace-nowrap">
@@ -746,7 +750,7 @@ const Merchants = () => {
 
                                                         <div className="mt-2 flex items-center justify-between">
                                                             <div className="text-xs text-gray-600">
-                                                                {merchant.totalOrders} orders • {formatCurrency(merchant.totalRevenue)}
+                                                                {merchant.todaysOrders} orders • {formatCurrency(merchant.todaysRevenue)}
                                                             </div>
                                                             <button
                                                                 onClick={() => navigate(`/merchants/${merchant.id}`)}

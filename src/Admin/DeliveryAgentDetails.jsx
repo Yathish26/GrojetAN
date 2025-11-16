@@ -28,7 +28,9 @@ import {
   RefreshCw,
   CheckSquare,
   LogOut,
-  Download
+  Download,
+  Smartphone,
+  Copy
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { GoogleMap, Marker } from '../Components/GoogleMapComponents';
@@ -90,16 +92,6 @@ export default function DeliveryAgentDetails() {
     accountHolderName: ''
   });
 
-  // Verification status states
-  const [documentsVerified, setDocumentsVerified] = useState(false);
-  const [backgroundCheckCompleted, setBackgroundCheckCompleted] = useState(false);
-  const [trainingCompleted, setTrainingCompleted] = useState(false);
-
-  // Verification timestamps
-  const [documentsVerifiedAt, setDocumentsVerifiedAt] = useState(null);
-  const [backgroundCheckCompletedAt, setBackgroundCheckCompletedAt] = useState(null);
-  const [trainingCompletedAt, setTrainingCompletedAt] = useState(null);
-
   // Delete confirmation modal state
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteConfirmationText, setDeleteConfirmationText] = useState('');
@@ -157,16 +149,6 @@ export default function DeliveryAgentDetails() {
       if (data.agent?.status?.deliveryZone) {
         await fetchZoneName(data.agent.status.deliveryZone);
       }
-
-      // Initialize verification states from agent data
-      setDocumentsVerified(data.agent?.verification?.documentsVerified || false);
-      setBackgroundCheckCompleted(data.agent?.verification?.backgroundCheckPassed || false);
-      setTrainingCompleted(data.agent?.verification?.trainingCompleted || false);
-
-      // Initialize timestamps from backend data
-      setDocumentsVerifiedAt(data.agent?.verification?.documentsVerifiedAt || null);
-      setBackgroundCheckCompletedAt(data.agent?.verification?.backgroundCheckCompletedAt || null);
-      setTrainingCompletedAt(data.agent?.verification?.trainingCompletedAt || null);
     } catch (err) {
       setError(err.message);
       toast.error('Failed to load agent details');
@@ -314,15 +296,6 @@ export default function DeliveryAgentDetails() {
         return;
       }
       setAgent(data.agent);
-
-      // Update local verification states with backend response
-      setDocumentsVerified(data.agent?.verification?.documentsVerified || false);
-      setBackgroundCheckCompleted(data.agent?.verification?.backgroundCheckPassed || false);
-      setTrainingCompleted(data.agent?.verification?.trainingCompleted || false);
-      setDocumentsVerifiedAt(data.agent?.verification?.documentsVerifiedAt || null);
-      setBackgroundCheckCompletedAt(data.agent?.verification?.backgroundCheckCompletedAt || null);
-      setTrainingCompletedAt(data.agent?.verification?.trainingCompletedAt || null);
-
       toast.success('Application approved successfully');
     } catch (err) {
       toast.error(err.message);
@@ -400,6 +373,60 @@ export default function DeliveryAgentDetails() {
     }
   };
 
+  const forceAgentOffline = async () => {
+    if (currentUser?.role !== 'super_admin') {
+      toast.error('Only super admin can force agents offline');
+      return;
+    }
+    const loadingToast = toast.loading('Forcing agent offline...');
+    try {
+      const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/delivery-agents/${id}/force-offline`, {
+        method: 'PUT',
+        credentials: 'include'
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to force agent offline');
+      }
+
+      const data = await response.json();
+      if (data.tokenValid === false) {
+        navigate('/login', { replace: true });
+        return;
+      }
+
+      // Update agent data with the response
+      setAgent(prevAgent => ({
+        ...prevAgent,
+        status: data.agent.status,
+        authentication: data.agent.authentication
+      }));
+
+      toast.success('Agent forced offline successfully');
+    } catch (err) {
+      toast.error(err.message || 'Failed to force agent offline');
+    } finally {
+      toast.dismiss(loadingToast);
+    }
+  };
+
+  // Copy to clipboard function
+  const copyToClipboard = async (text) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success('Copied to clipboard!');
+    } catch (err) {
+      // Fallback for older browsers
+      const textArea = document.createElement('textarea');
+      textArea.value = text;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+      toast.success('Copied to clipboard!');
+    }
+  };
+
   const updateAgentDetails = async (updateData) => {
     if (!isAuthorized) return;
     const loadingToast = toast.loading('Updating agent details...');
@@ -446,121 +473,6 @@ export default function DeliveryAgentDetails() {
       toast.error(err.message);
     } finally {
       toast.dismiss(loadingToast);
-    }
-  };
-
-  // Verification status toggle functions
-  const toggleDocumentsVerified = async () => {
-    if (!isAuthorized) return;
-    const newStatus = !documentsVerified;
-    setDocumentsVerified(newStatus);
-
-    try {
-      const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/delivery-agents/${id}/verification`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        credentials: 'include',
-        body: JSON.stringify({ documentsVerified: newStatus })
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to update documents verification status');
-      }
-
-      const data = await response.json();
-      if (data.tokenValid === false) {
-        navigate('/login', { replace: true });
-        return;
-      }
-      setAgent(data.agent);
-
-      // Update local state with backend response
-      setDocumentsVerified(data.agent?.verification?.documentsVerified || false);
-      setDocumentsVerifiedAt(data.agent?.verification?.documentsVerifiedAt || null);
-
-      toast.success(`Documents ${newStatus ? 'verified' : 'marked as pending'}`);
-    } catch (err) {
-      // Revert on error
-      setDocumentsVerified(!newStatus);
-      toast.error('Failed to update documents verification status');
-    }
-  };
-
-  const toggleBackgroundCheckCompleted = async () => {
-    if (!isAuthorized) return;
-    const newStatus = !backgroundCheckCompleted;
-    setBackgroundCheckCompleted(newStatus);
-
-    try {
-      const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/delivery-agents/${id}/verification`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        credentials: 'include',
-        body: JSON.stringify({ backgroundCheckPassed: newStatus })
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to update background check status');
-      }
-
-      const data = await response.json();
-      if (data.tokenValid === false) {
-        navigate('/login', { replace: true });
-        return;
-      }
-      setAgent(data.agent);
-
-      // Update local state with backend response
-      setBackgroundCheckCompleted(data.agent?.verification?.backgroundCheckPassed || false);
-      setBackgroundCheckCompletedAt(data.agent?.verification?.backgroundCheckCompletedAt || null);
-
-      toast.success(`Background check ${newStatus ? 'completed' : 'marked as pending'}`);
-    } catch (err) {
-      // Revert on error
-      setBackgroundCheckCompleted(!newStatus);
-      toast.error('Failed to update background check status');
-    }
-  };
-
-  const toggleTrainingCompleted = async () => {
-    if (!isAuthorized) return;
-    const newStatus = !trainingCompleted;
-    setTrainingCompleted(newStatus);
-
-    try {
-      const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/delivery-agents/${id}/verification`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        credentials: 'include',
-        body: JSON.stringify({ trainingCompleted: newStatus })
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to update training status');
-      }
-
-      const data = await response.json();
-      if (data.tokenValid === false) {
-        navigate('/login', { replace: true });
-        return;
-      }
-      setAgent(data.agent);
-
-      // Update local state with backend response
-      setTrainingCompleted(data.agent?.verification?.trainingCompleted || false);
-      setTrainingCompletedAt(data.agent?.verification?.trainingCompletedAt || null);
-
-      toast.success(`Training ${newStatus ? 'completed' : 'marked as pending'}`);
-    } catch (err) {
-      // Revert on error
-      setTrainingCompleted(!newStatus);
-      toast.error('Failed to update training status');
     }
   };
 
@@ -992,12 +904,12 @@ export default function DeliveryAgentDetails() {
       { Field: 'Completed Deliveries', Value: agentStats?.completedDeliveries || 'N/A' },
       { Field: 'Cancelled Deliveries', Value: agentStats?.cancelledDeliveries || 'N/A' },
       { Field: 'Total Earnings', Value: agentStats?.totalEarnings || 'N/A' },
-      { Field: 'Documents Verified', Value: agent.verification?.documentsVerified ? 'Yes' : 'No' },
-      { Field: 'Documents Verified At', Value: agent.verification?.documentsVerifiedAt ? formatISTTime(agent.verification.documentsVerifiedAt) : 'N/A' },
-      { Field: 'Background Check Passed', Value: agent.verification?.backgroundCheckPassed ? 'Yes' : 'No' },
-      { Field: 'Background Check Completed At', Value: agent.verification?.backgroundCheckCompletedAt ? formatISTTime(agent.verification.backgroundCheckCompletedAt) : 'N/A' },
-      { Field: 'Training Completed', Value: agent.verification?.trainingCompleted ? 'Yes' : 'No' },
-      { Field: 'Training Completed At', Value: agent.verification?.trainingCompletedAt ? formatISTTime(agent.verification.trainingCompletedAt) : 'N/A' },
+      { Field: 'Device Platform', Value: agent.authentication?.deviceInfo?.platform || 'N/A' },
+      { Field: 'Device Name', Value: agent.authentication?.deviceInfo?.deviceName || 'N/A' },
+      { Field: 'Device ID', Value: agent.authentication?.deviceInfo?.deviceId || 'N/A' },
+      { Field: 'Push Token', Value: agent.authentication?.deviceInfo?.pushToken || 'N/A' },
+      { Field: 'Device Last Activity', Value: agent.authentication?.deviceInfo?.lastActivity ? formatISTTime(agent.authentication.deviceInfo.lastActivity) : 'N/A' },
+      { Field: 'Last Login', Value: agent.authentication?.lastLogin ? formatISTTime(agent.authentication.lastLogin) : 'N/A' },
       { Field: 'Created At', Value: agent.createdAt ? formatISTTime(agent.createdAt) : 'N/A' },
       { Field: 'Last Updated', Value: agent.updatedAt ? formatISTTime(agent.updatedAt) : 'N/A' },
       { Field: 'Current Latitude', Value: agent.status?.currentLocation?.latitude || 'N/A' },
@@ -1028,9 +940,9 @@ export default function DeliveryAgentDetails() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto p-6 space-y-6">
+    <div className="max-w-6xl mx-auto p-4 sm:p-6 space-y-4 sm:space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <button
             onClick={() => navigate('/delivery-agents')}
@@ -1039,14 +951,14 @@ export default function DeliveryAgentDetails() {
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div>
-            <h1 className="text-2xl font-bold text-gray-800">
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-800">
               {agent.personalInfo?.firstName} {agent.personalInfo?.lastName}
             </h1>
-            <p className="text-gray-600">Delivery Agent ID: {agent.agentId}</p>
+            <p className="text-gray-600 text-sm sm:text-base">Delivery Agent ID: {agent.agentId}</p>
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full sm:w-auto">
           <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-sm ${getWorkingStatusColor(agent.status?.isOnline ? 'online' : 'offline')}`}>
             <div className={`w-2 h-2 rounded-full ${agent.status?.isOnline ? 'bg-green-500' : 'bg-gray-500'
               }`}></div>
@@ -1064,37 +976,40 @@ export default function DeliveryAgentDetails() {
               // Toggle edit mode or show edit modal
               toast('Click on individual fields to edit them');
             }}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
           >
             <Edit3 className="w-4 h-4" />
-            Edit Details
+            <span className="hidden sm:inline">Edit Details</span>
+            <span className="sm:hidden">Edit</span>
           </button>
 
           {/* Clear Login Info Button */}
           <button
             onClick={clearLoginInfo}
-            className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+            className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm"
             title="Clear login session and force logout"
           >
             <LogOut className="w-4 h-4" />
-            Clear Login Info
+            <span className="hidden sm:inline">Clear Login Info</span>
+            <span className="sm:hidden">Clear</span>
           </button>
 
           {/* Export to Excel Button */}
           <button
             onClick={exportToExcel}
-            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+            className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm"
             title="Download agent details as Excel file"
           >
             <Download className="w-4 h-4" />
-            Export to Excel
+            <span className="hidden sm:inline">Export to Excel</span>
+            <span className="sm:hidden">Export</span>
           </button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         {/* Main Information */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="lg:col-span-2 space-y-4 sm:space-y-6">
           {/* Personal Information */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200">
             <div className="p-6 border-b border-gray-200">
@@ -1103,7 +1018,7 @@ export default function DeliveryAgentDetails() {
                 Personal Information
               </h2>
             </div>
-            <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="p-4 sm:p-6 grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div className="flex-1">
@@ -1452,6 +1367,73 @@ export default function DeliveryAgentDetails() {
             </div>
           </div>
 
+          {/* Device Information */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+            <div className="p-6 border-b border-gray-200">
+              <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                <Smartphone className="w-5 h-5" />
+                Device Information
+              </h2>
+            </div>
+            <div className="p-4 sm:p-6 grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+              <div className="space-y-4">
+                <div>
+                  <label className="text-sm text-gray-500">Platform</label>
+                  <p className="font-medium text-gray-800 capitalize">
+                    {agent.authentication?.deviceInfo?.platform || 'N/A'}
+                  </p>
+                </div>
+                <div>
+                  <label className="text-sm text-gray-500">Device Name</label>
+                  <p className="font-medium text-gray-800">
+                    {agent.authentication?.deviceInfo?.deviceName || 'N/A'}
+                  </p>
+                </div>
+                <div>
+                  <label className="text-sm text-gray-500">Device ID</label>
+                  <p className="font-medium text-gray-800 text-xs">
+                    {agent.authentication?.deviceInfo?.deviceId || 'N/A'}
+                  </p>
+                </div>
+              </div>
+              <div className="space-y-4">
+                <div>
+                  <label className="text-sm text-gray-500">Push Token</label>
+                  <div className="flex items-center gap-2">
+                    <p className="font-medium text-gray-800 text-xs break-all flex-1">
+                      {agent.authentication?.deviceInfo?.pushToken || 'N/A'}
+                    </p>
+                    {agent.authentication?.deviceInfo?.pushToken && (
+                      <button
+                        onClick={() => copyToClipboard(agent.authentication.deviceInfo.pushToken)}
+                        className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded"
+                        title="Copy push token"
+                      >
+                        <Copy className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+                <div>
+                  <label className="text-sm text-gray-500">Last Activity</label>
+                  <p className="font-medium text-gray-800">
+                    {agent.authentication?.deviceInfo?.lastActivity ? 
+                      formatISTTime(agent.authentication.deviceInfo.lastActivity) : 
+                      'N/A'}
+                  </p>
+                </div>
+                <div>
+                  <label className="text-sm text-gray-500">Last Login</label>
+                  <p className="font-medium text-gray-800">
+                    {agent.authentication?.lastLogin ? 
+                      formatISTTime(agent.authentication.lastLogin) : 
+                      'N/A'}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* Current Location - Always visible for monitoring */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200">
             <div className="p-6 border-b border-gray-200">
@@ -1512,16 +1494,14 @@ export default function DeliveryAgentDetails() {
                   </div>
 
                   {/* Map View */}
-                  <div className="h-64 border border-gray-200 rounded-lg overflow-hidden relative">
+                  <div className="h-48 sm:h-64 border border-gray-200 rounded-lg overflow-hidden relative">
                     {isConnected && agentLocations[id] && (
                       <>
                         <div className={`absolute top-2 right-2 z-10 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1 ${
-                          agentLocations[id]?.speed && agentLocations[id].speed > 1
-                            ? 'bg-orange-500 animate-pulse'
-                            : 'bg-green-500'
+                          'bg-green-500'
                         }`}>
                           <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
-                          {agentLocations[id]?.speed && agentLocations[id].speed > 1 ? 'Moving' : 'Live'}
+                          Live
                         </div>
                         <button
                           onClick={() => {
@@ -1580,7 +1560,6 @@ export default function DeliveryAgentDetails() {
                             <p style="margin: 0 0 4px 0;">Lat: ${(agentLocations[id]?.latitude || agent.status.currentLocation.latitude).toFixed(6)}</p>
                             <p style="margin: 0 0 4px 0;">Lng: ${(agentLocations[id]?.longitude || agent.status.currentLocation.longitude).toFixed(6)}</p>
                             ${agentLocations[id]?.accuracy ? `<p style="margin: 0 0 4px 0;">Accuracy: ±${agentLocations[id].accuracy.toFixed(1)}m</p>` : ''}
-                            ${agentLocations[id]?.speed ? `<p style="margin: 0 0 4px 0;">Speed: ${agentLocations[id].speed.toFixed(1)} km/h</p>` : ''}
                             ${agentLocations[id]?.heading ? `<p style="margin: 0 0 4px 0;">Heading: ${agentLocations[id].heading.toFixed(1)}° ${getDirectionFromHeading(agentLocations[id].heading)}</p>` : ''}
                             <p style="margin: 0; font-size: 12px; color: #666;">
                               Updated: ${(() => {
@@ -1630,7 +1609,7 @@ export default function DeliveryAgentDetails() {
                 Vehicle Information
               </h2>
             </div>
-            <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="p-4 sm:p-6 grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div className="flex-1">
@@ -1706,7 +1685,7 @@ export default function DeliveryAgentDetails() {
                         <button
                           onClick={() => startEditing('vehicleInfo.vehicleNumber', agent.vehicleInfo?.vehicleNumber)}
                           className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded"
-                        >
+                        >\
                           <Edit3 className="w-4 h-4" />
                         </button>
                       </div>
@@ -1980,7 +1959,7 @@ export default function DeliveryAgentDetails() {
                 Work Information
               </h2>
             </div>
-            <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="p-4 sm:p-6 grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
               <div className="space-y-4">
                 <div>
                   <label className="text-sm text-gray-500">Experience</label>
@@ -2147,56 +2126,17 @@ export default function DeliveryAgentDetails() {
                 </div>
               </div>
 
-              <div>
-                <label className="text-sm text-gray-500">Documents Verified</label>
-                <div className="flex items-center gap-2 mt-1">
-                  {agent.verification?.documentsVerified ? (
-                    <>
-                      <CircleCheck className="w-4 h-4 text-green-500" />
-                      <span className="text-sm text-green-600">Verified</span>
-                    </>
-                  ) : (
-                    <>
-                      <XCircle className="w-4 h-4 text-red-500" />
-                      <span className="text-sm text-red-600">Pending</span>
-                    </>
-                  )}
+              {/* Force Offline Button */}
+              {agent.status?.isOnline && currentUser?.role === 'super_admin' && (
+                <div className="pt-4">
+                  <button
+                    onClick={forceAgentOffline}
+                    className="w-full bg-orange-600 text-white py-2 px-4 rounded-lg hover:bg-orange-700 transition-colors"
+                  >
+                    Force Offline
+                  </button>
                 </div>
-              </div>
-
-              <div>
-                <label className="text-sm text-gray-500">Background Check</label>
-                <div className="flex items-center gap-2 mt-1">
-                  {agent.verification?.backgroundCheckPassed ? (
-                    <>
-                      <CircleCheck className="w-4 h-4 text-green-500" />
-                      <span className="text-sm text-green-600">Passed</span>
-                    </>
-                  ) : (
-                    <>
-                      <XCircle className="w-4 h-4 text-red-500" />
-                      <span className="text-sm text-red-600">Pending</span>
-                    </>
-                  )}
-                </div>
-              </div>
-
-              <div>
-                <label className="text-sm text-gray-500">Training Completed</label>
-                <div className="flex items-center gap-2 mt-1">
-                  {agent.verification?.trainingCompleted ? (
-                    <>
-                      <CircleCheck className="w-4 h-4 text-green-500" />
-                      <span className="text-sm text-green-600">Completed</span>
-                    </>
-                  ) : (
-                    <>
-                      <XCircle className="w-4 h-4 text-red-500" />
-                      <span className="text-sm text-red-600">Pending</span>
-                    </>
-                  )}
-                </div>
-              </div>
+              )}
 
               {agent.status?.applicationStatus === 'pending' && (
                 <div className="pt-4 space-y-2">
@@ -2214,92 +2154,6 @@ export default function DeliveryAgentDetails() {
                   </button>
                 </div>
               )}
-            </div>
-          </div>
-
-          {/* Verification Checklist */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-            <div className="p-6 border-b border-gray-200">
-              <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-                <CheckSquare className="w-5 h-5" />
-                Verification Checklist
-              </h2>
-            </div>
-            <div className="p-6 space-y-4">
-              {/* Documents Verified */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <input
-                    type="checkbox"
-                    checked={documentsVerified}
-                    onChange={toggleDocumentsVerified}
-                    className="w-4 h-4 text-green-600 bg-gray-100 border-gray-300 rounded focus:ring-green-500 focus:ring-2"
-                  />
-                  <div>
-                    <label className="text-sm font-medium text-gray-800">Documents Verified</label>
-                    {documentsVerifiedAt && (
-                      <p className="text-xs text-gray-500">
-                        Completed: {formatISTTime(documentsVerifiedAt)}
-                      </p>
-                    )}
-                  </div>
-                </div>
-                {documentsVerified ? (
-                  <CircleCheck className="w-5 h-5 text-green-500" />
-                ) : (
-                  <XCircle className="w-5 h-5 text-red-500" />
-                )}
-              </div>
-
-              {/* Background Check Completed */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <input
-                    type="checkbox"
-                    checked={backgroundCheckCompleted}
-                    onChange={toggleBackgroundCheckCompleted}
-                    className="w-4 h-4 text-green-600 bg-gray-100 border-gray-300 rounded focus:ring-green-500 focus:ring-2"
-                  />
-                  <div>
-                    <label className="text-sm font-medium text-gray-800">Background Check Completed</label>
-                    {backgroundCheckCompletedAt && (
-                      <p className="text-xs text-gray-500">
-                        Completed: {formatISTTime(backgroundCheckCompletedAt)}
-                      </p>
-                    )}
-                  </div>
-                </div>
-                {backgroundCheckCompleted ? (
-                  <CircleCheck className="w-5 h-5 text-green-500" />
-                ) : (
-                  <XCircle className="w-5 h-5 text-red-500" />
-                )}
-              </div>
-
-              {/* Training Completed */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <input
-                    type="checkbox"
-                    checked={trainingCompleted}
-                    onChange={toggleTrainingCompleted}
-                    className="w-4 h-4 text-green-600 bg-gray-100 border-gray-300 rounded focus:ring-green-500 focus:ring-2"
-                  />
-                  <div>
-                    <label className="text-sm font-medium text-gray-800">Training Completed</label>
-                    {trainingCompletedAt && (
-                      <p className="text-xs text-gray-500">
-                        Completed: {formatISTTime(trainingCompletedAt)}
-                      </p>
-                    )}
-                  </div>
-                </div>
-                {trainingCompleted ? (
-                  <CircleCheck className="w-5 h-5 text-green-500" />
-                ) : (
-                  <XCircle className="w-5 h-5 text-red-500" />
-                )}
-              </div>
             </div>
           </div>
 
@@ -2367,7 +2221,6 @@ export default function DeliveryAgentDetails() {
                     <li>Bank account information</li>
                     <li>Vehicle details</li>
                     <li>Order history</li>
-                    <li>Verification records</li>
                   </ul>
                 </div>
 

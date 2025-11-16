@@ -128,7 +128,6 @@ export const WebSocketProvider = ({ children }) => {
               longitude: data.longitude,
               timestamp: data.timestamp,
               accuracy: data.accuracy,
-              speed: data.speed,
               heading: finalHeading
             };
             return updated;
@@ -143,6 +142,19 @@ export const WebSocketProvider = ({ children }) => {
             delete updated[data.agentId];
             return updated;
           });
+        });
+
+        // Listen for agent status updates
+        socketRef.current.on('agent-status-update', (data) => {
+          console.log('🔄 [WS] Agent status update:', data);
+          if (!data.isOnline) {
+            // If agent went offline, remove from locations
+            setAgentLocations(prev => {
+              const updated = { ...prev };
+              delete updated[data.agentId];
+              return updated;
+            });
+          }
         });
 
         // Clean up stale location entries every 30 seconds

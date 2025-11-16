@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../Components/Layout';
 import {
-  ShoppingCart, Search, Filter, Eye, MapPin,
+  ShoppingCart, Search, Filter, MapPin,
   Clock, User, Package, Truck, CircleCheck,
   XCircle, AlertCircle, Calendar, DollarSign,
   RefreshCw, Download,
@@ -110,12 +110,28 @@ const Orders = () => {
     if (!isAuthorized) return;
     
     if (key === 'dateRange') {
-      const dateRange = getDateRange(value);
+      if (value === 'custom') {
+        // For custom range, don't set startDate and endDate automatically
+        setFilters(prev => ({ 
+          ...prev, 
+          dateRange: value,
+          startDate: prev.startDate || '',
+          endDate: prev.endDate || ''
+        }));
+      } else {
+        const dateRange = getDateRange(value);
+        setFilters(prev => ({ 
+          ...prev, 
+          dateRange: value,
+          startDate: dateRange.startDate,
+          endDate: dateRange.endDate
+        }));
+      }
+    } else if (key === 'startDate' || key === 'endDate') {
       setFilters(prev => ({ 
         ...prev, 
-        dateRange: value,
-        startDate: dateRange.startDate,
-        endDate: dateRange.endDate
+        [key]: value,
+        dateRange: 'custom' // Set to custom when manually changing dates
       }));
     } else {
       setFilters(prev => ({ ...prev, [key]: value }));
@@ -362,7 +378,31 @@ const Orders = () => {
                   <option value="last30days">Last 30 Days</option>
                   <option value="thisMonth">This Month</option>
                   <option value="lastMonth">Last Month</option>
+                  <option value="custom">Custom Range</option>
                 </select>
+
+                {filters.dateRange === 'custom' && (
+                  <>
+                    <div className="flex-1">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
+                      <input
+                        type="date"
+                        value={filters.startDate}
+                        onChange={(e) => handleFilterChange('startDate', e.target.value)}
+                        className="w-full px-3 py-2 sm:py-3 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors duration-200"
+                      />
+                    </div>
+                    <div className="flex-1">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
+                      <input
+                        type="date"
+                        value={filters.endDate}
+                        onChange={(e) => handleFilterChange('endDate', e.target.value)}
+                        className="w-full px-3 py-2 sm:py-3 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors duration-200"
+                      />
+                    </div>
+                  </>
+                )}
 
                 <select
                   value={filters.status}
@@ -431,7 +471,7 @@ const Orders = () => {
                         Merchant
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Status
+                        Order Status
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Amount
@@ -513,19 +553,13 @@ const Orders = () => {
                           )}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center gap-2">
-                            <button
-                              onClick={() => navigate(`/orders/${order._id}`)}
-                              className="text-green-600 hover:text-green-900"
-                              title="View Details"
-                            >
-                              <Eye size={16} />
-                            </button>
-                            <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-none text-xs font-medium ${getStatusColor(order.status.current)}`}>
-                              {getStatusIcon(order.status.current)}
-                              {formatStatusText(order.status.current)}
-                            </span>
-                          </div>
+                          <button
+                            onClick={() => navigate(`/orders/${order._id}`)}
+                            className="text-green-600 hover:text-green-900 font-medium text-sm"
+                            title="View Details"
+                          >
+                            View Details
+                          </button>
                         </td>
                       </tr>
                     ))}
@@ -595,10 +629,10 @@ const Orders = () => {
                             <div className="flex items-center gap-3">
                               <button
                                 onClick={() => navigate(`/orders/${order._id}`)}
-                                className="text-green-600 hover:text-green-900 p-1"
+                                className="text-green-600 hover:text-green-900 font-medium text-sm"
                                 title="View Details"
                               >
-                                <Eye size={16} />
+                                View Details
                               </button>
                               <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-none text-xs font-medium ${getStatusColor(order.status.current)}`}>
                                 {getStatusIcon(order.status.current)}
