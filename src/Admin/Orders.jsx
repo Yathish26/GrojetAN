@@ -241,6 +241,52 @@ const Orders = () => {
       .join(' ');
   };
 
+  const exportToExcel = async () => {
+    try {
+      toast.loading('Exporting orders to Excel...', { id: 'export' });
+      
+      const queryParams = new URLSearchParams({
+        ...filters
+      });
+
+      const response = await fetch(
+        `${import.meta.env.VITE_SERVER}/admin/orders/export?${queryParams}`,
+        { credentials: 'include' }
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to export orders');
+      }
+
+      // Get the blob and create download link
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      
+      // Get filename from response headers or default
+      const contentDisposition = response.headers.get('Content-Disposition');
+      let filename = 'orders.xlsx';
+      if (contentDisposition) {
+        const filenameMatch = contentDisposition.match(/filename="(.+)"/);
+        if (filenameMatch) {
+          filename = filenameMatch[1];
+        }
+      }
+      
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+      
+      toast.success('Orders exported successfully!', { id: 'export' });
+    } catch (error) {
+      console.error('Export error:', error);
+      toast.error('Failed to export orders', { id: 'export' });
+    }
+  };
+
   const StatCard = ({ title, value, icon: Icon, color = 'text-gray-600' }) => (
     <div className="bg-white shadow-sm border border-gray-200 p-4 sm:p-6">
       <div className="flex items-center justify-between">
@@ -321,6 +367,13 @@ const Orders = () => {
               </h1>
               <p className="text-gray-600 mt-1 text-sm sm:text-base">Monitor and manage all customer orders</p>
             </div>
+            <button
+              onClick={exportToExcel}
+              className="flex items-center px-4 py-2 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition-colors duration-200"
+            >
+              <Download className="mr-2" size={18} />
+              Export to Excel
+            </button>
           </div>
 
           {/* Stats Cards */}

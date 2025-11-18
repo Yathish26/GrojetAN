@@ -37,6 +37,7 @@ import BugReports from './Admin/BugReports.jsx'
 import { WebSocketProvider } from './context/WebSocketContext.jsx'
 import Support from './Admin/Support.jsx'
 import DarkStore from './Admin/DarkStore.jsx'
+import Security from './Admin/Security.jsx'
 
 function App() {
   return (
@@ -126,6 +127,7 @@ function App() {
           
           {/* Admin Management (Super Admin only) */}
           <Route path="/admin-management" element={<AdminManagement />} />
+          <Route path="/security" element={<Security />} />
           <Route path="/admin-register" element={<AdminRegister />} />
           <Route path="/update-notes" element={<UpdateNotesAdmin />} />
           <Route path="/bug-reports" element={<BugReports />} />
