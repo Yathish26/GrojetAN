@@ -419,7 +419,7 @@ export default function AddProduct() {
                 </label>
                 <textarea
                   name="description"
-                  maxLength={200}
+                  maxLength={3000}
                   rows={3}
                   className="w-full px-4 py-2.5 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-green-500"
                   value={formData.description}
