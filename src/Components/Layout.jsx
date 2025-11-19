@@ -5,7 +5,8 @@ import {
   Truck, MapPin, BarChart3, Settings, LogOut, User,
   Menu, X, Shield, ShoppingCart, Bell, Gift,
   TabletSmartphone, Briefcase, Smartphone,
-  Bug, Headphones, Moon
+  Bug, Headphones, Moon,
+  ShieldPlus
 } from 'lucide-react';
 import { MdAdminPanelSettings } from 'react-icons/md';
 import toast from 'react-hot-toast';
@@ -161,7 +162,7 @@ const Layout = ({ children, title }) => {
     { name: 'App Controls', icon: TabletSmartphone, path: '/app-controls', roles: ['super_admin', 'admin'] },
     { name: 'Bug Reports', icon: Bug, path: '/bug-reports', roles: ['super_admin'] },
     { name: 'Admin Management', icon: Shield, path: '/admin-management', roles: ['super_admin'] },
-    { name: 'Security', icon: Shield, path: '/security', roles: ['super_admin'] },
+    { name: 'Security', icon: ShieldPlus, path: '/security', roles: ['super_admin'] },
     { name: 'Update Notes', icon: Bell, path: '/update-notes', roles: ['super_admin'] },
     { name: 'Dark Store (Beta)', icon: Moon, path: '/dark-store', roles: ['super_admin', 'admin'] },
   ];

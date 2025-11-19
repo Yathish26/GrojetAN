@@ -8,9 +8,6 @@ import {
   Eye,
   EyeOff,
   Search,
-  CircleCheck,
-  XCircle,
-  AlertCircle,
   Crown,
   UserPlus,
   Settings

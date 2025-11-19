@@ -160,49 +160,6 @@ export default function Security() {
                     </p>
                 </div>
 
-                {/* Security Stats */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    <div className="bg-white rounded-lg shadow-sm border border-neutral-200 p-6">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-sm font-medium text-neutral-600">Active Sessions</p>
-                                <p className="text-2xl font-bold text-neutral-900">1,234</p>
-                            </div>
-                            <Lock className="w-8 h-8 text-blue-600" />
-                        </div>
-                    </div>
-
-                    <div className="bg-white rounded-lg shadow-sm border border-neutral-200 p-6">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-sm font-medium text-neutral-600">Failed Logins</p>
-                                <p className="text-2xl font-bold text-neutral-900">23</p>
-                            </div>
-                            <AlertTriangle className="w-8 h-8 text-red-600" />
-                        </div>
-                    </div>
-
-                    <div className="bg-white rounded-lg shadow-sm border border-neutral-200 p-6">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-sm font-medium text-neutral-600">Security Alerts</p>
-                                <p className="text-2xl font-bold text-neutral-900">5</p>
-                            </div>
-                            <Eye className="w-8 h-8 text-yellow-600" />
-                        </div>
-                    </div>
-
-                    <div className="bg-white rounded-lg shadow-sm border border-neutral-200 p-6">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-sm font-medium text-neutral-600">Compliance Score</p>
-                                <p className="text-2xl font-bold text-neutral-900">98%</p>
-                            </div>
-                            <CheckCircle className="w-8 h-8 text-green-600" />
-                        </div>
-                    </div>
-                </div>
-
                 {/* Account Deletion Requests Section */}
                 <div className="bg-white rounded-lg shadow-sm border border-neutral-200 p-6">
                     <div className="flex items-center gap-3 mb-4">

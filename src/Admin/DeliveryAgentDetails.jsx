@@ -96,6 +96,9 @@ export default function DeliveryAgentDetails() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteConfirmationText, setDeleteConfirmationText] = useState('');
 
+  // Status change dropdown state
+  const [showStatusDropdown, setShowStatusDropdown] = useState(false);
+
   // Handle keyboard events for editing
   useEffect(() => {
     const handleKeyPress = (e) => {
@@ -111,6 +114,18 @@ export default function DeliveryAgentDetails() {
     document.addEventListener('keydown', handleKeyPress);
     return () => document.removeEventListener('keydown', handleKeyPress);
   }, [editingField, editValue]);
+
+  // Handle clicking outside status dropdown
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showStatusDropdown && !event.target.closest('.status-dropdown')) {
+        setShowStatusDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showStatusDropdown]);
 
   // Fetch agent details on component mount
   useEffect(() => {
@@ -256,7 +271,7 @@ export default function DeliveryAgentDetails() {
           'Content-Type': 'application/json'
         },
         credentials: 'include',
-        body: JSON.stringify({ status: newStatus })
+        body: JSON.stringify({ applicationStatus: newStatus })
       });
 
       if (!response.ok) {
@@ -269,7 +284,7 @@ export default function DeliveryAgentDetails() {
         return;
       }
       setAgent(data.agent);
-      toast.success(`Agent status updated to ${newStatus}`);
+      toast.success(`Application ${newStatus} successfully`);
     } catch (err) {
       toast.error(err.message);
     } finally {
@@ -468,6 +483,12 @@ export default function DeliveryAgentDetails() {
       setFullNameEdit({
         firstName: '',
         lastName: ''
+      });
+      setBankAccountEdit({
+        accountNumber: '',
+        ifscCode: '',
+        bankName: '',
+        accountHolderName: ''
       });
     } catch (err) {
       toast.error(err.message);
@@ -965,9 +986,39 @@ export default function DeliveryAgentDetails() {
             <span className="capitalize">{agent.status?.isOnline ? 'online' : 'offline'}</span>
           </div>
 
-          <div className={`flex items-center gap-2 px-4 py-2 rounded-full border ${getStatusColor(agent.status?.applicationStatus)}`}>
-            {getStatusIcon(agent.status?.applicationStatus)}
-            <span className="font-medium capitalize">{agent.status?.applicationStatus}</span>
+          <div className="relative">
+            <div
+              className={`flex items-center gap-2 px-4 py-2 rounded-full border cursor-pointer hover:opacity-80 transition-opacity status-dropdown ${getStatusColor(agent.status?.applicationStatus)}`}
+              onClick={() => setShowStatusDropdown(!showStatusDropdown)}
+            >
+              {getStatusIcon(agent.status?.applicationStatus)}
+              <span className="font-medium capitalize">{agent.status?.applicationStatus}</span>
+              <Edit3 className="w-4 h-4 ml-1" />
+            </div>
+
+            {showStatusDropdown && (
+              <div className="absolute top-full mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-10 status-dropdown">
+                <div className="p-2">
+                  <div className="text-sm font-medium text-gray-700 mb-2">Change Application Status</div>
+                  {['pending', 'approved', 'rejected'].map((status) => (
+                    <button
+                      key={status}
+                      onClick={() => {
+                        updateAgentStatus(status);
+                        setShowStatusDropdown(false);
+                      }}
+                      className={`w-full text-left px-3 py-2 text-sm rounded hover:bg-gray-50 flex items-center gap-2 ${
+                        agent.status?.applicationStatus === status ? 'bg-blue-50 text-blue-600' : 'text-gray-700'
+                      }`}
+                      disabled={agent.status?.applicationStatus === status}
+                    >
+                      {getStatusIcon(status)}
+                      <span className="capitalize">{status}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Edit Button */}
@@ -1685,7 +1736,7 @@ export default function DeliveryAgentDetails() {
                         <button
                           onClick={() => startEditing('vehicleInfo.vehicleNumber', agent.vehicleInfo?.vehicleNumber)}
                           className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded"
-                        >\
+                        >
                           <Edit3 className="w-4 h-4" />
                         </button>
                       </div>
@@ -2159,34 +2210,33 @@ export default function DeliveryAgentDetails() {
 
           {/* Delete Agent Section - Only for Super Admin */}
           {currentUser?.role === 'super_admin' && (
-            <div className="bg-white rounded-xl shadow-sm border border-red-200">
-              <div className="p-6">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                  <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-red-800 flex items-center gap-2">
-                      <XCircle className="w-5 h-5" />
-                      Danger Zone
-                    </h3>
+            <div className="bg-red-50 border border-red-200 rounded-lg">
+              <div className="p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <XCircle className="w-5 h-5 text-red-600" />
+                    <div>
+                      <h3 className="text-sm font-semibold text-red-800">Danger Zone</h3>
+                      <p className="text-xs text-red-600">Permanently delete this agent</p>
+                    </div>
                   </div>
-                  <div className="flex-shrink-0">
-                    <button
-                      onClick={deleteDeliveryAgent}
-                      disabled={loading}
-                      className="w-full sm:w-auto px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-colors"
-                    >
-                      {loading ? (
-                        <>
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                          Deleting...
-                        </>
-                      ) : (
-                        <>
-                          <XCircle className="w-4 h-4" />
-                          Delete Agent
-                        </>
-                      )}
-                    </button>
-                  </div>
+                  <button
+                    onClick={deleteDeliveryAgent}
+                    disabled={loading}
+                    className="px-4 py-2 bg-red-600 text-white text-sm rounded hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-colors"
+                  >
+                    {loading ? (
+                      <>
+                        <div className="animate-spin rounded-full h-3 w-3 border-b border-white"></div>
+                        Deleting...
+                      </>
+                    ) : (
+                      <>
+                        <XCircle className="w-4 h-4" />
+                        Delete
+                      </>
+                    )}
+                  </button>
                 </div>
               </div>
             </div>

@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Plus, Edit, Trash2, X, Loader2, ChevronLeft, ChevronRight, Shield, Download, Package, Image, CircleCheck, XCircle, ChevronDown } from 'lucide-react';
+import { Search, Plus, Edit, Edit3, Trash2, X, Loader2, ChevronLeft, ChevronRight, Shield, Download, Package, Image, CircleCheck, XCircle, ChevronDown } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
 import Modal from 'react-modal';
 import ChipInput from '../Components/ChipInput';
