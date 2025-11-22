@@ -48,21 +48,14 @@ export const WebSocketProvider = ({ children }) => {
     const initWebSocket = async () => {
       try {
         // Get admin token from localStorage (assuming it's stored there)
+        // Note: Admin auth uses cookies, so we don't need to send token in auth
         const adminToken = localStorage.getItem('adminToken');
-
-        if (!adminToken) {
-          console.log('🔒 [WS] No admin token found, skipping WebSocket connection');
-          return;
-        }
 
         console.log('🔌 [WS] Connecting to WebSocket server...');
 
-        // Connect to the server
+        // Connect to the server (admin auth is handled via cookies)
         socketRef.current = io(import.meta.env.VITE_SERVER, {
-          auth: {
-            token: adminToken,
-            type: 'admin'
-          },
+          // Remove auth token since admin uses cookie-based auth
           transports: ['websocket', 'polling'],
           reconnection: true,
           reconnectionAttempts: 10,
@@ -78,8 +71,10 @@ export const WebSocketProvider = ({ children }) => {
           try {
             const adminToken = localStorage.getItem('adminToken');
             const adminId = localStorage.getItem('adminId');
+            console.log('🔑 [WS] Joining admin room with:', { adminId, hasToken: !!adminToken });
             socketRef.current.emit('join-admin', { adminId, token: adminToken });
           } catch (e) {
+            console.error('❌ [WS] Error joining admin room:', e);
             socketRef.current.emit('join-admin');
           }
         });

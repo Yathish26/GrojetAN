@@ -12,6 +12,7 @@ import Orders from './Admin/Orders.jsx'
 import OrderDetails from './Admin/OrderDetails.jsx'
 import DeliveryAgents from './Admin/DeliveryAgents.jsx'
 import DeliveryAgentDetails from './Admin/DeliveryAgentDetails.jsx'
+import RidersZone from './Admin/RidersZone.jsx'
 import DeliveryZones from './Admin/DeliveryZones.jsx'
 import Analytics from './Admin/Analytics.jsx'
 import AdminManagement from './Admin/AdminManagement.jsx'
@@ -34,20 +35,21 @@ import MarketArea from './Admin/MarketArea.jsx'
 import UpdateNotesAdmin from './Admin/UpdateNotesAdmin.jsx'
 import HomeAds from './Admin/HomeAds.jsx'
 import BugReports from './Admin/BugReports.jsx'
-import { WebSocketProvider } from './context/WebSocketContext.jsx'
 import Support from './Admin/Support.jsx'
 import DarkStore from './Admin/DarkStore.jsx'
+import LiveChat from './Admin/LiveChat.jsx'
 import Security from './Admin/Security.jsx'
+import { WebSocketProvider } from './context/WebSocketContext.jsx'
 
 function App() {
   return (
     <WebSocketProvider>
       <Router>
         <div className="min-h-screen bg-gray-50">
-          <Toaster 
+          <Toaster
             position="top-center"
-            toastOptions={{
-              duration: 3000,
+              toastOptions={{
+                duration: 3000,
               style: {
                 background: '#fff',
                 color: '#333',
@@ -111,6 +113,7 @@ function App() {
           {/* Delivery Management */}
           <Route path="/delivery-agents" element={<DeliveryAgents />} />
           <Route path="/delivery-agents/:id" element={<DeliveryAgentDetails />} />
+          <Route path="/riders-zone" element={<RidersZone />} />
           <Route path="/delivery-zones" element={<DeliveryZones />} />
           <Route path="/market-area" element={<MarketArea />} />
           <Route path="/delivery-signup" element={<DeliveryAgentSignup />} />
@@ -121,6 +124,9 @@ function App() {
           
           {/* Dark Store */}
           <Route path="/dark-store" element={<DarkStore />} />
+          
+          {/* Live Chat */}
+          <Route path="/live-chat" element={<LiveChat />} />
           
           {/* Analytics & Reports */}
           <Route path="/analytics" element={<Analytics />} />

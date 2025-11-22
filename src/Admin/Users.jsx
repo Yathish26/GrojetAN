@@ -201,10 +201,12 @@ export default function Users() {
   };
 
   // Pagination logic
-  const indexOfLastUser = currentPage * usersPerPage;
-  const indexOfFirstUser = indexOfLastUser - usersPerPage;
-  const currentUsers = searching ? users : users.slice(indexOfFirstUser, indexOfLastUser);
+  const currentUsers = searching ? users : users;
   const totalPages = searching ? 1 : Math.ceil(totalUsers / usersPerPage);
+
+  // Calculate display indices for pagination info
+  const displayStartIndex = searching ? 1 : (currentPage - 1) * usersPerPage + 1;
+  const displayEndIndex = searching ? users.length : (currentPage - 1) * usersPerPage + currentUsers.length;
 
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
@@ -380,8 +382,8 @@ export default function Users() {
                   </div>
                   <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
                     <div className="text-xs sm:text-sm text-gray-700">
-                      Showing <span className="font-medium">{indexOfFirstUser + 1}</span> to{' '}
-                      <span className="font-medium">{Math.min(indexOfLastUser, totalUsers)}</span> of{' '}
+                      Showing <span className="font-medium">{displayStartIndex}</span> to{' '}
+                      <span className="font-medium">{Math.min(displayEndIndex, totalUsers)}</span> of{' '}
                       <span className="font-medium">{totalUsers}</span> users
                     </div>
                     <nav className="inline-flex shadow-sm" aria-label="Pagination">

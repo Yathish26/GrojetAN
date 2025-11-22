@@ -165,6 +165,7 @@ const Layout = ({ children, title }) => {
     { name: 'Security', icon: ShieldPlus, path: '/security', roles: ['super_admin'] },
     { name: 'Update Notes', icon: Bell, path: '/update-notes', roles: ['super_admin'] },
     { name: 'Dark Store (Beta)', icon: Moon, path: '/dark-store', roles: ['super_admin', 'admin'] },
+    { name: 'Live Chat (Beta)', icon: Headphones, path: '/live-chat', roles: ['super_admin', 'admin', 'customer_service'] },
   ];
 
   const filteredMenuItems = menuItems.filter(item =>

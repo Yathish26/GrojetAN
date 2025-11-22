@@ -40,6 +40,12 @@ export const GoogleMap = ({
   let loadingInterval;
     let canceled = false;
 
+    // Trigger Google Maps loading if not already loaded
+    if (!window.googleMapsLoaded && window.loadGoogleMaps) {
+      console.log('Triggering Google Maps load from component...');
+      window.loadGoogleMaps();
+    }
+
     // Simple connectivity check using a reliable endpoint
     const checkConnectivity = () => {
       return fetch('https://www.google.com/favicon.ico', {
@@ -56,7 +62,7 @@ export const GoogleMap = ({
       });
     };
 
-    const createMapIfReady = () => {
+  const createMapIfReady = () => {
       if (canceled || map) return; // Already created or unmounted
 
       const ready = window.googleMapsLoaded && window.google && window.google.maps && ref.current;
@@ -70,51 +76,59 @@ export const GoogleMap = ({
       setIsLoaded(true);
       try {
         const newMap = new window.google.maps.Map(ref.current, {
-          center: center || { lat: 12.9716, lng: 77.5946 }, // Bangalore
+          center: center || { lat: 12.9141, lng: 74.8560 }, // Mangalore
           zoom,
+          // Enable smooth zooming and better controls
+          zoomControl: true,
+          zoomControlOptions: {
+            position: window.google.maps.ControlPosition.RIGHT_CENTER
+          },
+          gestureHandling: 'greedy',
+          scrollwheel: true,
+          disableDoubleClickZoom: false,
+          // Smooth animations
+          animation: window.google.maps.Animation.DROP,
+          // Better performance
+          mapTypeControl: false,
+          streetViewControl: false,
+          fullscreenControl: true,
+          fullscreenControlOptions: {
+            position: window.google.maps.ControlPosition.TOP_RIGHT
+          },
+          // Style options for better UX
+          styles: [
+            {
+              featureType: 'poi',
+              elementType: 'labels',
+              stylers: [{ visibility: 'off' }]
+            }
+          ],
+          // Smooth zoom transitions and performance
+          tilt: 0,
+          heading: 0,
+          minZoom: 8,
+          maxZoom: 20,
           ...props
         });
 
+        console.log('Map created successfully:', newMap);
+        setMap(newMap);
+        setIsMapReady(true);
+
+        // Call onLoad callback if provided
+        if (onLoad) {
+          onLoad(newMap);
+        }
+
         // Add click listener if provided
         if (onMapClick) {
-          newMap.addListener('click', (event) => {
-            onMapClick({
-              lat: event.latLng.lat(),
-              lng: event.latLng.lng()
-            });
-          });
+          newMap.addListener('click', onMapClick);
         }
 
-        setMap(newMap);
-  mapRef.current = newMap;
-        setIsMapReady(true);
-        if (onLoad) onLoad(newMap);
-        console.log('Google Maps created successfully');
-
-        // Ensure map renders correctly in modals/hidden containers by observing size changes
-        try {
-          const targetEl = ref.current;
-          if (targetEl && 'ResizeObserver' in window) {
-            const initialCenter = newMap.getCenter();
-            const ro = new ResizeObserver(() => {
-              if (window.google && window.google.maps) {
-                window.google.maps.event.trigger(newMap, 'resize');
-                if (initialCenter) newMap.setCenter(initialCenter);
-              }
-            });
-            ro.observe(targetEl);
-
-            // Disconnect on unmount
-            const disconnect = () => ro.disconnect();
-            // Attach to map instance for cleanup
-            newMap.__resizeObserverCleanup = disconnect;
-          }
-        } catch (e) {
-          console.warn('ResizeObserver setup failed:', e);
-        }
       } catch (error) {
         console.error('Error creating Google Map:', error);
-        toast.error('Failed to load Google Maps');
+        setShowRetry(true);
+        toast.error('Failed to load map. Please check your internet connection and API key.');
       }
     };
 
@@ -186,7 +200,14 @@ export const GoogleMap = ({
   // Always render the map container so ref.current is available; overlay a loader until ready
   return (
     <div style={{ position: 'relative', height: '100%', width: '100%' }}>
-      <div ref={ref} style={style} />
+      <div
+        ref={ref}
+        style={{
+          ...style,
+          transition: 'transform 0.3s ease-out',
+          willChange: 'transform'
+        }}
+      />
       {!isMapReady && (
         <div
           className="absolute inset-0 flex items-center justify-center bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg"
@@ -622,10 +643,25 @@ export const Marker = ({
           if (!overlayProjection) return; // Projection not ready yet
 
           const position = overlayProjection.fromLatLngToDivPixel(this.position);
+          if (!position || typeof position.x !== 'number' || typeof position.y !== 'number') {
+            return; // Position not available yet
+          }
+
+          const anchorX = this.icon && this.icon.anchor && typeof this.icon.anchor.x === 'number'
+            ? this.icon.anchor.x
+            : (this.icon && this.icon.scaledSize && typeof this.icon.scaledSize.width === 'number'
+              ? this.icon.scaledSize.width / 2
+              : 0);
+
+          const anchorY = this.icon && this.icon.anchor && typeof this.icon.anchor.y === 'number'
+            ? this.icon.anchor.y
+            : (this.icon && this.icon.scaledSize && typeof this.icon.scaledSize.height === 'number'
+              ? this.icon.scaledSize.height / 2
+              : 0);
 
           if (this.div) {
-            this.div.style.left = `${position.x - this.icon.anchor.x}px`;
-            this.div.style.top = `${position.y - this.icon.anchor.y}px`;
+            this.div.style.left = `${position.x - anchorX}px`;
+            this.div.style.top = `${position.y - anchorY}px`;
           }
         }
 

@@ -31,9 +31,12 @@ export default function AppControls() {
       return;
     }
 
-    // Validate token format
-    if (!pushToken.startsWith('ExponentPushToken[') || !pushToken.endsWith(']')) {
-      toast.error('Invalid token format. Token must start with "ExponentPushToken[" and end with "]"');
+    // Validate token format - allow both Expo and FCM tokens
+    const isExpoToken = pushToken.startsWith('ExponentPushToken[') && pushToken.endsWith(']');
+    const isFCMToken = pushToken.length > 100 && /^[a-zA-Z0-9_:-]+$/.test(pushToken); // FCM tokens are long alphanumeric strings with possible colons
+    
+    if (!isExpoToken && !isFCMToken) {
+      toast.error('Invalid token format. Token must be a valid Expo push token or FCM registration token');
       return;
     }
 
@@ -115,11 +118,13 @@ export default function AppControls() {
                 maxLength={200}
                 value={pushToken}
                 onChange={(e) => setPushToken(e.target.value)}
-                placeholder="ExponentPushToken[your_token_here]"
+                placeholder="ExponentPushToken[your_token_here] or FCM token"
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm"
               />
               <p className="text-xs text-gray-500 mt-1">
-                Copy the complete token from the merchant app alert (includes "ExponentPushToken[" and "]")
+                Enter Expo push token (starts with "ExponentPushToken[") or Android FCM registration token.
+                <br />
+                <strong>Note:</strong> FCM tokens must match the selected app's Firebase project to avoid sender ID mismatch errors.
               </p>
             </div>
 

@@ -117,6 +117,18 @@
         loadGoogleMaps();
       };
 
+      // Load Google Maps when DOM is ready
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function() {
+          console.log('DOM loaded, loading Google Maps...');
+          loadGoogleMaps();
+        });
+      } else {
+        // DOM already loaded
+        console.log('DOM already loaded, loading Google Maps...');
+        loadGoogleMaps();
+      }
+
       // Emergency static script loader
       window.loadStaticGoogleMaps = function() {
         if (window.__GMAPS.fallbackAppended || document.getElementById('gmaps-script-fallback')) {

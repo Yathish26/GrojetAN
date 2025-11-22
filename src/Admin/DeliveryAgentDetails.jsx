@@ -46,6 +46,11 @@ export default function DeliveryAgentDetails() {
   useEffect(() => {
     console.log('🔄 DeliveryAgentDetails - agentLocations updated:', agentLocations);
   }, [agentLocations]);
+
+  // Live location updates state
+  const [liveLocationLog, setLiveLocationLog] = useState([]);
+  const [lastLiveUpdate, setLastLiveUpdate] = useState(null);
+
   const [agent, setAgent] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -61,6 +66,40 @@ export default function DeliveryAgentDetails() {
   const [availableZones, setAvailableZones] = useState([]);
   const [zonesLoading, setZonesLoading] = useState(true);
   const [zoneNames, setZoneNames] = useState({});
+
+  // Handle live location updates for this agent
+  useEffect(() => {
+    if (agentLocations[id] && agent) {
+      const liveLocation = agentLocations[id];
+      const now = new Date();
+
+      // Update map center to follow live location
+      setMapCenter({
+        lat: liveLocation.latitude,
+        lng: liveLocation.longitude
+      });
+
+      // Update last live update timestamp
+      setLastLiveUpdate(now);
+
+      // Add to location log (keep last 10 entries)
+      const newLogEntry = {
+        timestamp: now,
+        latitude: liveLocation.latitude,
+        longitude: liveLocation.longitude,
+        accuracy: liveLocation.accuracy,
+        heading: liveLocation.heading,
+        speed: liveLocation.speed
+      };
+
+      setLiveLocationLog(prev => {
+        const updated = [newLogEntry, ...prev].slice(0, 10);
+        return updated;
+      });
+
+      console.log('📍 Live location update for agent', id, ':', liveLocation);
+    }
+  }, [agentLocations[id], agent, id]);
 
   // Emergency contact editing state
   const [emergencyContactEdit, setEmergencyContactEdit] = useState({
@@ -933,8 +972,13 @@ export default function DeliveryAgentDetails() {
       { Field: 'Last Login', Value: agent.authentication?.lastLogin ? formatISTTime(agent.authentication.lastLogin) : 'N/A' },
       { Field: 'Created At', Value: agent.createdAt ? formatISTTime(agent.createdAt) : 'N/A' },
       { Field: 'Last Updated', Value: agent.updatedAt ? formatISTTime(agent.updatedAt) : 'N/A' },
-      { Field: 'Current Latitude', Value: agent.status?.currentLocation?.latitude || 'N/A' },
-      { Field: 'Current Longitude', Value: agent.status?.currentLocation?.longitude || 'N/A' },
+      { Field: 'Current Latitude', Value: agentLocations[id]?.latitude || agent.status?.currentLocation?.latitude || 'N/A' },
+      { Field: 'Current Longitude', Value: agentLocations[id]?.longitude || agent.status?.currentLocation?.longitude || 'N/A' },
+      { Field: 'Live Location Available', Value: agentLocations[id] ? 'Yes' : 'No' },
+      { Field: 'Live Location Accuracy', Value: agentLocations[id]?.accuracy ? `±${agentLocations[id].accuracy.toFixed(1)}m` : 'N/A' },
+      { Field: 'Live Location Heading', Value: agentLocations[id]?.heading ? `${agentLocations[id].heading.toFixed(1)}°` : 'N/A' },
+      { Field: 'Live Location Speed', Value: agentLocations[id]?.speed ? `${agentLocations[id].speed.toFixed(1)} km/h` : 'N/A' },
+      { Field: 'Live Location Last Update', Value: agentLocations[id]?.timestamp ? formatISTTime(agentLocations[id].timestamp) : 'N/A' },
       { Field: 'Location Last Updated', Value: agent.status?.currentLocation?.lastUpdated ? formatISTTime(agent.status.currentLocation.lastUpdated) : 'N/A' }
     ];
 
@@ -1511,7 +1555,8 @@ export default function DeliveryAgentDetails() {
                       <MapPin className="w-4 h-4 text-green-500" />
                       <div>
                         <span className="text-sm font-medium text-gray-800">
-                          Lat: {agent.status.currentLocation.latitude.toFixed(6)}, Lng: {agent.status.currentLocation.longitude.toFixed(6)}
+                          Lat: {(agentLocations[id]?.latitude || agent.status.currentLocation.latitude).toFixed(6)}, 
+                          Lng: {(agentLocations[id]?.longitude || agent.status.currentLocation.longitude).toFixed(6)}
                           {
                             (() => {
                               const liveHeading = agentLocations[id]?.heading;
@@ -1523,16 +1568,42 @@ export default function DeliveryAgentDetails() {
                           }
                         </span>
                         <div className="flex items-center gap-2 mt-1">
-                          {agent.status.currentLocation.lastUpdated && (
-                            <p className="text-xs text-gray-500">
-                              Last updated: {formatISTTime(agent.status.currentLocation.lastUpdated)}
-                            </p>
-                          )}
-                          {agent.status?.isOnline ? (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Live</span>
-                          ) : (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">Offline</span>
-                          )}
+                          <p className="text-xs text-gray-500">
+                            {(() => {
+                              const agentLoc = agentLocations[id];
+                              const isLive = agentLoc && agentLoc.timestamp && (new Date() - new Date(agentLoc.timestamp)) < 300000; // 5 minutes
+                              if (isLive) {
+                                return `Live: ${formatISTTime(agentLoc.timestamp)}`;
+                              } else if (agent.status.currentLocation.lastUpdated) {
+                                return `Last updated: ${formatISTTime(agent.status.currentLocation.lastUpdated)}`;
+                              }
+                              return 'Location data unavailable';
+                            })()}
+                          </p>
+                          {(() => {
+                            const agentLoc = agentLocations[id];
+                            const isLive = agentLoc && agentLoc.timestamp && (new Date() - new Date(agentLoc.timestamp)) < 300000;
+                            if (isLive) {
+                              return (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                  <div className="w-2 h-2 bg-green-500 rounded-full mr-1 animate-pulse"></div>
+                                  LIVE
+                                </span>
+                              );
+                            } else if (agent.status?.isOnline) {
+                              return (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                  Online
+                                </span>
+                              );
+                            } else {
+                              return (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                  Offline
+                                </span>
+                              );
+                            }
+                          })()}
                         </div>
                       </div>
                     </div>
@@ -1651,6 +1722,60 @@ export default function DeliveryAgentDetails() {
               )}
             </div>
           </div>
+
+          {/* Live Location Activity Log */}
+          {liveLocationLog.length > 0 && (
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+              <div className="p-6 border-b border-gray-200">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                    <Navigation className="w-5 h-5" />
+                    Live Location Activity
+                  </h2>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                    <span className="text-sm text-green-600">Live Updates</span>
+                  </div>
+                </div>
+              </div>
+              <div className="p-6">
+                <div className="space-y-3 max-h-64 overflow-y-auto">
+                  {liveLocationLog.map((entry, index) => (
+                    <div key={index} className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
+                      <div className="flex-shrink-0">
+                        <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                          <Navigation className="w-4 h-4 text-green-600" />
+                        </div>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <p className="text-sm font-medium text-gray-800">
+                            Location Update
+                          </p>
+                          <span className="text-xs text-gray-500">
+                            {formatISTTime(entry.timestamp)}
+                          </span>
+                        </div>
+                        <div className="text-xs text-gray-600 space-y-1">
+                          <p>📍 Lat: {entry.latitude.toFixed(6)}, Lng: {entry.longitude.toFixed(6)}</p>
+                          {entry.accuracy && <p>🎯 Accuracy: ±{entry.accuracy.toFixed(1)}m</p>}
+                          {entry.heading && <p>🧭 Heading: {entry.heading.toFixed(1)}° {getDirectionFromHeading(entry.heading)}</p>}
+                          {entry.speed && <p>💨 Speed: {entry.speed.toFixed(1)} km/h</p>}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {liveLocationLog.length === 0 && (
+                  <div className="text-center py-8">
+                    <Navigation className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                    <p className="text-sm text-gray-500">No live location updates yet</p>
+                    <p className="text-xs text-gray-400 mt-1">Location activity will appear here when the agent is online</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Vehicle Information */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200">

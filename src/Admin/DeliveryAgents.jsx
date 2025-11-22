@@ -16,7 +16,8 @@ const DeliveryAgents = () => {
   const [filters, setFilters] = useState({
     status: '',
     zone: '',
-    applicationStatus: ''
+    applicationStatus: '',
+    online: ''
   });
   const [pagination, setPagination] = useState({
     page: 1,
@@ -202,13 +203,22 @@ const DeliveryAgents = () => {
               </h1>
               <p className="text-gray-600 mt-1 text-sm sm:text-base">Manage and monitor delivery agents across your network</p>
             </div>
-            <button
-              onClick={() => navigate('/delivery-signup')}
-              className="w-full sm:w-auto bg-green-600 text-white px-4 py-2 hover:bg-green-700 flex items-center justify-center gap-2 transition-colors duration-200"
-            >
-              <Plus size={16} className="sm:w-4 sm:h-4" />
-              Add New Agent
-            </button>
+            <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+              <button
+                onClick={() => navigate('/riders-zone')}
+                className="w-full sm:w-auto bg-blue-600 text-white px-4 py-2 hover:bg-blue-700 flex items-center justify-center gap-2 transition-colors duration-200"
+              >
+                <MapPin size={16} className="sm:w-4 sm:h-4" />
+                Riders Zone
+              </button>
+              <button
+                onClick={() => navigate('/delivery-signup')}
+                className="w-full sm:w-auto bg-green-600 text-white px-4 py-2 hover:bg-green-700 flex items-center justify-center gap-2 transition-colors duration-200"
+              >
+                <Plus size={16} className="sm:w-4 sm:h-4" />
+                Add New Agent
+              </button>
+            </div>
           </div>
 
           {/* Stats Cards */}
@@ -279,6 +289,16 @@ const DeliveryAgents = () => {
                   <option value="">All Status</option>
                   <option value="active">Active</option>
                   <option value="inactive">Inactive</option>
+                </select>
+
+                <select
+                  value={filters.online}
+                  onChange={(e) => handleFilterChange('online', e.target.value)}
+                  className="flex-1 px-3 py-2 sm:py-3 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors duration-200"
+                >
+                  <option value="">All Online Status</option>
+                  <option value="true">Online</option>
+                  <option value="false">Offline</option>
                 </select>
 
                 <button
