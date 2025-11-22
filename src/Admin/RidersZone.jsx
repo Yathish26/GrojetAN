@@ -97,7 +97,7 @@ const RidersZone = () => {
   };
 
   const getAgentLabel = (agentId) => {
-    const agent = agents.find(a => a._id === agentId);
+    const agent = agents.find(a => a.agentId === agentId);
     if (!agent) return agentId;
     return agent.name || agentId;
   };
@@ -115,6 +115,7 @@ const RidersZone = () => {
 
     return { lat: avgLat, lng: avgLng };
   };
+  const [mapCenter] = useState(calculateCenter);
 
   const AgentInfoWindow = ({ agent }) => (
     <div className="bg-white p-4 rounded-lg shadow-lg border max-w-xs">
@@ -235,7 +236,7 @@ const RidersZone = () => {
               <div>
                 <p className="text-sm font-medium text-gray-500">Online Now</p>
                 <p className="text-2xl font-bold text-green-600">
-                  {agents.filter(agent => agent.status?.isOnline).length}
+                  {agents.filter(agent => agent.isOnline).length}
                 </p>
               </div>
               <CircleCheck className="h-8 w-8 text-green-600" />
@@ -271,7 +272,6 @@ const RidersZone = () => {
         <div className="bg-white shadow-sm border border-gray-200 rounded-lg overflow-hidden">
           <div className="p-4 border-b border-gray-200">
             <h2 className="text-lg font-semibold text-gray-900">Live Agent Locations</h2>
-            <p className="text-sm text-gray-600">Green markers indicate online agents, gray markers indicate offline agents</p>
           </div>
 
           <div className="h-96 md:h-[600px]">
@@ -284,12 +284,24 @@ const RidersZone = () => {
               </div>
             ) : (
               <GoogleMap
-                center={calculateCenter()}
+                center={mapCenter}
                 zoom={12}
                 style={{ height: '100%', width: '100%' }}
               >
                 {Object.entries(agentLocations).map(([agentId, location]) => {
                   const agentLabel = getAgentLabel(agentId);
+                  const infoHtml = `
+                    <div style="padding: 8px 10px; font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 13px;">
+                      <div style="font-weight: 600; margin-bottom: 4px; color: #111827;">${agentLabel}</div>
+                      <div style="line-height: 1.4; color: #374151;">
+                        <div><strong>Lat:</strong> ${location.latitude?.toFixed(6) ?? 'N/A'}</div>
+                        <div><strong>Lng:</strong> ${location.longitude?.toFixed(6) ?? 'N/A'}</div>
+                        <div><strong>Accuracy:</strong> ${location.accuracy ? `${location.accuracy.toFixed(1)}m` : 'N/A'}</div>
+                        <div><strong>Heading:</strong> ${typeof location.heading === 'number' ? `${location.heading.toFixed(1)}°` : 'N/A'}</div>
+                        <div><strong>Time:</strong> ${location.timestamp ? new Date(location.timestamp).toLocaleString() : 'N/A'}</div>
+                      </div>
+                    </div>
+                  `;
                   return (
                     <Marker
                       key={agentId}
@@ -303,12 +315,7 @@ const RidersZone = () => {
                         scaledSize: { width: 40, height: 40 }
                       }}
                       rotation={location.heading}
-                      onClick={() => {
-                        // Optional: show details for this live location
-                        const agent = agents.find(a => a._id === agentId);
-                        const agentName = agent ? agent.name : agentId;
-                        alert(`Agent: ${agentName}\nLat: ${location.latitude.toFixed(6)}\nLng: ${location.longitude.toFixed(6)}\nAccuracy: ${location.accuracy?.toFixed(1)}m\nHeading: ${location.heading?.toFixed(1)}°\nTime: ${new Date(location.timestamp).toLocaleString()}`);
-                      }}
+                      infoContent={infoHtml}
                     />
                   );
                 })}
