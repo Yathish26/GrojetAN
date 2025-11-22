@@ -306,7 +306,9 @@ const RidersZone = () => {
                       rotation={location.heading}
                       onClick={() => {
                         // Optional: show details for this live location
-                        alert(`${agentLabel}\nLat: ${location.latitude.toFixed(6)}\nLng: ${location.longitude.toFixed(6)}\nAccuracy: ${location.accuracy?.toFixed(1)}m\nHeading: ${location.heading?.toFixed(1)}°\nTime: ${new Date(location.timestamp).toLocaleString()}`);
+                        const agent = agents.find(a => a._id === agentId);
+                        const agentName = agent ? (agent.name || `${agent.personalInfo?.firstName || ''} ${agent.personalInfo?.lastName || ''}`.trim() || agentId) : agentId;
+                        alert(`Agent: ${agentName}\nLat: ${location.latitude.toFixed(6)}\nLng: ${location.longitude.toFixed(6)}\nAccuracy: ${location.accuracy?.toFixed(1)}m\nHeading: ${location.heading?.toFixed(1)}°\nTime: ${new Date(location.timestamp).toLocaleString()}`);
                       }}
                     />
                   );

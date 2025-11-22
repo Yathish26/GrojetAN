@@ -105,6 +105,48 @@ const DeliveryAgents = () => {
     setPagination(prev => ({ ...prev, page: 1 }));
   };
 
+  const handleForceOfflineAll = async () => {
+    if (!isAuthorized) return;
+    
+    const confirmed = window.confirm(
+      'Are you sure you want to force all delivery agents offline? This will immediately disconnect all online agents.'
+    );
+    
+    if (!confirmed) return;
+
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_SERVER}/admin/delivery-agents/force-offline-all`,
+        {
+          method: 'POST',
+          credentials: 'include',
+        }
+      );
+
+      if (response.status === 401) {
+        navigate('/login', { replace: true });
+        return;
+      }
+
+      const data = await response.json();
+      if (data.tokenValid === false) {
+        navigate('/login', { replace: true });
+        return;
+      }
+
+      if (data.success) {
+        toast.success(`Successfully forced ${data.updatedCount} agents offline`);
+        fetchAgents(); // Refresh the list
+        fetchStats(); // Refresh stats
+      } else {
+        toast.error(data.message || 'Failed to force agents offline');
+      }
+    } catch (error) {
+      console.error('Error forcing agents offline:', error);
+      toast.error('Failed to force agents offline');
+    }
+  };
+
   const getStatusColor = (status) => {
     const colors = {
       pending: 'bg-yellow-100 text-yellow-800',
@@ -210,6 +252,13 @@ const DeliveryAgents = () => {
               >
                 <MapPin size={16} className="sm:w-4 sm:h-4" />
                 Riders Zone
+              </button>
+              <button
+                onClick={handleForceOfflineAll}
+                className="w-full sm:w-auto bg-red-600 text-white px-4 py-2 hover:bg-red-700 flex items-center justify-center gap-2 transition-colors duration-200"
+              >
+                <Ban size={16} className="sm:w-4 sm:h-4" />
+                Force Offline All
               </button>
               <button
                 onClick={() => navigate('/delivery-signup')}
