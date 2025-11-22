@@ -54,7 +54,7 @@ const RidersZone = () => {
     try {
       setLoading(true);
       const response = await fetch(
-        `${import.meta.env.VITE_SERVER}/admin/delivery-agents?limit=1000`,
+        `${import.meta.env.VITE_SERVER}/admin/delivery-agents/riders-zone/agents`,
         { credentials: 'include' }
       );
 
@@ -99,8 +99,7 @@ const RidersZone = () => {
   const getAgentLabel = (agentId) => {
     const agent = agents.find(a => a._id === agentId);
     if (!agent) return agentId;
-    const name = agent.name || `${agent.personalInfo?.firstName || ''} ${agent.personalInfo?.lastName || ''}`.trim();
-    return name || agentId;
+    return agent.name || agentId;
   };
 
   const calculateCenter = () => {
@@ -307,7 +306,7 @@ const RidersZone = () => {
                       onClick={() => {
                         // Optional: show details for this live location
                         const agent = agents.find(a => a._id === agentId);
-                        const agentName = agent ? (agent.name || `${agent.personalInfo?.firstName || ''} ${agent.personalInfo?.lastName || ''}`.trim() || agentId) : agentId;
+                        const agentName = agent ? agent.name : agentId;
                         alert(`Agent: ${agentName}\nLat: ${location.latitude.toFixed(6)}\nLng: ${location.longitude.toFixed(6)}\nAccuracy: ${location.accuracy?.toFixed(1)}m\nHeading: ${location.heading?.toFixed(1)}°\nTime: ${new Date(location.timestamp).toLocaleString()}`);
                       }}
                     />
