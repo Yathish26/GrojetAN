@@ -22,7 +22,8 @@ import {
   Star,
   Eye,
   Trash2,
-  Download
+  Download,
+  RefreshCw
 } from 'lucide-react';
 import { GoogleMap, Marker } from '../Components/GoogleMapComponents';
 import { Store, Home } from 'lucide-react';
@@ -76,6 +77,13 @@ export default function OrderDetails() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
   const [deleteConfirmError, setDeleteConfirmError] = useState('');
+  
+  // Delivery agent assignment states
+  const [deliveryAgents, setDeliveryAgents] = useState([]);
+  const [loadingAgents, setLoadingAgents] = useState(false);
+  const [assigningAgent, setAssigningAgent] = useState(false);
+  const [showAgentAssignment, setShowAgentAssignment] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   useEffect(() => {
     fetchOrderDetails();
@@ -110,6 +118,12 @@ export default function OrderDetails() {
     }
   };
 
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await fetchOrderDetails();
+    setIsRefreshing(false);
+  };
+
   const updateOrderStatus = async (newStatus) => {
     setUpdating(true);
     try {
@@ -142,7 +156,7 @@ export default function OrderDetails() {
   };
 
   const assignDeliveryAgent = async (agentId) => {
-    setUpdating(true);
+    setAssigningAgent(true);
     try {
       const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/orders/${orderId}/assign-agent`, {
         method: 'PUT',
@@ -164,12 +178,60 @@ export default function OrderDetails() {
       }
 
       setOrder(data.order);
+      setShowAgentAssignment(false);
       toast.success('Delivery agent assigned successfully');
     } catch (err) {
       toast.error(err.message);
     } finally {
-      setUpdating(false);
+      setAssigningAgent(false);
     }
+  };
+
+  const fetchDeliveryAgents = async () => {
+    setLoadingAgents(true);
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_SERVER}/admin/delivery-agents?applicationStatus=approved&isActive=true&online=true`,
+        { credentials: 'include' }
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch delivery agents');
+      }
+
+      const data = await response.json();
+      if (data.tokenValid === false) {
+        navigate('/login', { replace: true });
+        return;
+      }
+
+      setDeliveryAgents(data.agents || []);
+    } catch (err) {
+      toast.error('Failed to load delivery agents');
+      console.error('Error fetching delivery agents:', err);
+    } finally {
+      setLoadingAgents(false);
+    }
+  };
+
+  const getAgentDisplayInfo = (agent) => {
+    if (!agent) {
+      return { id: null, name: null, phone: null };
+    }
+
+    if (typeof agent === 'string') {
+      return { id: agent, name: agent, phone: null };
+    }
+
+    const firstName = agent.personalInfo?.firstName || '';
+    const lastName = agent.personalInfo?.lastName || '';
+    const name = `${firstName} ${lastName}`.trim() || agent.personalInfo?.phone || agent._id || 'Delivery Agent';
+
+    return {
+      id: agent._id || agent.id || null,
+      name,
+      phone: agent.personalInfo?.phone || null
+    };
   };
 
   const deleteOrder = () => {
@@ -294,6 +356,10 @@ export default function OrderDetails() {
         return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
+
+  const assignedAgentInfo = getAgentDisplayInfo(order?.assignment?.deliveryAgent);
+  const assignmentStatus = order?.assignment?.status || null;
+  const isAssignmentAccepted = assignmentStatus === 'accepted';
 
   if (loading) {
     return (
@@ -620,10 +686,134 @@ export default function OrderDetails() {
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Sidebar */}
-        <div className="space-y-6">
+          {/* Delivery Agent Assignment */}
+          <div className="bg-white rounded-none shadow-sm border border-gray-200">
+            <div className="p-6 border-b border-gray-200">
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                  <Truck className="w-5 h-5" />
+                  Delivery Agent Assignment
+                </h2>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleRefresh}
+                    disabled={isRefreshing}
+                    className="p-2 text-gray-600 hover:text-gray-800 transition-colors cursor-pointer disabled:opacity-50"
+                    title="Refresh assignment status"
+                  >
+                    <RefreshCw className={`w-5 h-5 ${isRefreshing ? 'animate-spin' : ''}`} />
+                  </button>
+                  {!isAssignmentAccepted && (
+                    <button
+                      onClick={() => {
+                        setShowAgentAssignment(!showAgentAssignment);
+                        if (!showAgentAssignment && deliveryAgents.length === 0) {
+                          fetchDeliveryAgents();
+                        }
+                      }}
+                      className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-none hover:bg-blue-700 transition-colors"
+                    >
+                      {showAgentAssignment ? 'Hide Agents' : 'Assign Agent'}
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+            
+            <div className="p-6">
+              {order.assignment?.deliveryAgent ? (
+                <div className="p-3 bg-green-50 rounded-none">
+                  <div className="flex items-center gap-2 mb-2">
+                    <User className="w-4 h-4 text-green-600" />
+                    <span className="text-sm font-medium text-green-800">Delivery Agent Assigned</span>
+                  </div>
+                  <div className="space-y-1 text-sm text-green-700">
+                    {assignedAgentInfo.name && (
+                      <p className="text-xs uppercase tracking-wide text-green-600">Assigned Driver</p>
+                    )}
+                    {assignedAgentInfo.name && (
+                      <p className="font-medium">{assignedAgentInfo.name}</p>
+                    )}
+                    {assignedAgentInfo.phone && (
+                      <p className="text-green-600">Phone: {assignedAgentInfo.phone}</p>
+                    )}
+                    {assignedAgentInfo.id && (
+                      <p className="text-green-600">Agent ID: {assignedAgentInfo.id}</p>
+                    )}
+                    {isAssignmentAccepted ? (
+                      <p className="text-green-700 font-medium">
+                        {assignedAgentInfo.name || 'Delivery agent'} accepted this order
+                        {order.assignment?.acceptedAt ? ` on ${new Date(order.assignment.acceptedAt).toLocaleString('en-IN')}` : ''}.
+                      </p>
+                    ) : (
+                      <p className="text-yellow-700">
+                        Awaiting confirmation from the assigned driver.
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-none">
+                  <p className="text-yellow-800 font-medium">No delivery agent assigned</p>
+                  <p className="text-yellow-600 text-sm">Use “Assign Agent” to choose a driver.</p>
+                </div>
+              )}
+            </div>
+
+            {!isAssignmentAccepted && showAgentAssignment && (
+              <div className="px-6 pb-6">
+                {loadingAgents ? (
+                  <div className="text-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                    <p className="text-gray-600 mt-2">Loading delivery agents...</p>
+                  </div>
+                ) : deliveryAgents.length > 0 ? (
+                  <div className="space-y-3">
+                    <h3 className="font-medium text-gray-800">Available Delivery Agents:</h3>
+                    {deliveryAgents.map((agent) => (
+                      <div key={agent._id} className="flex items-center justify-between p-4 border border-gray-200 rounded-none hover:bg-gray-50">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-blue-100 rounded-none flex items-center justify-center">
+                            <User className="w-5 h-5 text-blue-600" />
+                          </div>
+                          <div>
+                            <p className="font-medium text-gray-800">
+                              {agent.personalInfo.firstName} {agent.personalInfo.lastName}
+                            </p>
+                            <p className="text-sm text-gray-600">{agent.personalInfo.phone}</p>
+                            <p className="text-xs text-gray-500">
+                              Rating: {agent.status.rating?.toFixed(1) || 'N/A'} • 
+                              Deliveries: {agent.status.completedDeliveries || 0}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                            agent.status.isOnline ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                          }`}>
+                            {agent.status.isOnline ? 'Online' : 'Offline'}
+                          </span>
+                          <button
+                            onClick={() => assignDeliveryAgent(agent._id)}
+                            disabled={assigningAgent}
+                            className="px-3 py-1 bg-blue-600 text-white text-sm font-medium rounded-none hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            {assigningAgent ? 'Assigning...' : 'Assign'}
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <p className="text-gray-600">No delivery agents available in this zone</p>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
           {/* Customer Information */}
           <div className="bg-white rounded-none shadow-sm border border-gray-200">
             <div className="p-6 border-b border-gray-200">
@@ -814,9 +1004,30 @@ export default function OrderDetails() {
                     <User className="w-4 h-4 text-green-600" />
                     <span className="text-sm font-medium text-green-800">Delivery Agent Assigned</span>
                   </div>
-                  <p className="text-sm text-green-700">
-                    Agent ID: {order.assignment.deliveryAgent}
-                  </p>
+                  <div className="space-y-1 text-sm text-green-700">
+                    {assignedAgentInfo.name && (
+                      <p className="text-xs uppercase tracking-wide text-green-600">Assigned Driver</p>
+                    )}
+                    {assignedAgentInfo.name && (
+                      <p className="font-medium">{assignedAgentInfo.name}</p>
+                    )}
+                    {assignedAgentInfo.phone && (
+                      <p className="text-green-600">Phone: {assignedAgentInfo.phone}</p>
+                    )}
+                    {assignedAgentInfo.id && (
+                      <p className="text-green-600">Agent ID: {assignedAgentInfo.id}</p>
+                    )}
+                      {isAssignmentAccepted ? (
+                        <p className="text-green-700 font-medium">
+                          {assignedAgentInfo.name || 'Delivery agent'} accepted this order
+                          {order.assignment?.acceptedAt ? ` on ${new Date(order.assignment.acceptedAt).toLocaleString('en-IN')}` : ''}.
+                        </p>
+                      ) : (
+                        <p className="text-yellow-700">
+                          Awaiting confirmation from the assigned driver.
+                        </p>
+                      )}
+                  </div>
                 </div>
               ) : (
                 <div className="p-3 bg-yellow-50 rounded-none">
@@ -942,6 +1153,12 @@ export default function OrderDetails() {
                 <span className="text-gray-600">Delivery Fee</span>
                 <span className="font-medium">₹{(order.pricing?.deliveryFee || 0).toFixed(2)}</span>
               </div>
+              {(order.pricing?.smallCartFee || 0) > 0 && (
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Small Cart Fee</span>
+                  <span className="font-medium">₹{(order.pricing?.smallCartFee || 0).toFixed(2)}</span>
+                </div>
+              )}
               <div className="flex justify-between">
                 <span className="text-gray-600">Taxes</span>
                 <span className="font-medium">₹{(order.pricing?.taxes || 0).toFixed(2)}</span>
@@ -1729,6 +1946,12 @@ export default function OrderDetails() {
                             <span class="font-medium">Delivery Fee:</span>
                             <span>₹${(order?.pricing?.deliveryFee || 0).toFixed(2)}</span>
                           </div>
+                          ${(order?.pricing?.smallCartFee || 0) > 0 ? `
+                          <div class="flex justify-between items-center mb-2">
+                            <span class="font-medium">Small Cart Fee:</span>
+                            <span>₹${(order?.pricing?.smallCartFee || 0).toFixed(2)}</span>
+                          </div>
+                          ` : ''}
                           <div class="flex justify-between items-center mb-2">
                             <span class="font-medium">Tax:</span>
                             <span>₹${(order?.pricing?.taxes || 0).toFixed(2)}</span>

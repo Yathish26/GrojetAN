@@ -396,6 +396,9 @@ const DeliveryAgents = () => {
                         Performance
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Last Updated
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Actions
                       </th>
                     </tr>
@@ -455,6 +458,11 @@ const DeliveryAgents = () => {
                             <div className="text-xs text-gray-500">
                               {agent.status.completedDeliveries} deliveries
                             </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900">
+                            {agent.status.currentLocation?.lastUpdated || 'Never'}
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
@@ -526,6 +534,15 @@ const DeliveryAgents = () => {
                                 {agent.status.rating.toFixed(1)}
                               </div>
                               <div className="text-gray-600">{agent.status.completedDeliveries} deliveries</div>
+                            </div>
+                          </div>
+
+                          <div className="mb-3">
+                            <div className="text-xs">
+                              <span className="text-gray-500">Last Updated:</span>
+                              <div className="font-medium text-gray-900">
+                                {agent.status.currentLocation?.lastUpdated || 'Never'}
+                              </div>
                             </div>
                           </div>
 

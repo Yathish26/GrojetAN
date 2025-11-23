@@ -42,9 +42,8 @@ const HomeAds = () => {
     merchantId: '',
     productId: '',
     categoryId: '',
+    appNavigateMerchantId: '',
     displayOrder: 0,
-    startDate: '',
-    endDate: '',
     targetAudience: 'all',
     isActive: true
   });
@@ -152,9 +151,8 @@ const HomeAds = () => {
       merchantId: '',
       productId: '',
       categoryId: '',
+      appNavigateMerchantId: '',
       displayOrder: 0,
-      startDate: '',
-      endDate: '',
       targetAudience: 'all',
       isActive: true
     });
@@ -173,9 +171,8 @@ const HomeAds = () => {
       merchantId: ad.merchantId || '',
       productId: ad.productId || '',
       categoryId: ad.categoryId || '',
+      appNavigateMerchantId: ad.appNavigateMerchantId || '',
       displayOrder: ad.displayOrder,
-      startDate: ad.startDate ? new Date(ad.startDate).toISOString().split('T')[0] : '',
-      endDate: ad.endDate ? new Date(ad.endDate).toISOString().split('T')[0] : '',
       targetAudience: ad.targetAudience,
       isActive: ad.isActive
     });
@@ -457,6 +454,7 @@ const HomeAds = () => {
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ad</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Link Type</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Order</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">App ID</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                     </tr>
@@ -487,6 +485,9 @@ const HomeAds = () => {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                           {ad.displayOrder}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {ad.appNavigateMerchantId || 'N/A'}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span className={`px-2 py-1 text-xs font-medium ${
@@ -563,6 +564,7 @@ const HomeAds = () => {
                     </div>
                     <div className="mt-2 flex items-center justify-between text-xs text-gray-500">
                       <span>Order: {ad.displayOrder}</span>
+                      <span>App ID: {ad.appNavigateMerchantId || 'N/A'}</span>
                       <span className={`px-2 py-1 text-xs font-medium ${
                         ad.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
                       }`}>
@@ -632,6 +634,17 @@ const HomeAds = () => {
                       />
                     </div>
 
+                    <div className="sm:col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">App Navigate Merchant ID</label>
+                      <input
+                        type="text"
+                        value={formData.appNavigateMerchantId}
+                        onChange={(e) => setFormData(prev => ({ ...prev, appNavigateMerchantId: e.target.value }))}
+                        className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                        placeholder="Enter merchant ID for app navigation"
+                      />
+                    </div>
+
                     {formData.linkType === 'external' && (
                       <div className="sm:col-span-2">
                         <label className="block text-sm font-medium text-gray-700 mb-2">External Link</label>
@@ -683,26 +696,6 @@ const HomeAds = () => {
                         />
                       </div>
                     )}
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Start Date</label>
-                      <input
-                        type="date"
-                        value={formData.startDate}
-                        onChange={(e) => setFormData(prev => ({ ...prev, startDate: e.target.value }))}
-                        className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">End Date</label>
-                      <input
-                        type="date"
-                        value={formData.endDate}
-                        onChange={(e) => setFormData(prev => ({ ...prev, endDate: e.target.value }))}
-                        className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                      />
-                    </div>
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">Target Audience</label>

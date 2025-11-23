@@ -5,7 +5,8 @@ import {
   DollarSign, Calendar, User, Edit, Trash2, CheckCircle,
   XCircle, Clock, AlertTriangle, FileText, CreditCard,
   Building, Globe, Users, Award, TrendingUp, Timer,
-  Truck, Settings, Eye, Download, Image as ImageIcon
+  Truck, Settings, X, Eye, Download, Image as ImageIcon,
+  BarChart3
 } from 'lucide-react';
 import Layout from '../Components/Layout';
 import { GoogleMap, Marker } from '../Components/GoogleMapComponents';
@@ -179,6 +180,77 @@ const MerchantDetails = () => {
     }
   };
 
+  const handleCloseShop = async () => {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/merchant-stores/${id}`, {
+        method: 'PUT',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          storeStatus: 'closed'
+        })
+      });
+
+      const data = await response.json();
+      if (data.tokenValid === false) {
+        navigate('/login', { replace: true });
+        return;
+      }
+
+      if (response.ok) {
+        if (data.success) {
+          toast.success('Shop closed successfully');
+          fetchMerchantDetails(); // Refresh to show updated status
+        } else {
+          throw new Error(data.message || 'Failed to close shop');
+        }
+      } else {
+        throw new Error('Failed to close shop');
+      }
+    } catch (error) {
+      console.error('Error closing shop:', error);
+      toast.error(error.message || 'Failed to close shop');
+    }
+  };
+
+  const handleClearStats = async () => {
+    if (!confirm('Are you sure you want to clear all performance statistics? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/merchant-stores/${id}/clear-stats`, {
+        method: 'PUT',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+
+      const data = await response.json();
+      if (data.tokenValid === false) {
+        navigate('/login', { replace: true });
+        return;
+      }
+
+      if (response.ok) {
+        if (data.success) {
+          toast.success('Performance statistics cleared successfully');
+          fetchMerchantDetails(); // Refresh to show updated stats
+        } else {
+          throw new Error(data.message || 'Failed to clear statistics');
+        }
+      } else {
+        throw new Error('Failed to clear statistics');
+      }
+    } catch (error) {
+      console.error('Error clearing stats:', error);
+      toast.error(error.message || 'Failed to clear statistics');
+    }
+  };
+
   const handleViewDocument = (url, title) => {
     if (!url) {
       toast.error('Document URL not available');
@@ -349,6 +421,16 @@ const MerchantDetails = () => {
               <span className="hidden sm:inline">Clear Device Login</span>
               <span className="sm:hidden">Clear Login</span>
             </button>
+            {merchant?.storeStatus !== 'closed' && (
+              <button
+                onClick={handleCloseShop}
+                className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-orange-600 text-white hover:bg-orange-700 rounded-md transition-colors text-sm sm:text-base"
+              >
+                <X size={16} />
+                <span className="hidden sm:inline">Close Shop</span>
+                <span className="sm:hidden">Close</span>
+              </button>
+            )}
             <button
               onClick={() => navigate(`/merchants/${id}/inventory`)}
               className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-green-600 text-white hover:bg-green-700 rounded-md transition-colors text-sm sm:text-base"
@@ -362,6 +444,14 @@ const MerchantDetails = () => {
             >
               <Edit size={16} />
               Edit Merchant
+            </button>
+            <button
+              onClick={handleClearStats}
+              className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-purple-600 text-white hover:bg-purple-700 rounded-md transition-colors text-sm sm:text-base"
+            >
+              <BarChart3 size={16} />
+              <span className="hidden sm:inline">Clear Stats</span>
+              <span className="sm:hidden">Clear Stats</span>
             </button>
           </div>
         </div>

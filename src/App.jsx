@@ -15,6 +15,7 @@ import DeliveryAgentDetails from './Admin/DeliveryAgentDetails.jsx'
 import RidersZone from './Admin/RidersZone.jsx'
 import DeliveryZones from './Admin/DeliveryZones.jsx'
 import Analytics from './Admin/Analytics.jsx'
+import Finance from './Admin/Finance.jsx'
 import AdminManagement from './Admin/AdminManagement.jsx'
 import Profile from './Admin/Profile.jsx'
 import Settings from './Admin/Settings.jsx'
@@ -130,6 +131,7 @@ function App() {
           
           {/* Analytics & Reports */}
           <Route path="/analytics" element={<Analytics />} />
+          <Route path="/finance" element={<Finance />} />
           
           {/* Admin Management (Super Admin only) */}
           <Route path="/admin-management" element={<AdminManagement />} />

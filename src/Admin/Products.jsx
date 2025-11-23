@@ -646,6 +646,7 @@ export default function Products() {
           ...editProduct,
           thumbnail: finalThumbnail,
           images: finalImages,
+          customFields: (editProduct.customFields || []).filter(field => field.key.trim() && field.value.trim()),
           // Only include weightDimension if both value and unit are provided
           weightDimension: (editProduct.weightDimension?.value && editProduct.weightDimension?.unit) 
             ? {
@@ -1546,6 +1547,65 @@ export default function Products() {
                     maxTags={10}
                     placeholder="Add tag and press Enter or comma"
                   />
+
+                  {/* Custom Fields */}
+                  <div>
+                    <label className="block text-gray-700 text-sm font-medium mb-2">Custom Attributes</label>
+                    <div className="space-y-2">
+                      {(editProduct.customFields || []).map((field, index) => (
+                        <div key={index} className="flex items-center gap-2">
+                          <input
+                            type="text"
+                            placeholder="Key (e.g., Type)"
+                            value={field.key || ''}
+                            onChange={(e) => {
+                              const newFields = [...(editProduct.customFields || [])];
+                              newFields[index] = { ...newFields[index], key: e.target.value };
+                              setEditProduct({ ...editProduct, customFields: newFields });
+                            }}
+                            className="flex-1 px-3 py-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500 text-sm"
+                            disabled={isSaving || currentUser?.role === 'inventory_manager'}
+                          />
+                          <input
+                            type="text"
+                            placeholder="Value (e.g., Veg)"
+                            value={field.value || ''}
+                            onChange={(e) => {
+                              const newFields = [...(editProduct.customFields || [])];
+                              newFields[index] = { ...newFields[index], value: e.target.value };
+                              setEditProduct({ ...editProduct, customFields: newFields });
+                            }}
+                            className="flex-1 px-3 py-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500 text-sm"
+                            disabled={isSaving || currentUser?.role === 'inventory_manager'}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const newFields = (editProduct.customFields || []).filter((_, i) => i !== index);
+                              setEditProduct({ ...editProduct, customFields: newFields });
+                            }}
+                            className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded"
+                            disabled={isSaving || currentUser?.role === 'inventory_manager'}
+                          >
+                            <XCircle size={16} />
+                          </button>
+                        </div>
+                      ))}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const newFields = [...(editProduct.customFields || []), { key: '', value: '' }];
+                          setEditProduct({ ...editProduct, customFields: newFields });
+                        }}
+                        className="flex items-center gap-2 text-green-600 hover:text-green-700 text-sm font-medium"
+                        disabled={isSaving || currentUser?.role === 'inventory_manager'}
+                      >
+                        <Plus size={16} />
+                        Add Custom Attribute
+                      </button>
+                    </div>
+                  </div>
+
                   {/* Highlights and Search Keywords removed from product edit form */}
                 </div>
               </div>

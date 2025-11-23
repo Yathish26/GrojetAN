@@ -55,7 +55,8 @@ export default function AddProduct() {
       mrp: "",
     },
     isActive: true,
-  tags: []
+  tags: [],
+  customFields: []
   });
 
   const [categories, setCategories] = useState([]);
@@ -152,6 +153,29 @@ export default function AddProduct() {
     setFormData(prev => ({
       ...prev,
       [arrayName]: prev[arrayName].filter((_, i) => i !== index)
+    }));
+  };
+
+  const addCustomField = () => {
+    setFormData(prev => ({
+      ...prev,
+      customFields: [...prev.customFields, { key: '', value: '' }]
+    }));
+  };
+
+  const updateCustomField = (index, field, value) => {
+    setFormData(prev => ({
+      ...prev,
+      customFields: prev.customFields.map((item, i) =>
+        i === index ? { ...item, [field]: value } : item
+      )
+    }));
+  };
+
+  const removeCustomField = (index) => {
+    setFormData(prev => ({
+      ...prev,
+      customFields: prev.customFields.filter((_, i) => i !== index)
     }));
   };
 
@@ -284,6 +308,7 @@ export default function AddProduct() {
   // highlights removed from product schema
         images: finalImages.filter(img => img.trim() !== ''),
   // searchKeywords removed from product schema
+        customFields: formData.customFields.filter(field => field.key.trim() && field.value.trim())
       };
 
       // Only include weightDimension if both value and unit are provided
@@ -336,7 +361,8 @@ export default function AddProduct() {
             mrp: 0,
           },
           isActive: true,
-          tags: []
+          tags: [],
+          customFields: []
         });
       } else {
         throw new Error(data.message || 'Failed to add product');
@@ -785,7 +811,49 @@ export default function AddProduct() {
               />
             </div>
 
-            {/* Search Keywords removed from product form */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-gray-800 border-b pb-2">Custom Attributes</h3>
+
+              <div className="space-y-3">
+                {formData.customFields.map((field, index) => (
+                  <div key={index} className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      placeholder="Key (e.g., Type)"
+                      value={field.key}
+                      onChange={(e) => updateCustomField(index, 'key', e.target.value)}
+                      className="flex-1 px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm"
+                      disabled={loading}
+                    />
+                    <input
+                      type="text"
+                      placeholder="Value (e.g., Veg)"
+                      value={field.value}
+                      onChange={(e) => updateCustomField(index, 'value', e.target.value)}
+                      className="flex-1 px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm"
+                      disabled={loading}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeCustomField(index)}
+                      className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded"
+                      disabled={loading}
+                    >
+                      <XCircle size={16} />
+                    </button>
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  onClick={addCustomField}
+                  className="flex items-center gap-2 text-green-600 hover:text-green-700 text-sm font-medium"
+                  disabled={loading}
+                >
+                  <Plus size={16} />
+                  Add Custom Attribute
+                </button>
+              </div>
+            </div>
           </div>
 
           {/* Status and Submit */}

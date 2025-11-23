@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import Layout from '../Components/Layout';
@@ -9,6 +9,141 @@ export default function AppControls() {
   const [selectedApps, setSelectedApps] = useState([]);
   const [pushToken, setPushToken] = useState('');
   const [notificationResults, setNotificationResults] = useState(null);
+
+  // New states for app controls
+  const [taxPercentageOnDeliveryFee, setTaxPercentageOnDeliveryFee] = useState(18);
+  const [deliveryFee, setDeliveryFee] = useState(40);
+  const [smallCartFee, setSmallCartFee] = useState(40);
+  const [smallCartThreshold, setSmallCartThreshold] = useState(499);
+  const [freeDeliveryThreshold, setFreeDeliveryThreshold] = useState(499);
+  const [cashOnDeliveryEnabled, setCashOnDeliveryEnabled] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [originalValues, setOriginalValues] = useState({});
+
+  // Fetch app controls on component mount
+  useEffect(() => {
+    fetchAppControls();
+  }, []);
+
+  const fetchAppControls = async () => {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/app-controls/app-controls`, {
+        method: 'GET',
+        credentials: 'include',
+      });
+
+      if (response.status === 401) {
+        navigate('/login', { replace: true });
+        return;
+      }
+
+      const result = await response.json();
+      if (result.success) {
+        const data = result.data;
+        setTaxPercentageOnDeliveryFee(data.taxPercentageOnDeliveryFee || 18);
+        setDeliveryFee(data.deliveryFee || 40);
+        setSmallCartFee(data.smallCartFee || 40);
+        setSmallCartThreshold(data.smallCartThreshold || 499);
+        setFreeDeliveryThreshold(data.freeDeliveryThreshold || 499);
+        setCashOnDeliveryEnabled(data.cashOnDeliveryEnabled !== undefined ? data.cashOnDeliveryEnabled : true);
+        
+        // Store original values for cancel functionality
+        setOriginalValues({
+          taxPercentageOnDeliveryFee: data.taxPercentageOnDeliveryFee || 18,
+          deliveryFee: data.deliveryFee || 40,
+          smallCartFee: data.smallCartFee || 40,
+          smallCartThreshold: data.smallCartThreshold || 499,
+          freeDeliveryThreshold: data.freeDeliveryThreshold || 499,
+          cashOnDeliveryEnabled: data.cashOnDeliveryEnabled !== undefined ? data.cashOnDeliveryEnabled : true,
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching app controls:', error);
+      toast.error('Failed to load app controls');
+    }
+  };
+
+  const handleEdit = () => {
+    // Store current values as original before editing
+    setOriginalValues({
+      taxPercentageOnDeliveryFee,
+      deliveryFee,
+      smallCartFee,
+      smallCartThreshold,
+      freeDeliveryThreshold,
+      cashOnDeliveryEnabled,
+    });
+    setIsEditing(true);
+  };
+
+  const handleCancel = () => {
+    // Restore original values
+    setTaxPercentageOnDeliveryFee(originalValues.taxPercentageOnDeliveryFee);
+    setDeliveryFee(originalValues.deliveryFee);
+    setSmallCartFee(originalValues.smallCartFee);
+    setSmallCartThreshold(originalValues.smallCartThreshold);
+    setFreeDeliveryThreshold(originalValues.freeDeliveryThreshold);
+    setCashOnDeliveryEnabled(originalValues.cashOnDeliveryEnabled);
+    setIsEditing(false);
+  };
+
+  const handleSave = async () => {
+    const success = await handleUpdateAppControls();
+    if (success) {
+      setIsEditing(false);
+    }
+  };
+
+  const handleUpdateAppControls = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/app-controls/app-controls`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          taxPercentageOnDeliveryFee: parseFloat(taxPercentageOnDeliveryFee),
+          deliveryFee: parseFloat(deliveryFee),
+          smallCartFee: parseFloat(smallCartFee),
+          smallCartThreshold: parseFloat(smallCartThreshold),
+          freeDeliveryThreshold: parseFloat(freeDeliveryThreshold),
+          cashOnDeliveryEnabled: cashOnDeliveryEnabled,
+        }),
+      });
+
+      if (response.status === 401) {
+        navigate('/login', { replace: true });
+        return;
+      }
+
+      const result = await response.json();
+      if (result.success) {
+        toast.success('App controls updated successfully');
+        // Update original values after successful save
+        setOriginalValues({
+          taxPercentageOnDeliveryFee: parseFloat(taxPercentageOnDeliveryFee),
+          deliveryFee: parseFloat(deliveryFee),
+          smallCartFee: parseFloat(smallCartFee),
+          smallCartThreshold: parseFloat(smallCartThreshold),
+          freeDeliveryThreshold: parseFloat(freeDeliveryThreshold),
+          cashOnDeliveryEnabled: cashOnDeliveryEnabled,
+        });
+        return true;
+      } else {
+        toast.error(result.message || 'Failed to update app controls');
+        return false;
+      }
+    } catch (error) {
+      console.error('Error updating app controls:', error);
+      toast.error('Failed to update app controls');
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const clearResults = () => {
     setNotificationResults(null);
@@ -237,10 +372,173 @@ export default function AppControls() {
           </div>
         )}
 
-        {/* Placeholder for future controls */}
+        {/* App Controls Panel */}
         <div className="bg-white shadow-sm border border-gray-200 rounded-lg p-4 sm:p-6">
-          <h2 className="text-lg sm:text-xl font-semibold text-gray-800 mb-4">Other Controls</h2>
-          <p className="text-gray-600 text-sm sm:text-base">More app control features coming soon...</p>
+          <h2 className="text-lg sm:text-xl font-semibold text-gray-800 mb-4">Checkout Controls</h2>
+          <div className="space-y-4">
+            {/* Tax Percentage on Delivery Fee */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Tax Percentage on Delivery Fee (%)
+              </label>
+              <input
+                type="number"
+                min="0"
+                max="100"
+                step="0.1"
+                value={taxPercentageOnDeliveryFee}
+                onChange={(e) => setTaxPercentageOnDeliveryFee(e.target.value)}
+                disabled={!isEditing}
+                className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm ${
+                  !isEditing ? 'bg-gray-50 cursor-not-allowed' : ''
+                }`}
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                This percentage will be applied as tax on the delivery fee.
+              </p>
+            </div>
+
+            {/* Delivery Fee */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Delivery Fee (₹)
+              </label>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                value={deliveryFee}
+                onChange={(e) => setDeliveryFee(e.target.value)}
+                disabled={!isEditing}
+                className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm ${
+                  !isEditing ? 'bg-gray-50 cursor-not-allowed' : ''
+                }`}
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Base delivery fee amount.
+              </p>
+            </div>
+
+            {/* Small Cart Fee */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Small Cart Fee (₹)
+              </label>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                value={smallCartFee}
+                onChange={(e) => setSmallCartFee(e.target.value)}
+                disabled={!isEditing}
+                className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm ${
+                  !isEditing ? 'bg-gray-50 cursor-not-allowed' : ''
+                }`}
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Delivery fee for carts below the threshold.
+              </p>
+            </div>
+
+            {/* Small Cart Threshold */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Small Cart Threshold (₹)
+              </label>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                value={smallCartThreshold}
+                onChange={(e) => setSmallCartThreshold(e.target.value)}
+                disabled={!isEditing}
+                className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm ${
+                  !isEditing ? 'bg-gray-50 cursor-not-allowed' : ''
+                }`}
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Minimum cart value for small cart fee.
+              </p>
+            </div>
+
+            {/* Free Delivery Threshold */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Free Delivery Threshold (₹)
+              </label>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                value={freeDeliveryThreshold}
+                onChange={(e) => setFreeDeliveryThreshold(e.target.value)}
+                disabled={!isEditing}
+                className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm ${
+                  !isEditing ? 'bg-gray-50 cursor-not-allowed' : ''
+                }`}
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Minimum cart value for free delivery.
+              </p>
+            </div>
+
+            {/* Cash on Delivery */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Cash on Delivery
+              </label>
+              <div className="flex items-center">
+                <button
+                  type="button"
+                  onClick={() => isEditing && setCashOnDeliveryEnabled(!cashOnDeliveryEnabled)}
+                  disabled={!isEditing}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 ${
+                    cashOnDeliveryEnabled ? 'bg-green-600' : 'bg-gray-200'
+                  } ${!isEditing ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      cashOnDeliveryEnabled ? 'translate-x-6' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+                <span className="ml-3 text-sm text-gray-700">
+                  {cashOnDeliveryEnabled ? 'Enabled' : 'Disabled'}
+                </span>
+              </div>
+              <p className="text-xs text-gray-500 mt-1">
+                Allow customers to pay with cash on delivery.
+              </p>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex justify-end gap-3 pt-2">
+              {!isEditing ? (
+                <button
+                  onClick={handleEdit}
+                  className="w-full sm:w-auto px-4 sm:px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+                >
+                  Edit Controls
+                </button>
+              ) : (
+                <>
+                  <button
+                    onClick={handleCancel}
+                    className="w-full sm:w-auto px-4 sm:px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors text-sm font-medium"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleSave}
+                    disabled={loading}
+                    className="w-full sm:w-auto px-4 sm:px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-400 transition-colors text-sm font-medium"
+                  >
+                    {loading ? 'Saving...' : 'Save Changes'}
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
         </div>
       </div>
     </Layout>

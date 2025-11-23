@@ -17,6 +17,7 @@ const Merchants = () => {
     const [searchInput, setSearchInput] = useState('');
     const [currentSearch, setCurrentSearch] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
+    const [storeStatusFilter, setStoreStatusFilter] = useState('all');
     const [showFilters, setShowFilters] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
@@ -101,7 +102,7 @@ const Merchants = () => {
     };
 
     // Fetch merchants from API with search and filters
-    const fetchMerchants = async (page = 1, search = '', status = 'all') => {
+    const fetchMerchants = async (page = 1, search = '', status = 'all', storeStatus = 'all') => {
         try {
             setLoading(true);
 
@@ -117,6 +118,10 @@ const Merchants = () => {
 
             if (status && status !== 'all') {
                 params.append('status', status);
+            }
+
+            if (storeStatus && storeStatus !== 'all') {
+                params.append('storeStatus', storeStatus);
             }
 
             const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/merchant-stores?${params}`, {
@@ -259,23 +264,29 @@ const Merchants = () => {
     const handleSearch = () => {
         setCurrentSearch(searchInput);
         setCurrentPage(1);
-        fetchMerchants(1, searchInput, statusFilter);
+        fetchMerchants(1, searchInput, statusFilter, storeStatusFilter);
     };
 
     // Handle filter changes
     const handleStatusFilterChange = (newStatus) => {
         setStatusFilter(newStatus);
         setCurrentPage(1);
-        fetchMerchants(1, currentSearch, newStatus);
+        fetchMerchants(1, currentSearch, newStatus, storeStatusFilter);
+    };
+
+    const handleStoreStatusFilterChange = (newStoreStatus) => {
+        setStoreStatusFilter(newStoreStatus);
+        setCurrentPage(1);
+        fetchMerchants(1, currentSearch, statusFilter, newStoreStatus);
     };
 
     // Handle page change
     const handlePageChange = (page) => {
-        fetchMerchants(page, currentSearch, statusFilter);
+        fetchMerchants(page, currentSearch, statusFilter, storeStatusFilter);
     };
 
     useEffect(() => {
-        fetchMerchants();
+        fetchMerchants(1, '', 'all', 'all');
     }, []);
 
     const getStatusColor = (status) => {
@@ -435,6 +446,47 @@ const Merchants = () => {
         }
     };
 
+    const forceCloseAllMerchants = async () => {
+        if (!confirm('Are you sure you want to force close all open merchant shops? This action cannot be undone.')) {
+            return;
+        }
+
+        try {
+            setLoading(true);
+
+            const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/merchant-stores/force-close-all`, {
+                method: 'PUT',
+                credentials: 'include',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            });
+
+            const data = await response.json();
+            if (data.tokenValid === false) {
+                navigate('/login', { replace: true });
+                return;
+            }
+
+            if (response.ok) {
+                if (data.success) {
+                    toast.success(data.message || 'All open merchant shops have been closed');
+                    // Refresh the merchants list
+                    fetchMerchants(1, currentSearch, statusFilter, storeStatusFilter);
+                } else {
+                    throw new Error(data.message || 'Failed to force close merchants');
+                }
+            } else {
+                throw new Error('Failed to force close merchants');
+            }
+        } catch (error) {
+            console.error('Force close error:', error);
+            toast.error(error.message || 'Failed to force close merchants');
+        } finally {
+            setLoading(false);
+        }
+    };
+
     return (
         <Layout title="Merchants">
             <div className="max-w-7xl mx-auto p-4 sm:p-6 space-y-4 sm:space-y-6">
@@ -467,6 +519,18 @@ const Merchants = () => {
                                 <Download size={16} />
                             )}
                             {loading ? 'Exporting...' : 'Export'}
+                        </button>
+                        <button
+                            onClick={forceCloseAllMerchants}
+                            disabled={loading}
+                            className="flex items-center justify-center gap-2 px-3 py-2 bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                        >
+                            {loading ? (
+                                <div className="animate-spin h-4 w-4 border-2 border-red-300 border-t-red-100 rounded-full"></div>
+                            ) : (
+                                <X size={16} />
+                            )}
+                            {loading ? 'Closing...' : 'Force Close All'}
                         </button>
                         <button
                             onClick={() => navigate('/merchants/add')}
@@ -531,6 +595,18 @@ const Merchants = () => {
                                         <option value="active">Active</option>
                                         <option value="hold">Hold</option>
                                         <option value="banned">Banned</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">Store Status</label>
+                                    <select
+                                        value={storeStatusFilter}
+                                        onChange={(e) => handleStoreStatusFilterChange(e.target.value)}
+                                        className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                    >
+                                        <option value="all">All Store Status</option>
+                                        <option value="open">Open</option>
+                                        <option value="close">Close</option>
                                     </select>
                                 </div>
                             </div>
