@@ -876,7 +876,7 @@ const Merchants = () => {
                                             })}
                                             <button
                                                 onClick={() => handlePageChange(currentPage + 1)}
-                                                disabled={currentPage === totalPages}
+                                                disabled={currentPage * 5 >= totalMerchants}
                                                 className="px-2 sm:px-3 py-1 border border-gray-300 text-xs sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
                                             >
                                                 Next

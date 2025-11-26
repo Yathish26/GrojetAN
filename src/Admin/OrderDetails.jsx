@@ -1126,7 +1126,7 @@ export default function OrderDetails() {
                   <div className="space-y-1">
                     {order.assignment.rejectedBy.map((rejection, index) => (
                       <p key={index} className="text-sm text-red-700">
-                        Agent {rejection.agentId} - {new Date(rejection.rejectedAt).toLocaleString('en-IN')}
+                        {rejection.agentName} - {rejection.agentId} - {new Date(rejection.rejectedAt).toLocaleString('en-IN')}
                         {rejection.reason && ` (${rejection.reason})`}
                       </p>
                     ))}
