@@ -245,6 +245,11 @@ const MerchantInventory = () => {
                             )}
                             <div>
                               <div className="text-sm font-medium text-gray-900">{item.name}</div>
+                              {item.weightDimension && (
+                                <div className="text-xs text-gray-500">
+                                  {item.weightDimension.value} {item.weightDimension.unit}
+                                </div>
+                              )}
                             </div>
                           </div>
                         </td>

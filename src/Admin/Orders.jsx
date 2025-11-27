@@ -552,7 +552,7 @@ const Orders = () => {
                               {new Date(order.createdAt).toLocaleDateString('en-IN')}
                             </div>
                             <div className="text-xs text-gray-400">
-                              {order.items.length} item(s)
+                              {new Date(order.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
                             </div>
                           </div>
                         </td>
