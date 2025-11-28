@@ -601,7 +601,7 @@ export default function Products() {
         const uploadedUrls = await Promise.all(
           selectedImageFiles.map(file => uploadImage(file, 'products'))
         );
-        finalImages = uploadedUrls;
+        finalImages = [...finalImages, ...uploadedUrls];
       }
 
       // Delete images that are no longer needed
