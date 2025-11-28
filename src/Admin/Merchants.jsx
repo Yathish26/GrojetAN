@@ -121,7 +121,7 @@ const Merchants = () => {
             }
 
             if (storeStatus && storeStatus !== 'all') {
-                params.append('storeStatus', storeStatus);
+                params.append('storeStatus', storeStatus === 'Open' ? 'open' : 'close');
             }
 
             const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/merchant-stores?${params}`, {
@@ -621,8 +621,8 @@ const Merchants = () => {
                   <div className="flex rounded-lg border border-gray-300 overflow-hidden">
                     {[
                       { key: 'all', label: 'All', color: 'bg-gray-100 text-gray-700 hover:bg-gray-200' },
-                      { key: 'open', label: 'Open', color: 'bg-green-100 text-green-700 hover:bg-green-200' },
-                      { key: 'close', label: 'Closed', color: 'bg-red-100 text-red-700 hover:bg-red-200' }
+                      { key: 'Open', label: 'Open', color: 'bg-green-100 text-green-700 hover:bg-green-200' },
+                      { key: 'Closed', label: 'Closed', color: 'bg-red-100 text-red-700 hover:bg-red-200' }
                     ].map(({ key, label, color }) => (
                       <button
                         key={key}
