@@ -19,6 +19,8 @@ const Merchants = () => {
     const [currentSearch, setCurrentSearch] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
     const [storeStatusFilter, setStoreStatusFilter] = useState('all');
+    const [storeTypeFilter, setStoreTypeFilter] = useState('all');
+    const availableStoreTypes = ['Grocery', 'Healthcare', 'Fresh Fruits & Vegetables', 'Meats', 'Other'];
     const [showFilters, setShowFilters] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
@@ -103,7 +105,7 @@ const Merchants = () => {
     };
 
     // Fetch merchants from API with search and filters
-    const fetchMerchants = async (page = 1, search = '', status = 'all', storeStatus = 'all') => {
+    const fetchMerchants = async (page = 1, search = '', status = 'all', storeStatus = 'all', storeType = 'all') => {
         try {
             setLoading(true);
 
@@ -123,6 +125,10 @@ const Merchants = () => {
 
             if (storeStatus && storeStatus !== 'all') {
                 params.append('storeStatus', storeStatus === 'Open' ? 'open' : 'close');
+            }
+
+            if (storeType && storeType !== 'all') {
+                params.append('storeType', storeType);
             }
 
             const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/merchant-stores?${params}`, {
@@ -263,29 +269,35 @@ const Merchants = () => {
     const handleSearch = () => {
         setCurrentSearch(searchInput);
         setCurrentPage(1);
-        fetchMerchants(1, searchInput, statusFilter, storeStatusFilter);
+        fetchMerchants(1, searchInput, statusFilter, storeStatusFilter, storeTypeFilter);
     };
 
     // Handle filter changes
     const handleStatusFilterChange = (newStatus) => {
         setStatusFilter(newStatus);
         setCurrentPage(1);
-        fetchMerchants(1, currentSearch, newStatus, storeStatusFilter);
+        fetchMerchants(1, currentSearch, newStatus, storeStatusFilter, storeTypeFilter);
     };
 
     const handleStoreStatusFilterChange = (newStoreStatus) => {
         setStoreStatusFilter(newStoreStatus);
         setCurrentPage(1);
-        fetchMerchants(1, currentSearch, statusFilter, newStoreStatus);
+        fetchMerchants(1, currentSearch, statusFilter, newStoreStatus, storeTypeFilter);
+    };
+
+    const handleStoreTypeFilterChange = (newStoreType) => {
+        setStoreTypeFilter(newStoreType);
+        setCurrentPage(1);
+        fetchMerchants(1, currentSearch, statusFilter, storeStatusFilter, newStoreType);
     };
 
     // Handle page change
     const handlePageChange = (page) => {
-        fetchMerchants(page, currentSearch, statusFilter, storeStatusFilter);
+        fetchMerchants(page, currentSearch, statusFilter, storeStatusFilter, storeTypeFilter);
     };
 
     useEffect(() => {
-        fetchMerchants(1, '', 'all', 'all');
+        fetchMerchants(1, '', 'all', 'all', 'all');
     }, []);
 
     const getStatusColor = (status) => {
@@ -464,7 +476,7 @@ const Merchants = () => {
                 if (data.success) {
                     toast.success(data.message || 'All open merchant shops have been closed');
                     // Refresh the merchants list
-                    fetchMerchants(1, currentSearch, statusFilter, storeStatusFilter);
+                    fetchMerchants(1, currentSearch, statusFilter, storeStatusFilter, storeTypeFilter);
                 } else {
                     throw new Error(data.message || 'Failed to force close merchants');
                 }
@@ -629,16 +641,32 @@ const Merchants = () => {
                                     </div>
                                 </div>
 
+                                {/* Store Type Filter */}
+                                <div className="flex items-center gap-2">
+                                    <span className="text-sm text-gray-600">Store Type:</span>
+                                    <select
+                                        value={storeTypeFilter}
+                                        onChange={(e) => handleStoreTypeFilterChange(e.target.value)}
+                                        className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    >
+                                        <option value="all">All Types</option>
+                                        {availableStoreTypes.map(type => (
+                                            <option key={type} value={type}>{type}</option>
+                                        ))}
+                                    </select>
+                                </div>
+
                                 {/* Clear Filters */}
-                                {(statusFilter !== 'all' || storeStatusFilter !== 'all' || searchInput) && (
+                                {(statusFilter !== 'all' || storeStatusFilter !== 'all' || storeTypeFilter !== 'all' || searchInput) && (
                                     <button
                                         onClick={() => {
                                             setStatusFilter('all');
                                             setStoreStatusFilter('all');
+                                            setStoreTypeFilter('all');
                                             setSearchInput('');
                                             setCurrentSearch('');
                                             setCurrentPage(1);
-                                            fetchMerchants(1, '', 'all', 'all');
+                                            fetchMerchants(1, '', 'all', 'all', 'all');
                                         }}
                                         className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
                                     >
