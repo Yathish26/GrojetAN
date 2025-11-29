@@ -54,6 +54,7 @@ export default function AddProduct() {
     pricing: {
       mrp: "",
     },
+    variants: [],
     isActive: true,
   tags: [],
   customFields: []
@@ -308,7 +309,21 @@ export default function AddProduct() {
   // highlights removed from product schema
         images: finalImages.filter(img => img.trim() !== ''),
   // searchKeywords removed from product schema
-        customFields: formData.customFields.filter(field => field.key.trim() && field.value.trim())
+        customFields: formData.customFields.filter(field => field.key.trim() && field.value.trim()),
+        variants: formData.variants.filter(variant => 
+          variant.name.trim() && 
+          variant.pricing?.mrp && 
+          variant.pricing.mrp > 0
+        ).map(variant => ({
+          ...variant,
+          weightDimension: variant.weightDimension?.value && variant.weightDimension?.unit ? {
+            value: parseFloat(variant.weightDimension.value),
+            unit: variant.weightDimension.unit
+          } : undefined,
+          pricing: {
+            mrp: parseFloat(variant.pricing.mrp)
+          }
+        })).filter(variant => variant.weightDimension) // Only include variants with weightDimension
       };
 
       // Only include weightDimension if both value and unit are provided
@@ -360,6 +375,7 @@ export default function AddProduct() {
           pricing: {
             mrp: 0,
           },
+          variants: [],
           isActive: true,
           tags: [],
           customFields: []
@@ -793,6 +809,181 @@ export default function AddProduct() {
                 />
                 <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">₹</span>
               </div>
+            </div>
+          </div>
+
+          {/* Variants */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-gray-800 border-b pb-2">Product Variants</h3>
+            <div className="space-y-4">
+              {formData.variants.map((variant, index) => (
+                <div key={index} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                  <div className="flex justify-between items-center mb-3">
+                    <h4 className="text-md font-medium text-gray-700">Variant {index + 1}</h4>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const newVariants = formData.variants.filter((_, i) => i !== index);
+                        setFormData(prev => ({ ...prev, variants: newVariants }));
+                      }}
+                      className="text-red-500 hover:text-red-700 p-1"
+                      disabled={loading}
+                    >
+                      <XCircle size={16} />
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-gray-700 text-sm font-medium mb-1">Variant Name*</label>
+                      <input
+                        type="text"
+                        value={variant.name || ''}
+                        onChange={(e) => {
+                          const newVariants = [...formData.variants];
+                          newVariants[index] = { ...newVariants[index], name: e.target.value };
+                          setFormData(prev => ({ ...prev, variants: newVariants }));
+                        }}
+                        className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500"
+                        disabled={loading}
+                        placeholder="e.g., 500ml, 1kg, Small"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-gray-700 text-sm font-medium mb-1">Weight/Dimension</label>
+                      <div className="grid grid-cols-2 gap-2">
+                        <input
+                          type="number"
+                          value={variant.weightDimension?.value || ''}
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            const newVariants = [...formData.variants];
+                            newVariants[index] = {
+                              ...newVariants[index],
+                              weightDimension: {
+                                ...newVariants[index].weightDimension,
+                                value: value
+                              }
+                            };
+                            setFormData(prev => ({ ...prev, variants: newVariants }));
+                          }}
+                          className="px-3 py-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500"
+                          disabled={loading}
+                          placeholder="e.g. 500"
+                          min="0"
+                          step="0.01"
+                          onWheel={(e) => e.target.blur()}
+                          onKeyDown={(e) => {
+                            if (['e', 'E', '+', '-'].includes(e.key)) {
+                              e.preventDefault();
+                            }
+                          }}
+                        />
+                        <select
+                          value={variant.weightDimension?.unit || ''}
+                          onChange={(e) => {
+                            const unit = e.target.value;
+                            const newVariants = [...formData.variants];
+                            newVariants[index] = {
+                              ...newVariants[index],
+                              weightDimension: {
+                                ...newVariants[index].weightDimension,
+                                unit: unit
+                              }
+                            };
+                            setFormData(prev => ({ ...prev, variants: newVariants }));
+                          }}
+                          className="px-3 py-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500"
+                          disabled={loading}
+                        >
+                          <option value="">Unit</option>
+                          <option value="g">g</option>
+                          <option value="kg">kg</option>
+                          <option value="ml">ml</option>
+                          <option value="l">l</option>
+                          <option value="pack">pack</option>
+                          <option value="piece">piece</option>
+                          <option value="unit">unit</option>
+                          <option value="dozen">dozen</option>
+                          <option value="cm">cm</option>
+                          <option value="mm">mm</option>
+                          <option value="inch">inch</option>
+                          <option value="feet">feet</option>
+                          <option value="meter">meter</option>
+                          <option value="other">other</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-gray-700 text-sm font-medium mb-1">MRP (₹)*</label>
+                      <input
+                        type="number"
+                        value={variant.pricing?.mrp || ''}
+                        onChange={(e) => {
+                          const mrp = e.target.value;
+                          const newVariants = [...formData.variants];
+                          newVariants[index] = {
+                            ...newVariants[index],
+                            pricing: {
+                              ...newVariants[index].pricing,
+                              mrp: parseFloat(mrp) || 0
+                            }
+                          };
+                          setFormData(prev => ({ ...prev, variants: newVariants }));
+                        }}
+                        className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500"
+                        disabled={loading}
+                        placeholder="0.00"
+                        min="0"
+                        step="0.01"
+                        onWheel={(e) => e.target.blur()}
+                        onKeyDown={(e) => {
+                          if (['e', 'E', '+', '-'].includes(e.key)) {
+                            e.preventDefault();
+                          }
+                        }}
+                        required
+                      />
+                    </div>
+                  </div>
+                  <div className="mt-3">
+                    <div className="flex items-center">
+                      <input
+                        type="checkbox"
+                        id={`variant-active-${index}`}
+                        checked={variant.isActive !== false}
+                        onChange={(e) => {
+                          const newVariants = [...formData.variants];
+                          newVariants[index] = { ...newVariants[index], isActive: e.target.checked };
+                          setFormData(prev => ({ ...prev, variants: newVariants }));
+                        }}
+                        className="h-4 w-4 text-blue-600 focus:ring-blue-500"
+                        disabled={loading}
+                      />
+                      <label htmlFor={`variant-active-${index}`} className="ml-2 text-sm text-gray-700">
+                        Active
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              ))}
+              <button
+                type="button"
+                onClick={() => {
+                  const newVariants = [...formData.variants, {
+                    name: '',
+                    weightDimension: { value: '', unit: '' },
+                    pricing: { mrp: 0 },
+                    isActive: true
+                  }];
+                  setFormData(prev => ({ ...prev, variants: newVariants }));
+                }}
+                className="flex items-center gap-2 text-green-600 hover:text-green-700 text-sm font-medium"
+                disabled={loading}
+              >
+                <Plus size={16} />
+                Add Variant
+              </button>
             </div>
           </div>
 

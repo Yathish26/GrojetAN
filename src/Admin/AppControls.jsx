@@ -21,6 +21,16 @@ export default function AppControls() {
   const [isEditing, setIsEditing] = useState(false);
   const [originalValues, setOriginalValues] = useState({});
 
+  // Update logs states
+  const [updateLogs, setUpdateLogs] = useState({
+    taxPercentageOnDeliveryFee: { updatedBy: null, updatedAt: null },
+    deliveryFee: { updatedBy: null, updatedAt: null },
+    smallCartFee: { updatedBy: null, updatedAt: null },
+    smallCartThreshold: { updatedBy: null, updatedAt: null },
+    freeDeliveryThreshold: { updatedBy: null, updatedAt: null },
+    cashOnDeliveryEnabled: { updatedBy: null, updatedAt: null },
+  });
+
   // Fetch app controls on component mount
   useEffect(() => {
     fetchAppControls();
@@ -41,27 +51,62 @@ export default function AppControls() {
       const result = await response.json();
       if (result.success) {
         const data = result.data;
-        setTaxPercentageOnDeliveryFee(data.taxPercentageOnDeliveryFee || 18);
-        setDeliveryFee(data.deliveryFee || 40);
-        setSmallCartFee(data.smallCartFee || 40);
-        setSmallCartThreshold(data.smallCartThreshold || 499);
-        setFreeDeliveryThreshold(data.freeDeliveryThreshold || 499);
-        setCashOnDeliveryEnabled(data.cashOnDeliveryEnabled !== undefined ? data.cashOnDeliveryEnabled : true);
+        setTaxPercentageOnDeliveryFee(data.taxPercentageOnDeliveryFee?.value || 18);
+        setDeliveryFee(data.deliveryFee?.value || 40);
+        setSmallCartFee(data.smallCartFee?.value || 40);
+        setSmallCartThreshold(data.smallCartThreshold?.value || 499);
+        setFreeDeliveryThreshold(data.freeDeliveryThreshold?.value || 499);
+        setCashOnDeliveryEnabled(data.cashOnDeliveryEnabled?.value !== undefined ? data.cashOnDeliveryEnabled.value : true);
+        
+        // Set update logs
+        setUpdateLogs({
+          taxPercentageOnDeliveryFee: {
+            updatedBy: data.taxPercentageOnDeliveryFee?.updatedBy,
+            updatedAt: data.taxPercentageOnDeliveryFee?.updatedAt
+          },
+          deliveryFee: {
+            updatedBy: data.deliveryFee?.updatedBy,
+            updatedAt: data.deliveryFee?.updatedAt
+          },
+          smallCartFee: {
+            updatedBy: data.smallCartFee?.updatedBy,
+            updatedAt: data.smallCartFee?.updatedAt
+          },
+          smallCartThreshold: {
+            updatedBy: data.smallCartThreshold?.updatedBy,
+            updatedAt: data.smallCartThreshold?.updatedAt
+          },
+          freeDeliveryThreshold: {
+            updatedBy: data.freeDeliveryThreshold?.updatedBy,
+            updatedAt: data.freeDeliveryThreshold?.updatedAt
+          },
+          cashOnDeliveryEnabled: {
+            updatedBy: data.cashOnDeliveryEnabled?.updatedBy,
+            updatedAt: data.cashOnDeliveryEnabled?.updatedAt
+          },
+        });
         
         // Store original values for cancel functionality
         setOriginalValues({
-          taxPercentageOnDeliveryFee: data.taxPercentageOnDeliveryFee || 18,
-          deliveryFee: data.deliveryFee || 40,
-          smallCartFee: data.smallCartFee || 40,
-          smallCartThreshold: data.smallCartThreshold || 499,
-          freeDeliveryThreshold: data.freeDeliveryThreshold || 499,
-          cashOnDeliveryEnabled: data.cashOnDeliveryEnabled !== undefined ? data.cashOnDeliveryEnabled : true,
+          taxPercentageOnDeliveryFee: data.taxPercentageOnDeliveryFee?.value || 18,
+          deliveryFee: data.deliveryFee?.value || 40,
+          smallCartFee: data.smallCartFee?.value || 40,
+          smallCartThreshold: data.smallCartThreshold?.value || 499,
+          freeDeliveryThreshold: data.freeDeliveryThreshold?.value || 499,
+          cashOnDeliveryEnabled: data.cashOnDeliveryEnabled?.value !== undefined ? data.cashOnDeliveryEnabled.value : true,
         });
       }
     } catch (error) {
       console.error('Error fetching app controls:', error);
       toast.error('Failed to load app controls');
     }
+  };
+
+  const formatUpdateLog = (log) => {
+    if (!log.updatedAt) return 'Never updated';
+    const date = new Date(log.updatedAt).toLocaleString();
+    const adminName = log.updatedBy ? (log.updatedBy.name || log.updatedBy.email || 'Unknown Admin') : 'Unknown Admin';
+    return `Last updated by ${adminName} on ${date}`;
   };
 
   const handleEdit = () => {
@@ -130,6 +175,34 @@ export default function AppControls() {
           smallCartThreshold: parseFloat(smallCartThreshold),
           freeDeliveryThreshold: parseFloat(freeDeliveryThreshold),
           cashOnDeliveryEnabled: cashOnDeliveryEnabled,
+        });
+        // Update update logs with the returned data
+        const data = result.data;
+        setUpdateLogs({
+          taxPercentageOnDeliveryFee: {
+            updatedBy: data.taxPercentageOnDeliveryFee?.updatedBy,
+            updatedAt: data.taxPercentageOnDeliveryFee?.updatedAt
+          },
+          deliveryFee: {
+            updatedBy: data.deliveryFee?.updatedBy,
+            updatedAt: data.deliveryFee?.updatedAt
+          },
+          smallCartFee: {
+            updatedBy: data.smallCartFee?.updatedBy,
+            updatedAt: data.smallCartFee?.updatedAt
+          },
+          smallCartThreshold: {
+            updatedBy: data.smallCartThreshold?.updatedBy,
+            updatedAt: data.smallCartThreshold?.updatedAt
+          },
+          freeDeliveryThreshold: {
+            updatedBy: data.freeDeliveryThreshold?.updatedBy,
+            updatedAt: data.freeDeliveryThreshold?.updatedAt
+          },
+          cashOnDeliveryEnabled: {
+            updatedBy: data.cashOnDeliveryEnabled?.updatedBy,
+            updatedAt: data.cashOnDeliveryEnabled?.updatedAt
+          },
         });
         return true;
       } else {
@@ -396,6 +469,9 @@ export default function AppControls() {
               <p className="text-xs text-gray-500 mt-1">
                 This percentage will be applied as tax on the delivery fee.
               </p>
+              <p className="text-xs text-blue-600 mt-1">
+                {formatUpdateLog(updateLogs.taxPercentageOnDeliveryFee)}
+              </p>
             </div>
 
             {/* Delivery Fee */}
@@ -416,6 +492,9 @@ export default function AppControls() {
               />
               <p className="text-xs text-gray-500 mt-1">
                 Base delivery fee amount.
+              </p>
+              <p className="text-xs text-blue-600 mt-1">
+                {formatUpdateLog(updateLogs.deliveryFee)}
               </p>
             </div>
 
@@ -438,6 +517,9 @@ export default function AppControls() {
               <p className="text-xs text-gray-500 mt-1">
                 Delivery fee for carts below the threshold.
               </p>
+              <p className="text-xs text-blue-600 mt-1">
+                {formatUpdateLog(updateLogs.smallCartFee)}
+              </p>
             </div>
 
             {/* Small Cart Threshold */}
@@ -459,6 +541,9 @@ export default function AppControls() {
               <p className="text-xs text-gray-500 mt-1">
                 Minimum cart value for small cart fee.
               </p>
+              <p className="text-xs text-blue-600 mt-1">
+                {formatUpdateLog(updateLogs.smallCartThreshold)}
+              </p>
             </div>
 
             {/* Free Delivery Threshold */}
@@ -479,6 +564,9 @@ export default function AppControls() {
               />
               <p className="text-xs text-gray-500 mt-1">
                 Minimum cart value for free delivery.
+              </p>
+              <p className="text-xs text-blue-600 mt-1">
+                {formatUpdateLog(updateLogs.freeDeliveryThreshold)}
               </p>
             </div>
 
@@ -508,6 +596,9 @@ export default function AppControls() {
               </div>
               <p className="text-xs text-gray-500 mt-1">
                 Allow customers to pay with cash on delivery.
+              </p>
+              <p className="text-xs text-blue-600 mt-1">
+                {formatUpdateLog(updateLogs.cashOnDeliveryEnabled)}
               </p>
             </div>
 

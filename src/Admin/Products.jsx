@@ -434,7 +434,12 @@ export default function Products() {
 
   // Edit modal handlers
   const openEditModal = (product) => {
-    setEditProduct(JSON.parse(JSON.stringify(product)));
+    const productCopy = JSON.parse(JSON.stringify(product));
+    // Ensure variants is always an array
+    if (!productCopy.variants) {
+      productCopy.variants = [];
+    }
+    setEditProduct(productCopy);
     setOriginalThumbnailUrl(product.thumbnail || null);
     setOriginalImageUrls([...(product.images || [])]);
     setInitialOriginalImageUrls([...(product.images || [])]); // Store initial state for deletion tracking
@@ -1317,6 +1322,181 @@ export default function Products() {
     }
   }}
                   />
+                </div>
+              </div>
+
+              {/* Variants Section */}
+              <div className="bg-gray-50 p-4">
+                <h3 className="text-lg font-medium text-gray-800 mb-4">Product Variants</h3>
+                <div className="space-y-4">
+                  {(editProduct.variants || []).map((variant, index) => (
+                    <div key={index} className="border border-gray-200 rounded-lg p-4 bg-white">
+                      <div className="flex justify-between items-center mb-3">
+                        <h4 className="text-md font-medium text-gray-700">Variant {index + 1}</h4>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const newVariants = (editProduct.variants || []).filter((_, i) => i !== index);
+                            setEditProduct({ ...editProduct, variants: newVariants });
+                          }}
+                          className="text-red-500 hover:text-red-700 p-1"
+                          disabled={isSaving || currentUser?.role === 'inventory_manager'}
+                        >
+                          <XCircle size={16} />
+                        </button>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div>
+                          <label className="block text-gray-700 text-sm font-medium mb-1">Variant Name*</label>
+                          <input
+                            type="text"
+                            value={variant.name || ''}
+                            onChange={(e) => {
+                              const newVariants = [...(editProduct.variants || [])];
+                              newVariants[index] = { ...newVariants[index], name: e.target.value };
+                              setEditProduct({ ...editProduct, variants: newVariants });
+                            }}
+                            className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500"
+                            disabled={isSaving || currentUser?.role === 'inventory_manager'}
+                            placeholder="e.g., 500ml, 1kg, Small"
+                            required
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-gray-700 text-sm font-medium mb-1">Weight/Dimension</label>
+                          <div className="grid grid-cols-2 gap-2">
+                            <input
+                              type="number"
+                              value={variant.weightDimension?.value || ''}
+                              onChange={(e) => {
+                                const value = e.target.value;
+                                const newVariants = [...(editProduct.variants || [])];
+                                newVariants[index] = {
+                                  ...newVariants[index],
+                                  weightDimension: {
+                                    ...newVariants[index].weightDimension,
+                                    value: value
+                                  }
+                                };
+                                setEditProduct({ ...editProduct, variants: newVariants });
+                              }}
+                              className="px-3 py-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500"
+                              disabled={isSaving || currentUser?.role === 'inventory_manager'}
+                              placeholder="e.g. 500"
+                              min="0"
+                              step="0.01"
+                              onWheel={(e) => e.target.blur()}
+                              onKeyDown={(e) => {
+                                if (['e', 'E', '+', '-'].includes(e.key)) {
+                                  e.preventDefault();
+                                }
+                              }}
+                            />
+                            <select
+                              value={variant.weightDimension?.unit || ''}
+                              onChange={(e) => {
+                                const unit = e.target.value;
+                                const newVariants = [...(editProduct.variants || [])];
+                                newVariants[index] = {
+                                  ...newVariants[index],
+                                  weightDimension: {
+                                    ...newVariants[index].weightDimension,
+                                    unit: unit
+                                  }
+                                };
+                                setEditProduct({ ...editProduct, variants: newVariants });
+                              }}
+                              className="px-3 py-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500"
+                              disabled={isSaving || currentUser?.role === 'inventory_manager'}
+                            >
+                              <option value="">Unit</option>
+                              <option value="g">g</option>
+                              <option value="kg">kg</option>
+                              <option value="ml">ml</option>
+                              <option value="l">l</option>
+                              <option value="pack">pack</option>
+                              <option value="piece">piece</option>
+                              <option value="unit">unit</option>
+                              <option value="dozen">dozen</option>
+                              <option value="cm">cm</option>
+                              <option value="mm">mm</option>
+                              <option value="inch">inch</option>
+                              <option value="feet">feet</option>
+                              <option value="meter">meter</option>
+                              <option value="other">other</option>
+                            </select>
+                          </div>
+                        </div>
+                        <div>
+                          <label className="block text-gray-700 text-sm font-medium mb-1">MRP (₹)*</label>
+                          <input
+                            type="number"
+                            value={variant.pricing?.mrp || ''}
+                            onChange={(e) => {
+                              const mrp = e.target.value;
+                              const newVariants = [...(editProduct.variants || [])];
+                              newVariants[index] = {
+                                ...newVariants[index],
+                                pricing: {
+                                  ...newVariants[index].pricing,
+                                  mrp: parseFloat(mrp) || 0
+                                }
+                              };
+                              setEditProduct({ ...editProduct, variants: newVariants });
+                            }}
+                            className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500"
+                            disabled={isSaving || currentUser?.role === 'inventory_manager'}
+                            placeholder="0.00"
+                            min="0"
+                            step="0.01"
+                            onWheel={(e) => e.target.blur()}
+                            onKeyDown={(e) => {
+                              if (['e', 'E', '+', '-'].includes(e.key)) {
+                                e.preventDefault();
+                              }
+                            }}
+                            required
+                          />
+                        </div>
+                      </div>
+                      <div className="mt-3">
+                        <div className="flex items-center">
+                          <input
+                            type="checkbox"
+                            id={`variant-active-${index}`}
+                            checked={variant.isActive !== false}
+                            onChange={(e) => {
+                              const newVariants = [...(editProduct.variants || [])];
+                              newVariants[index] = { ...newVariants[index], isActive: e.target.checked };
+                              setEditProduct({ ...editProduct, variants: newVariants });
+                            }}
+                            className="h-4 w-4 text-blue-600 focus:ring-blue-500"
+                            disabled={isSaving || currentUser?.role === 'inventory_manager'}
+                          />
+                          <label htmlFor={`variant-active-${index}`} className="ml-2 text-sm text-gray-700">
+                            Active
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const newVariants = [...(editProduct.variants || []), {
+                        name: '',
+                        weightDimension: { value: '', unit: '' },
+                        pricing: { mrp: 0 },
+                        isActive: true
+                      }];
+                      setEditProduct({ ...editProduct, variants: newVariants });
+                    }}
+                    className="flex items-center gap-2 text-green-600 hover:text-green-700 text-sm font-medium"
+                    disabled={isSaving || currentUser?.role === 'inventory_manager'}
+                  >
+                    <Plus size={16} />
+                    Add Variant
+                  </button>
                 </div>
               </div>
 

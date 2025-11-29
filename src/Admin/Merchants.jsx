@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import {
     Search, Filter, Plus, Eye, Edit, Trash2, Store,
     Phone, Mail, MapPin, Star, Package, DollarSign,
-    Calendar, User, MoreVertical, Download, Map, X
+    Calendar, User, MoreVertical, Download, Map, X,
+    IndianRupeeIcon
 } from 'lucide-react';
 import Layout from '../Components/Layout';
 import { GoogleMap, Marker } from '../Components/GoogleMapComponents';
@@ -139,8 +140,6 @@ const Merchants = () => {
                     return;
                 }
                 if (data.success) {
-                    console.log('API Response:', data); // Debug log
-                    // Transform API data to match component expectations
                     const transformedMerchants = data.merchants.map(merchant => ({
                         id: merchant.id,
                         merchantId: merchant.merchantId,
@@ -355,11 +354,11 @@ const Merchants = () => {
                 'Account Number', 'IFSC Code', 'Bank Name', 'Branch Name', 'Account Holder Name',
                 'Store Street', 'Store City', 'Store State', 'Store Pincode', 'Store Country', 'Store Landmark', 'Store Latitude', 'Store Longitude',
                 'Opening Time', 'Closing Time', 'Store Type', 'Delivery Type',
-                'Logo URL', 'Banner URL', 'Tagline', 'Store Description', 'Facebook URL', 'Instagram URL', 'Twitter URL', 'WhatsApp URL', 'Google Business URL',
+                'Logo URL', 'Banner URL', 'Tagline', 'Store Description', 'Google Business URL',
                 'Documents Link', 'Store Banner',
-                'Commission Percentage', 'Commission Minimum Settlement',
+                'Commission Percentage',
                 'Status', 'Store Status',
-                'Rating', 'Total Ratings', 'Total Orders', 'Completed Orders', 'Cancelled Orders', 'Total Revenue', 'Average Order Value', 'Response Time',
+                'Rating', 'Total Ratings', 'Total Orders', 'Completed Orders', 'Cancelled Orders', 'Total Revenue',
                 'Registration Date', 'Last Login', 'Updated At',
                 'Device Platform', 'Device Name', 'Last Device Login'
             ];
@@ -397,15 +396,10 @@ const Merchants = () => {
                     `"${merchant.bannerUrl}"`,
                     `"${merchant.tagline}"`,
                     `"${merchant.storeDescription}"`,
-                    `"${merchant.facebookUrl}"`,
-                    `"${merchant.instagramUrl}"`,
-                    `"${merchant.twitterUrl}"`,
-                    `"${merchant.whatsappUrl}"`,
                     `"${merchant.googleBusinessUrl}"`,
                     `"${merchant.documentsLink}"`,
                     `"${merchant.storeBanner}"`,
                     `"${merchant.commissionPercentage}"`,
-                    `"${merchant.commissionMinimumSettlement}"`,
                     `"${merchant.status}"`,
                     `"${merchant.storeStatus}"`,
                     `"${merchant.rating}"`,
@@ -414,8 +408,6 @@ const Merchants = () => {
                     `"${merchant.completedOrders}"`,
                     `"${merchant.cancelledOrders}"`,
                     `"${merchant.totalRevenue}"`,
-                    `"${merchant.averageOrderValue}"`,
-                    `"${merchant.responseTime}"`,
                     `"${merchant.registrationDate}"`,
                     `"${merchant.lastLogin}"`,
                     `"${merchant.updatedAt}"`,
@@ -494,7 +486,7 @@ const Merchants = () => {
                     {/* Header */}
                     <div className="mb-8">
                         <div className="flex items-center justify-between">
-                            <div className="flex items-center space-x-4">
+                            <div className="hidden md:flex items-center space-x-4">
                                 <div>
                                     <h1 className="text-3xl font-bold text-gray-900">Merchants</h1>
                                     <p className="mt-1 text-sm text-gray-500">Manage and monitor all merchant accounts</p>
@@ -546,122 +538,120 @@ const Merchants = () => {
                         </div>
                     </div>
 
-          {/* Search and Filters */}
-          <div className="bg-white shadow-lg rounded-lg overflow-hidden mb-8">
-            <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4">
-              <h2 className="text-xl font-semibold text-white flex items-center gap-3">
-                <Search className="w-6 h-6" />
-                Search & Filters
-              </h2>
-            </div>
-            <div className="p-6">
-              {/* Search Bar */}
-              <div className="mb-6">
-                <div className="flex gap-4">
-                  <div className="flex-1 max-w-lg">
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <Search className="h-5 w-5 text-gray-400" />
-                      </div>
-                      <input
-                        type="text"
-                        placeholder="Search merchants by name, email, or ID..."
-                        value={searchInput}
-                        onChange={(e) => setSearchInput(e.target.value)}
-                        onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                        className="block w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                      />
-                    </div>
-                  </div>
-                  <button
-                    onClick={handleSearch}
-                    className="inline-flex items-center px-6 py-3 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
-                  >
-                    <Search size={16} className="mr-2" />
-                    Search
-                  </button>
-                </div>
-              </div>
+                    {/* Search and Filters */}
+                    <div className="bg-white shadow-lg rounded-lg overflow-hidden mb-8">
+                        <div className="bg-green-600 px-6 py-4">
+                            <h2 className="text-xl font-semibold text-white flex items-center gap-3">
+                                <Search className="w-6 h-6" />
+                                Search & Filters
+                            </h2>
+                        </div>
+                        <div className="p-6">
+                            {/* Search Bar */}
+                            <div className="mb-6">
+                                <div className="flex gap-4">
+                                    <div className="flex-1 max-w-lg">
+                                        <div className="relative">
+                                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                                <Search className="h-5 w-5 text-gray-400" />
+                                            </div>
+                                            <input
+                                                type="text"
+                                                placeholder="Search merchants by name, email, or ID..."
+                                                value={searchInput}
+                                                onChange={(e) => setSearchInput(e.target.value)}
+                                                onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                                                className="block w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                                            />
+                                        </div>
+                                    </div>
+                                    <button
+                                        onClick={handleSearch}
+                                        className="inline-flex items-center px-6 py-3 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+                                    >
+                                        <Search size={16} className="mr-2" />
+                                        Search
+                                    </button>
+                                </div>
+                            </div>
 
-              {/* Filters */}
-              <div className="flex flex-wrap items-center gap-4">
-                <div className="flex items-center gap-2">
-                  <Filter className="h-5 w-5 text-gray-500" />
-                  <span className="text-sm font-medium text-gray-700">Filters:</span>
-                </div>
+                            {/* Filters */}
+                            <div className="flex flex-wrap items-center gap-4">
+                                <div className="flex items-center gap-2">
+                                    <Filter className="h-5 w-5 text-gray-500" />
+                                    <span className="text-sm font-medium text-gray-700">Filters:</span>
+                                </div>
 
-                {/* Status Filter */}
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-gray-600">Account Status:</span>
-                  <div className="flex rounded-lg border border-gray-300 overflow-hidden">
-                    {[
-                      { key: 'all', label: 'All', color: 'bg-gray-100 text-gray-700 hover:bg-gray-200' },
-                      { key: 'active', label: 'Active', color: 'bg-green-100 text-green-700 hover:bg-green-200' },
-                      { key: 'hold', label: 'Hold', color: 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200' },
-                      { key: 'banned', label: 'Banned', color: 'bg-red-100 text-red-700 hover:bg-red-200' }
-                    ].map(({ key, label, color }) => (
-                      <button
-                        key={key}
-                        onClick={() => handleStatusFilterChange(key)}
-                        className={`px-3 py-1.5 text-xs font-medium transition-colors ${
-                          statusFilter === key
-                            ? color.replace('hover:', '')
-                            : 'bg-white text-gray-600 hover:bg-gray-50'
-                        } ${key !== 'all' ? 'border-l border-gray-300' : ''}`}
-                      >
-                        {label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
+                                {/* Status Filter */}
+                                <div className="flex items-center gap-2">
+                                    <span className="text-sm text-gray-600">Account Status:</span>
+                                    <div className="flex rounded-lg border border-gray-300 overflow-hidden">
+                                        {[
+                                            { key: 'all', label: 'All', color: 'bg-gray-100 text-gray-700 hover:bg-gray-200' },
+                                            { key: 'active', label: 'Active', color: 'bg-green-100 text-green-700 hover:bg-green-200' },
+                                            { key: 'hold', label: 'Hold', color: 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200' },
+                                            { key: 'banned', label: 'Banned', color: 'bg-red-100 text-red-700 hover:bg-red-200' }
+                                        ].map(({ key, label, color }) => (
+                                            <button
+                                                key={key}
+                                                onClick={() => handleStatusFilterChange(key)}
+                                                className={`px-3 py-1.5 text-xs font-medium transition-colors ${statusFilter === key
+                                                        ? color.replace('hover:', '')
+                                                        : 'bg-white text-gray-600 hover:bg-gray-50'
+                                                    } ${key !== 'all' ? 'border-l border-gray-300' : ''}`}
+                                            >
+                                                {label}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
 
-                {/* Store Status Filter */}
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-gray-600">Store Status:</span>
-                  <div className="flex rounded-lg border border-gray-300 overflow-hidden">
-                    {[
-                      { key: 'all', label: 'All', color: 'bg-gray-100 text-gray-700 hover:bg-gray-200' },
-                      { key: 'Open', label: 'Open', color: 'bg-green-100 text-green-700 hover:bg-green-200' },
-                      { key: 'Closed', label: 'Closed', color: 'bg-red-100 text-red-700 hover:bg-red-200' }
-                    ].map(({ key, label, color }) => (
-                      <button
-                        key={key}
-                        onClick={() => handleStoreStatusFilterChange(key)}
-                        className={`px-3 py-1.5 text-xs font-medium transition-colors ${
-                          storeStatusFilter === key
-                            ? color.replace('hover:', '')
-                            : 'bg-white text-gray-600 hover:bg-gray-50'
-                        } ${key !== 'all' ? 'border-l border-gray-300' : ''}`}
-                      >
-                        {label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
+                                {/* Store Status Filter */}
+                                <div className="flex items-center gap-2">
+                                    <span className="text-sm text-gray-600">Store Status:</span>
+                                    <div className="flex rounded-lg border border-gray-300 overflow-hidden">
+                                        {[
+                                            { key: 'all', label: 'All', color: 'bg-gray-100 text-gray-700 hover:bg-gray-200' },
+                                            { key: 'Open', label: 'Open', color: 'bg-green-100 text-green-700 hover:bg-green-200' },
+                                            { key: 'Closed', label: 'Closed', color: 'bg-red-100 text-red-700 hover:bg-red-200' }
+                                        ].map(({ key, label, color }) => (
+                                            <button
+                                                key={key}
+                                                onClick={() => handleStoreStatusFilterChange(key)}
+                                                className={`px-3 py-1.5 text-xs font-medium transition-colors ${storeStatusFilter === key
+                                                        ? color.replace('hover:', '')
+                                                        : 'bg-white text-gray-600 hover:bg-gray-50'
+                                                    } ${key !== 'all' ? 'border-l border-gray-300' : ''}`}
+                                            >
+                                                {label}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
 
-                {/* Clear Filters */}
-                {(statusFilter !== 'all' || storeStatusFilter !== 'all' || searchInput) && (
-                  <button
-                    onClick={() => {
-                      setStatusFilter('all');
-                      setStoreStatusFilter('all');
-                      setSearchInput('');
-                      setCurrentSearch('');
-                      setCurrentPage(1);
-                      fetchMerchants(1, '', 'all', 'all');
-                    }}
-                    className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
-                  >
-                    <X size={16} className="mr-1" />
-                    Clear Filters
-                  </button>
-                )}
-              </div>
-            </div>
-          </div>                    {/* Stats Cards */}
-                    <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                                {/* Clear Filters */}
+                                {(statusFilter !== 'all' || storeStatusFilter !== 'all' || searchInput) && (
+                                    <button
+                                        onClick={() => {
+                                            setStatusFilter('all');
+                                            setStoreStatusFilter('all');
+                                            setSearchInput('');
+                                            setCurrentSearch('');
+                                            setCurrentPage(1);
+                                            fetchMerchants(1, '', 'all', 'all');
+                                        }}
+                                        className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                                    >
+                                        <X size={16} className="mr-1" />
+                                        Clear Filters
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+                    </div>                    {/* Stats Cards */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                         <div className="bg-white shadow-lg rounded-lg overflow-hidden">
-                            <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4">
+                            <div className="bg-green-600 px-6 py-4">
                                 <div className="flex items-center justify-between">
                                     <div>
                                         <p className="text-sm font-medium text-blue-100 uppercase tracking-wide">Total Merchants</p>
@@ -670,12 +660,9 @@ const Merchants = () => {
                                     <Store className="w-8 h-8 text-blue-200" />
                                 </div>
                             </div>
-                            <div className="p-6">
-                                <p className="text-sm text-gray-600">All registered merchants in the system</p>
-                            </div>
                         </div>
                         <div className="bg-white shadow-lg rounded-lg overflow-hidden">
-                            <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4">
+                            <div className="bg-green-600 px-6 py-4">
                                 <div className="flex items-center justify-between">
                                     <div>
                                         <p className="text-sm font-medium text-blue-100 uppercase tracking-wide">Open Merchants</p>
@@ -686,12 +673,9 @@ const Merchants = () => {
                                     </div>
                                 </div>
                             </div>
-                            <div className="p-6">
-                                <p className="text-sm text-gray-600">Merchants currently open for business</p>
-                            </div>
                         </div>
                         <div className="bg-white shadow-lg rounded-lg overflow-hidden">
-                            <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4">
+                            <div className="bg-green-600 px-6 py-4">
                                 <div className="flex items-center justify-between">
                                     <div>
                                         <p className="text-sm font-medium text-blue-100 uppercase tracking-wide">On Hold</p>
@@ -702,29 +686,23 @@ const Merchants = () => {
                                     </div>
                                 </div>
                             </div>
-                            <div className="p-6">
-                                <p className="text-sm text-gray-600">Merchants with accounts on hold</p>
-                            </div>
                         </div>
                         <div className="bg-white shadow-lg rounded-lg overflow-hidden">
-                            <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4">
+                            <div className="bg-green-600 px-6 py-4">
                                 <div className="flex items-center justify-between">
                                     <div>
                                         <p className="text-sm font-medium text-blue-100 uppercase tracking-wide">Total Revenue</p>
                                         <p className="text-3xl font-bold text-white">{formatCurrency(stats.totalRevenue)}</p>
                                     </div>
-                                    <DollarSign className="w-8 h-8 text-blue-200" />
+                                    <IndianRupeeIcon className="w-8 h-8 text-blue-200" />
                                 </div>
-                            </div>
-                            <div className="p-6">
-                                <p className="text-sm text-gray-600">Total revenue generated by all merchants</p>
                             </div>
                         </div>
                     </div>
 
                     {/* Merchants List */}
                     <div className="bg-white shadow-lg rounded-lg overflow-hidden mb-8">
-                        <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4">
+                        <div className="bg-green-600 px-6 py-4">
                             <h2 className="text-xl font-semibold text-white flex items-center gap-3">
                                 <Package className="w-6 h-6" />
                                 Merchants ({filteredMerchants.length})
@@ -837,189 +815,187 @@ const Merchants = () => {
                                             )}
                                         </tbody>
                                     </table>
-                            </div>
+                                </div>
 
-                            {/* Mobile Card View */}
-                            <div className="md:hidden p-6">
-                                {filteredMerchants.length === 0 ? (
-                                    <div className="text-center py-12">
-                                        <Store className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                                        <p className="text-lg font-medium text-gray-500">No merchants found</p>
-                                        <p className="text-sm text-gray-400">Try adjusting your search criteria</p>
-                                    </div>
-                                ) : (
-                                    <div className="space-y-4">
-                                        {filteredMerchants.map((merchant) => (
-                                            <div key={merchant.id} className="bg-gray-50 rounded-lg p-4 hover:bg-gray-100 transition-colors border border-gray-200">
-                                                <div className="flex items-start gap-4">
-                                                    <div className="w-14 h-14 bg-green-100 flex items-center justify-center overflow-hidden flex-shrink-0 rounded-lg">
-                                                        {merchant.brandingInfo?.logoUrl ? (
-                                                            <img
-                                                                src={merchant.brandingInfo.logoUrl}
-                                                                alt={`${merchant.name} logo`}
-                                                                className="w-full h-full object-cover"
-                                                                onError={(e) => {
-                                                                    e.target.style.display = 'none';
-                                                                    e.target.nextSibling.style.display = 'block';
-                                                                }}
-                                                            />
-                                                        ) : null}
-                                                        <Store className="w-7 h-7 text-green-600" style={{ display: merchant.brandingInfo?.logoUrl ? 'none' : 'block' }} />
-                                                    </div>
-                                                    <div className="flex-1 min-w-0">
-                                                        <div className="flex items-start justify-between mb-2">
-                                                            <div className="flex-1 min-w-0">
-                                                                <h3 className="text-base font-semibold text-gray-900 truncate">
-                                                                    {merchant.name}
-                                                                </h3>
-                                                                <p className="text-sm text-gray-500 font-mono">ID: {merchant.merchantId}</p>
-                                                            </div>
-                                                            <span className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ml-2 flex-shrink-0 ${getStatusColor(merchant.storeStatus)}`}>
-                                                                {getStatusIcon(merchant.storeStatus)} {merchant.storeStatus}
-                                                            </span>
+                                {/* Mobile Card View */}
+                                <div className="md:hidden p-6">
+                                    {filteredMerchants.length === 0 ? (
+                                        <div className="text-center py-12">
+                                            <Store className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                                            <p className="text-lg font-medium text-gray-500">No merchants found</p>
+                                            <p className="text-sm text-gray-400">Try adjusting your search criteria</p>
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-4">
+                                            {filteredMerchants.map((merchant) => (
+                                                <div key={merchant.id} className="bg-gray-50 rounded-lg p-4 hover:bg-gray-100 transition-colors border border-gray-200">
+                                                    <div className="flex items-start gap-4">
+                                                        <div className="w-14 h-14 bg-green-100 flex items-center justify-center overflow-hidden flex-shrink-0 rounded-lg">
+                                                            {merchant.brandingInfo?.logoUrl ? (
+                                                                <img
+                                                                    src={merchant.brandingInfo.logoUrl}
+                                                                    alt={`${merchant.name} logo`}
+                                                                    className="w-full h-full object-cover"
+                                                                    onError={(e) => {
+                                                                        e.target.style.display = 'none';
+                                                                        e.target.nextSibling.style.display = 'block';
+                                                                    }}
+                                                                />
+                                                            ) : null}
+                                                            <Store className="w-7 h-7 text-green-600" style={{ display: merchant.brandingInfo?.logoUrl ? 'none' : 'block' }} />
                                                         </div>
+                                                        <div className="flex-1 min-w-0">
+                                                            <div className="flex items-start justify-between mb-2">
+                                                                <div className="flex-1 min-w-0">
+                                                                    <h3 className="text-base font-semibold text-gray-900 truncate">
+                                                                        {merchant.name}
+                                                                    </h3>
+                                                                    <p className="text-sm text-gray-500 font-mono">ID: {merchant.merchantId}</p>
+                                                                </div>
+                                                                <span className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ml-2 flex-shrink-0 ${getStatusColor(merchant.storeStatus)}`}>
+                                                                    {getStatusIcon(merchant.storeStatus)} {merchant.storeStatus}
+                                                                </span>
+                                                            </div>
 
-                                                        <div className="space-y-2 mb-3">
-                                                            <div className="flex items-center gap-2 text-sm text-gray-600">
-                                                                <Mail className="w-4 h-4 text-gray-400" />
-                                                                <span className="truncate">{merchant.email}</span>
+                                                            <div className="space-y-2 mb-3">
+                                                                <div className="flex items-center gap-2 text-sm text-gray-600">
+                                                                    <Mail className="w-4 h-4 text-gray-400" />
+                                                                    <span className="truncate">{merchant.email}</span>
+                                                                </div>
+                                                                <div className="flex items-center gap-2 text-sm text-gray-600">
+                                                                    <Phone className="w-4 h-4 text-gray-400" />
+                                                                    <span>{merchant.phone}</span>
+                                                                </div>
                                                             </div>
-                                                            <div className="flex items-center gap-2 text-sm text-gray-600">
-                                                                <Phone className="w-4 h-4 text-gray-400" />
-                                                                <span>{merchant.phone}</span>
-                                                            </div>
-                                                        </div>
 
-                                                        <div className="flex items-center justify-between pt-2 border-t border-gray-200">
-                                                            <div className="text-sm text-gray-600">
-                                                                <span className="font-medium">{merchant.todaysOrders}</span> orders • <span className="font-medium">{formatCurrency(merchant.todaysRevenue)}</span>
+                                                            <div className="flex items-center justify-between pt-2 border-t border-gray-200">
+                                                                <div className="text-sm text-gray-600">
+                                                                    <span className="font-medium">{merchant.todaysOrders}</span> orders • <span className="font-medium">{formatCurrency(merchant.todaysRevenue)}</span>
+                                                                </div>
+                                                                <button
+                                                                    onClick={() => navigate(`/merchants/${merchant.id}`)}
+                                                                    className="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-md text-green-700 bg-green-100 hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
+                                                                >
+                                                                    <Eye size={14} className="mr-1.5" />
+                                                                    View
+                                                                </button>
                                                             </div>
-                                                            <button
-                                                                onClick={() => navigate(`/merchants/${merchant.id}`)}
-                                                                className="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-md text-green-700 bg-green-100 hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
-                                                            >
-                                                                <Eye size={14} className="mr-1.5" />
-                                                                View
-                                                            </button>
                                                         </div>
                                                     </div>
                                                 </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Pagination */}
+                                {(() => {
+                                    return (totalPages > 1 || stats.totalMerchants > 10) && (
+                                        <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 flex flex-col sm:flex-row items-center justify-between gap-4">
+                                            <div className="text-sm text-gray-700 font-medium">
+                                                Showing page <span className="font-semibold">{currentPage}</span> of <span className="font-semibold">{totalPages}</span> ({stats.totalMerchants} total merchants)
                                             </div>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* Pagination */}
-                            {(() => {
-                                console.log('Pagination check:', { totalPages, totalMerchants: stats.totalMerchants });
-                                return (totalPages > 1 || stats.totalMerchants > 10) && (
-                                    <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 flex flex-col sm:flex-row items-center justify-between gap-4">
-                                        <div className="text-sm text-gray-700 font-medium">
-                                            Showing page <span className="font-semibold">{currentPage}</span> of <span className="font-semibold">{totalPages}</span> ({stats.totalMerchants} total merchants)
+                                            <div className="flex items-center space-x-2">
+                                                <button
+                                                    onClick={() => handlePageChange(currentPage - 1)}
+                                                    disabled={currentPage === 1}
+                                                    className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                                >
+                                                    Previous
+                                                </button>
+                                                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                                                    const pageNum = Math.max(1, Math.min(totalPages - 4, currentPage - 2)) + i;
+                                                    return (
+                                                        <button
+                                                            key={pageNum}
+                                                            onClick={() => handlePageChange(pageNum)}
+                                                            className={`inline-flex items-center px-3 py-2 border shadow-sm text-sm leading-4 font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors ${pageNum === currentPage
+                                                                    ? 'border-green-500 bg-green-50 text-green-700'
+                                                                    : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+                                                                }`}
+                                                        >
+                                                            {pageNum}
+                                                        </button>
+                                                    );
+                                                })}
+                                                <button
+                                                    onClick={() => handlePageChange(currentPage + 1)}
+                                                    disabled={currentPage * 5 >= totalMerchants}
+                                                    className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                                >
+                                                    Next
+                                                </button>
+                                            </div>
                                         </div>
-                                        <div className="flex items-center space-x-2">
-                                            <button
-                                                onClick={() => handlePageChange(currentPage - 1)}
-                                                disabled={currentPage === 1}
-                                                className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                                            >
-                                                Previous
-                                            </button>
-                                            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                                                const pageNum = Math.max(1, Math.min(totalPages - 4, currentPage - 2)) + i;
-                                                return (
-                                                    <button
-                                                        key={pageNum}
-                                                        onClick={() => handlePageChange(pageNum)}
-                                                        className={`inline-flex items-center px-3 py-2 border shadow-sm text-sm leading-4 font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors ${
-                                                            pageNum === currentPage
-                                                                ? 'border-green-500 bg-green-50 text-green-700'
-                                                                : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
-                                                        }`}
-                                                    >
-                                                        {pageNum}
-                                                    </button>
-                                                );
-                                            })}
-                                            <button
-                                                onClick={() => handlePageChange(currentPage + 1)}
-                                                disabled={currentPage * 5 >= totalMerchants}
-                                                className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                                            >
-                                                Next
-                                            </button>
-                                        </div>
-                                    </div>
-                                );
-                            })()}
-                        </>
-                    )}
+                                    );
+                                })()}
+                            </>
+                        )}
                     </div>
-            </div>
+                </div>
 
-            {/* Merchants Map Modal */}
-            {showMapModal && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-                    <div className="bg-white shadow-2xl max-w-7xl w-full max-h-[95vh] overflow-hidden rounded-lg">
-                        <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4">
-                            <div className="flex items-center justify-between">
-                                <div className="flex-1 min-w-0">
-                                    <h2 className="text-xl font-semibold text-white flex items-center gap-3">
-                                        <Map size={24} />
-                                        <span className="truncate">Grojet Merchants Map View</span>
-                                    </h2>
-                                    <p className="text-sm text-blue-100 mt-1">
-                                        🟢 Green markers: Merchants with coordinates | 🔴 Red markers: Location not set
-                                    </p>
-                                </div>
-                                <button
-                                    onClick={() => setShowMapModal(false)}
-                                    className="p-2 hover:bg-blue-500 rounded-lg ml-4 flex-shrink-0 transition-colors"
-                                >
-                                    <X size={20} className="text-white" />
-                                </button>
-                            </div>
-                        </div>
-                        <div className="p-6">
-                            {loadingMap ? (
-                                <div className="flex items-center justify-center py-12 h-[60vh]">
-                                    <div className="text-center">
-                                        <div className="animate-spin h-10 w-10 border-4 border-blue-200 border-t-blue-600 rounded-full mx-auto mb-4"></div>
-                                        <span className="text-gray-600 font-medium">Loading all merchants for map...</span>
+                {/* Merchants Map Modal */}
+                {showMapModal && (
+                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                        <div className="bg-white shadow-2xl max-w-7xl w-full max-h-[95vh] overflow-hidden rounded-lg">
+                            <div className="bg-green-600 px-6 py-4">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex-1 min-w-0">
+                                        <h2 className="text-xl font-semibold text-white flex items-center gap-3">
+                                            <Map size={24} />
+                                            <span className="truncate">Grojet Merchants Map View</span>
+                                        </h2>
+                                        <p className="text-sm text-blue-100 mt-1">
+                                            🟢 Green markers: Merchants with coordinates | 🔴 Red markers: Location not set
+                                        </p>
                                     </div>
-                                </div>
-                            ) : (
-                                <div className="h-[60vh] w-full overflow-hidden border-2 border-gray-200 rounded-lg shadow-sm">
-                                    <GoogleMap
-                                        center={getMapCenterAndZoom().center}
-                                        zoom={getMapCenterAndZoom().zoom}
-                                        style={{ height: '100%', width: '100%' }}
+                                    <button
+                                        onClick={() => setShowMapModal(false)}
+                                        className="p-2 hover:bg-blue-500 rounded-lg ml-4 flex-shrink-0 transition-colors"
                                     >
-                                        {allMerchantsForMap.map((merchant) => {
-                                            const hasCoordinates = merchant.operationalInfo?.storeAddress?.coordinates?.latitude &&
-                                                                  merchant.operationalInfo?.storeAddress?.coordinates?.longitude;
+                                        <X size={20} className="text-white" />
+                                    </button>
+                                </div>
+                            </div>
+                            <div className="p-6">
+                                {loadingMap ? (
+                                    <div className="flex items-center justify-center py-12 h-[60vh]">
+                                        <div className="text-center">
+                                            <div className="animate-spin h-10 w-10 border-4 border-blue-200 border-t-blue-600 rounded-full mx-auto mb-4"></div>
+                                            <span className="text-gray-600 font-medium">Loading all merchants for map...</span>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="h-[60vh] w-full overflow-hidden border-2 border-gray-200 rounded-lg shadow-sm">
+                                        <GoogleMap
+                                            center={getMapCenterAndZoom().center}
+                                            zoom={getMapCenterAndZoom().zoom}
+                                            style={{ height: '100%', width: '100%' }}
+                                        >
+                                            {allMerchantsForMap.map((merchant) => {
+                                                const hasCoordinates = merchant.operationalInfo?.storeAddress?.coordinates?.latitude &&
+                                                    merchant.operationalInfo?.storeAddress?.coordinates?.longitude;
 
-                                            if (hasCoordinates) {
-                                                return (
-                                                    <Marker
-                                                        key={merchant.id}
-                                                        position={{
-                                                            lat: parseFloat(merchant.operationalInfo.storeAddress.coordinates.latitude),
-                                                            lng: parseFloat(merchant.operationalInfo.storeAddress.coordinates.longitude)
-                                                        }}
-                                                        title={merchant.name}
-                                                        icon={{
-                                                            url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
+                                                if (hasCoordinates) {
+                                                    return (
+                                                        <Marker
+                                                            key={merchant.id}
+                                                            position={{
+                                                                lat: parseFloat(merchant.operationalInfo.storeAddress.coordinates.latitude),
+                                                                lng: parseFloat(merchant.operationalInfo.storeAddress.coordinates.longitude)
+                                                            }}
+                                                            title={merchant.name}
+                                                            icon={{
+                                                                url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
                                                                 <svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
                                                                     <path d="M20 2C14.48 2 10 6.48 10 12c0 7.74 8.5 16.5 9.5 17.5L20 32l.5-.5C21.5 28.5 30 19.74 30 12c0-5.52-4.48-10-10-10z" fill="red" stroke="white" stroke-width="2"/>
                                                                     <circle cx="20" cy="12" r="4" fill="white"/>
                                                                 </svg>
                                                             `),
-                                                            scaledSize: new window.google.maps.Size(40, 40),
-                                                            anchor: new window.google.maps.Point(20, 32)
-                                                        }}
-                                                        infoContent={`
+                                                                scaledSize: new window.google.maps.Size(40, 40),
+                                                                anchor: new window.google.maps.Point(20, 32)
+                                                            }}
+                                                            infoContent={`
                                                             <div style="max-width: 280px;">
                                                                 <div style="font-weight: 600; margin-bottom: 8px; color: #1f2937;">${merchant.name}</div>
                                                                 <div style="margin-bottom: 4px;"><strong>ID:</strong> ${merchant.merchantId}</div>
@@ -1038,30 +1014,30 @@ const Merchants = () => {
                                                                 </div>
                                                             </div>
                                                         `}
-                                                    />
-                                                );
-                                            } else {
-                                                // Show merchants without coordinates at a default location with a different marker
-                                                return (
-                                                    <Marker
-                                                        key={merchant.id}
-                                                        position={{
-                                                            lat: 12.9716 + (Math.random() - 0.5) * 0.01, // Slight random offset from center
-                                                            lng: 77.5946 + (Math.random() - 0.5) * 0.01
-                                                        }}
-                                                        title={`${merchant.name} (Location not set)`}
-                                                        icon={{
-                                                            url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
+                                                        />
+                                                    );
+                                                } else {
+                                                    // Show merchants without coordinates at a default location with a different marker
+                                                    return (
+                                                        <Marker
+                                                            key={merchant.id}
+                                                            position={{
+                                                                lat: 12.9716 + (Math.random() - 0.5) * 0.01, // Slight random offset from center
+                                                                lng: 77.5946 + (Math.random() - 0.5) * 0.01
+                                                            }}
+                                                            title={`${merchant.name} (Location not set)`}
+                                                            icon={{
+                                                                url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
                                                                 <svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
                                                                     <path d="M20 2C14.48 2 10 6.48 10 12c0 7.74 8.5 16.5 9.5 17.5L20 32l.5-.5C21.5 28.5 30 19.74 30 12c0-5.52-4.48-10-10-10z" fill="#EF4444" stroke="white" stroke-width="2"/>
                                                                     <circle cx="20" cy="12" r="4" fill="white"/>
                                                                     <text x="20" y="16" text-anchor="middle" font-size="12" fill="#EF4444" font-weight="bold">!</text>
                                                                 </svg>
                                                             `),
-                                                            scaledSize: new window.google.maps.Size(40, 40),
-                                                            anchor: new window.google.maps.Point(20, 32)
-                                                        }}
-                                                        infoContent={`
+                                                                scaledSize: new window.google.maps.Size(40, 40),
+                                                                anchor: new window.google.maps.Point(20, 32)
+                                                            }}
+                                                            infoContent={`
                                                             <div style="max-width: 280px;">
                                                                 <div style="font-weight: 600; margin-bottom: 8px; color: #1f2937;">${merchant.name}</div>
                                                                 <div style="margin-bottom: 4px;"><strong>ID:</strong> ${merchant.merchantId}</div>
@@ -1080,34 +1056,34 @@ const Merchants = () => {
                                                                 </div>
                                                             </div>
                                                         `}
-                                                    />
-                                                );
-                                            }
-                                        })}
-                                    </GoogleMap>
+                                                        />
+                                                    );
+                                                }
+                                            })}
+                                        </GoogleMap>
+                                    </div>
+                                )}
+                                <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+                                    <div className="text-sm text-gray-600 text-center sm:text-left">
+                                        Showing {allMerchantsForMap.length} merchants on map
+                                        {allMerchantsForMap.filter(m => m.operationalInfo?.storeAddress?.coordinates?.latitude).length > 0 && (
+                                            <span className="ml-2 text-green-600 font-medium">
+                                                ({allMerchantsForMap.filter(m => m.operationalInfo?.storeAddress?.coordinates?.latitude).length} with coordinates)
+                                            </span>
+                                        )}
+                                    </div>
+                                    <button
+                                        onClick={() => setShowMapModal(false)}
+                                        className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-gray-600 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors"
+                                    >
+                                        Close Map
+                                    </button>
                                 </div>
-                            )}
-                            <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-                                <div className="text-sm text-gray-600 text-center sm:text-left">
-                                    Showing {allMerchantsForMap.length} merchants on map
-                                    {allMerchantsForMap.filter(m => m.operationalInfo?.storeAddress?.coordinates?.latitude).length > 0 && (
-                                        <span className="ml-2 text-green-600 font-medium">
-                                            ({allMerchantsForMap.filter(m => m.operationalInfo?.storeAddress?.coordinates?.latitude).length} with coordinates)
-                                        </span>
-                                    )}
-                                </div>
-                                <button
-                                    onClick={() => setShowMapModal(false)}
-                                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-gray-600 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors"
-                                >
-                                    Close Map
-                                </button>
                             </div>
                         </div>
                     </div>
-                </div>
-            )}
-        </div>
+                )}
+            </div>
         </Layout>
     );
 };
