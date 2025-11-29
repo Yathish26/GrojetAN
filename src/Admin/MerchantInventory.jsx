@@ -22,6 +22,9 @@ const MerchantInventory = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [availableCategories, setAvailableCategories] = useState([]);
+  const [editingWeight, setEditingWeight] = useState(null);
+  const [editedWeightValue, setEditedWeightValue] = useState('');
+  const [editedWeightUnit, setEditedWeightUnit] = useState('');
 
   // Fetch merchant details with inventory
   const fetchMerchantInventory = useCallback(async (params = {}) => {
@@ -201,6 +204,74 @@ const MerchantInventory = () => {
     } catch (error) {
       console.error('Error updating price:', error);
       toast.error(error.message || 'Failed to update price');
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const handleEditWeight = (item) => {
+    setEditingWeight(item._id);
+    setEditedWeightValue(item.weightDimension?.value?.toString() || '');
+    setEditedWeightUnit(item.weightDimension?.unit || '');
+  };
+
+  const handleCancelEditWeight = () => {
+    setEditingWeight(null);
+    setEditedWeightValue('');
+    setEditedWeightUnit('');
+  };
+
+  const handleSaveWeight = async (item) => {
+    const value = parseFloat(editedWeightValue);
+    const unit = editedWeightUnit.trim();
+    if (isNaN(value) || value <= 0) {
+      toast.error('Please enter a valid weight value');
+      return;
+    }
+    if (!unit) {
+      toast.error('Please enter a valid weight unit');
+      return;
+    }
+
+    setUpdating(true);
+    try {
+      const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/merchant-stores/${id}/inventory/${item._id}/weight-dimension`, {
+        method: 'PUT',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ value, unit }),
+      });
+
+      if (response.status === 401) {
+        localStorage.removeItem('adminUser');
+        navigate('/login');
+        return;
+      }
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.tokenValid === false) {
+          navigate('/login', { replace: true });
+          return;
+        }
+        if (data.success) {
+          toast.success('Weight dimension updated successfully');
+          setEditingWeight(null);
+          setEditedWeightValue('');
+          setEditedWeightUnit('');
+          // Refetch the current page to ensure data consistency
+          fetchMerchantInventory({ page, search: searchTerm });
+        } else {
+          throw new Error(data.message || 'Failed to update weight dimension');
+        }
+      } else {
+        throw new Error('Failed to update weight dimension');
+      }
+    } catch (error) {
+      console.error('Error updating weight dimension:', error);
+      toast.error(error.message || 'Failed to update weight dimension');
     } finally {
       setUpdating(false);
     }
@@ -460,6 +531,9 @@ const MerchantInventory = () => {
                         Category
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Weight
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Stock
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -491,11 +565,6 @@ const MerchantInventory = () => {
                               )}
                               <div>
                                 <div className="text-sm font-medium text-gray-900">{item.name}</div>
-                                {item.weightDimension && (
-                                  <div className="text-xs text-gray-500 mt-1">
-                                    {item.weightDimension.value} {item.weightDimension.unit}
-                                  </div>
-                                )}
                               </div>
                             </div>
                           </td>
@@ -503,6 +572,48 @@ const MerchantInventory = () => {
                             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
                               {item.category}
                             </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            {editingWeight === item._id ? (
+                              <div className="flex items-center space-x-2">
+                                <input
+                                  type="number"
+                                  value={editedWeightValue}
+                                  onChange={(e) => setEditedWeightValue(e.target.value)}
+                                  className="w-16 px-2 py-1 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm"
+                                  min="0"
+                                  step="0.01"
+                                  placeholder="Value"
+                                  disabled={updating}
+                                />
+                                <select
+                                  value={editedWeightUnit}
+                                  onChange={(e) => setEditedWeightUnit(e.target.value)}
+                                  className="w-20 px-2 py-1 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm"
+                                  disabled={updating}
+                                >
+                                  <option value="">Select Unit</option>
+                                  <option value="g">g</option>
+                                  <option value="kg">kg</option>
+                                  <option value="ml">ml</option>
+                                  <option value="l">l</option>
+                                  <option value="pack">pack</option>
+                                  <option value="piece">piece</option>
+                                  <option value="unit">unit</option>
+                                  <option value="dozen">dozen</option>
+                                  <option value="cm">cm</option>
+                                  <option value="mm">mm</option>
+                                  <option value="inch">inch</option>
+                                  <option value="feet">feet</option>
+                                  <option value="meter">meter</option>
+                                  <option value="other">other</option>
+                                </select>
+                              </div>
+                            ) : (
+                              <div className="text-sm text-gray-900">
+                                {item.weightDimension ? `${item.weightDimension.value} ${item.weightDimension.unit}` : 'N/A'}
+                              </div>
+                            )}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="text-sm text-gray-900 font-medium">
@@ -556,14 +667,42 @@ const MerchantInventory = () => {
                                   Cancel
                                 </button>
                               </div>
+                            ) : editingWeight === item._id ? (
+                              <div className="flex items-center space-x-2">
+                                <button
+                                  className="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 transition-colors"
+                                  onClick={() => handleSaveWeight(item)}
+                                  disabled={updating}
+                                >
+                                  <Save size={14} className="mr-1" />
+                                  Save
+                                </button>
+                                <button
+                                  className="inline-flex items-center px-2.5 py-1.5 border border-gray-300 text-xs font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 transition-colors"
+                                  onClick={handleCancelEditWeight}
+                                  disabled={updating}
+                                >
+                                  <X size={14} className="mr-1" />
+                                  Cancel
+                                </button>
+                              </div>
                             ) : (
-                              <button
-                                className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-green-700 bg-green-100 hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
-                                onClick={() => handleEditPrice(item)}
-                              >
-                                <Edit size={14} className="mr-1.5" />
-                                Edit Price
-                              </button>
+                              <div className="flex space-x-2">
+                                <button
+                                  className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-green-700 bg-green-100 hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
+                                  onClick={() => handleEditPrice(item)}
+                                >
+                                  <Edit size={14} className="mr-1.5" />
+                                  Edit Price
+                                </button>
+                                <button
+                                  className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-blue-700 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+                                  onClick={() => handleEditWeight(item)}
+                                >
+                                  <Edit size={14} className="mr-1.5" />
+                                  Edit Weight
+                                </button>
+                              </div>
                             )}
                           </td>
                         </tr>
