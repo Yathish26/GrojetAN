@@ -20,7 +20,7 @@ const Merchants = () => {
     const [statusFilter, setStatusFilter] = useState('all');
     const [storeStatusFilter, setStoreStatusFilter] = useState('all');
     const [storeTypeFilter, setStoreTypeFilter] = useState('all');
-    const availableStoreTypes = ['Grocery', 'Healthcare', 'Fresh Fruits & Vegetables', 'Meats', 'Other'];
+    const availableStoreTypes = ['Grocery', 'Healthcare', 'Fresh Fruits & Vegetables', 'Meats', 'Pet', 'Electronics', 'Other'];
     const [showFilters, setShowFilters] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);

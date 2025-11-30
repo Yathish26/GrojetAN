@@ -1213,6 +1213,8 @@ const EditMerchant = () => {
                     <option value="Healthcare">Healthcare</option>
                     <option value="Fresh Fruits & Vegetables">Fresh Fruits & Vegetables</option>
                     <option value="Meats">Meats</option>
+                    <option value="Pet">Pet</option>
+                    <option value="Electronics">Electronics</option>
                     <option value="Other">Other</option>
                   </select>
                 </div>

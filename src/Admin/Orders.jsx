@@ -6,7 +6,8 @@ import {
   Clock, User, Package, Truck, CircleCheck,
   XCircle, AlertCircle, Calendar, DollarSign,
   RefreshCw, Download,
-  Ban
+  Ban,
+  IndianRupee, X
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -181,7 +182,7 @@ const Orders = () => {
 
   const getPaymentStatusIcon = (method) => {
     const icons = {
-      cod: <DollarSign size={12} />,
+      cod: <IndianRupee size={12} />,
       razorpay: <CircleCheck size={12} />,
       paypal: <CircleCheck size={12} />,
       stripe: <CircleCheck size={12} />,
@@ -287,20 +288,6 @@ const Orders = () => {
     }
   };
 
-  const StatCard = ({ title, value, icon: Icon, color = 'text-gray-600' }) => (
-    <div className="bg-white shadow-sm border border-gray-200 p-4 sm:p-6">
-      <div className="flex items-center justify-between">
-        <div className="flex-1 min-w-0">
-          <p className="text-xs sm:text-sm font-medium text-gray-500 truncate">{title}</p>
-          <p className={`text-lg sm:text-2xl font-bold ${color} mt-1`}>
-            {typeof value === 'number' ? value.toLocaleString() : value}
-          </p>
-        </div>
-        <Icon className={`h-6 w-6 sm:h-8 sm:w-8 ${color} flex-shrink-0 ml-2`} />
-      </div>
-    </div>
-  );
-
   const fetchCurrentUser = useCallback(async () => {
     try {
       const local = localStorage.getItem('adminUser');
@@ -355,74 +342,125 @@ const Orders = () => {
 
   return (
     <Layout title="Orders Management">
-      <div className="p-4 sm:p-6">
-        {/* Header Section */}
-        <div className="mb-6 sm:mb-8">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-              <h1 className="text-xl sm:text-2xl font-bold text-gray-900 flex items-center">
-                <ShoppingCart className="mr-2 sm:mr-3 text-green-600" size={24} />
-                <span className="hidden sm:inline">Orders Management</span>
-                <span className="sm:hidden">Orders</span>
-              </h1>
-              <p className="text-gray-600 mt-1 text-sm sm:text-base">Monitor and manage all customer orders</p>
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* Header */}
+          <div className="mb-8">
+            <div className="flex items-center justify-between">
+              <div className="hidden md:flex items-center space-x-4">
+                <div>
+                  <h1 className="text-3xl font-bold text-gray-900">Orders Management</h1>
+                  <p className="mt-1 text-sm text-gray-500">Monitor and manage all customer orders</p>
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={fetchOrders}
+                  className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                >
+                  <RefreshCw size={16} className="mr-2" />
+                  Refresh
+                </button>
+                <button
+                  onClick={exportToExcel}
+                  className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                >
+                  <Download size={16} className="mr-2" />
+                  Export
+                </button>
+              </div>
             </div>
-            <button
-              onClick={exportToExcel}
-              className="flex items-center px-4 py-2 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition-colors duration-200"
-            >
-              <Download className="mr-2" size={18} />
-              Export to Excel
-            </button>
           </div>
 
           {/* Stats Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mt-4 sm:mt-6">
-            <StatCard
-              title="Total Orders"
-              value={stats.totalOrders || 0}
-              icon={ShoppingCart}
-              color="text-blue-600"
-            />
-            <StatCard
-              title="Active Orders"
-              value={stats.activeOrders || 0}
-              icon={Clock}
-              color="text-orange-600"
-            />
-            <StatCard
-              title="Total Revenue"
-              value={`₹${(stats.totalRevenue || 0).toLocaleString()}`}
-              icon={DollarSign}
-              color="text-purple-600"
-            />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
+            <div className="bg-white shadow-lg rounded-lg overflow-hidden">
+              <div className="bg-green-600 px-6 py-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-blue-100 uppercase tracking-wide">Total Orders</p>
+                    <p className="text-3xl font-bold text-white">{stats.totalOrders || 0}</p>
+                  </div>
+                  <ShoppingCart className="w-8 h-8 text-blue-200" />
+                </div>
+              </div>
+            </div>
+            <div className="bg-white shadow-lg rounded-lg overflow-hidden">
+              <div className="bg-green-600 px-6 py-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-blue-100 uppercase tracking-wide">Active Orders</p>
+                    <p className="text-3xl font-bold text-white">{stats.activeOrders || 0}</p>
+                  </div>
+                  <Clock className="w-8 h-8 text-blue-200" />
+                </div>
+              </div>
+            </div>
+            <div className="bg-white shadow-lg rounded-lg overflow-hidden">
+              <div className="bg-green-600 px-6 py-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-blue-100 uppercase tracking-wide">Total Revenue</p>
+                    <p className="text-3xl font-bold text-white">₹{(stats.totalRevenue || 0).toLocaleString()}</p>
+                  </div>
+                  <IndianRupee className="w-8 h-8 text-blue-200" />
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Filters and Search */}
-        <div className="bg-white shadow-sm border border-gray-200 mb-4 sm:mb-6">
-          <div className="p-4 sm:p-6">
-            <div className="flex flex-col gap-4">
-              {/* Search */}
-              <form onSubmit={handleSearch} className="w-full">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
-                  <input
-                    type="text"
-                    placeholder="Search by order number, customer name, or phone..."
-                    className="w-full pl-10 pr-4 py-2 sm:py-3 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors duration-200"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                  />
+        {/* Search and Filters */}
+        <div className="bg-white shadow-lg rounded-lg overflow-hidden mb-8">
+          <div className="bg-green-600 px-6 py-4">
+            <h2 className="text-xl font-semibold text-white flex items-center gap-3">
+              <Search className="w-6 h-6" />
+              Search & Filters
+            </h2>
+          </div>
+          <div className="p-6">
+            {/* Search Bar */}
+            <div className="mb-6">
+              <div className="flex gap-4">
+                <div className="flex-1 max-w-lg">
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <Search className="h-5 w-5 text-gray-400" />
+                    </div>
+                    <input
+                      type="text"
+                      placeholder="Search by order number, customer name, or phone..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                      className="block w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                    />
+                  </div>
                 </div>
-              </form>
+                <button
+                  onClick={handleSearch}
+                  className="inline-flex items-center px-6 py-3 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+                >
+                  <Search size={16} className="mr-2" />
+                  Search
+                </button>
+              </div>
+            </div>
 
-              {/* Filters */}
-              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+            {/* Filters */}
+            <div className="flex flex-wrap items-center gap-4">
+              <div className="flex items-center gap-2">
+                <Filter className="h-5 w-5 text-gray-500" />
+                <span className="text-sm font-medium text-gray-700">Filters:</span>
+              </div>
+
+              {/* Date Range Filter */}
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-600">Date Range:</span>
                 <select
                   value={filters.dateRange}
                   onChange={(e) => handleFilterChange('dateRange', e.target.value)}
-                  className="flex-1 px-3 py-2 sm:py-3 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors duration-200"
+                  className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 >
                   <option value="">All Time</option>
                   <option value="today">Today</option>
@@ -433,34 +471,38 @@ const Orders = () => {
                   <option value="lastMonth">Last Month</option>
                   <option value="custom">Custom Range</option>
                 </select>
+              </div>
 
-                {filters.dateRange === 'custom' && (
-                  <>
-                    <div className="flex-1">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
-                      <input
-                        type="date"
-                        value={filters.startDate}
-                        onChange={(e) => handleFilterChange('startDate', e.target.value)}
-                        className="w-full px-3 py-2 sm:py-3 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors duration-200"
-                      />
-                    </div>
-                    <div className="flex-1">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
-                      <input
-                        type="date"
-                        value={filters.endDate}
-                        onChange={(e) => handleFilterChange('endDate', e.target.value)}
-                        className="w-full px-3 py-2 sm:py-3 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors duration-200"
-                      />
-                    </div>
-                  </>
-                )}
+              {filters.dateRange === 'custom' && (
+                <>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-gray-600">Start Date:</span>
+                    <input
+                      type="date"
+                      value={filters.startDate}
+                      onChange={(e) => handleFilterChange('startDate', e.target.value)}
+                      className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-gray-600">End Date:</span>
+                    <input
+                      type="date"
+                      value={filters.endDate}
+                      onChange={(e) => handleFilterChange('endDate', e.target.value)}
+                      className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+                </>
+              )}
 
+              {/* Status Filter */}
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-600">Order Status:</span>
                 <select
                   value={filters.status}
                   onChange={(e) => handleFilterChange('status', e.target.value)}
-                  className="flex-1 px-3 py-2 sm:py-3 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors duration-200"
+                  className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 >
                   <option value="">All Status</option>
                   <option value="confirmed">Confirmed</option>
@@ -471,36 +513,76 @@ const Orders = () => {
                   <option value="delivered">Delivered</option>
                   <option value="cancelled">Cancelled</option>
                 </select>
+              </div>
 
+              {/* Payment Status Filter */}
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-600">Payment Status:</span>
                 <select
                   value={filters.paymentStatus}
                   onChange={(e) => handleFilterChange('paymentStatus', e.target.value)}
-                  className="flex-1 px-3 py-2 sm:py-3 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors duration-200"
+                  className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 >
                   <option value="">All Payments</option>
-                  <option value="pending">Pending</option>
                   <option value="paid">Paid</option>
+                  <option value="pending">Pending</option>
                   <option value="failed">Failed</option>
-                  <option value="refunded">Refunded</option>
                 </select>
-
-                <button
-                  onClick={fetchOrders}
-                  className="px-4 py-2 sm:py-3 bg-green-600 text-white hover:bg-green-700 flex items-center justify-center gap-2 transition-colors duration-200 whitespace-nowrap"
-                >
-                  <RefreshCw size={16} />
-                  Refresh
-                </button>
               </div>
+
+              {/* Delivery Type Filter */}
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-600">Delivery Type:</span>
+                <select
+                  value={filters.deliveryType}
+                  onChange={(e) => handleFilterChange('deliveryType', e.target.value)}
+                  className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option value="">All Types</option>
+                  <option value="delivery">Delivery</option>
+                  <option value="pickup">Pickup</option>
+                </select>
+              </div>
+
+              {/* Clear Filters */}
+              {(filters.dateRange || filters.status || filters.paymentStatus || filters.deliveryType || searchTerm) && (
+                <button
+                  onClick={() => {
+                    setFilters({
+                      status: '',
+                      paymentStatus: '',
+                      deliveryType: '',
+                      dateRange: '',
+                      startDate: '',
+                      endDate: ''
+                    });
+                    setSearchTerm('');
+                    setPagination(prev => ({ ...prev, page: 1 }));
+                    fetchOrders();
+                  }}
+                  className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                >
+                  <X className="w-4 h-4 mr-1" />
+                  Clear Filters
+                </button>
+              )}
             </div>
           </div>
         </div>
 
-        {/* Orders Table */}
-        <div className="bg-white shadow-sm border border-gray-200 overflow-hidden">
+        {/* Orders List */}
+        <div className="bg-white shadow-lg rounded-lg overflow-hidden">
+          <div className="bg-green-600 px-6 py-4">
+            <h2 className="text-xl font-semibold text-white flex items-center gap-3">
+              <Package className="w-6 h-6" />
+              Orders ({orders.length})
+            </h2>
+          </div>
+
           {loading ? (
-            <div className="flex justify-center items-center p-8 sm:p-12">
-              <div className="animate-spin rounded-full h-8 w-8 sm:h-12 sm:w-12 border-b-2 border-green-500"></div>
+            <div className="flex items-center justify-center py-12">
+              <div className="animate-spin h-8 w-8 border-4 border-indigo-200 border-t-indigo-600 rounded-full"></div>
+              <span className="ml-3 text-gray-600 font-medium">Loading orders...</span>
             </div>
           ) : orders.length === 0 ? (
             <div className="p-8 sm:p-12 text-center text-gray-500">

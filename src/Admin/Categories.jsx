@@ -7,6 +7,7 @@ import {
   Image as ImageIcon,
   CircleCheck,
   XCircle,
+  X,
   Loader2,
   Star,
   ListOrdered,
@@ -371,7 +372,13 @@ export default function Categories() {
     return filtered;
   }, [categories, searchTerm, filterMainCategory, filterIsActive, filterShowOnHome]);
 
-  // Reset filters
+  // Handle search
+  const handleSearch = () => {
+    // The search is handled in real-time by the useMemo for filteredCategories
+    // This function is here for the search button if needed
+  };
+
+  // Handle reset filters
   const handleResetFilters = () => {
     setSearchTerm('');
     setFilterMainCategory('');
@@ -510,135 +517,185 @@ export default function Categories() {
   }
   return (
     <Layout title="Categories">
-      <div className="min-h-screen bg-gray-50 p-4 md:p-6 font-sans">
-
-      <div className="bg-white border border-gray-200  overflow-hidden shadow-sm">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border-b border-gray-200 bg-gray-50">
-          <h2 className="text-2xl font-bold text-gray-800 mb-4 sm:mb-0">Categories Management</h2>
-
-          <div className="flex items-center">
-            <button
-              onClick={() => {
-                setEditingCategory(null);
-                setFormData({
-                  name: '',
-                  mainCategory: '',
-                  image: '',
-                  isActive: true,
-                  showOnHome: false,
-                  order: 0
-                });
-                setSelectedFile(null);
-                setIsModalOpen(true);
-              }}
-              className="flex items-center px-4 py-2 bg-green-600 text-white font-semibold hover:bg-green-700 shadow-sm"
-            >
-              <Plus size={18} className="mr-2" />
-              Add Category
-            </button>
-          </div>
-        </div>
-
-        {/* Search and Filter Section */}
-        <div className="p-4 border-b border-gray-200 bg-white">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
-            {/* Search Input */}
-            <div>
-              <label htmlFor="search" className="block text-sm font-medium text-gray-700 mb-1">
-                <Search size={14} className="inline-block mr-1" /> Search by Name
-              </label>
-              <input
-                type="text"
-                id="search"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Search category name..."
-                className="w-full px-3 py-2 border border-gray-300  focus:ring-green-500 focus:border-green-500 text-sm"
-              />
-            </div>
-
-            {/* Main Category Filter */}
-            <div>
-              <label htmlFor="filterMainCategory" className="block text-sm font-medium text-gray-700 mb-1">
-                <ListOrdered size={14} className="inline-block mr-1" /> Filter by Main Category
-              </label>
-              <select
-                id="filterMainCategory"
-                value={filterMainCategory}
-                onChange={(e) => setFilterMainCategory(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300  focus:ring-green-500 focus:border-green-500 text-sm bg-white"
-              >
-                <option value="">All Main Categories</option>
-                {mainCategories.map((category, index) => (
-                  <option key={index} value={category}>
-                    {category}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Active Status Filter */}
-            <div>
-              <label htmlFor="filterIsActive" className="block text-sm font-medium text-gray-700 mb-1">
-                <CircleCheck size={14} className="inline-block mr-1" /> Filter by Status
-              </label>
-              <select
-                id="filterIsActive"
-                value={filterIsActive}
-                onChange={(e) => setFilterIsActive(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300  focus:ring-green-500 focus:border-green-500 text-sm bg-white"
-              >
-                <option value="all">All Statuses</option>
-                <option value="true">Active</option>
-                <option value="false">Inactive</option>
-              </select>
-            </div>
-
-            {/* Show on Home Filter */}
-            <div>
-              <label htmlFor="filterShowOnHome" className="block text-sm font-medium text-gray-700 mb-1">
-                <Star size={14} className="inline-block mr-1" /> Filter by Homepage
-              </label>
-              <select
-                id="filterShowOnHome"
-                value={filterShowOnHome}
-                onChange={(e) => setFilterShowOnHome(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300  focus:ring-green-500 focus:border-green-500 text-sm bg-white"
-              >
-                <option value="all">All Homepage Statuses</option>
-                <option value="true">Show on Home</option>
-                <option value="false">Don't Show on Home</option>
-              </select>
-            </div>
-
-            {/* Reset Filters Button */}
-            <div className="md:col-span-2 lg:col-span-4 flex justify-end">
-              <button
-                onClick={handleResetFilters}
-                className="flex items-center px-4 py-2 bg-gray-200 text-gray-700 font-semibold hover:bg-gray-300  shadow-sm transition-colors duration-200"
-              >
-                <RotateCcw size={16} className="mr-2" />
-                Reset Filters
-              </button>
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* Header */}
+          <div className="mb-8">
+            <div className="flex items-center justify-between">
+              <div className="hidden md:flex items-center space-x-4">
+                <div>
+                  <h1 className="text-3xl font-bold text-gray-900">Categories</h1>
+                  <p className="mt-1 text-sm text-gray-500">Manage and organize product categories</p>
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={() => {
+                    setEditingCategory(null);
+                    setFormData({
+                      name: '',
+                      mainCategory: '',
+                      image: '',
+                      isActive: true,
+                      showOnHome: false,
+                      order: 0
+                    });
+                    setSelectedFile(null);
+                    setIsModalOpen(true);
+                  }}
+                  className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
+                >
+                  <Plus size={16} className="mr-2" />
+                  Add Category
+                </button>
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Content area */}
-        <div className="p-4">
-          {renderCategories()}
+          {/* Search and Filters */}
+          <div className="bg-white shadow-lg rounded-lg overflow-hidden mb-8">
+            <div className="bg-green-600 px-6 py-4">
+              <h2 className="text-xl font-semibold text-white flex items-center gap-3">
+                <Search className="w-6 h-6" />
+                Search & Filters
+              </h2>
+            </div>
+            <div className="p-6">
+              {/* Search Bar */}
+              <div className="mb-6">
+                <div className="flex gap-4">
+                  <div className="flex-1 max-w-lg">
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <Search className="h-5 w-5 text-gray-400" />
+                      </div>
+                      <input
+                        type="text"
+                        placeholder="Search categories by name..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="block w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                      />
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => {}}
+                    className="inline-flex items-center px-6 py-3 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+                  >
+                    <Search size={16} className="mr-2" />
+                    Search
+                  </button>
+                </div>
+              </div>
+
+              {/* Filters */}
+              <div className="flex flex-wrap items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <Filter className="h-5 w-5 text-gray-500" />
+                  <span className="text-sm font-medium text-gray-700">Filters:</span>
+                </div>
+
+                {/* Main Category Filter */}
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-gray-600">Main Category:</span>
+                  <select
+                    value={filterMainCategory}
+                    onChange={(e) => setFilterMainCategory(e.target.value)}
+                    className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="">All Categories</option>
+                    {mainCategories.map((category, index) => (
+                      <option key={index} value={category}>
+                        {category}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Active Status Filter */}
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-gray-600">Status:</span>
+                  <div className="flex rounded-lg border border-gray-300 overflow-hidden">
+                    {[
+                      { key: 'all', label: 'All', color: 'bg-gray-100 text-gray-700 hover:bg-gray-200' },
+                      { key: 'true', label: 'Active', color: 'bg-green-100 text-green-700 hover:bg-green-200' },
+                      { key: 'false', label: 'Inactive', color: 'bg-red-100 text-red-700 hover:bg-red-200' }
+                    ].map(({ key, label, color }) => (
+                      <button
+                        key={key}
+                        onClick={() => setFilterIsActive(key)}
+                        className={`px-3 py-1.5 text-xs font-medium transition-colors ${filterIsActive === key
+                            ? color.replace('hover:', '')
+                            : 'bg-white text-gray-600 hover:bg-gray-50'
+                          } ${key !== 'all' ? 'border-l border-gray-300' : ''}`}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Show on Home Filter */}
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-gray-600">Homepage:</span>
+                  <div className="flex rounded-lg border border-gray-300 overflow-hidden">
+                    {[
+                      { key: 'all', label: 'All', color: 'bg-gray-100 text-gray-700 hover:bg-gray-200' },
+                      { key: 'true', label: 'Show', color: 'bg-blue-100 text-blue-700 hover:bg-blue-200' },
+                      { key: 'false', label: 'Hide', color: 'bg-gray-100 text-gray-700 hover:bg-gray-200' }
+                    ].map(({ key, label, color }) => (
+                      <button
+                        key={key}
+                        onClick={() => setFilterShowOnHome(key)}
+                        className={`px-3 py-1.5 text-xs font-medium transition-colors ${filterShowOnHome === key
+                            ? color.replace('hover:', '')
+                            : 'bg-white text-gray-600 hover:bg-gray-50'
+                          } ${key !== 'all' ? 'border-l border-gray-300' : ''}`}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Reset Filters */}
+                <button
+                  onClick={handleResetFilters}
+                  className="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
+                >
+                  <RotateCcw size={14} className="mr-1" />
+                  Reset
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Content area */}
+          <div className="bg-white shadow-lg rounded-lg overflow-hidden">
+            {renderCategories()}
+          </div>
         </div>
       </div>
 
       {/* Add/Edit Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-white/60  flex items-center justify-center p-4 z-50">
-          <div className="bg-white w-full max-w-2xl  shadow-xl">
-            <div className="flex items-center justify-between p-4 border-b">
-              <h3 className="text-xl font-bold text-gray-800">
-                {editingCategory ? 'Edit Category' : 'Add New Category'}
-              </h3>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white shadow-2xl max-w-2xl w-full max-h-[95vh] overflow-hidden rounded-lg">
+            <div className="bg-green-600 px-6 py-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-semibold text-white flex items-center gap-3">
+                  <Plus size={20} />
+                  {editingCategory ? 'Edit Category' : 'Add New Category'}
+                </h2>
+                <button
+                  onClick={() => setIsModalOpen(false)}
+                  className="p-2 hover:bg-blue-500 rounded-lg transition-colors"
+                >
+                  <X size={20} className="text-white" />
+                </button>
+              </div>
+            </div>
+            <div className="p-6 max-h-[80vh] overflow-y-auto">
               <button
                 onClick={() => setIsModalOpen(false)}
                 className="text-gray-500 hover:text-gray-700 transition-colors duration-200"
@@ -761,21 +818,21 @@ export default function Categories() {
                 </div>
               </div>
 
-              <div className="flex justify-end space-x-3 pt-4">
+              <div className="flex justify-end space-x-3 pt-6 border-t border-gray-200 mt-6">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 border border-gray-300  text-gray-700 hover:bg-gray-50 transition-colors duration-200 shadow-sm"
+                  className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  disabled={loading}
-                  className="px-4 py-2 bg-green-600 text-white  hover:bg-green-700 disabled:opacity-70 flex items-center justify-center transition-colors duration-200 shadow-sm"
+                  disabled={loading || uploadingImage}
+                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
-                  {loading && <Loader2 className="animate-spin mr-2" size={18} />}
-                  {editingCategory ? 'Update' : 'Add'}
+                  {(loading || uploadingImage) && <Loader2 className="animate-spin mr-2" size={16} />}
+                  {editingCategory ? 'Update Category' : 'Add Category'}
                 </button>
               </div>
             </form>
@@ -785,34 +842,58 @@ export default function Categories() {
 
       {/* Delete Confirmation Modal */}
       {isDeleteModalOpen && categoryToDelete && (
-        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-50">
-          <div className="bg-white w-full max-w-md  shadow-xl animate-fade-in-up">
-            <div className="p-6">
-              <h3 className="text-xl font-bold mb-4 text-gray-800">Confirm Deletion</h3>
-              <p className="text-gray-700 mb-6">
-                Are you sure you want to delete "<span className="font-semibold">{categoryToDelete.name}</span>"? This action cannot be undone.
-              </p>
-              <div className="flex justify-end space-x-3">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white shadow-2xl max-w-md w-full overflow-hidden rounded-lg">
+            <div className="bg-red-600 px-6 py-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-semibold text-white flex items-center gap-3">
+                  <Trash2 size={20} />
+                  Confirm Deletion
+                </h2>
                 <button
                   onClick={() => setIsDeleteModalOpen(false)}
-                  className="px-4 py-2 border border-gray-300  text-gray-700 hover:bg-gray-50 transition-colors duration-200 shadow-sm"
+                  className="p-2 hover:bg-red-500 rounded-lg transition-colors"
                 >
-                  Cancel
+                  <X size={20} className="text-white" />
                 </button>
-                <button
-                  onClick={handleDelete}
-                  disabled={loading}
-                  className="px-4 py-2 bg-red-600 text-white  hover:bg-red-700 disabled:opacity-70 flex items-center justify-center transition-colors duration-200 shadow-sm"
-                >
-                  {loading && <Loader2 className="animate-spin mr-2" size={18} />}
-                  Delete
-                </button>
+              </div>
+            </div>
+            <div className="p-6">
+              <div className="flex items-start gap-4">
+                <div className="flex-shrink-0">
+                  <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                    <Trash2 size={24} className="text-red-600" />
+                  </div>
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">Delete Category</h3>
+                  <p className="text-gray-600 mb-4">
+                    Are you sure you want to delete "<span className="font-semibold text-gray-900">{categoryToDelete.name}</span>"? This action cannot be undone and will permanently remove the category and its image.
+                  </p>
+                  <div className="flex justify-end space-x-3">
+                    <button
+                      onClick={() => setIsDeleteModalOpen(false)}
+                      className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleDelete}
+                      disabled={loading}
+                      className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      {loading && <Loader2 className="animate-spin mr-2" size={16} />}
+                      Delete Category
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </div>
       )}
-    </div>
+
+      {/* Add/Edit Modal */}
     </Layout>
   );
 }
