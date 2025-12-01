@@ -93,6 +93,12 @@ export default function OrderDetails() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
   const [deleteConfirmError, setDeleteConfirmError] = useState('');
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  const [showRefundOptions, setShowRefundOptions] = useState(false);
+  const [refundType, setRefundType] = useState(''); // 'full' or 'partial'
+  const [refundAmount, setRefundAmount] = useState('');
+  const [refundError, setRefundError] = useState('');
+  const [cancelReason, setCancelReason] = useState('');
 
   // Delivery agent assignment states
   const [deliveryAgents, setDeliveryAgents] = useState([]);
@@ -283,6 +289,50 @@ export default function OrderDetails() {
 
       toast.success('Order deleted successfully');
       navigate('/orders');
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const confirmCancelOrder = async (cancelType = 'cancel_only', refundData = null) => {
+    setUpdating(true);
+    setShowCancelConfirm(false);
+    setShowRefundOptions(false);
+    
+    try {
+      const payload = { 
+        status: 'cancelled',
+        cancelType,
+        notes: cancelReason || 'Cancelled by admin'
+      };
+      
+      if (cancelType === 'cancel_and_refund' && refundData) {
+        payload.refund = refundData;
+      }
+      
+      const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/orders/${orderId}/status`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include',
+        body: JSON.stringify(payload)
+      });
+
+      const data = await response.json();
+      if (data.tokenValid === false) {
+        navigate('/login', { replace: true });
+        return;
+      }
+
+      if (!response.ok) {
+        throw new Error('Failed to cancel order');
+      }
+
+      setOrder(data.order);
+      toast.success(`Order cancelled successfully${cancelType === 'cancel_and_refund' ? ' with refund initiated' : ''}`);
     } catch (err) {
       toast.error(err.message);
     } finally {
@@ -558,6 +608,18 @@ export default function OrderDetails() {
                     icon: getStatusIcon(status.status),
                     color: index === 0 ? 'green' : 'gray'
                   })) || [];
+
+                  // Add order creation as "Order Confirmed" event at the beginning
+                  if (order.createdAt) {
+                    const orderConfirmedEvent = {
+                      timestamp: new Date(order.createdAt),
+                      title: 'Order Confirmed',
+                      description: 'Order has been placed successfully',
+                      icon: getStatusIcon('confirmed'),
+                      color: 'green'
+                    };
+                    statusEvents.unshift(orderConfirmedEvent);
+                  }
 
                   // Sort events by timestamp (most recent first for status history)
                   statusEvents.sort((a, b) => b.timestamp - a.timestamp);
@@ -1625,7 +1687,7 @@ export default function OrderDetails() {
                         <span className="text-sm font-medium text-gray-800">Cancelled By</span>
                       </div>
                       <p className="text-sm text-gray-700 capitalize">
-                        {order.cancellation.cancelledBy || 'Unknown'}
+                        {order.cancellation.cancelledByName || order.cancellation.cancelledBy || 'Unknown'}
                       </p>
                     </div>
 
@@ -1657,9 +1719,11 @@ export default function OrderDetails() {
                         <span className="text-sm font-medium text-blue-800">Refund Status</span>
                       </div>
                       <p className={`text-sm font-medium ${order.cancellation.refundStatus === 'processed' ? 'text-green-600' :
-                        order.cancellation.refundStatus === 'pending' ? 'text-yellow-600' : 'text-red-600'
+                        order.cancellation.refundStatus === 'pending' ? 'text-yellow-600' : 
+                        order.cancellation.refundStatus === 'not_applicable' ? 'text-gray-600' : 'text-red-600'
                         }`}>
-                        {order.cancellation.refundStatus || 'Unknown'}
+                        {order.cancellation.refundStatus === 'not_applicable' ? 'Not Applicable' : 
+                         order.cancellation.refundStatus || 'Unknown'}
                       </p>
                     </div>
                   </div>
@@ -1813,7 +1877,10 @@ export default function OrderDetails() {
                     <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
                       <span className="text-sm font-medium text-blue-700">Order Age</span>
                       <span className="text-sm font-semibold text-blue-900">
-                        {new Date(order.createdAt).toLocaleDateString('en-IN')}
+                        {new Date(order.createdAt).toLocaleDateString('en-IN')} at {new Date(order.createdAt).toLocaleTimeString('en-IN', {
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
                       </span>
                     </div>
 
@@ -1847,42 +1914,16 @@ export default function OrderDetails() {
                       </button>
                     )}
 
-                    {getStatusValue(order.status) === 'confirmed' && (
-                      <button
-                        onClick={() => updateOrderStatus('packing')}
-                        disabled={updating}
-                        className="w-full bg-orange-600 text-white py-3 px-4 rounded-lg hover:bg-orange-700 transition-all duration-200 shadow-sm hover:shadow-md disabled:opacity-50 flex items-center justify-center gap-3 font-medium"
-                      >
-                        <Package className="w-5 h-5" />
-                        Start Packing
-                      </button>
-                    )}
-
-                    {getStatusValue(order.status) === 'packing' && (
-                      <button
-                        onClick={() => updateOrderStatus('out_for_delivery')}
-                        disabled={updating}
-                        className="w-full bg-purple-600 text-white py-3 px-4 rounded-lg hover:bg-purple-700 transition-all duration-200 shadow-sm hover:shadow-md disabled:opacity-50 flex items-center justify-center gap-3 font-medium"
-                      >
-                        <Truck className="w-5 h-5" />
-                        Out for Delivery
-                      </button>
-                    )}
-
-                    {getStatusValue(order.status) === 'out_for_delivery' && (
-                      <button
-                        onClick={() => updateOrderStatus('delivered')}
-                        disabled={updating}
-                        className="w-full bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 transition-all duration-200 shadow-sm hover:shadow-md disabled:opacity-50 flex items-center justify-center gap-3 font-medium"
-                      >
-                        <CircleCheck className="w-5 h-5" />
-                        Mark as Delivered
-                      </button>
-                    )}
-
                     {!['delivered', 'cancelled'].includes(getStatusValue(order.status)) && (
                       <button
-                        onClick={() => updateOrderStatus('cancelled')}
+                        onClick={() => {
+                          setShowCancelConfirm(true);
+                          setCancelType('');
+                          setRefundType('');
+                          setRefundAmount('');
+                          setRefundAmountError('');
+                          setCancelReason('');
+                        }}
                         disabled={updating}
                         className="w-full bg-red-600 text-white py-3 px-4 rounded-lg hover:bg-red-700 transition-all duration-200 shadow-sm hover:shadow-md disabled:opacity-50 flex items-center justify-center gap-3 font-medium"
                       >
@@ -2189,6 +2230,202 @@ export default function OrderDetails() {
                     {updating ? 'Deleting...' : 'Delete Order'}
                   </button>
                 </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Cancel Order Confirmation Modal */}
+        {showCancelConfirm && (
+          <div className="fixed inset-0 bg-gray-700 bg-opacity-50 flex items-center justify-center z-50 min-h-screen">
+            <div className="bg-white rounded-none shadow-xl max-w-md w-full mx-4">
+              <div className="p-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                    <XCircle className="w-6 h-6 text-red-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-800">Cancel Order</h3>
+                    <p className="text-sm text-gray-600">This action cannot be undone</p>
+                  </div>
+                </div>
+
+                <div className="mb-6">
+                  <p className="text-gray-700 mb-3">
+                    Are you sure you want to cancel order <strong>#{order.orderNumber}</strong>? Choose how you want to handle this cancellation.
+                  </p>
+
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-gray-700">
+                      Reason for cancellation <span className="text-red-500">*</span>
+                    </label>
+                    <textarea
+                      value={cancelReason}
+                      onChange={(e) => setCancelReason(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-none focus:ring-2 focus:ring-red-500 focus:border-red-500 resize-none"
+                      placeholder="Please provide a reason for cancelling this order..."
+                      rows={3}
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-3">
+                  <button
+                    onClick={() => {
+                      if (!cancelReason.trim()) {
+                        alert('Please provide a reason for cancellation');
+                        return;
+                      }
+                      setShowCancelConfirm(false);
+                      setShowRefundOptions(true);
+                    }}
+                    disabled={updating}
+                    className="w-full bg-orange-600 text-white py-3 px-4 rounded-none hover:bg-orange-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 font-medium"
+                  >
+                    <IndianRupee className="w-5 h-5" />
+                    Cancel and Refund
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (!cancelReason.trim()) {
+                        alert('Please provide a reason for cancellation');
+                        return;
+                      }
+                      confirmCancelOrder('cancel_only');
+                    }}
+                    disabled={updating}
+                    className="w-full bg-red-600 text-white py-3 px-4 rounded-none hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 font-medium"
+                  >
+                    <XCircle className="w-5 h-5" />
+                    {updating ? 'Cancelling...' : 'Cancel Only'}
+                  </button>
+                  <button
+                    onClick={() => setShowCancelConfirm(false)}
+                    className="w-full bg-gray-200 text-gray-800 py-2 px-4 rounded-none hover:bg-gray-300 transition-colors"
+                    disabled={updating}
+                  >
+                    Keep Order
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Refund Options Modal */}
+        {showRefundOptions && (
+          <div className="fixed inset-0 bg-gray-700 bg-opacity-50 flex items-center justify-center z-50 min-h-screen">
+            <div className="bg-white rounded-none shadow-xl max-w-md w-full mx-4">
+              <div className="p-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
+                    <IndianRupee className="w-6 h-6 text-orange-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-800">Refund Options</h3>
+                    <p className="text-sm text-gray-600">Choose refund type for order #{order.orderNumber}</p>
+                  </div>
+                </div>
+
+                <div className="mb-6">
+                  <p className="text-gray-700 mb-4">Order Total: <strong>₹{order.pricing?.totalAmount?.toFixed(2) || '0.00'}</strong></p>
+                  
+                  <div className="space-y-3">
+                    <button
+                      onClick={() => {
+                        setRefundType('full');
+                        setRefundAmount(order.pricing?.totalAmount?.toString() || '0');
+                        confirmCancelOrder('cancel_and_refund', { type: 'full', amount: order.pricing?.totalAmount || 0 });
+                      }}
+                      disabled={updating}
+                      className="w-full bg-green-600 text-white py-3 px-4 rounded-none hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 font-medium"
+                    >
+                      <CircleCheck className="w-5 h-5" />
+                      Full Refund (₹{order.pricing?.totalAmount?.toFixed(2) || '0.00'})
+                    </button>
+                    
+                    <button
+                      onClick={() => setRefundType('partial')}
+                      disabled={updating}
+                      className="w-full bg-blue-600 text-white py-3 px-4 rounded-none hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 font-medium"
+                    >
+                      <IndianRupee className="w-5 h-5" />
+                      Partial Refund
+                    </button>
+                  </div>
+
+                  {refundType === 'partial' && (
+                    <div className="mt-4 space-y-2">
+                      <label className="block text-sm font-medium text-gray-700">
+                        Refund Amount (₹)
+                      </label>
+                      <input
+                        type="number"
+                        value={refundAmount}
+                        onChange={(e) => {
+                          setRefundAmount(e.target.value);
+                          setRefundError('');
+                        }}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="Enter refund amount"
+                        min="0"
+                        max={order.pricing?.totalAmount || 0}
+                        step="0.01"
+                      />
+                      {refundError && (
+                        <p className="text-sm text-red-600">{refundError}</p>
+                      )}
+                      <div className="flex gap-2 mt-3">
+                        <button
+                          onClick={() => {
+                            const amount = parseFloat(refundAmount);
+                            const maxAmount = order.pricing?.totalAmount || 0;
+                            
+                            if (!refundAmount || amount <= 0) {
+                              setRefundError('Please enter a valid refund amount');
+                              return;
+                            }
+                            
+                            if (amount > maxAmount) {
+                              setRefundError(`Refund amount cannot exceed ₹${maxAmount.toFixed(2)}`);
+                              return;
+                            }
+                            
+                            confirmCancelOrder('cancel_and_refund', { type: 'partial', amount: amount });
+                          }}
+                          disabled={updating}
+                          className="flex-1 bg-green-600 text-white py-2 px-4 rounded-none hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {updating ? 'Processing...' : 'Confirm Partial Refund'}
+                        </button>
+                        <button
+                          onClick={() => {
+                            setRefundType('');
+                            setRefundAmount('');
+                            setRefundError('');
+                          }}
+                          className="flex-1 bg-gray-200 text-gray-800 py-2 px-4 rounded-none hover:bg-gray-300 transition-colors"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <button
+                  onClick={() => {
+                    setShowRefundOptions(false);
+                    setRefundType('');
+                    setRefundAmount('');
+                    setRefundError('');
+                  }}
+                  className="w-full bg-gray-200 text-gray-800 py-2 px-4 rounded-none hover:bg-gray-300 transition-colors"
+                  disabled={updating}
+                >
+                  Back to Cancel Options
+                </button>
               </div>
             </div>
           </div>

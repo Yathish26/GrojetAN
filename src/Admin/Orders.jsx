@@ -17,7 +17,7 @@ const Orders = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filters, setFilters] = useState({
     status: '',
-    paymentStatus: '',
+    paymentMethod: '',
     deliveryType: '',
     dateRange: '',
     startDate: '',
@@ -171,7 +171,7 @@ const Orders = () => {
 
   const getPaymentStatusColor = (method) => {
     const colors = {
-      cod: 'bg-blue-100 text-blue-800',
+      cash: 'bg-blue-100 text-blue-800',
       razorpay: 'bg-purple-100 text-purple-800',
       paypal: 'bg-orange-100 text-orange-800',
       stripe: 'bg-indigo-100 text-indigo-800',
@@ -182,7 +182,7 @@ const Orders = () => {
 
   const getPaymentStatusIcon = (method) => {
     const icons = {
-      cod: <IndianRupee size={12} />,
+      cash: <IndianRupee size={12} />,
       razorpay: <CircleCheck size={12} />,
       paypal: <CircleCheck size={12} />,
       stripe: <CircleCheck size={12} />,
@@ -515,18 +515,17 @@ const Orders = () => {
                 </select>
               </div>
 
-              {/* Payment Status Filter */}
+              {/* Payment Method Filter */}
               <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-600">Payment Status:</span>
+                <span className="text-sm text-gray-600">Payment Method:</span>
                 <select
-                  value={filters.paymentStatus}
-                  onChange={(e) => handleFilterChange('paymentStatus', e.target.value)}
+                  value={filters.paymentMethod}
+                  onChange={(e) => handleFilterChange('paymentMethod', e.target.value)}
                   className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 >
-                  <option value="">All Payments</option>
-                  <option value="paid">Paid</option>
-                  <option value="pending">Pending</option>
-                  <option value="failed">Failed</option>
+                  <option value="">All Methods</option>
+                  <option value="cash">Cash on Delivery</option>
+                  <option value="razorpay">Razorpay</option>
                 </select>
               </div>
 
@@ -545,12 +544,12 @@ const Orders = () => {
               </div>
 
               {/* Clear Filters */}
-              {(filters.dateRange || filters.status || filters.paymentStatus || filters.deliveryType || searchTerm) && (
+              {(filters.dateRange || filters.status || filters.paymentMethod || filters.deliveryType || searchTerm) && (
                 <button
                   onClick={() => {
                     setFilters({
                       status: '',
-                      paymentStatus: '',
+                      paymentMethod: '',
                       deliveryType: '',
                       dateRange: '',
                       startDate: '',
@@ -612,7 +611,7 @@ const Orders = () => {
                         Amount
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Payment Status
+                        Payment Method
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Delivery Agent
@@ -670,7 +669,7 @@ const Orders = () => {
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-none text-xs font-medium ${getPaymentStatusColor(order.payment.method)}`}>
                             {getPaymentStatusIcon(order.payment.method)}
-                            {order.payment.method ? formatStatusText(order.payment.method) : 'N/A'}
+                            {order.payment.method ? (order.payment.method === 'cash' ? 'Cash on Delivery' : formatStatusText(order.payment.method)) : 'N/A'}
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
@@ -755,7 +754,7 @@ const Orders = () => {
                               <span className="text-gray-500">Payment:</span>
                               <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-none text-xs font-medium ${getPaymentStatusColor(order.payment.method)}`}>
                                 {getPaymentStatusIcon(order.payment.method)}
-                                {order.payment.method ? formatStatusText(order.payment.method) : 'N/A'}
+                                {order.payment.method ? (order.payment.method === 'cash' ? 'Cash on Delivery' : formatStatusText(order.payment.method)) : 'N/A'}
                               </span>
                             </div>
                           </div>
