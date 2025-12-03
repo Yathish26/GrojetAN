@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { MdAdminPanelSettings } from 'react-icons/md';
 import toast from 'react-hot-toast';
+import { VERSION } from '../../version.js';
 
 const Layout = ({ children, title }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -204,6 +205,7 @@ const Layout = ({ children, title }) => {
         <div className="flex items-center justify-between h-16 px-6 border-b border-neutral-200 flex-shrink-0">
           <div className="flex items-center gap-3 w-full">
             <img src="/grojet.png" alt="Grojet" className="h-6 object-contain" />
+            <span className="text-xs text-neutral-500">{VERSION}</span>
           </div>
           <button
             onClick={() => setSidebarOpen(false)}
