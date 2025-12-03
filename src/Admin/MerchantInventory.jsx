@@ -22,6 +22,7 @@ const MerchantInventory = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [availableCategories, setAvailableCategories] = useState([]);
+  const [stockCounts, setStockCounts] = useState({ inStock: 0, lowStock: 0, outOfStock: 0 });
   const [editingWeight, setEditingWeight] = useState(null);
   const [editedWeightValue, setEditedWeightValue] = useState('');
   const [editedWeightUnit, setEditedWeightUnit] = useState('');
@@ -76,6 +77,7 @@ const MerchantInventory = () => {
           setInventory(data.merchant.inventory || []);
           setTotalPages(data.pagination?.totalPages || 1);
           setTotalItems(data.pagination?.totalItems || 0);
+          setStockCounts(data.stockCounts || { inStock: 0, lowStock: 0, outOfStock: 0 });
 
           // Extract unique categories from inventory
           const categories = [...new Set(data.merchant.inventory?.map(item => item.category) || [])];
@@ -382,7 +384,7 @@ const MerchantInventory = () => {
                     { key: 'all', label: 'All', color: 'bg-gray-100 text-gray-700 hover:bg-gray-200' },
                     { key: 'in_stock', label: 'In Stock', color: 'bg-green-100 text-green-700 hover:bg-green-200' },
                     { key: 'low_stock', label: 'Low Stock', color: 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200' },
-                    { key: 'out_of_stock', label: 'Out of Stock', color: 'bg-red-100 text-red-700 hover:bg-red-200' }
+                    { key: 'out_of_stock', label: ' ', color: 'bg-red-100 text-red-700 hover:bg-red-200' }
                   ].map(({ key, label, color }) => (
                     <button
                       key={key}
@@ -456,7 +458,7 @@ const MerchantInventory = () => {
                   <div className="ml-4">
                     <dt className="text-sm font-medium text-gray-500 truncate">In Stock</dt>
                     <dd className="text-2xl font-semibold text-gray-900">
-                      {inventory.filter(item => item.quantity > item.minStock).length}
+                      {stockCounts.inStock}
                     </dd>
                   </div>
                 </div>
@@ -474,7 +476,7 @@ const MerchantInventory = () => {
                   <div className="ml-4">
                     <dt className="text-sm font-medium text-gray-500 truncate">Low Stock</dt>
                     <dd className="text-2xl font-semibold text-gray-900">
-                      {inventory.filter(item => item.quantity > 0 && item.quantity <= item.minStock).length}
+                      {stockCounts.lowStock}
                     </dd>
                   </div>
                 </div>
@@ -492,7 +494,7 @@ const MerchantInventory = () => {
                   <div className="ml-4">
                     <dt className="text-sm font-medium text-gray-500 truncate">Out of Stock</dt>
                     <dd className="text-2xl font-semibold text-gray-900">
-                      {inventory.filter(item => item.quantity === 0).length}
+                      {stockCounts.outOfStock}
                     </dd>
                   </div>
                 </div>
