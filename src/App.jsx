@@ -40,6 +40,7 @@ import Support from './Admin/Support.jsx'
 import DarkStore from './Admin/DarkStore.jsx'
 import LiveChat from './Admin/LiveChat.jsx'
 import Security from './Admin/Security.jsx'
+import Xpress from './Admin/Xpress.jsx'
 import { WebSocketProvider } from './context/WebSocketContext.jsx'
 
 function App() {
@@ -107,6 +108,9 @@ function App() {
           
           {/* Category Management */}
           <Route path="/categories" element={<Categories />} />
+          
+          {/* Xpress */}
+          <Route path="/xpress" element={<Xpress />} />
           
           {/* Careers Management */}
           <Route path="/careers" element={<Careers />} />
