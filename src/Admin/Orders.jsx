@@ -396,7 +396,7 @@ const Orders = () => {
                 </div>
               </div>
             </div>
-            <div className="bg-white shadow-lg rounded-lg overflow-hidden">
+            {/* <div className="bg-white shadow-lg rounded-lg overflow-hidden">
               <div className="bg-green-600 px-6 py-4">
                 <div className="flex items-center justify-between">
                   <div>
@@ -406,7 +406,7 @@ const Orders = () => {
                   <IndianRupee className="w-8 h-8 text-blue-200" />
                 </div>
               </div>
-            </div>
+            </div> */}
           </div>
         </div>
 
@@ -616,14 +616,11 @@ const Orders = () => {
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Delivery Agent
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Actions
-                      </th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
                     {orders.map((order) => (
-                      <tr key={order._id} className="hover:bg-gray-50">
+                      <tr key={order._id} className="hover:bg-gray-50 cursor-pointer" onClick={() => navigate(`/orders/${order._id}`)}>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div>
                             <div className="text-sm font-medium text-gray-900">
@@ -686,15 +683,6 @@ const Orders = () => {
                             <span className="text-sm text-gray-400">Not assigned</span>
                           )}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <button
-                            onClick={() => navigate(`/orders/${order._id}`)}
-                            className="text-green-600 hover:text-green-900 font-medium text-sm"
-                            title="View Details"
-                          >
-                            View Details
-                          </button>
-                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -705,7 +693,7 @@ const Orders = () => {
               <div className="md:hidden">
                 <div className="divide-y divide-gray-200">
                   {orders.map((order) => (
-                    <div key={order._id} className="p-4 hover:bg-gray-50">
+                    <div key={order._id} className="p-4 hover:bg-gray-50 cursor-pointer" onClick={() => navigate(`/orders/${order._id}`)}>
                       <div className="flex items-start gap-3">
                         <div className="flex-shrink-0 w-12 h-12">
                           <div className="w-full h-full rounded-none bg-gray-200 flex items-center justify-center">
@@ -761,13 +749,6 @@ const Orders = () => {
 
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
-                              <button
-                                onClick={() => navigate(`/orders/${order._id}`)}
-                                className="text-green-600 hover:text-green-900 font-medium text-sm"
-                                title="View Details"
-                              >
-                                View Details
-                              </button>
                               <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-none text-xs font-medium ${getStatusColor(order.status.current)}`}>
                                 {getStatusIcon(order.status.current)}
                                 {formatStatusText(order.status.current)}

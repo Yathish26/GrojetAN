@@ -600,8 +600,8 @@ export const Marker = ({
       infoWindowRef.current = null;
     }
 
-    // If custom icon is provided, use custom overlay (rotatable if rotation is valid)
-    if (icon) {
+    // If custom icon is provided and rotation is needed, use custom overlay
+    if (icon && rotation !== 0 && typeof rotation === 'number' && !isNaN(rotation)) {
       // Create custom overlay for rotatable marker
       class RotatableMarker extends window.google.maps.OverlayView {
         constructor(position, icon, rotation, title, onClick) {

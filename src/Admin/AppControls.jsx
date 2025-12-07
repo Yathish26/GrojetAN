@@ -10,6 +10,12 @@ export default function AppControls() {
   const [pushToken, setPushToken] = useState('');
   const [notificationResults, setNotificationResults] = useState(null);
 
+  // Bulk notifications states
+  const [bulkNotificationText, setBulkNotificationText] = useState('');
+  const [bulkSelectedApps, setBulkSelectedApps] = useState([]);
+  const [bulkNotificationResults, setBulkNotificationResults] = useState(null);
+  const [bulkNotificationLoading, setBulkNotificationLoading] = useState(false);
+
   // New states for app controls
   const [taxPercentageOnDeliveryFee, setTaxPercentageOnDeliveryFee] = useState(18);
   const [deliveryFee, setDeliveryFee] = useState(40);
@@ -20,6 +26,21 @@ export default function AppControls() {
   const [loading, setLoading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [originalValues, setOriginalValues] = useState({});
+
+  // Xpress controls states
+  const [xpressGstPercentage, setXpressGstPercentage] = useState(18);
+  const [xpressCodEnabled, setXpressCodEnabled] = useState(true);
+
+  // Xpress editing states
+  const [isEditingXpress, setIsEditingXpress] = useState(false);
+  const [xpressOriginalValues, setXpressOriginalValues] = useState({});
+  const [xpressLoading, setXpressLoading] = useState(false);
+
+  // Xpress update logs states
+  const [xpressUpdateLogs, setXpressUpdateLogs] = useState({
+    xpressGstPercentage: { updatedBy: null, updatedAt: null },
+    xpressCodEnabled: { updatedBy: null, updatedAt: null },
+  });
 
   // Update logs states
   const [updateLogs, setUpdateLogs] = useState({
@@ -58,31 +79,47 @@ export default function AppControls() {
         setFreeDeliveryThreshold(data.freeDeliveryThreshold?.value || 499);
         setCashOnDeliveryEnabled(data.cashOnDeliveryEnabled?.value !== undefined ? data.cashOnDeliveryEnabled.value : true);
         
-        // Set update logs
+        // Set Xpress controls
+        setXpressGstPercentage(data.xpressGstPercentage?.value || 18);
+        setXpressCodEnabled(data.xpressCodEnabled?.value !== undefined ? data.xpressCodEnabled.value : true);
+        
+        // Set Xpress update logs
+        setXpressUpdateLogs({
+          xpressGstPercentage: {
+            updatedBy: data.xpressGstPercentage?.updatedBy,
+            updatedAt: data.xpressGstPercentage?.updatedAt
+          },
+          xpressCodEnabled: {
+            updatedBy: data.xpressCodEnabled?.updatedBy,
+            updatedAt: data.xpressCodEnabled?.updatedAt
+          },
+        });
+        
+        // Set update logs for merchant controls
         setUpdateLogs({
           taxPercentageOnDeliveryFee: {
             updatedBy: data.taxPercentageOnDeliveryFee?.updatedBy,
-            updatedAt: data.taxPercentageOnDeliveryFee?.updatedAt
+            updatedAt: data.taxPercentageOnDeliveryFee?.updatedAt || data.updatedAt
           },
           deliveryFee: {
             updatedBy: data.deliveryFee?.updatedBy,
-            updatedAt: data.deliveryFee?.updatedAt
+            updatedAt: data.deliveryFee?.updatedAt || data.updatedAt
           },
           smallCartFee: {
             updatedBy: data.smallCartFee?.updatedBy,
-            updatedAt: data.smallCartFee?.updatedAt
+            updatedAt: data.smallCartFee?.updatedAt || data.updatedAt
           },
           smallCartThreshold: {
             updatedBy: data.smallCartThreshold?.updatedBy,
-            updatedAt: data.smallCartThreshold?.updatedAt
+            updatedAt: data.smallCartThreshold?.updatedAt || data.updatedAt
           },
           freeDeliveryThreshold: {
             updatedBy: data.freeDeliveryThreshold?.updatedBy,
-            updatedAt: data.freeDeliveryThreshold?.updatedAt
+            updatedAt: data.freeDeliveryThreshold?.updatedAt || data.updatedAt
           },
           cashOnDeliveryEnabled: {
             updatedBy: data.cashOnDeliveryEnabled?.updatedBy,
-            updatedAt: data.cashOnDeliveryEnabled?.updatedAt
+            updatedAt: data.cashOnDeliveryEnabled?.updatedAt || data.updatedAt
           },
         });
         
@@ -94,6 +131,12 @@ export default function AppControls() {
           smallCartThreshold: data.smallCartThreshold?.value || 499,
           freeDeliveryThreshold: data.freeDeliveryThreshold?.value || 499,
           cashOnDeliveryEnabled: data.cashOnDeliveryEnabled?.value !== undefined ? data.cashOnDeliveryEnabled.value : true,
+        });
+        
+        // Store Xpress original values for cancel functionality
+        setXpressOriginalValues({
+          xpressGstPercentage: data.xpressGstPercentage?.value || 18,
+          xpressCodEnabled: data.xpressCodEnabled?.value !== undefined ? data.xpressCodEnabled.value : true,
         });
       }
     } catch (error) {
@@ -141,6 +184,84 @@ export default function AppControls() {
     setFreeDeliveryThreshold(originalValues.freeDeliveryThreshold);
     setCashOnDeliveryEnabled(originalValues.cashOnDeliveryEnabled);
     setIsEditing(false);
+  };
+
+  // Xpress functions
+  const handleXpressEdit = () => {
+    // Store current values as original before editing
+    setXpressOriginalValues({
+      xpressGstPercentage,
+      xpressCodEnabled,
+    });
+    setIsEditingXpress(true);
+  };
+
+  const handleXpressCancel = () => {
+    // Restore original values
+    setXpressGstPercentage(xpressOriginalValues.xpressGstPercentage);
+    setXpressCodEnabled(xpressOriginalValues.xpressCodEnabled);
+    setIsEditingXpress(false);
+  };
+
+  const handleXpressSave = async () => {
+    const success = await handleUpdateXpressControls();
+    if (success) {
+      setIsEditingXpress(false);
+    }
+  };
+
+  const handleUpdateXpressControls = async () => {
+    setXpressLoading(true);
+    try {
+      const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/app-controls/xpress-controls`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          xpressGstPercentage: parseFloat(xpressGstPercentage),
+          xpressCodEnabled: xpressCodEnabled,
+        }),
+      });
+
+      if (response.status === 401) {
+        navigate('/login', { replace: true });
+        return false;
+      }
+
+      const result = await response.json();
+      if (result.success) {
+        toast.success('Xpress controls updated successfully');
+        // Update original values after successful save
+        setXpressOriginalValues({
+          xpressGstPercentage: parseFloat(xpressGstPercentage),
+          xpressCodEnabled: xpressCodEnabled,
+        });
+        // Update update logs with the returned data
+        const data = result.data;
+        setXpressUpdateLogs({
+          xpressGstPercentage: {
+            updatedBy: data.xpressGstPercentage?.updatedBy,
+            updatedAt: data.xpressGstPercentage?.updatedAt
+          },
+          xpressCodEnabled: {
+            updatedBy: data.xpressCodEnabled?.updatedBy,
+            updatedAt: data.xpressCodEnabled?.updatedAt
+          },
+        });
+        return true;
+      } else {
+        toast.error(result.message || 'Failed to update Xpress controls');
+        return false;
+      }
+    } catch (error) {
+      console.error('Error updating Xpress controls:', error);
+      toast.error('Failed to update Xpress controls');
+      return false;
+    } finally {
+      setXpressLoading(false);
+    }
   };
 
   const handleSave = async () => {
@@ -294,6 +415,59 @@ export default function AppControls() {
       console.error('Error sending notification:', error);
       toast.error('Failed to send notification');
     }
+  };
+
+  const handleSendBulkNotification = async () => {
+    if (!bulkNotificationText.trim()) {
+      toast.error('Please enter notification text');
+      return;
+    }
+    if (bulkSelectedApps.length === 0) {
+      toast.error('Please select at least one app to send to');
+      return;
+    }
+
+    setBulkNotificationLoading(true);
+    try {
+      const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/notifications/send-bulk-notification`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          message: bulkNotificationText,
+          appType: bulkSelectedApps.join(', '),
+        }),
+      });
+
+      if (response.status === 401) {
+        navigate('/login', { replace: true });
+        return;
+      }
+
+      const result = await response.json();
+      if (result.tokenValid === false) {
+        navigate('/login', { replace: true });
+        return;
+      }
+
+      if (result.success) {
+        setBulkNotificationResults(result);
+        toast.success(`Bulk notification sent to ${bulkSelectedApps.join(', ')}`);
+      } else {
+        toast.error(result.message || 'Failed to send bulk notification');
+      }
+    } catch (error) {
+      console.error('Error sending bulk notification:', error);
+      toast.error('Failed to send bulk notification');
+    } finally {
+      setBulkNotificationLoading(false);
+    }
+  };
+
+  const clearBulkResults = () => {
+    setBulkNotificationResults(null);
   };
 
   return (
@@ -455,9 +629,132 @@ export default function AppControls() {
           </div>
         )}
 
+        {/* Bulk Notifications Panel */}
+        <div className="bg-white shadow-sm border border-gray-200 rounded-lg p-4 sm:p-6">
+          <h2 className="text-lg sm:text-xl font-semibold text-gray-800 mb-4">Bulk Notifications</h2>
+          <div className="space-y-4">
+            {/* Notification Text */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Notification Text
+              </label>
+              <textarea
+                maxLength={500}
+                value={bulkNotificationText}
+                onChange={(e) => setBulkNotificationText(e.target.value)}
+                placeholder="Enter the notification message..."
+                rows="4"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 resize-none text-sm"
+              />
+            </div>
+
+            {/* App Selection */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Send to Apps
+              </label>
+              <div className="grid grid-cols-1 sm:flex sm:flex-wrap gap-3 sm:gap-4">
+                {['Merchant App'].map((app) => (
+                  <label key={app} className="flex items-center cursor-pointer p-2 sm:p-0 border sm:border-0 border-gray-200 rounded-lg sm:rounded-none">
+                    <input
+                      type="checkbox"
+                      checked={bulkSelectedApps.includes(app)}
+                      onChange={(e) => {
+                        const isChecked = e.target.checked;
+                        setBulkSelectedApps(prev =>
+                          isChecked
+                            ? [...prev, app]
+                            : prev.filter(a => a !== app)
+                        );
+                      }}
+                      className="mr-2 text-green-600 focus:ring-green-500 h-4 w-4"
+                    />
+                    <span className="text-sm text-gray-700">{app}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            {/* Send Button */}
+            <div className="flex justify-end pt-2">
+              <button
+                onClick={handleSendBulkNotification}
+                disabled={bulkNotificationLoading}
+                className="w-full sm:w-auto px-4 sm:px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-green-400 disabled:cursor-not-allowed transition-colors text-sm font-medium"
+              >
+                {bulkNotificationLoading ? 'Sending...' : 'Send Bulk Notification'}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Bulk Notification Results */}
+        {bulkNotificationResults && (
+          <div className="bg-white shadow-sm border border-gray-200 rounded-lg p-4 sm:p-6">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4">
+              <h2 className="text-lg sm:text-xl font-semibold text-gray-800">Bulk Notification Results</h2>
+              <button
+                onClick={clearBulkResults}
+                className="w-full sm:w-auto px-3 py-2 text-sm bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-colors"
+              >
+                Clear Results
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div className="bg-gray-50 p-3 sm:p-4 rounded-lg">
+                <h3 className="font-medium text-gray-900 mb-2 text-sm sm:text-base">Request Summary</h3>
+                <p className="text-sm text-gray-600">
+                  <strong>Message:</strong> {bulkNotificationResults.message}
+                </p>
+                <p className="text-sm text-gray-600">
+                  <strong>Status:</strong> <span className="text-green-600 font-medium">Success</span>
+                </p>
+                {bulkNotificationResults.data && bulkNotificationResults.data.totalSent && (
+                  <p className="text-sm text-gray-600">
+                    <strong>Total Sent:</strong> {bulkNotificationResults.data.totalSent}
+                  </p>
+                )}
+              </div>
+
+              {bulkNotificationResults.data && bulkNotificationResults.data.results && bulkNotificationResults.data.results.length > 0 && (
+                <div>
+                  <h3 className="font-medium text-gray-900 mb-3 text-sm sm:text-base">Delivery Results</h3>
+                  <div className="space-y-3 max-h-96 overflow-y-auto">
+                    {bulkNotificationResults.data.results.map((result, index) => (
+                      <div
+                        key={index}
+                        className={`p-3 sm:p-4 rounded-lg border ${
+                          result.success
+                            ? 'bg-green-50 border-green-200'
+                            : 'bg-red-50 border-red-200'
+                        }`}
+                      >
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">
+                          <span className={`font-medium text-sm sm:text-base ${
+                            result.success ? 'text-green-800' : 'text-red-800'
+                          }`}>
+                            {result.success ? '✅ Delivered' : '❌ Failed'}
+                          </span>
+                        </div>
+
+                        {result.error && (
+                          <div className="mt-2 text-xs text-red-600 bg-red-50 p-2 rounded">
+                            <strong>Error:</strong> {result.error}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* App Controls Panel */}
         <div className="bg-white shadow-sm border border-gray-200 rounded-lg p-4 sm:p-6">
-          <h2 className="text-lg sm:text-xl font-semibold text-gray-800 mb-4">Checkout Controls</h2>
+          <h2 className="text-lg sm:text-xl font-semibold text-gray-800 mb-4">Checkout Controls (Merchant)</h2>
           <div className="space-y-4">
             {/* Tax Percentage on Delivery Fee */}
             <div>
@@ -639,6 +936,103 @@ export default function AppControls() {
                 </>
               )}
             </div>
+          </div>
+        </div>
+
+        {/* Xpress Controls Panel */}
+        <div className="bg-white shadow-sm border border-gray-200 rounded-lg p-4 sm:p-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+            <div>
+              <h2 className="text-lg sm:text-xl font-semibold text-gray-800">Xpress Delivery Controls</h2>
+              <p className="text-gray-600 text-sm">Manage Xpress delivery settings</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Xpress GST Percentage */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                GST Percentage (%)
+              </label>
+              <input
+                type="number"
+                min="0"
+                max="100"
+                step="0.01"
+                value={xpressGstPercentage}
+                onChange={(e) => setXpressGstPercentage(e.target.value)}
+                disabled={!isEditingXpress}
+                className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm ${
+                  !isEditingXpress ? 'bg-gray-50 cursor-not-allowed' : ''
+                }`}
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                GST percentage applied to Xpress delivery charges.
+              </p>
+              <p className="text-xs text-blue-600 mt-1">
+                {formatUpdateLog(xpressUpdateLogs.xpressGstPercentage)}
+              </p>
+            </div>
+
+            {/* Xpress COD Enabled */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Cash on Delivery
+              </label>
+              <div className="flex items-center">
+                <button
+                  type="button"
+                  onClick={() => isEditingXpress && setXpressCodEnabled(!xpressCodEnabled)}
+                  disabled={!isEditingXpress}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 ${
+                    xpressCodEnabled ? 'bg-green-600' : 'bg-gray-200'
+                  } ${!isEditingXpress ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      xpressCodEnabled ? 'translate-x-6' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+                <span className="ml-3 text-sm text-gray-700">
+                  {xpressCodEnabled ? 'Enabled' : 'Disabled'}
+                </span>
+              </div>
+              <p className="text-xs text-gray-500 mt-1">
+                Allow cash on delivery for Xpress orders.
+              </p>
+              <p className="text-xs text-blue-600 mt-1">
+                {formatUpdateLog(xpressUpdateLogs.xpressCodEnabled)}
+              </p>
+            </div>
+          </div>
+
+          {/* Xpress Action Buttons */}
+          <div className="flex justify-end gap-3 pt-6">
+            {!isEditingXpress ? (
+              <button
+                onClick={handleXpressEdit}
+                className="w-full sm:w-auto px-4 sm:px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+              >
+                Edit Xpress Controls
+              </button>
+            ) : (
+              <>
+                <button
+                  onClick={handleXpressCancel}
+                  className="w-full sm:w-auto px-4 sm:px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors text-sm font-medium"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleXpressSave}
+                  disabled={xpressLoading}
+                  className="w-full sm:w-auto px-4 sm:px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-400 transition-colors text-sm font-medium"
+                >
+                  {xpressLoading ? 'Saving...' : 'Save Changes'}
+                </button>
+              </>
+            )}
           </div>
         </div>
       </div>

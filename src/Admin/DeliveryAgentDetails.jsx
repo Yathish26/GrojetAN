@@ -427,6 +427,42 @@ export default function DeliveryAgentDetails() {
     }
   };
 
+  const clearData = async () => {
+    if (!isAuthorized) return;
+
+    const confirmClear = window.confirm(
+      'Are you sure you want to clear all earnings and delivery data for this delivery agent? This action cannot be undone.'
+    );
+
+    if (!confirmClear) return;
+
+    const loadingToast = toast.loading('Clearing agent data...');
+    try {
+      const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/delivery-agents/${id}/clear-data`, {
+        method: 'POST',
+        credentials: 'include'
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to clear agent data');
+      }
+
+      const data = await response.json();
+      if (data.tokenValid === false) {
+        navigate('/login', { replace: true });
+        return;
+      }
+
+      // Refresh agent data to get updated status
+      await fetchAgentDetails();
+      toast.success('Agent data cleared successfully!');
+    } catch (err) {
+      toast.error(err.message || 'Failed to clear agent data');
+    } finally {
+      toast.dismiss(loadingToast);
+    }
+  };
+
   const forceAgentOffline = async () => {
     if (currentUser?.role !== 'super_admin') {
       toast.error('Only super admin can force agents offline');
@@ -1098,6 +1134,17 @@ export default function DeliveryAgentDetails() {
             <Download className="w-4 h-4" />
             <span className="hidden sm:inline">Export to Excel</span>
             <span className="sm:hidden">Export</span>
+          </button>
+
+          {/* Clear Data Button */}
+          <button
+            onClick={clearData}
+            className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors text-sm"
+            title="Clear all earnings and delivery data"
+          >
+            <X className="w-4 h-4" />
+            <span className="hidden sm:inline">Clear Data</span>
+            <span className="sm:hidden">Clear</span>
           </button>
         </div>
       </div>

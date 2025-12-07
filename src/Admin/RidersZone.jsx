@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { GoogleMap, Marker } from '../Components/GoogleMapComponents';
 import {
   MapPin, Truck, Navigation, RefreshCw,
-  CircleCheck, Clock, Star, Phone, ArrowLeft
+  CircleCheck, Clock, Star, Phone, ArrowLeft, Bell
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useWebSocket } from '../context/WebSocketContext';
@@ -83,6 +83,24 @@ const RidersZone = () => {
       fetchAgents();
     }
   }, [isAuthorized]);
+
+  const sendAlert = async (agentId) => {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/delivery-agents/send-alert/${agentId}`, {
+        method: 'POST',
+        credentials: 'include'
+      });
+      const data = await response.json();
+      if (data.success) {
+        toast.success('Alert sent to the agent');
+      } else {
+        toast.error('Failed to send alert');
+      }
+    } catch (error) {
+      console.error('Error sending alert:', error);
+      toast.error('Failed to send alert');
+    }
+  };
 
   const getVehicleIcon = (vehicleType) => {
     return <img src="/assets/bikerider.png" alt="Bike" className="w-6 h-6 object-contain" />;
@@ -367,9 +385,16 @@ const RidersZone = () => {
                         <div className="font-semibold text-gray-900">
                           📍 {agentLabel}
                         </div>
-                        <span className="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
-                          Live
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
+                            Live
+                          </span>
+                          <Bell
+                            size={16}
+                            className="text-green-500 cursor-pointer hover:text-green-600"
+                            onClick={() => sendAlert(agentId)}
+                          />
+                        </div>
                       </div>
                       <div className="grid grid-cols-2 gap-2 text-sm text-gray-700">
                         <div>

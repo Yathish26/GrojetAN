@@ -41,6 +41,7 @@ import DarkStore from './Admin/DarkStore.jsx'
 import LiveChat from './Admin/LiveChat.jsx'
 import Security from './Admin/Security.jsx'
 import Xpress from './Admin/Xpress.jsx'
+import XpressOrderDetails from './Admin/XpressOrderDetails.jsx'
 import { WebSocketProvider } from './context/WebSocketContext.jsx'
 
 function App() {
@@ -111,6 +112,7 @@ function App() {
           
           {/* Xpress */}
           <Route path="/xpress" element={<Xpress />} />
+          <Route path="/xpress/:id" element={<XpressOrderDetails />} />
           
           {/* Careers Management */}
           <Route path="/careers" element={<Careers />} />

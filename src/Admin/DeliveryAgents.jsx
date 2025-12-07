@@ -5,7 +5,7 @@ import {
   Truck, Search, Filter, Eye, MapPin, Star,
   CircleCheck, XCircle, Clock, User, Phone,
   Mail, AlertCircle, Plus, RefreshCw,
-  Ban
+  Ban, Bell
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -89,6 +89,24 @@ const DeliveryAgents = () => {
       }
     } catch (error) {
       console.error('Error fetching stats:', error);
+    }
+  };
+
+  const sendAlert = async (agentId) => {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/delivery-agents/send-alert/${agentId}`, {
+        method: 'POST',
+        credentials: 'include'
+      });
+      const data = await response.json();
+      if (data.success) {
+        toast.success('Alert sent to the agent');
+      } else {
+        toast.error('Failed to send alert');
+      }
+    } catch (error) {
+      console.error('Error sending alert:', error);
+      toast.error('Failed to send alert');
     }
   };
 
@@ -398,14 +416,11 @@ const DeliveryAgents = () => {
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Last Updated
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Actions
-                      </th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
                     {agents.map((agent) => (
-                      <tr key={agent._id} className="hover:bg-gray-50">
+                      <tr key={agent._id} className="hover:bg-gray-50 cursor-pointer" onClick={() => navigate(`/delivery-agents/${agent._id}`)}>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center">
                             <div className="ml-4">
@@ -415,11 +430,21 @@ const DeliveryAgents = () => {
                               <div className="text-sm text-gray-500">
                                 Zone: {agent.status.deliveryZone?.name || 'Not assigned'}
                               </div>
-                              <div className="flex items-center mt-1">
+                              <div className="flex items-center mt-1 gap-2">
                                 {agent.status.isOnline && (
-                                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
-                                    Online
-                                  </span>
+                                  <>
+                                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                                      Online
+                                    </span>
+                                    <Bell
+                                      size={14}
+                                      className="text-green-500 cursor-pointer hover:text-green-600"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        sendAlert(agent.agentId);
+                                      }}
+                                    />
+                                  </>
                                 )}
                               </div>
                             </div>
@@ -465,17 +490,6 @@ const DeliveryAgents = () => {
                             {agent.status.currentLocation?.lastUpdated || 'Never'}
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center gap-2">
-                            <button
-                              onClick={() => navigate(`/delivery-agents/${agent._id}`)}
-                              className="text-green-600 hover:text-green-900 text-sm font-medium"
-                              title="View Details"
-                            >
-                              View details
-                            </button>
-                          </div>
-                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -486,7 +500,7 @@ const DeliveryAgents = () => {
               <div className="md:hidden">
                 <div className="divide-y divide-gray-200">
                   {agents.map((agent) => (
-                    <div key={agent._id} className="p-4 hover:bg-gray-50">
+                    <div key={agent._id} className="p-4 hover:bg-gray-50 cursor-pointer" onClick={() => navigate(`/delivery-agents/${agent._id}`)}>
                       <div className="flex items-start gap-3">
                         <div className="flex-shrink-0 w-12 h-12">
                           <div className="w-full h-full rounded-full bg-gray-200 flex items-center justify-center">
@@ -515,9 +529,19 @@ const DeliveryAgents = () => {
                               {agent.personalInfo.phone}
                             </div>
                             {agent.status.isOnline && (
-                              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
-                                Online
-                              </span>
+                              <div className="flex items-center gap-1">
+                                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                                  Online
+                                </span>
+                                <Bell
+                                  size={12}
+                                  className="text-green-500 cursor-pointer hover:text-green-600"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    sendAlert(agent.agentId);
+                                  }}
+                                />
+                              </div>
                             )}
                           </div>
 
@@ -543,18 +567,6 @@ const DeliveryAgents = () => {
                               <div className="font-medium text-gray-900">
                                 {agent.status.currentLocation?.lastUpdated || 'Never'}
                               </div>
-                            </div>
-                          </div>
-
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                              <button
-                                onClick={() => navigate(`/delivery-agents/${agent._id}`)}
-                                className="text-green-600 hover:text-green-900 text-sm font-medium"
-                                title="View Details"
-                              >
-                                View details
-                              </button>
                             </div>
                           </div>
                         </div>

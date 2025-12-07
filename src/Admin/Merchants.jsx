@@ -715,7 +715,7 @@ const Merchants = () => {
                                 </div>
                             </div>
                         </div>
-                        <div className="bg-white shadow-lg rounded-lg overflow-hidden">
+                        {/* <div className="bg-white shadow-lg rounded-lg overflow-hidden">
                             <div className="bg-green-600 px-6 py-4">
                                 <div className="flex items-center justify-between">
                                     <div>
@@ -725,7 +725,7 @@ const Merchants = () => {
                                     <IndianRupeeIcon className="w-8 h-8 text-blue-200" />
                                 </div>
                             </div>
-                        </div>
+                        </div> */}
                     </div>
 
                     {/* Merchants List */}
@@ -761,15 +761,12 @@ const Merchants = () => {
                                                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                                                     Today's Performance
                                                 </th>
-                                                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                                                    Actions
-                                                </th>
                                             </tr>
                                         </thead>
                                         <tbody className="bg-white divide-y divide-gray-200">
                                             {filteredMerchants.length === 0 ? (
                                                 <tr>
-                                                    <td colSpan="6" className="px-6 py-12 text-center text-gray-500">
+                                                    <td colSpan="5" className="px-6 py-12 text-center text-gray-500">
                                                         <div className="flex flex-col items-center gap-2">
                                                             <Store className="w-12 h-12 text-gray-300" />
                                                             <p className="text-lg font-medium">No merchants found</p>
@@ -779,7 +776,7 @@ const Merchants = () => {
                                                 </tr>
                                             ) : (
                                                 filteredMerchants.map((merchant) => (
-                                                    <tr key={merchant.id} className="hover:bg-gray-50 transition-colors">
+                                                    <tr key={merchant.id} className="hover:bg-gray-50 transition-colors cursor-pointer" onClick={() => navigate(`/merchants/${merchant.id}`)}>
                                                         <td className="px-6 py-4 whitespace-nowrap">
                                                             <div className="flex items-center">
                                                                 <div className="w-12 h-12 bg-green-100 flex items-center justify-center overflow-hidden rounded-lg">
@@ -829,15 +826,6 @@ const Merchants = () => {
                                                                 {formatCurrency(merchant.todaysRevenue)}
                                                             </div>
                                                         </td>
-                                                        <td className="px-6 py-4 whitespace-nowrap">
-                                                            <button
-                                                                onClick={() => navigate(`/merchants/${merchant.id}`)}
-                                                                className="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-md text-green-700 bg-green-100 hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
-                                                            >
-                                                                <Eye size={14} className="mr-1.5" />
-                                                                View Details
-                                                            </button>
-                                                        </td>
                                                     </tr>
                                                 ))
                                             )}
@@ -856,7 +844,7 @@ const Merchants = () => {
                                     ) : (
                                         <div className="space-y-4">
                                             {filteredMerchants.map((merchant) => (
-                                                <div key={merchant.id} className="bg-gray-50 rounded-lg p-4 hover:bg-gray-100 transition-colors border border-gray-200">
+                                                <div key={merchant.id} className="bg-gray-50 rounded-lg p-4 hover:bg-gray-100 transition-colors border border-gray-200 cursor-pointer" onClick={() => navigate(`/merchants/${merchant.id}`)}>
                                                     <div className="flex items-start gap-4">
                                                         <div className="w-14 h-14 bg-green-100 flex items-center justify-center overflow-hidden flex-shrink-0 rounded-lg">
                                                             {merchant.brandingInfo?.logoUrl ? (
@@ -900,13 +888,6 @@ const Merchants = () => {
                                                                 <div className="text-sm text-gray-600">
                                                                     <span className="font-medium">{merchant.todaysOrders}</span> orders • <span className="font-medium">{formatCurrency(merchant.todaysRevenue)}</span>
                                                                 </div>
-                                                                <button
-                                                                    onClick={() => navigate(`/merchants/${merchant.id}`)}
-                                                                    className="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-md text-green-700 bg-green-100 hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
-                                                                >
-                                                                    <Eye size={14} className="mr-1.5" />
-                                                                    View
-                                                                </button>
                                                             </div>
                                                         </div>
                                                     </div>
