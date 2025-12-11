@@ -17,10 +17,7 @@ const Xpress = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filters, setFilters] = useState({
     status: '',
-    paymentMethod: '',
-    dateRange: '',
-    startDate: '',
-    endDate: ''
+    paymentMethod: ''
   });
   const [pagination, setPagination] = useState({
     page: 1,
@@ -187,6 +184,11 @@ const Xpress = () => {
   }, [checkUser]);
 
   const isAuthorized = allowedRoles.includes(currentUser?.role);
+
+  // Reset page to 1 when search or filters change
+  useEffect(() => {
+    setPagination(prev => ({ ...prev, page: 1 }));
+  }, [searchTerm, filters.status, filters.paymentMethod]);
 
   useEffect(() => {
     if (isAuthorized) {
@@ -364,15 +366,6 @@ const Xpress = () => {
                 <option value="online">Online</option>
               </select>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Date Range</label>
-              <input
-                type="date"
-                value={filters.startDate}
-                onChange={(e) => setFilters(prev => ({ ...prev, startDate: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
           </div>
         </div>
 
@@ -384,11 +377,11 @@ const Xpress = () => {
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Order</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pickup</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Drop</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Distance</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Package</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Assigned To</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Payment</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                 </tr>
               </thead>
@@ -434,20 +427,12 @@ const Xpress = () => {
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-4">
-                        <div className="text-sm text-gray-900 max-w-xs truncate">
-                          {order.pickup?.address || 'N/A'}
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium text-gray-900">
+                          {order.pricing?.distance ? `${order.pricing.distance} km` : 'N/A'}
                         </div>
                         <div className="text-sm text-gray-500">
-                          {order.pickup?.name || 'N/A'} • {order.pickup?.phone || 'N/A'}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="text-sm text-gray-900 max-w-xs truncate">
-                          {order.drop?.address || 'N/A'}
-                        </div>
-                        <div className="text-sm text-gray-500">
-                          {order.drop?.name || 'N/A'} • {order.drop?.phone || 'N/A'}
+                          {order.pricing?.eta ? `${order.pricing.eta} mins` : 'N/A'}
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -481,6 +466,18 @@ const Xpress = () => {
                         <div className="text-sm text-gray-500">
                           {order.pricing?.distance?.toFixed(1)} km • {order.pricing?.eta} min
                         </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          order.pricing?.paymentMethod === 'cod'
+                            ? 'bg-green-100 text-green-800 border-green-200'
+                            : 'bg-blue-100 text-blue-800 border-blue-200'
+                        }`}>
+                          {order.pricing?.paymentMethod === 'cod' ? '💵' : '💳'}
+                          <span className="ml-1">
+                            {order.pricing?.paymentMethod === 'cod' ? 'Cash' : 'Razorpay'}
+                          </span>
+                        </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(order.status)}`}>

@@ -449,7 +449,7 @@ const XpressOrderDetails = () => {
             )}
 
             {/* Delivery Agent Assignment */}
-            {currentUser?.role === 'super_admin' && (
+            {['super_admin', 'admin'].includes(currentUser?.role) && (
               <div className="bg-white rounded-lg shadow-sm border p-6">
                 <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
                   <User size={20} className="mr-2" />

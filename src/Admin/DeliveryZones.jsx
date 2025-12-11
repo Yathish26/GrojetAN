@@ -67,6 +67,7 @@ const ZonePolygon = ({ map, zone }) => {
         <div style="max-width:220px">
           <div style="font-weight:600;margin-bottom:4px">${zone.name || 'Zone'}</div>
           <div>Status: ${zone.isActive ? 'Active' : 'Inactive'}</div>
+          <div>Xpress: ${zone.supportsXpress ? 'Yes' : 'No'}</div>
           <div>Boundary Points: ${zone.boundaries?.coordinates?.[0]?.length || 0}</div>
         </div>
       `
@@ -227,6 +228,7 @@ const AllZonesView = ({ map, zones }) => {
             <div style="max-width:220px">
               <div style="font-weight:600;margin-bottom:4px">${zone.name || 'Zone'}</div>
               <div>Status: ${zone.isActive ? 'Active' : 'Inactive'}</div>
+              <div>Xpress: ${zone.supportsXpress ? 'Yes' : 'No'}</div>
               <div>Boundary Points: ${zone.boundaries?.coordinates?.[0]?.length || 0}</div>
             </div>
           `
@@ -312,7 +314,8 @@ export default function DeliveryZones() {
       type: 'Polygon',
       coordinates: []
     },
-    isActive: true
+    isActive: true,
+    supportsXpress: false
   });
 
   // Initialize edit form when a zone is selected for editing
@@ -324,6 +327,7 @@ export default function DeliveryZones() {
         name: editingZone.name || '',
         description: editingZone.description || '',
         isActive: !!editingZone.isActive,
+        supportsXpress: !!editingZone.supportsXpress,
         boundaries: {
           type: 'Polygon',
           coordinates: editingZone.boundaries?.coordinates || []
@@ -385,6 +389,7 @@ export default function DeliveryZones() {
       name: createForm.name,
       description: createForm.description,
       isActive: createForm.isActive,
+      supportsXpress: createForm.supportsXpress,
       boundaries: {
         type: 'Polygon',
         coordinates: createForm.boundaries.coordinates
@@ -417,7 +422,8 @@ export default function DeliveryZones() {
         name: '',
         description: '',
         boundaries: { type: 'Polygon', coordinates: [] },
-        isActive: true
+        isActive: true,
+        supportsXpress: false
       });
       toast.success('Delivery zone created successfully');
     } catch (err) {
@@ -717,11 +723,19 @@ export default function DeliveryZones() {
                   <h3 className="text-lg font-semibold text-gray-800">{zone.name}</h3>
                   <p className="text-sm text-gray-600 mt-1">{zone.description}</p>
                 </div>
-                <div className={`px-2 py-1 rounded-full text-xs font-medium ${zone.isActive
-                  ? 'bg-green-100 text-green-800'
-                  : 'bg-gray-100 text-gray-800'
-                  }`}>
-                  {zone.isActive ? 'Active' : 'Inactive'}
+                <div className="flex flex-col gap-2">
+                  <div className={`px-2 py-1 rounded-full text-xs font-medium ${zone.isActive
+                    ? 'bg-green-100 text-green-800'
+                    : 'bg-gray-100 text-gray-800'
+                    }`}>
+                    {zone.isActive ? 'Active' : 'Inactive'}
+                  </div>
+                  <div className={`px-2 py-1 rounded-full text-xs font-medium ${zone.supportsXpress
+                    ? 'bg-blue-100 text-blue-800'
+                    : 'bg-gray-100 text-gray-800'
+                    }`}>
+                    {zone.supportsXpress ? 'Xpress' : 'Standard'}
+                  </div>
                 </div>
               </div>
               <div className="space-y-3">
@@ -897,17 +911,31 @@ export default function DeliveryZones() {
                     )}
                   </div>
                 </div>
-                <div className="flex items-center gap-2 mt-2">
-                  <input
-                    type="checkbox"
-                    id="isActive"
-                    checked={createForm.isActive}
-                    onChange={(e) => setCreateForm({ ...createForm, isActive: e.target.checked })}
-                    className="text-green-600 focus:ring-green-500"
-                  />
-                  <label htmlFor="isActive" className="text-sm text-gray-700">
-                    Active Zone
-                  </label>
+                <div className="flex items-center gap-4 mt-2">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      id="isActive"
+                      checked={createForm.isActive}
+                      onChange={(e) => setCreateForm({ ...createForm, isActive: e.target.checked })}
+                      className="text-green-600 focus:ring-green-500"
+                    />
+                    <label htmlFor="isActive" className="text-sm text-gray-700">
+                      Active Zone
+                    </label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      id="supportsXpress"
+                      checked={createForm.supportsXpress}
+                      onChange={(e) => setCreateForm({ ...createForm, supportsXpress: e.target.checked })}
+                      className="text-blue-600 focus:ring-blue-500"
+                    />
+                    <label htmlFor="supportsXpress" className="text-sm text-gray-700">
+                      Supports Xpress
+                    </label>
+                  </div>
                 </div>
               </div>
               <div className="flex justify-end gap-3 pt-4">
@@ -1092,6 +1120,7 @@ export default function DeliveryZones() {
                 const payload = {
                   name: editForm.name,
                   description: editForm.description,
+                  supportsXpress: editForm.supportsXpress,
                   boundaries: {
                     type: 'Polygon',
                     coordinates: editForm.boundaries?.coordinates || []
@@ -1164,15 +1193,27 @@ export default function DeliveryZones() {
                   </div>
                 </div>
                 {currentUser?.role === 'super_admin' && (
-                  <div className="flex items-center gap-2 mt-2">
-                    <input
-                      type="checkbox"
-                      id="isActiveEdit"
-                      checked={editForm.isActive}
-                      onChange={(e) => setEditForm({ ...editForm, isActive: e.target.checked })}
-                      className="text-green-600 focus:ring-green-500"
-                    />
-                    <label htmlFor="isActiveEdit" className="text-sm text-gray-700">Active Zone</label>
+                  <div className="flex items-center gap-4 mt-2">
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        id="isActiveEdit"
+                        checked={editForm.isActive}
+                        onChange={(e) => setEditForm({ ...editForm, isActive: e.target.checked })}
+                        className="text-green-600 focus:ring-green-500"
+                      />
+                      <label htmlFor="isActiveEdit" className="text-sm text-gray-700">Active Zone</label>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        id="supportsXpressEdit"
+                        checked={editForm.supportsXpress}
+                        onChange={(e) => setEditForm({ ...editForm, supportsXpress: e.target.checked })}
+                        className="text-blue-600 focus:ring-blue-500"
+                      />
+                      <label htmlFor="supportsXpressEdit" className="text-sm text-gray-700">Supports Xpress</label>
+                    </div>
                   </div>
                 )}
               </div>
