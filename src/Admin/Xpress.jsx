@@ -15,6 +15,7 @@ const Xpress = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [currentSearch, setCurrentSearch] = useState('');
   const [filters, setFilters] = useState({
     status: '',
     paymentMethod: ''
@@ -37,7 +38,7 @@ const Xpress = () => {
       const queryParams = new URLSearchParams({
         page: pagination.page,
         limit: pagination.limit,
-        search: searchTerm,
+        search: currentSearch,
         ...filters
       });
 
@@ -188,14 +189,14 @@ const Xpress = () => {
   // Reset page to 1 when search or filters change
   useEffect(() => {
     setPagination(prev => ({ ...prev, page: 1 }));
-  }, [searchTerm, filters.status, filters.paymentMethod]);
+  }, [currentSearch, filters.status, filters.paymentMethod]);
 
   useEffect(() => {
     if (isAuthorized) {
       fetchOrders();
       fetchStats();
     }
-  }, [currentUser, pagination.page, searchTerm, filters, isAuthorized]);
+  }, [currentUser, pagination.page, currentSearch, filters, isAuthorized]);
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -326,17 +327,24 @@ const Xpress = () => {
         {/* Filters */}
         <div className="bg-white p-6 rounded-lg shadow-sm border mb-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div>
+            <div className="lg:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-2">Search</label>
-              <div className="relative">
+              <div className="relative flex">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
                 <input
                   type="text"
                   placeholder="Order #, name, phone..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  onKeyPress={(e) => e.key === 'Enter' && setCurrentSearch(searchTerm)}
+                  className="flex-1 pl-10 pr-4 py-2 border border-gray-300 rounded-l-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
+                <button
+                  onClick={() => setCurrentSearch(searchTerm)}
+                  className="px-4 py-2 bg-blue-500 text-white rounded-r-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  Search
+                </button>
               </div>
             </div>
             <div>
@@ -413,6 +421,9 @@ const Xpress = () => {
                           <div className="text-sm font-medium text-gray-900">#{order.orderNumber}</div>
                           <div className="text-sm text-gray-500">
                             {new Date(order.createdAt).toLocaleDateString()}
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            {new Date(order.createdAt).toLocaleTimeString()}
                           </div>
                         </div>
                       </td>

@@ -777,7 +777,62 @@ export const Marker = ({
   }, [position]);
 
   return null; // This component doesn't render anything visible
-};export const googleMapsApi = {
+};
+
+export const DirectionsRenderer = ({
+  directions,
+  map = null,
+  options = {}
+}) => {
+  const directionsRendererRef = useRef(null);
+
+  useEffect(() => {
+    if (!map || !window.google || !window.google.maps) return;
+
+    // Clean up previous renderer
+    if (directionsRendererRef.current) {
+      directionsRendererRef.current.setMap(null);
+      directionsRendererRef.current = null;
+    }
+
+    // Create new directions renderer
+    const directionsRenderer = new window.google.maps.DirectionsRenderer({
+      map: map,
+      suppressMarkers: true, // Don't show default markers since we have custom ones
+      polylineOptions: {
+        strokeColor: '#4285F4',
+        strokeWeight: 5,
+        strokeOpacity: 0.8
+      },
+      ...options
+    });
+
+    directionsRendererRef.current = directionsRenderer;
+
+    // Set directions if provided
+    if (directions) {
+      directionsRenderer.setDirections(directions);
+    }
+
+    return () => {
+      if (directionsRendererRef.current) {
+        directionsRendererRef.current.setMap(null);
+        directionsRendererRef.current = null;
+      }
+    };
+  }, [map]);
+
+  // Update directions when they change
+  useEffect(() => {
+    if (directionsRendererRef.current && directions) {
+      directionsRendererRef.current.setDirections(directions);
+    }
+  }, [directions]);
+
+  return null; // This component doesn't render anything visible
+};
+
+export const googleMapsApi = {
   // Geocode an address using backend
   async geocodeAddress(address) {
     try {

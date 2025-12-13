@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import Layout from '../Components/Layout';
-import { GoogleMap, Marker } from '../Components/GoogleMapComponents';
+import { GoogleMap, Marker, DirectionsRenderer } from '../Components/GoogleMapComponents';
 import {
   ArrowLeft, MapPin, Phone, Package, Clock,
   User, Calendar, Truck, CheckCircle, XCircle,
@@ -18,6 +18,7 @@ const XpressOrderDetails = () => {
   const [agents, setAgents] = useState([]);
   const [assigningAgent, setAssigningAgent] = useState(false);
   const [showAgentsList, setShowAgentsList] = useState(false);
+  const [directions, setDirections] = useState(null);
   const allowedRoles = ['super_admin', 'admin'];
   const navigate = useNavigate();
   const { id } = useParams();
@@ -93,6 +94,10 @@ const XpressOrderDetails = () => {
       const data = await response.json();
       if (data.success) {
         setOrder(data.order);
+        // Calculate directions after order is loaded
+        if (data.order.pickup?.coordinates && data.order.drop?.coordinates) {
+          calculateDirections(data.order.pickup.coordinates, data.order.drop.coordinates);
+        }
       } else {
         toast.error('Failed to fetch order details');
         navigate('/admin/xpress');
@@ -104,6 +109,33 @@ const XpressOrderDetails = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const calculateDirections = (pickupCoords, dropCoords) => {
+    if (!window.google || !window.google.maps) return;
+
+    const directionsService = new window.google.maps.DirectionsService();
+
+    directionsService.route(
+      {
+        origin: {
+          lat: parseFloat(pickupCoords.latitude),
+          lng: parseFloat(pickupCoords.longitude)
+        },
+        destination: {
+          lat: parseFloat(dropCoords.latitude),
+          lng: parseFloat(dropCoords.longitude)
+        },
+        travelMode: window.google.maps.TravelMode.DRIVING,
+      },
+      (result, status) => {
+        if (status === window.google.maps.DirectionsStatus.OK) {
+          setDirections(result);
+        } else {
+          console.error('Directions request failed:', status);
+        }
+      }
+    );
   };
 
   const updateOrderStatus = async (newStatus) => {
@@ -391,7 +423,7 @@ const XpressOrderDetails = () => {
                       lng: (parseFloat(order.pickup.coordinates.longitude) + parseFloat(order.drop.coordinates.longitude)) / 2
                     }}
                     zoom={12}
-                    style={{ height: '400px', width: '100%' }}
+                    style={{ height: '400px', width: '100%', border: 'none' }}
                   >
                     <Marker
                       position={{
@@ -443,6 +475,7 @@ const XpressOrderDetails = () => {
                         anchor: new window.google.maps.Point(20, 40)
                       } : null}
                     />
+                    {directions && <DirectionsRenderer directions={directions} />}
                   </GoogleMap>
                 </div>
               </div>
