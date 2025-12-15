@@ -720,6 +720,9 @@ const XpressOrderDetails = () => {
                     {order.pickup?.landmark && (
                       <p className="text-sm text-gray-500">Landmark: {order.pickup.landmark}</p>
                     )}
+                    {order.pickupOtp && (
+                      <p className="text-sm text-gray-900 font-semibold">Pickup OTP: <span className="text-blue-600">{order.pickupOtp.code}</span></p>
+                    )}
                     {order.packageDetails?.pickupNotes && (
                       <div className="mt-2 p-2 bg-blue-50 rounded-md border-l-4 border-blue-400">
                         <p className="text-sm text-blue-800">
@@ -747,6 +750,9 @@ const XpressOrderDetails = () => {
                     </p>
                     {order.drop?.landmark && (
                       <p className="text-sm text-gray-500">Landmark: {order.drop.landmark}</p>
+                    )}
+                    {order.dropOtp && (
+                      <p className="text-sm text-gray-900 font-semibold">Drop OTP: <span className="text-red-600">{order.dropOtp.code}</span></p>
                     )}
                     {order.packageDetails?.dropNotes && (
                       <div className="mt-2 p-2 bg-orange-50 rounded-md border-l-4 border-orange-400">
@@ -818,6 +824,24 @@ const XpressOrderDetails = () => {
                   <span className="text-gray-600">Payment Method</span>
                   <span className="text-gray-900 capitalize">{order.pricing?.paymentMethod || 'N/A'}</span>
                 </div>
+                {order.razorpayOrderId && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600">Razorpay Order ID</span>
+                    <span className="text-gray-900 font-mono text-xs">{order.razorpayOrderId}</span>
+                  </div>
+                )}
+                {order.razorpayPaymentId && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600">Payment ID</span>
+                    <span className="text-gray-900 font-mono text-xs">{order.razorpayPaymentId}</span>
+                  </div>
+                )}
+                {order.razorpaySignature && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600">Signature</span>
+                    <span className="text-gray-900 font-mono text-xs break-all">{order.razorpaySignature}</span>
+                  </div>
+                )}
               </div>
             </div>
 
