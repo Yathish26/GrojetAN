@@ -25,11 +25,12 @@ import {
   Download,
   RefreshCw
 } from 'lucide-react';
-import { GoogleMap, Marker } from '../Components/GoogleMapComponents';
+import { GoogleMap, Marker, DirectionsRenderer } from '../Components/GoogleMapComponents';
 import { Store, Home } from 'lucide-react';
 import ReactDOMServer from 'react-dom/server';
 import toast from 'react-hot-toast';
 import html2pdf from 'html2pdf.js';
+import * as XLSX from 'xlsx';
 import { useWebSocket } from '../context/WebSocketContext';
 
 // Pre-render lucide icons into small SVG marker images (data URIs will be created later when window.google is available)
@@ -100,12 +101,74 @@ export default function OrderDetails() {
   const [refundError, setRefundError] = useState('');
   const [cancelReason, setCancelReason] = useState('');
 
+  // User authentication states
+  const [currentUser, setCurrentUser] = useState(null);
+  const [checkingUser, setCheckingUser] = useState(true);
+
   // Delivery agent assignment states
   const [deliveryAgents, setDeliveryAgents] = useState([]);
   const [loadingAgents, setLoadingAgents] = useState(false);
-  const [assigningAgent, setAssigningAgent] = useState(false);
+  const [assigningAgentId, setAssigningAgentId] = useState(null);
   const [showAgentAssignment, setShowAgentAssignment] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [agentEarnings, setAgentEarnings] = useState('');
+  const [directions, setDirections] = useState(null);
+
+  const checkUser = async () => {
+    try {
+      const local = localStorage.getItem('adminUser');
+      if (local) {
+        setCurrentUser(JSON.parse(local));
+      } else {
+        const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/auth/profile`, { credentials: 'include' });
+        const data = await response.json();
+        if (data.tokenValid === false) {
+          navigate('/login', { replace: true });
+          return;
+        }
+        if (response.ok && data.admin) {
+          setCurrentUser(data.admin);
+          localStorage.setItem('adminUser', JSON.stringify(data.admin));
+        }
+      }
+    } catch (error) {
+      console.error('Error checking user:', error);
+      navigate('/login');
+    } finally {
+      setCheckingUser(false);
+    }
+  };
+
+  const calculateDirections = (pickupCoords, dropCoords) => {
+    if (!window.google || !window.google.maps) return;
+
+    const directionsService = new window.google.maps.DirectionsService();
+
+    directionsService.route(
+      {
+        origin: {
+          lat: parseFloat(pickupCoords.latitude),
+          lng: parseFloat(pickupCoords.longitude)
+        },
+        destination: {
+          lat: parseFloat(dropCoords.latitude),
+          lng: parseFloat(dropCoords.longitude)
+        },
+        travelMode: window.google.maps.TravelMode.DRIVING,
+      },
+      (result, status) => {
+        if (status === window.google.maps.DirectionsStatus.OK) {
+          setDirections(result);
+        } else {
+          console.error('Directions request failed:', status);
+        }
+      }
+    );
+  };
+
+  useEffect(() => {
+    checkUser();
+  }, []);
 
   useEffect(() => {
     fetchOrderDetails();
@@ -132,6 +195,11 @@ export default function OrderDetails() {
       console.log('Delivery address coordinates:', data.order?.deliveryAddress?.coordinates);
       console.log('Delivery address full:', data.order?.deliveryAddress);
       setOrder(data.order);
+
+      // Calculate directions after order is loaded
+      if (data.order?.merchantLandmark?.address?.coordinates && data.order?.deliveryAddress?.coordinates) {
+        calculateDirections(data.order.merchantLandmark.address.coordinates, data.order.deliveryAddress.coordinates);
+      }
     } catch (err) {
       setError(err.message);
       toast.error('Failed to load order details');
@@ -178,7 +246,18 @@ export default function OrderDetails() {
   };
 
   const assignDeliveryAgent = async (agentId) => {
-    setAssigningAgent(true);
+    if (!agentEarnings || agentEarnings.trim() === '') {
+      toast.error('Please enter earnings amount for the delivery agent');
+      return;
+    }
+
+    const earningsAmount = parseFloat(agentEarnings);
+    if (isNaN(earningsAmount) || earningsAmount <= 0) {
+      toast.error('Please enter a valid earnings amount');
+      return;
+    }
+
+    setAssigningAgentId(agentId);
     try {
       const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/orders/${orderId}/assign-agent`, {
         method: 'PUT',
@@ -186,7 +265,10 @@ export default function OrderDetails() {
           'Content-Type': 'application/json'
         },
         credentials: 'include',
-        body: JSON.stringify({ deliveryAgentId: agentId })
+        body: JSON.stringify({ 
+          deliveryAgentId: agentId,
+          agentEarnings: earningsAmount
+        })
       });
 
       const data = await response.json();
@@ -201,19 +283,34 @@ export default function OrderDetails() {
 
       setOrder(data.order);
       setShowAgentAssignment(false);
+      setAgentEarnings('');
       toast.success('Delivery agent assigned successfully');
     } catch (err) {
       toast.error(err.message);
     } finally {
-      setAssigningAgent(false);
+      setAssigningAgentId(null);
     }
   };
 
   const fetchDeliveryAgents = async () => {
     setLoadingAgents(true);
     try {
+      // Build query parameters
+      const params = new URLSearchParams({
+        applicationStatus: 'approved',
+        isActive: 'true',
+        online: 'true',
+        limit: '1000'
+      });
+
+      // Add merchant coordinates if available
+      if (order?.merchantLandmark?.address?.coordinates) {
+        params.append('merchantLat', order.merchantLandmark.address.coordinates.latitude);
+        params.append('merchantLng', order.merchantLandmark.address.coordinates.longitude);
+      }
+
       const response = await fetch(
-        `${import.meta.env.VITE_SERVER}/admin/delivery-agents?applicationStatus=approved&isActive=true&online=true`,
+        `${import.meta.env.VITE_SERVER}/admin/delivery-agents?${params.toString()}`,
         { credentials: 'include' }
       );
 
@@ -233,6 +330,148 @@ export default function OrderDetails() {
       console.error('Error fetching delivery agents:', err);
     } finally {
       setLoadingAgents(false);
+    }
+  };
+
+  const exportToExcel = () => {
+    if (!order) {
+      toast.error('No order data available to export');
+      return;
+    }
+
+    try {
+      // Create workbook
+      const wb = XLSX.utils.book_new();
+
+      // Order Summary Sheet
+      const orderSummary = [
+        ['Order Details Export'],
+        [''],
+        ['Order Information'],
+        ['Order Number', order.orderNumber || 'N/A'],
+        ['Order Date', order.createdAt ? new Date(order.createdAt).toLocaleString('en-IN') : 'N/A'],
+        ['Status', getStatusValue(order.status).replace('_', ' ').toUpperCase()],
+        [''],
+        ['Customer Information'],
+        ['Name', order.customer?.name || 'N/A'],
+        ['Email', order.customer?.email || 'N/A'],
+        ['Phone', order.customer?.phone || 'N/A'],
+        [''],
+        ['Delivery Address'],
+        ['Street', order.deliveryAddress?.street || 'N/A'],
+        ['City', order.deliveryAddress?.city || 'N/A'],
+        ['State', order.deliveryAddress?.state || 'N/A'],
+        ['ZIP Code', order.deliveryAddress?.zipCode || 'N/A'],
+        [''],
+        ['Merchant Information'],
+        ['Store Name', order.merchantLandmark?.name || 'N/A'],
+        ['Store Phone', order.merchantLandmark?.phone || 'N/A'],
+        ['Store Address', `${order.merchantLandmark?.address?.street || ''}, ${order.merchantLandmark?.address?.city || ''}`],
+        [''],
+        ['Delivery Information'],
+        ['Estimated Time', `${order.deliveryInfo?.estimatedTime || 'N/A'} min`],
+        ['Distance', `${order.deliveryInfo?.distance || 'N/A'} km`],
+        ['Priority', order.deliveryInfo?.priority || 'N/A'],
+        ['Instructions', order.deliveryInfo?.deliveryInstructions || 'N/A'],
+        [''],
+        ['Payment Information'],
+        ['Method', order.payment?.method || order.paymentMethod || 'N/A'],
+        ['Status', (order.payment?.status || order.paymentStatus || 'Unknown').toUpperCase()],
+        ['Transaction ID', order.payment?.transactionId || 'N/A'],
+        ['Paid At', order.payment?.paidAt ? new Date(order.payment.paidAt).toLocaleString('en-IN') : 'N/A'],
+        [''],
+        ['Pricing Summary'],
+        ['Items Total', `₹${(order.pricing?.itemsTotal || 0).toFixed(2)}`],
+        ['Delivery Fee', `₹${(order.pricing?.deliveryFee || 0).toFixed(2)}`],
+        ['Taxes', `₹${(order.pricing?.taxes || 0).toFixed(2)}`],
+        ['Tip', `₹${(order.pricing?.tip || 0).toFixed(2)}`],
+        ['Discount', `₹${(order.pricing?.discount || 0).toFixed(2)}`],
+        ['Coupon Discount', `₹${(order.pricing?.couponDiscount || 0).toFixed(2)}`],
+        ['Total Amount', `₹${(order.pricing?.totalAmount || order.totalAmount || 0).toFixed(2)}`],
+      ];
+
+      const ws1 = XLSX.utils.aoa_to_sheet(orderSummary);
+      XLSX.utils.book_append_sheet(wb, ws1, 'Order Summary');
+
+      // Order Items Sheet
+      const itemsHeaders = [['Item Name', 'Quantity', 'Unit Price', 'Total Price']];
+      const itemsData = order.items?.map(item => [
+        item.productId?.name || item.name || 'N/A',
+        item.quantity,
+        `₹${item.price.toFixed(2)}`,
+        `₹${(item.quantity * item.price).toFixed(2)}`
+      ]) || [];
+
+      const ws2 = XLSX.utils.aoa_to_sheet([...itemsHeaders, ...itemsData]);
+      XLSX.utils.book_append_sheet(wb, ws2, 'Order Items');
+
+      // Order Timeline Sheet
+      const timelineHeaders = [['Date & Time', 'Event', 'Description']];
+      const timelineData = [];
+
+      // Add order creation
+      if (order.createdAt) {
+        timelineData.push([
+          new Date(order.createdAt).toLocaleString('en-IN'),
+          'Order Placed',
+          'Order has been placed successfully'
+        ]);
+      }
+
+      // Add status history
+      order.statusHistory?.forEach(status => {
+        timelineData.push([
+          new Date(status.timestamp).toLocaleString('en-IN'),
+          status.status.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()),
+          status.note || `Order status changed to ${status.status.replace('_', ' ')}`
+        ]);
+      });
+
+      // Add assignment events
+      if (order.assignment?.assignedAt) {
+        timelineData.push([
+          new Date(order.assignment.assignedAt).toLocaleString('en-IN'),
+          'Agent Assigned',
+          assignedAgentInfo.name ? `Assigned to ${assignedAgentInfo.name}` : 'Delivery agent assigned'
+        ]);
+      }
+
+      if (order.assignment?.acceptedAt) {
+        timelineData.push([
+          new Date(order.assignment.acceptedAt).toLocaleString('en-IN'),
+          'Assignment Accepted',
+          `${assignedAgentInfo.name || 'Delivery agent'} accepted the order`
+        ]);
+      }
+
+      if (order.assignment?.pickedUpAt) {
+        timelineData.push([
+          new Date(order.assignment.pickedUpAt).toLocaleString('en-IN'),
+          'Order Picked Up',
+          'Order has been picked up by the delivery agent'
+        ]);
+      }
+
+      if (order.assignment?.deliveredAt) {
+        timelineData.push([
+          new Date(order.assignment.deliveredAt).toLocaleString('en-IN'),
+          'Order Delivered',
+          'Order has been successfully delivered'
+        ]);
+      }
+
+      const ws3 = XLSX.utils.aoa_to_sheet([...timelineHeaders, ...timelineData]);
+      XLSX.utils.book_append_sheet(wb, ws3, 'Order Timeline');
+
+      // Generate filename with order number and date
+      const fileName = `Order_${order.orderNumber}_${new Date().toISOString().split('T')[0]}.xlsx`;
+
+      // Save file
+      XLSX.writeFile(wb, fileName);
+      toast.success('Order details exported to Excel successfully!');
+    } catch (error) {
+      console.error('Error exporting to Excel:', error);
+      toast.error('Failed to export order details to Excel');
     }
   };
 
@@ -258,6 +497,12 @@ export default function OrderDetails() {
   };
 
   const deleteOrder = () => {
+    // Check if order is delivered and user is not super_admin
+    if (order?.status?.current === 'delivered' && currentUser?.role !== 'super_admin') {
+      toast.error('Product Delivered cannot be Deleted');
+      return;
+    }
+
     setShowDeleteConfirm(true);
     setDeleteConfirmText('');
     setDeleteConfirmError('');
@@ -890,6 +1135,7 @@ export default function OrderDetails() {
                               `}
                                 />
                               )}
+                              {directions && <DirectionsRenderer directions={directions} />}
                             </GoogleMap>
                           </div>
 
@@ -938,6 +1184,9 @@ export default function OrderDetails() {
                           setShowAgentAssignment(!showAgentAssignment);
                           if (!showAgentAssignment && deliveryAgents.length === 0) {
                             fetchDeliveryAgents();
+                          }
+                          if (!showAgentAssignment) {
+                            setAgentEarnings('');
                           }
                         }}
                         className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-none hover:bg-blue-700 transition-colors"
@@ -988,6 +1237,20 @@ export default function OrderDetails() {
 
               {!isAssignmentAccepted && showAgentAssignment && (
                 <div className="px-6 pb-6">
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Delivery Agent Earnings (₹)
+                    </label>
+                    <input
+                      type="number"
+                      value={agentEarnings}
+                      onChange={(e) => setAgentEarnings(e.target.value)}
+                      placeholder="Enter earnings amount"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      min="0"
+                      step="0.01"
+                    />
+                  </div>
                   {loadingAgents ? (
                     <div className="text-center py-8">
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
@@ -995,7 +1258,14 @@ export default function OrderDetails() {
                     </div>
                   ) : deliveryAgents.length > 0 ? (
                     <div className="space-y-3">
-                      <h3 className="font-medium text-gray-800">Available Delivery Agents:</h3>
+                      <div className="flex items-center justify-between">
+                        <h3 className="font-medium text-gray-800">Available Delivery Agents:</h3>
+                        {order?.merchantLandmark?.address?.coordinates && (
+                          <span className="text-xs text-gray-500 bg-blue-50 px-2 py-1 rounded">
+                            Sorted by distance from store
+                          </span>
+                        )}
+                      </div>
                       {deliveryAgents.map((agent) => (
                         <div key={agent._id} className="flex items-center justify-between p-4 border border-gray-200 rounded-none hover:bg-gray-50">
                           <div className="flex items-center gap-3">
@@ -1010,6 +1280,9 @@ export default function OrderDetails() {
                               <p className="text-xs text-gray-500">
                                 Rating: {agent.status.rating?.toFixed(1) || 'N/A'} •
                                 Deliveries: {agent.status.completedDeliveries || 0}
+                                {agent.distance !== null && agent.distance !== undefined && (
+                                  <> • Distance: {agent.distance.toFixed(1)} km</>
+                                )}
                               </p>
                             </div>
                           </div>
@@ -1020,10 +1293,10 @@ export default function OrderDetails() {
                             </span>
                             <button
                               onClick={() => assignDeliveryAgent(agent._id)}
-                              disabled={assigningAgent}
+                              disabled={assigningAgentId !== null}
                               className="px-3 py-1 bg-blue-600 text-white text-sm font-medium rounded-none hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                              {assigningAgent ? 'Assigning...' : 'Assign'}
+                              {assigningAgentId === agent._id ? 'Assigning...' : 'Assign'}
                             </button>
                           </div>
                         </div>
@@ -1517,16 +1790,24 @@ export default function OrderDetails() {
                     </span>
                   </div>
 
-                  {order.delivery?.currentLocation && (
-                    <div className="p-3 bg-blue-50 rounded-none">
-                      <div className="flex items-center gap-2 mb-2">
-                        <LocationIcon className="w-4 h-4 text-blue-600" />
-                        <span className="text-sm font-medium text-blue-800">Live Location</span>
-                      </div>
-                      <p className="text-sm text-blue-700">
-                        Lat: {order.delivery.currentLocation.lat},
-                        Lng: {order.delivery.currentLocation.lng}
-                      </p>
+                  {/* Star Rating Display */}
+                  {order.deliveryAgent.rating && (
+                    <div className="flex items-center gap-1 mt-2">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <Star
+                          key={star}
+                          className={`w-4 h-4 ${
+                            star <= Math.floor(order.deliveryAgent.rating)
+                              ? 'text-yellow-400 fill-current'
+                              : star === Math.ceil(order.deliveryAgent.rating) && order.deliveryAgent.rating % 1 !== 0
+                              ? 'text-yellow-400 fill-current opacity-50'
+                              : 'text-gray-300'
+                          }`}
+                        />
+                      ))}
+                      <span className="text-sm text-gray-600 ml-2">
+                        {order.deliveryAgent.rating}/5
+                      </span>
                     </div>
                   )}
                 </div>
@@ -1543,7 +1824,7 @@ export default function OrderDetails() {
                   </h2>
                 </div>
                 <div className="p-6 space-y-3">
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 gap-4">
                     <div className="p-3 bg-green-50 rounded-none">
                       <div className="flex items-center gap-2 mb-1">
                         <IndianRupee className="w-4 h-4 text-green-600" />
@@ -1553,41 +1834,7 @@ export default function OrderDetails() {
                         ₹{order.earnings.deliveryFee || 0}
                       </p>
                     </div>
-
-                    <div className="p-3 bg-blue-50 rounded-none">
-                      <div className="flex items-center gap-2 mb-1">
-                        <IndianRupee className="w-4 h-4 text-blue-600" />
-                        <span className="text-sm font-medium text-blue-800">Tip</span>
-                      </div>
-                      <p className="text-lg font-semibold text-blue-900">
-                        ₹{order.earnings.tip || 0}
-                      </p>
-                    </div>
                   </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="p-3 bg-purple-50 rounded-none">
-                      <div className="flex items-center gap-2 mb-1">
-                        <MapPin className="w-4 h-4 text-purple-600" />
-                        <span className="text-sm font-medium text-purple-800">Distance Bonus</span>
-                      </div>
-                      <p className="text-lg font-semibold text-purple-900">
-                        ₹{order.earnings.distanceBonus || 0}
-                      </p>
-                    </div>
-
-                    <div className="p-3 bg-orange-50 rounded-none">
-                      <div className="flex items-center gap-2 mb-1">
-                        <Star className="w-4 h-4 text-orange-600" />
-                        <span className="text-sm font-medium text-orange-800">Priority Bonus</span>
-                      </div>
-                      <p className="text-lg font-semibold text-orange-900">
-                        ₹{order.earnings.priorityBonus || 0}
-                      </p>
-                    </div>
-                  </div>
-
-                  <hr className="my-3" />
 
                   <div className="p-3 bg-gray-50 rounded-none">
                     <div className="flex items-center gap-2 mb-1">
@@ -2026,6 +2273,14 @@ export default function OrderDetails() {
                     </button>
 
                     <button
+                      onClick={exportToExcel}
+                      className="w-full bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 transition-all duration-200 shadow-sm hover:shadow-md flex items-center justify-center gap-3 font-medium"
+                    >
+                      <Download className="w-5 h-5" />
+                      Export to Excel
+                    </button>
+
+                    <button
                       onClick={() => {
                         console.log('Download PDF button clicked');
 
@@ -2126,52 +2381,34 @@ export default function OrderDetails() {
                       <Download className="w-5 h-5" />
                       Download Invoice
                     </button>
-
-                    <button
-                      onClick={deleteOrder}
-                      disabled={updating}
-                      className="w-full bg-red-600 text-white py-3 px-4 rounded-lg hover:bg-red-700 transition-all duration-200 shadow-sm hover:shadow-md disabled:opacity-50 flex items-center justify-center gap-3 font-medium"
-                    >
-                      <Trash2 className="w-5 h-5" />
-                      Delete Order
-                    </button>
                   </div>
                 </div>
               </div>
 
-              {/* Store Information */}
-              <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                <div className="p-6 border-b border-gray-200">
-                  <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                    <Store className="w-5 h-5 text-purple-600" />
-                    Store Info
-                  </h2>
-                </div>
-                <div className="p-6">
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                      <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
-                        <Store className="w-5 h-5 text-purple-600" />
-                      </div>
-                      <div>
-                        <p className="font-medium text-gray-900">{order.merchantLandmark?.name || 'N/A'}</p>
-                        <p className="text-sm text-gray-600">Store</p>
-                      </div>
-                    </div>
+              {/* Show delete button only for super_admin or non-delivered orders */}
+              {(currentUser?.role === 'super_admin' || order?.status?.current !== 'delivered') && (
+                <div className="mt-6">
+                  <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                    <div className="p-6">
+                      <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                        <AlertCircle className="w-5 h-5 text-red-500" />
+                        Danger Zone
+                      </h3>
 
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2 text-sm">
-                        <Phone className="w-4 h-4 text-gray-500" />
-                        <span className="text-gray-700">{order.merchantLandmark?.phone || 'N/A'}</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-sm">
-                        <MapPin className="w-4 h-4 text-gray-500" />
-                        <span className="text-gray-700">{order.merchantLandmark?.address?.street || 'N/A'}</span>
+                      <div className="space-y-4">
+                        <button
+                          onClick={deleteOrder}
+                          disabled={updating}
+                          className="w-full bg-red-600 text-white py-3 px-4 rounded-lg hover:bg-red-700 transition-all duration-200 shadow-sm hover:shadow-md disabled:opacity-50 flex items-center justify-center gap-3 font-medium"
+                        >
+                          <Trash2 className="w-5 h-5" />
+                          Delete Order
+                        </button>
                       </div>
                     </div>
                   </div>
                 </div>
-              </div>
+              )}
             </div>
           </div>
         </div>

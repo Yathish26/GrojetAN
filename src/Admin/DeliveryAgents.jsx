@@ -411,7 +411,7 @@ const DeliveryAgents = () => {
                         Vehicle
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Performance
+                        App Version
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Last Updated
@@ -476,18 +476,23 @@ const DeliveryAgents = () => {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm text-gray-900">
-                            <div className="flex items-center gap-1">
-                              <Star size={14} className="text-yellow-400" />
-                              {agent.status.rating.toFixed(1)}
+                            <div className="font-medium">
+                              {agent.authentication.deviceInfo?.appVersion || 'Unknown'}
                             </div>
                             <div className="text-xs text-gray-500">
-                              {agent.status.completedDeliveries} deliveries
+                              {agent.authentication.deviceInfo?.lastAppUpdate ? 
+                                `Updated: ${new Date(agent.authentication.deviceInfo.lastAppUpdate).toLocaleDateString('en-GB')}` : 
+                                'Not updated'
+                              }
                             </div>
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm text-gray-900">
-                            {agent.status.currentLocation?.lastUpdated || 'Never'}
+                            {agent.status.currentLocation?.lastUpdated ? 
+                              new Date(agent.status.currentLocation.lastUpdated).toLocaleString('en-GB') : 
+                              'Never'
+                            }
                           </div>
                         </td>
                       </tr>
@@ -552,12 +557,16 @@ const DeliveryAgents = () => {
                               <div className="text-gray-600">{agent.vehicleInfo.vehicleNumber}</div>
                             </div>
                             <div className="text-xs">
-                              <span className="text-gray-500">Performance:</span>
-                              <div className="flex items-center gap-1 font-medium text-gray-900">
-                                <Star size={12} className="text-yellow-400" />
-                                {agent.status.rating.toFixed(1)}
+                              <span className="text-gray-500">App Version:</span>
+                              <div className="font-medium text-gray-900">
+                                {agent.authentication?.appVersion || 'Unknown'}
                               </div>
-                              <div className="text-gray-600">{agent.status.completedDeliveries} deliveries</div>
+                              <div className="text-gray-600 text-xs">
+                                {agent.authentication?.lastAppUpdate ? 
+                                  `Updated: ${new Date(agent.authentication.lastAppUpdate).toLocaleString('en-GB')}` : 
+                                  'Not updated'
+                                }
+                              </div>
                             </div>
                           </div>
 
@@ -565,7 +574,10 @@ const DeliveryAgents = () => {
                             <div className="text-xs">
                               <span className="text-gray-500">Last Updated:</span>
                               <div className="font-medium text-gray-900">
-                                {agent.status.currentLocation?.lastUpdated || 'Never'}
+                                {agent.status.currentLocation?.lastUpdated ? 
+                                  new Date(agent.status.currentLocation.lastUpdated).toLocaleString('en-GB') : 
+                                  'Never'
+                                }
                               </div>
                             </div>
                           </div>

@@ -4,7 +4,7 @@ import {
     Search, Filter, Plus, Eye, Edit, Trash2, Store,
     Phone, Mail, MapPin, Star, Package, DollarSign,
     Calendar, User, MoreVertical, Download, Map, X,
-    IndianRupeeIcon
+    IndianRupeeIcon, Send, Bell
 } from 'lucide-react';
 import Layout from '../Components/Layout';
 import { GoogleMap, Marker } from '../Components/GoogleMapComponents';
@@ -28,6 +28,10 @@ const Merchants = () => {
     const [showMapModal, setShowMapModal] = useState(false);
     const [allMerchantsForMap, setAllMerchantsForMap] = useState([]);
     const [loadingMap, setLoadingMap] = useState(false);
+    const [showPushNotificationModal, setShowPushNotificationModal] = useState(false);
+    const [selectedMerchant, setSelectedMerchant] = useState(null);
+    const [notificationMessage, setNotificationMessage] = useState('');
+    const [sendingNotification, setSendingNotification] = useState(false);
     const [stats, setStats] = useState({
         totalMerchants: 0,
         openMerchants: 0,
@@ -491,6 +495,57 @@ const Merchants = () => {
         }
     };
 
+    const sendPushNotification = async () => {
+        if (!notificationMessage.trim()) {
+            toast.error('Please enter a notification message');
+            return;
+        }
+
+        if (!selectedMerchant) {
+            toast.error('No merchant selected');
+            return;
+        }
+
+        setSendingNotification(true);
+        try {
+            const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/merchant-stores/${selectedMerchant.id}/send-notification`, {
+                method: 'POST',
+                credentials: 'include',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    message: notificationMessage.trim()
+                }),
+            });
+
+            const data = await response.json();
+            if (data.tokenValid === false) {
+                navigate('/login', { replace: true });
+                return;
+            }
+
+            if (response.ok && data.success) {
+                toast.success('Push notification sent successfully');
+                setShowPushNotificationModal(false);
+                setNotificationMessage('');
+                setSelectedMerchant(null);
+            } else {
+                throw new Error(data.message || 'Failed to send notification');
+            }
+        } catch (error) {
+            console.error('Send notification error:', error);
+            toast.error(error.message || 'Failed to send push notification');
+        } finally {
+            setSendingNotification(false);
+        }
+    };
+
+    const openPushNotificationModal = (merchant) => {
+        setSelectedMerchant(merchant);
+        setShowPushNotificationModal(true);
+    };
+
     return (
         <Layout title="Merchants">
             <div className="min-h-screen bg-gray-50">
@@ -819,11 +874,25 @@ const Merchants = () => {
                                                             </span>
                                                         </td>
                                                         <td className="px-6 py-4 whitespace-nowrap">
-                                                            <div className="text-sm font-semibold text-gray-900">
-                                                                {merchant.todaysOrders} orders today
-                                                            </div>
-                                                            <div className="text-sm text-gray-500">
-                                                                {formatCurrency(merchant.todaysRevenue)}
+                                                            <div className="flex items-center justify-between">
+                                                                <div>
+                                                                    <div className="text-sm font-semibold text-gray-900">
+                                                                        {merchant.todaysOrders} orders today
+                                                                    </div>
+                                                                    <div className="text-sm text-gray-500">
+                                                                        {formatCurrency(merchant.todaysRevenue)}
+                                                                    </div>
+                                                                </div>
+                                                                <button
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        openPushNotificationModal(merchant);
+                                                                    }}
+                                                                    className="ml-3 p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                                                    title="Send Push Notification"
+                                                                >
+                                                                    <Bell size={16} />
+                                                                </button>
                                                             </div>
                                                         </td>
                                                     </tr>
@@ -1093,6 +1162,71 @@ const Merchants = () => {
                     </div>
                 )}
             </div>
+
+            {/* Push Notification Modal */}
+            {showPushNotificationModal && (
+                <div className="fixed inset-0 backdrop-blur-sm bg-black/20 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+                        <div className="px-6 py-4 border-b border-gray-200">
+                            <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                                <Bell className="w-5 h-5 text-blue-600" />
+                                Send Push Notification
+                            </h3>
+                            <p className="mt-1 text-sm text-gray-600">
+                                Send a notification to {selectedMerchant?.name}
+                            </p>
+                        </div>
+                        <div className="px-6 py-4">
+                            <div className="space-y-4">
+                                <div>
+                                    <label htmlFor="notificationMessage" className="block text-sm font-medium text-gray-700 mb-2">
+                                        Notification Message
+                                    </label>
+                                    <textarea
+                                        id="notificationMessage"
+                                        value={notificationMessage}
+                                        onChange={(e) => setNotificationMessage(e.target.value)}
+                                        placeholder="Enter your notification message..."
+                                        rows={4}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+                                        disabled={sendingNotification}
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                        <div className="px-6 py-4 border-t border-gray-200 flex justify-end gap-3">
+                            <button
+                                onClick={() => {
+                                    setShowPushNotificationModal(false);
+                                    setNotificationMessage('');
+                                    setSelectedMerchant(null);
+                                }}
+                                disabled={sendingNotification}
+                                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={sendPushNotification}
+                                disabled={sendingNotification || !notificationMessage.trim()}
+                                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors flex items-center gap-2"
+                            >
+                                {sendingNotification ? (
+                                    <>
+                                        <div className="animate-spin h-4 w-4 border-2 border-blue-200 border-t-blue-600 rounded-full"></div>
+                                        Sending...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Send className="w-4 h-4" />
+                                        Send Notification
+                                    </>
+                                )}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </Layout>
     );
 };

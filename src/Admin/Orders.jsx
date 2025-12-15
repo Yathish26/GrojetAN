@@ -670,7 +670,7 @@ const Orders = () => {
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          {order.delivery && order.delivery.agentName ? (
+                          {order.assignment?.status === 'accepted' && order.delivery?.agentName ? (
                             <div>
                               <div className="text-sm font-medium text-gray-900">
                                 {order.delivery.agentName}
@@ -679,6 +679,8 @@ const Orders = () => {
                                 {order.delivery.agentPhone || 'N/A'}
                               </div>
                             </div>
+                          ) : order.assignment?.status === 'pending' ? (
+                            <span className="text-sm text-yellow-600">Agent assigned (pending acceptance)</span>
                           ) : (
                             <span className="text-sm text-gray-400">Not assigned</span>
                           )}
@@ -754,7 +756,7 @@ const Orders = () => {
                                 {formatStatusText(order.status.current)}
                               </span>
                             </div>
-                            {order.delivery && order.delivery.agentName && (
+                            {order.assignment?.status === 'accepted' && order.delivery?.agentName && (
                               <div className="text-xs text-gray-500 text-right">
                                 <div className="font-medium">{order.delivery.agentName}</div>
                                 <div>{order.delivery.agentPhone || 'N/A'}</div>

@@ -12,7 +12,7 @@ import {
   PieChart,
   Download,
   RefreshCw,
-  ArrowUp,
+  ArrowUp,  
   ShoppingCart,
   Target,
   MapPin,
@@ -118,7 +118,14 @@ export default function Analytics() {
     returningCustomers: 0,
     todaysOrders: 0,
     topAreas: [],
-    recentActivity: []
+    recentActivity: [],
+    // Xpress Orders
+    totalXpressOrders: 0,
+    totalXpressRevenue: 0,
+    xpressOrderGrowth: 0,
+    xpressRevenueGrowth: 0,
+    completedXpressOrders: 0,
+    pendingXpressOrders: 0
   });
 
   useEffect(() => {
@@ -186,26 +193,39 @@ export default function Analytics() {
     // Calculate basic metrics from chart data as fallback
     let totalOrders = 0,
       totalRevenue = 0,
-      totalOrderValue = 0;
+      totalOrderValue = 0,
+      totalXpressOrders = 0,
+      totalXpressRevenue = 0,
+      totalXpressOrderValue = 0;
     let prevOrders = 0,
-      prevRevenue = 0;
+      prevRevenue = 0,
+      prevXpressOrders = 0,
+      prevXpressRevenue = 0;
     const len = analyticsData.length;
 
     analyticsData.forEach((point, idx) => {
       totalOrders += point.orderCount || 0;
       totalRevenue += point.revenue || 0;
       totalOrderValue += point.avgOrderValue || 0;
+      totalXpressOrders += point.xpressOrderCount || 0;
+      totalXpressRevenue += point.xpressRevenue || 0;
+      totalXpressOrderValue += point.xpressAvgOrderValue || 0;
       // For growth: previous period is all except last day
       if (idx < len - 1) {
         prevOrders += point.orderCount || 0;
         prevRevenue += point.revenue || 0;
+        prevXpressOrders += point.xpressOrderCount || 0;
+        prevXpressRevenue += point.xpressRevenue || 0;
       }
     });
     const averageOrderValue = len > 0 ? Math.round(totalOrderValue / len) : 0;
+    const xpressAverageOrderValue = len > 0 ? Math.round(totalXpressOrderValue / len) : 0;
 
     // Calculate growth
     let orderGrowth = 0,
-      revenueGrowth = 0;
+      revenueGrowth = 0,
+      xpressOrderGrowth = 0,
+      xpressRevenueGrowth = 0;
     if (len > 1) {
       const last = analyticsData[len - 1];
       const prev = analyticsData[len - 2];
@@ -214,6 +234,12 @@ export default function Analytics() {
         : 0;
       revenueGrowth = prev.revenue
         ? Math.round(((last.revenue - prev.revenue) / prev.revenue) * 100)
+        : 0;
+      xpressOrderGrowth = prev.xpressOrderCount
+        ? Math.round(((last.xpressOrderCount - prev.xpressOrderCount) / prev.xpressOrderCount) * 100)
+        : 0;
+      xpressRevenueGrowth = prev.xpressRevenue
+        ? Math.round(((last.xpressRevenue - prev.xpressRevenue) / prev.xpressRevenue) * 100)
         : 0;
     }
 
@@ -225,6 +251,10 @@ export default function Analytics() {
       averageOrderValue,
       orderGrowth,
       revenueGrowth,
+      totalXpressOrders,
+      totalXpressRevenue,
+      xpressOrderGrowth,
+      xpressRevenueGrowth,
       completedOrders: 0,
       pendingOrders: 0,
       productRevenue: 0,
@@ -256,12 +286,15 @@ export default function Analytics() {
   const exportAnalytics = () => {
     if (!isAuthorized) return;
     // Export daily analytics as CSV
-    const csvHeader = ['Date', 'Orders', 'Revenue', 'Avg Order Value'];
+    const csvHeader = ['Date', 'Merchant Orders', 'Merchant Revenue', 'Merchant Avg Order Value', 'Xpress Orders', 'Xpress Revenue', 'Xpress Avg Order Value'];
     const csvRows = analytics.map((point) => [
       formatDate(point._id.year, point._id.month, point._id.day),
       point.orderCount || 0,
       point.revenue || 0,
-      point.avgOrderValue || 0
+      point.avgOrderValue || 0,
+      point.xpressOrderCount || 0,
+      point.xpressRevenue || 0,
+      point.xpressAvgOrderValue || 0
     ]);
     const csvContent =
       [csvHeader, ...csvRows].map((row) => row.join(',')).join('\n');
@@ -303,6 +336,8 @@ export default function Analytics() {
   );
   const chartOrders = analytics.map((point) => point.orderCount || 0);
   const chartRevenue = analytics.map((point) => point.revenue || 0);
+  const chartXpressOrders = analytics.map((point) => point.xpressOrderCount || 0);
+  const chartXpressRevenue = analytics.map((point) => point.xpressRevenue || 0);
 
   // Pie chart for revenue breakdown
   const revenuePieData = {
@@ -361,11 +396,19 @@ export default function Analytics() {
     labels: chartLabels,
     datasets: [
       {
-        label: 'Orders',
+        label: 'Merchant Orders',
         data: chartOrders,
         fill: false,
         borderColor: 'rgba(34,197,94,1)',
         backgroundColor: 'rgba(34,197,94,0.2)',
+        tension: 0.3
+      },
+      {
+        label: 'Xpress Orders',
+        data: chartXpressOrders,
+        fill: false,
+        borderColor: 'rgba(239,68,68,1)',
+        backgroundColor: 'rgba(239,68,68,0.2)',
         tension: 0.3
       },
       {
@@ -487,11 +530,11 @@ export default function Analytics() {
       </div>
 
       {/* Key Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-7 gap-6">
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Total Orders</p>
+              <p className="text-sm text-gray-600">Merchant Orders</p>
               <p className="text-2xl font-bold text-gray-800">{metrics.totalOrders}</p>
               <div className="flex items-center gap-1 mt-1">
                 <ArrowUp className="w-4 h-4 text-green-500" />
@@ -500,6 +543,21 @@ export default function Analytics() {
             </div>
             <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
               <ShoppingCart className="w-6 h-6 text-blue-600" />
+            </div>
+          </div>
+        </div>
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600">Xpress Orders</p>
+              <p className="text-2xl font-bold text-gray-800">{metrics.totalXpressOrders}</p>
+              <div className="flex items-center gap-1 mt-1">
+                <ArrowUp className="w-4 h-4 text-red-500" />
+                <span className="text-sm text-red-600">+{metrics.xpressOrderGrowth}%</span>
+              </div>
+            </div>
+            <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
+              <Package className="w-6 h-6 text-red-600" />
             </div>
           </div>
         </div>
@@ -520,7 +578,7 @@ export default function Analytics() {
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Total Revenue</p>
+              <p className="text-sm text-gray-600">Merchant Revenue</p>
               <p className="text-2xl font-bold text-gray-800">₹{metrics.totalRevenue.toLocaleString()}</p>
               <div className="flex items-center gap-1 mt-1">
                 <ArrowUp className="w-4 h-4 text-green-500" />
@@ -529,6 +587,21 @@ export default function Analytics() {
             </div>
             <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
               <DollarSign className="w-6 h-6 text-green-600" />
+            </div>
+          </div>
+        </div>
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600">Xpress Revenue</p>
+              <p className="text-2xl font-bold text-gray-800">₹{metrics.totalXpressRevenue.toLocaleString()}</p>
+              <div className="flex items-center gap-1 mt-1">
+                <ArrowUp className="w-4 h-4 text-red-500" />
+                <span className="text-sm text-red-600">+{metrics.xpressRevenueGrowth}%</span>
+              </div>
+            </div>
+            <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
+              <DollarSign className="w-6 h-6 text-red-600" />
             </div>
           </div>
         </div>
@@ -573,6 +646,7 @@ export default function Analytics() {
               <TrendingUp className="w-5 h-5" />
               Order & Revenue Trends
             </h2>
+            <p className="text-sm text-gray-600 mt-1">Merchant Orders (Green), Xpress Orders (Red), Revenue (Blue)</p>
           </div>
           <div className="p-6">
             {analytics.length > 0 ? (

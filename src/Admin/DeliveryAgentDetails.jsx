@@ -2324,11 +2324,6 @@ export default function DeliveryAgentDetails() {
                 <span className="text-gray-600">Total Earnings</span>
                 <span className="font-medium">₹{agent.status?.earnings?.total || 0}</span>
               </div>
-
-              <div className="flex items-center justify-between">
-                <span className="text-gray-600">This Month</span>
-                <span className="font-medium">₹{agent.status?.earnings?.thisMonth || 0}</span>
-              </div>
             </div>
           </div>
 
@@ -2350,7 +2345,7 @@ export default function DeliveryAgentDetails() {
               </div>
 
               {/* Force Offline Button */}
-              {agent.status?.isOnline && currentUser?.role === 'super_admin' && (
+              {agent.status?.isOnline && (currentUser?.role === 'super_admin' || currentUser?.role === 'admin') && (
                 <div className="pt-4">
                   <button
                     onClick={forceAgentOffline}

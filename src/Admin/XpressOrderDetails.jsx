@@ -19,6 +19,8 @@ const XpressOrderDetails = () => {
   const [assigningAgent, setAssigningAgent] = useState(false);
   const [showAgentsList, setShowAgentsList] = useState(false);
   const [directions, setDirections] = useState(null);
+  const [agentEarnings, setAgentEarnings] = useState('');
+  const [refreshingStatus, setRefreshingStatus] = useState(false);
   const allowedRoles = ['super_admin', 'admin'];
   const navigate = useNavigate();
   const { id } = useParams();
@@ -197,7 +199,7 @@ const XpressOrderDetails = () => {
   const fetchAgents = async () => {
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_SERVER}/admin/delivery-agents?online=true&applicationStatus=approved&isActive=true`,
+        `${import.meta.env.VITE_SERVER}/admin/delivery-agents?online=true&applicationStatus=approved&isActive=true&limit=1000`,
         { credentials: 'include' }
       );
 
@@ -210,7 +212,43 @@ const XpressOrderDetails = () => {
     }
   };
 
+  const refreshAssignmentStatus = async () => {
+    if (!order?.assignment?.agent) return;
+
+    setRefreshingStatus(true);
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_SERVER}/admin/xpress/${id}`,
+        { credentials: 'include' }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        setOrder(data.order);
+        toast.success('Assignment status updated');
+      } else {
+        toast.error('Failed to refresh assignment status');
+      }
+    } catch (error) {
+      console.error('Error refreshing assignment status:', error);
+      toast.error('Failed to refresh assignment status');
+    } finally {
+      setRefreshingStatus(false);
+    }
+  };
+
   const assignAgent = async (agentId) => {
+    if (!agentEarnings || agentEarnings.trim() === '') {
+      toast.error('Please enter earnings amount for the delivery agent');
+      return;
+    }
+
+    const earningsAmount = parseFloat(agentEarnings);
+    if (isNaN(earningsAmount) || earningsAmount <= 0) {
+      toast.error('Please enter a valid earnings amount');
+      return;
+    }
+
     try {
       setAssigningAgent(true);
       const response = await fetch(
@@ -221,13 +259,18 @@ const XpressOrderDetails = () => {
             'Content-Type': 'application/json'
           },
           credentials: 'include',
-          body: JSON.stringify({ agentId })
+          body: JSON.stringify({ 
+            agentId,
+            agentEarnings: earningsAmount
+          })
         }
       );
 
       if (response.ok) {
         const data = await response.json();
         setOrder(data.order);
+        setShowAgentsList(false);
+        setAgentEarnings('');
         toast.success('Agent assigned successfully');
       } else {
         const data = await response.json();
@@ -491,29 +534,71 @@ const XpressOrderDetails = () => {
 
                 {order.assignment?.agent ? (
                   <div className="space-y-4">
-                    <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                      <div className="flex items-center">
-                        <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center mr-3">
-                          <User size={20} className="text-green-600" />
+                    <div className={`border rounded-lg p-4 ${
+                      order.assignment.status === 'accepted' ? 'bg-green-50 border-green-200' :
+                      order.assignment.status === 'rejected' ? 'bg-red-50 border-red-200' :
+                      'bg-yellow-50 border-yellow-200'
+                    }`}>
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center">
+                          <div className={`w-10 h-10 rounded-full flex items-center justify-center mr-3 ${
+                            order.assignment.status === 'accepted' ? 'bg-green-100' :
+                            order.assignment.status === 'rejected' ? 'bg-red-100' :
+                            'bg-yellow-100'
+                          }`}>
+                            <User size={20} className={`${
+                              order.assignment.status === 'accepted' ? 'text-green-600' :
+                              order.assignment.status === 'rejected' ? 'text-red-600' :
+                              'text-yellow-600'
+                            }`} />
+                          </div>
+                          <div className="flex-1">
+                            <h3 className="text-lg font-medium text-gray-900">
+                              {order.assignment.agent.personalInfo.firstName} {order.assignment.agent.personalInfo.lastName || ''}
+                            </h3>
+                            <p className="text-sm text-gray-600">{order.assignment.agent.personalInfo.phone}</p>
+                            <div className="flex items-center gap-2 mt-1">
+                              <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                                order.assignment.status === 'accepted' ? 'bg-green-100 text-green-800' :
+                                order.assignment.status === 'rejected' ? 'bg-red-100 text-red-800' :
+                                'bg-yellow-100 text-yellow-800'
+                              }`}>
+                                {order.assignment.status === 'accepted' ? 'Accepted' :
+                                 order.assignment.status === 'rejected' ? 'Rejected' :
+                                 'Pending Confirmation'}
+                              </span>
+                              <button
+                                onClick={refreshAssignmentStatus}
+                                disabled={refreshingStatus}
+                                className="p-1 text-gray-400 hover:text-gray-600 disabled:opacity-50"
+                                title="Refresh assignment status"
+                              >
+                                <RefreshCw size={14} className={refreshingStatus ? 'animate-spin' : ''} />
+                              </button>
+                            </div>
+                          </div>
                         </div>
-                        <div className="flex-1">
-                          <h3 className="text-lg font-medium text-gray-900">
-                            {order.assignment.agent.personalInfo.firstName} {order.assignment.agent.personalInfo.lastName || ''}
-                          </h3>
-                          <p className="text-sm text-gray-600">{order.assignment.agent.personalInfo.phone}</p>
-                          <p className="text-xs text-gray-500 mt-1">
-                            Assigned on {formatDate(order.assignment.assignedAt)} at {formatTime12Hour(order.assignment.assignedAt)} by {order.assignment.assignedBy?.name || 'N/A'}
-                          </p>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={refreshAssignmentStatus}
+                            disabled={refreshingStatus}
+                            className="px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 disabled:opacity-50"
+                          >
+                            {refreshingStatus ? 'Refreshing...' : 'Refresh Status'}
+                          </button>
+                          <button
+                            onClick={() => {
+                              setOrder(prev => ({ ...prev, assignment: null }));
+                            }}
+                            className="px-3 py-1 text-sm bg-red-100 text-red-700 rounded-lg hover:bg-red-200"
+                          >
+                            Reassign
+                          </button>
                         </div>
-                        <button
-                          onClick={() => {
-                            setOrder(prev => ({ ...prev, assignment: null }));
-                          }}
-                          className="px-3 py-1 text-sm bg-red-100 text-red-700 rounded-lg hover:bg-red-200"
-                        >
-                          Reassign
-                        </button>
                       </div>
+                      <p className="text-xs text-gray-500 mt-2">
+                        Assigned on {formatDate(order.assignment.assignedAt)} at {formatTime12Hour(order.assignment.assignedAt)} by {order.assignment.assignedBy?.name || 'N/A'}
+                      </p>
                     </div>
                   </div>
                 ) : (
@@ -552,6 +637,22 @@ const XpressOrderDetails = () => {
                               Hide
                             </button>
                           </div>
+                        </div>
+
+                        {/* Delivery Agent Earnings Input */}
+                        <div className="mb-4">
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Delivery Agent Earnings (₹)
+                          </label>
+                          <input
+                            type="number"
+                            value={agentEarnings}
+                            onChange={(e) => setAgentEarnings(e.target.value)}
+                            placeholder="Enter earnings amount"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            min="0"
+                            step="0.01"
+                          />
                         </div>
 
                         {agents.length === 0 ? (

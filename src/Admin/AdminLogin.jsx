@@ -118,7 +118,7 @@ export default function AdminLogin() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-tr from-[#d6e04d] to-white flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-tr from-[#d30a02] to-white flex items-center justify-center p-4">
       <div className="bg-white p-8 shadow-xl border border-gray-200 w-full max-w-md">
         {/* Header */}
         <div className="flex flex-col items-center mb-8">
@@ -242,7 +242,7 @@ export default function AdminLogin() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full flex justify-center items-center gap-2 py-3 px-4 border border-transparent shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-70 transition-colors font-medium"
+            className="w-full flex justify-center items-center gap-2 py-3 px-4 border border-transparent shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-70 transition-colors cursor-pointer font-medium"
           >
             {loading ? (
               <>

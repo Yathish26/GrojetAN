@@ -11,6 +11,7 @@ export default function Admin() {
     const [dashboardStats, setDashboardStats] = useState({
         inventoryCount: null,
         orders: {},
+        xpressOrders: {},
         agents: {}
     });
     const [loading, setLoading] = useState(true);
@@ -23,26 +24,28 @@ export default function Admin() {
             try {
                 setLoading(true);
 
-                const [inventoryRes, ordersRes, agentsRes] = await Promise.all([
+                const [inventoryRes, ordersRes, xpressOrdersRes, agentsRes] = await Promise.all([
                     fetch(`${import.meta.env.VITE_SERVER}/admin/products/count`, { credentials: 'include' }),
                     fetch(`${import.meta.env.VITE_SERVER}/admin/orders/stats/overview`, { credentials: 'include' }),
+                    fetch(`${import.meta.env.VITE_SERVER}/admin/xpress/stats/overview`, { credentials: 'include' }),
                     fetch(`${import.meta.env.VITE_SERVER}/admin/delivery-agents/stats/overview`, { credentials: 'include' })
                 ]);
 
-                if (inventoryRes.status === 401 || ordersRes.status === 401 || agentsRes.status === 401) {
+                if (inventoryRes.status === 401 || ordersRes.status === 401 || xpressOrdersRes.status === 401 || agentsRes.status === 401) {
                     setRedirecting(true);
                     navigate('/login', { replace: true });
                     return;
                 }
 
-                const [inventoryData, ordersData, agentsData] = await Promise.all([
+                const [inventoryData, ordersData, xpressOrdersData, agentsData] = await Promise.all([
                     inventoryRes.json(),
                     ordersRes.json(),
+                    xpressOrdersRes.json(),
                     agentsRes.json()
                 ]);
 
                 // Check for token validation in responses
-                if (inventoryData.tokenValid === false || ordersData.tokenValid === false || agentsData.tokenValid === false) {
+                if (inventoryData.tokenValid === false || ordersData.tokenValid === false || xpressOrdersData.tokenValid === false || agentsData.tokenValid === false) {
                     setRedirecting(true);
                     navigate('/login', { replace: true });
                     return;
@@ -51,6 +54,7 @@ export default function Admin() {
                 setDashboardStats({
                     inventoryCount: inventoryData.success ? inventoryData.count : 0,
                     orders: ordersData.success ? ordersData.stats : {},
+                    xpressOrders: xpressOrdersData.success ? xpressOrdersData.stats : {},
                     agents: agentsData.success ? agentsData.stats : {}
                 });
             } catch (e) {
@@ -141,7 +145,7 @@ export default function Admin() {
             <div className="p-6 bg-gray-50 min-h-screen">
                 {/* Welcome Section */}
                 <div className="mb-8">
-                    <h2 className="text-2xl font-bold text-green-800 mb-1 tracking-tight">Grojet Control Panel</h2>
+                    <h2 className="text-xl font-bold text-green-800 mb-1 tracking-tight">Grojet Merchant orders</h2>
                     <p className="text-gray-600">Delivery Managing Platform</p>
                 </div>
 
@@ -175,6 +179,33 @@ export default function Admin() {
                         value={dashboardStats.orders.completedOrders || 0}
                         icon={CircleCheck}
                     />
+                </div>
+
+                {/* Xpress Orders Section */}
+                <div className="mb-8">
+                    <h3 className="text-xl font-bold text-green-800 mb-4">Grojet Xpress Orders</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <StatCard
+                            title="Total Xpress Orders"
+                            value={dashboardStats.xpressOrders.totalOrders || 0}
+                            icon={Package}
+                        />
+                        <StatCard
+                            title="Pending Xpress Orders"
+                            value={dashboardStats.xpressOrders.pendingOrders || 0}
+                            icon={Clock}
+                        />
+                        <StatCard
+                            title="In Transit"
+                            value={dashboardStats.xpressOrders.inTransitOrders || 0}
+                            icon={Truck}
+                        />
+                        <StatCard
+                            title="Delivered Today"
+                            value={dashboardStats.xpressOrders.deliveredOrders || 0}
+                            icon={CircleCheck}
+                        />
+                    </div>
                 </div>
             </div>
         </Layout>
