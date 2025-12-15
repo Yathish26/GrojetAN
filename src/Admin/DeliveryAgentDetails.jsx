@@ -464,8 +464,8 @@ export default function DeliveryAgentDetails() {
   };
 
   const forceAgentOffline = async () => {
-    if (currentUser?.role !== 'super_admin') {
-      toast.error('Only super admin can force agents offline');
+    if (currentUser?.role !== 'super_admin' && currentUser?.role !== 'admin') {
+      toast.error('Only admin can force agents offline');
       return;
     }
     const loadingToast = toast.loading('Forcing agent offline...');
