@@ -128,7 +128,7 @@ const Merchants = () => {
             }
 
             if (storeStatus && storeStatus !== 'all') {
-                params.append('storeStatus', storeStatus === 'Open' ? 'open' : 'close');
+                params.append('storeStatus', storeStatus === 'Open' ? 'open' : 'closed');
             }
 
             if (storeType && storeType !== 'all') {
@@ -821,7 +821,7 @@ const Merchants = () => {
                                         <tbody className="bg-white divide-y divide-gray-200">
                                             {filteredMerchants.length === 0 ? (
                                                 <tr>
-                                                    <td colSpan="5" className="px-6 py-12 text-center text-gray-500">
+                                                    <td colSpan="6" className="px-6 py-12 text-center text-gray-500">
                                                         <div className="flex flex-col items-center gap-2">
                                                             <Store className="w-12 h-12 text-gray-300" />
                                                             <p className="text-lg font-medium">No merchants found</p>
