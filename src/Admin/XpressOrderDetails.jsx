@@ -399,29 +399,29 @@ const XpressOrderDetails = () => {
                 {getStatusIcon(order.status)}
                 <span className="ml-2 capitalize">{order.status.replace('_', ' ')}</span>
               </span>
+              {['super_admin', 'admin'].includes(currentUser?.role) && (
+                <select
+                  value={order.status}
+                  onChange={(e) => updateOrderStatus(e.target.value)}
+                  disabled={updating}
+                  className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50"
+                >
+                  <option value="pending">Pending</option>
+                  <option value="picked_up">Picked Up</option>
+                  <option value="in_transit">In Transit</option>
+                  <option value="delivered">Delivered</option>
+                  <option value="cancelled">Cancelled</option>
+                </select>
+              )}
               {currentUser?.role === 'super_admin' && (
-                <>
-                  <select
-                    value={order.status}
-                    onChange={(e) => updateOrderStatus(e.target.value)}
-                    disabled={updating}
-                    className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50"
-                  >
-                    <option value="pending">Pending</option>
-                    <option value="picked_up">Picked Up</option>
-                    <option value="in_transit">In Transit</option>
-                    <option value="delivered">Delivered</option>
-                    <option value="cancelled">Cancelled</option>
-                  </select>
-                  <button
-                    onClick={deleteOrder}
-                    disabled={updating}
-                    className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
-                  >
-                    <Trash2 size={16} className="mr-2" />
-                    Delete Order
-                  </button>
-                </>
+                <button
+                  onClick={deleteOrder}
+                  disabled={updating}
+                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+                >
+                  <Trash2 size={16} className="mr-2" />
+                  Delete Order
+                </button>
               )}
             </div>
           </div>
