@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import Layout from '../Components/Layout';
 import { GoogleMap, Marker, DirectionsRenderer } from '../Components/GoogleMapComponents';
@@ -21,6 +21,11 @@ const XpressOrderDetails = () => {
   const [directions, setDirections] = useState(null);
   const [agentEarnings, setAgentEarnings] = useState('');
   const [refreshingStatus, setRefreshingStatus] = useState(false);
+  const [editingLocation, setEditingLocation] = useState(null); // 'pickup' or 'drop'
+  const [tempCoordinates, setTempCoordinates] = useState({ latitude: 0, longitude: 0 });
+  const [searchQuery, setSearchQuery] = useState('');
+  const searchInputRef = useRef(null);
+  const autocompleteRef = useRef(null);
   const allowedRoles = ['super_admin', 'admin'];
   const navigate = useNavigate();
   const { id } = useParams();
@@ -284,6 +289,40 @@ const XpressOrderDetails = () => {
     }
   };
 
+  const saveLocation = async () => {
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_SERVER}/admin/xpress/${id}/locations`,
+        {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          credentials: 'include',
+          body: JSON.stringify({
+            [editingLocation]: {
+              ...order[editingLocation],
+              coordinates: tempCoordinates
+            }
+          })
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        setOrder(data.order);
+        setEditingLocation(null);
+        toast.success('Location updated successfully');
+      } else {
+        const data = await response.json();
+        toast.error(data.message || 'Failed to update location');
+      }
+    } catch (error) {
+      console.error('Error updating location:', error);
+      toast.error('Failed to update location');
+    }
+  };
+
   useEffect(() => {
     checkUser();
   }, [checkUser]);
@@ -293,6 +332,37 @@ const XpressOrderDetails = () => {
       fetchOrderDetails();
     }
   }, [currentUser, id]);
+
+  // Initialize Google Places Autocomplete when modal opens
+  useEffect(() => {
+    if (editingLocation && searchInputRef.current && window.google && window.google.maps && window.google.maps.places) {
+      // Initialize Autocomplete
+      autocompleteRef.current = new window.google.maps.places.Autocomplete(searchInputRef.current, {
+        // Remove types restriction to allow businesses, addresses, etc.
+        componentRestrictions: { country: 'in' } // Restrict to India
+      });
+
+      // Listen for place selection
+      autocompleteRef.current.addListener('place_changed', () => {
+        const place = autocompleteRef.current.getPlace();
+        if (place.geometry && place.geometry.location) {
+          setTempCoordinates({
+            latitude: place.geometry.location.lat(),
+            longitude: place.geometry.location.lng()
+          });
+          setSearchQuery(place.formatted_address || '');
+        }
+      });
+    }
+
+    // Cleanup
+    return () => {
+      if (autocompleteRef.current) {
+        window.google.maps.event.clearInstanceListeners(autocompleteRef.current);
+        autocompleteRef.current = null;
+      }
+    };
+  }, [editingLocation]);
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -567,34 +637,38 @@ const XpressOrderDetails = () => {
                                  order.assignment.status === 'rejected' ? 'Rejected' :
                                  'Pending Confirmation'}
                               </span>
-                              <button
-                                onClick={refreshAssignmentStatus}
-                                disabled={refreshingStatus}
-                                className="p-1 text-gray-400 hover:text-gray-600 disabled:opacity-50"
-                                title="Refresh assignment status"
-                              >
-                                <RefreshCw size={14} className={refreshingStatus ? 'animate-spin' : ''} />
-                              </button>
+                              {order.status !== 'delivered' && (
+                                <button
+                                  onClick={refreshAssignmentStatus}
+                                  disabled={refreshingStatus}
+                                  className="p-1 text-gray-400 hover:text-gray-600 disabled:opacity-50"
+                                  title="Refresh assignment status"
+                                >
+                                  <RefreshCw size={14} className={refreshingStatus ? 'animate-spin' : ''} />
+                                </button>
+                              )}
                             </div>
                           </div>
                         </div>
-                        <div className="flex gap-2">
-                          <button
-                            onClick={refreshAssignmentStatus}
-                            disabled={refreshingStatus}
-                            className="px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 disabled:opacity-50"
-                          >
-                            {refreshingStatus ? 'Refreshing...' : 'Refresh Status'}
-                          </button>
-                          <button
-                            onClick={() => {
-                              setOrder(prev => ({ ...prev, assignment: null }));
-                            }}
-                            className="px-3 py-1 text-sm bg-red-100 text-red-700 rounded-lg hover:bg-red-200"
-                          >
-                            Reassign
-                          </button>
-                        </div>
+                        {order.status !== 'delivered' && (
+                          <div className="flex gap-2">
+                            <button
+                              onClick={refreshAssignmentStatus}
+                              disabled={refreshingStatus}
+                              className="px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 disabled:opacity-50"
+                            >
+                              {refreshingStatus ? 'Refreshing...' : 'Refresh Status'}
+                            </button>
+                            <button
+                              onClick={() => {
+                                setOrder(prev => ({ ...prev, assignment: null }));
+                              }}
+                              className="px-3 py-1 text-sm bg-red-100 text-red-700 rounded-lg hover:bg-red-200"
+                            >
+                              Reassign
+                            </button>
+                          </div>
+                        )}
                       </div>
                       <p className="text-xs text-gray-500 mt-2">
                         Assigned on {formatDate(order.assignment.assignedAt)} at {formatTime12Hour(order.assignment.assignedAt)} by {order.assignment.assignedBy?.name || 'N/A'}
@@ -730,6 +804,16 @@ const XpressOrderDetails = () => {
                         </p>
                       </div>
                     )}
+                    <button
+                      onClick={() => {
+                        setEditingLocation('pickup');
+                        setTempCoordinates(order.pickup.coordinates);
+                        setSearchQuery('');
+                      }}
+                      className="mt-2 px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600"
+                    >
+                      Change Pickup Location
+                    </button>
                   </div>
                 </div>
 
@@ -761,6 +845,16 @@ const XpressOrderDetails = () => {
                         </p>
                       </div>
                     )}
+                    <button
+                      onClick={() => {
+                        setEditingLocation('drop');
+                        setTempCoordinates(order.drop.coordinates);
+                        setSearchQuery('');
+                      }}
+                      className="mt-2 px-3 py-1 bg-red-500 text-white text-sm rounded hover:bg-red-600"
+                    >
+                      Change Drop Location
+                    </button>
                   </div>
                 </div>
               </div>
@@ -904,6 +998,66 @@ const XpressOrderDetails = () => {
           </div>
         </div>
       </div>
+
+      {/* Location Edit Modal */}
+      {editingLocation && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg max-w-4xl w-full mx-4">
+            <h3 className="text-lg font-semibold mb-4">
+              Change {editingLocation === 'pickup' ? 'Pickup' : 'Drop'} Location
+            </h3>
+            <div className="flex mb-4">
+              <input
+                ref={searchInputRef}
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search for location"
+                className="flex-1 p-2 border rounded"
+              />
+            </div>
+            <div className="h-96 mb-4">
+              <GoogleMap
+                center={{
+                  lat: parseFloat(tempCoordinates.latitude),
+                  lng: parseFloat(tempCoordinates.longitude)
+                }}
+                zoom={15}
+                onMapClick={(e) => {
+                  if (e && e.latLng) {
+                    setTempCoordinates({
+                      latitude: e.latLng.lat(),
+                      longitude: e.latLng.lng()
+                    });
+                  }
+                }}
+                style={{ height: '100%', width: '100%' }}
+              >
+                <Marker
+                  position={{
+                    lat: parseFloat(tempCoordinates.latitude),
+                    lng: parseFloat(tempCoordinates.longitude)
+                  }}
+                />
+              </GoogleMap>
+            </div>
+            <div className="flex justify-end space-x-2">
+              <button
+                onClick={() => setEditingLocation(null)}
+                className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={saveLocation}
+                className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
+              >
+                Save Location
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </Layout>
   );
 };
