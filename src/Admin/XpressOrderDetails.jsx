@@ -24,6 +24,11 @@ const XpressOrderDetails = () => {
   const [editingLocation, setEditingLocation] = useState(null); // 'pickup' or 'drop'
   const [tempCoordinates, setTempCoordinates] = useState({ latitude: 0, longitude: 0 });
   const [searchQuery, setSearchQuery] = useState('');
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [cancelConfirmationText, setCancelConfirmationText] = useState('');
+  const [cancelReason, setCancelReason] = useState('');
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteConfirmationText, setDeleteConfirmationText] = useState('');
   const searchInputRef = useRef(null);
   const autocompleteRef = useRef(null);
   const allowedRoles = ['super_admin', 'admin'];
@@ -58,6 +63,26 @@ const XpressOrderDetails = () => {
     const ampm = hours >= 12 ? 'PM' : 'AM';
     const displayHours = hours % 12 || 12;
     return `${displayHours}:${minutes} ${ampm}`;
+  };
+
+  const calculateTimeTaken = (createdAt, deliveredAt) => {
+    if (!createdAt || !deliveredAt) return null;
+    
+    const created = new Date(createdAt);
+    const delivered = new Date(deliveredAt);
+    const diffMs = delivered - created;
+    
+    if (diffMs < 0) return null; // Invalid dates
+    
+    const diffMinutes = Math.floor(diffMs / (1000 * 60));
+    const diffHours = Math.floor(diffMinutes / 60);
+    const remainingMinutes = diffMinutes % 60;
+    
+    if (diffHours > 0) {
+      return `${diffHours}h ${remainingMinutes}m`;
+    } else {
+      return `${diffMinutes}m`;
+    }
   };
 
   const checkUser = useCallback(async () => {
@@ -175,10 +200,6 @@ const XpressOrderDetails = () => {
   };
 
   const deleteOrder = async () => {
-    if (!window.confirm('Are you sure you want to delete this order? This action cannot be undone.')) {
-      return;
-    }
-
     try {
       const response = await fetch(
         `${import.meta.env.VITE_SERVER}/admin/xpress/${id}`,
@@ -198,6 +219,40 @@ const XpressOrderDetails = () => {
     } catch (error) {
       console.error('Error deleting order:', error);
       toast.error('Failed to delete order');
+    }
+  };
+
+  const handleCancelOrder = async () => {
+    try {
+      setUpdating(true);
+      const response = await fetch(
+        `${import.meta.env.VITE_SERVER}/admin/xpress/${id}/status`,
+        {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+          body: JSON.stringify({ 
+            status: 'cancelled',
+            reason: cancelReason.trim()
+          })
+        }
+      );
+
+      if (response.ok) {
+        toast.success('Order cancelled successfully');
+        // Refresh the order details
+        await fetchOrderDetails();
+      } else {
+        const data = await response.json();
+        toast.error(data.message || 'Failed to cancel order');
+      }
+    } catch (error) {
+      console.error('Error cancelling order:', error);
+      toast.error('Failed to cancel order');
+    } finally {
+      setUpdating(false);
     }
   };
 
@@ -463,6 +518,16 @@ const XpressOrderDetails = () => {
               <p className="text-gray-600 mt-1">
                 Placed on {formatDate(order.createdAt)} at {formatTime12Hour(order.createdAt)}
               </p>
+              {order.status === 'delivered' && order.deliveredAt && (
+                <div className="mt-1">
+                  <p className="text-green-600">
+                    Delivered on {formatDate(order.deliveredAt)} at {formatTime12Hour(order.deliveredAt)}
+                  </p>
+                  <p className="text-blue-600 text-sm">
+                    Time taken: {calculateTimeTaken(order.createdAt, order.deliveredAt)}
+                  </p>
+                </div>
+              )}
             </div>
             <div className="flex items-center space-x-4">
               <span className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-medium border ${getStatusColor(order.status)}`}>
@@ -480,12 +545,11 @@ const XpressOrderDetails = () => {
                   <option value="picked_up">Picked Up</option>
                   <option value="in_transit">In Transit</option>
                   <option value="delivered">Delivered</option>
-                  <option value="cancelled">Cancelled</option>
                 </select>
               )}
               {currentUser?.role === 'super_admin' && (
                 <button
-                  onClick={deleteOrder}
+                  onClick={() => setShowDeleteModal(true)}
                   disabled={updating}
                   className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
                 >
@@ -979,25 +1043,196 @@ const XpressOrderDetails = () => {
                     <div className="w-3 h-3 rounded-full mr-3 bg-green-500"></div>
                     <div>
                       <p className="text-sm font-medium text-gray-900">Delivered</p>
-                      <p className="text-xs text-gray-500">Package delivered successfully</p>
+                      <p className="text-xs text-gray-500">
+                        {order.deliveredAt ? formatDateTime(order.deliveredAt) : 'Package delivered successfully'}
+                      </p>
                     </div>
                   </div>
                 )}
 
                 {order.status === 'cancelled' && (
-                  <div className="flex items-center">
-                    <div className="w-3 h-3 rounded-full mr-3 bg-red-500"></div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">Cancelled</p>
-                      <p className="text-xs text-gray-500">Order was cancelled</p>
+                  <div className="flex items-start">
+                    <div className="w-3 h-3 rounded-full mr-3 bg-red-500 mt-1"></div>
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-gray-900">Order Cancelled</p>
+                      <p className="text-xs text-gray-500 mb-2">
+                        {order.cancellation?.cancelledAt ? formatDateTime(order.cancellation.cancelledAt) : 'Cancelled'}
+                      </p>
+                      {order.cancellation?.cancelledByName && (
+                        <p className="text-xs text-gray-600 mb-1">
+                          <span className="font-medium">Cancelled by:</span> {order.cancellation.cancelledByName}
+                        </p>
+                      )}
+                      {order.cancellation?.reason && (
+                        <p className="text-xs text-gray -600">
+                          <span className="font-medium">Reason:</span> {order.cancellation.reason}
+                        </p>
+                      )}
                     </div>
                   </div>
                 )}
               </div>
             </div>
+
+            {/* Cancel Order Button */}
+            {order && order.status !== 'delivered' && order.status !== 'cancelled' && (
+              <div className="bg-white rounded-lg shadow-sm border p-6">
+                <div className="flex justify-center">
+                  <button
+                    onClick={() => setShowCancelModal(true)}
+                    className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-medium flex items-center transition-colors duration-200"
+                  >
+                    <X size={18} className="mr-2" />
+                    Cancel Order
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
+
+      {/* Cancel Order Confirmation Modal */}
+      {showCancelModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg max-w-md w-full mx-4">
+            <div className="flex items-center mb-4">
+              <AlertCircle size={24} className="text-red-500 mr-3" />
+              <h3 className="text-lg font-semibold text-gray-900">
+                Cancel Order
+              </h3>
+            </div>
+            
+            <div className="mb-6">
+              <p className="text-sm text-gray-600 mb-4">
+                Are you sure you want to cancel this order? This action cannot be undone and will notify the customer.
+              </p>
+              
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Cancellation Reason <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  value={cancelReason}
+                  onChange={(e) => setCancelReason(e.target.value)}
+                  placeholder="Please provide a reason for cancellation..."
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 resize-none"
+                  rows={3}
+                  required
+                />
+              </div>
+              
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Type <span className="font-bold text-red-600">CANCEL</span> to confirm:
+                </label>
+                <input
+                  type="text"
+                  value={cancelConfirmationText}
+                  onChange={(e) => setCancelConfirmationText(e.target.value)}
+                  placeholder="Type CANCEL here"
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  autoFocus
+                />
+              </div>
+            </div>
+
+            <div className="flex space-x-3">
+              <button
+                onClick={() => {
+                  setShowCancelModal(false);
+                  setCancelConfirmationText('');
+                  setCancelReason('');
+                }}
+                className="flex-1 px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors duration-200"
+              >
+                Keep Order
+              </button>
+              <button
+                onClick={async () => {
+                  if (cancelConfirmationText === 'CANCEL' && cancelReason.trim()) {
+                    await handleCancelOrder();
+                    setShowCancelModal(false);
+                    setCancelConfirmationText('');
+                    setCancelReason('');
+                  }
+                }}
+                disabled={cancelConfirmationText !== 'CANCEL' || !cancelReason.trim() || updating}
+                className={`flex-1 px-4 py-2 rounded-lg font-medium transition-colors duration-200 ${
+                  cancelConfirmationText === 'CANCEL' && cancelReason.trim() && !updating
+                    ? 'bg-red-600 hover:bg-red-700 text-white'
+                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                }`}
+              >
+                {updating ? 'Cancelling...' : 'Cancel Order'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Order Confirmation Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg max-w-md w-full mx-4">
+            <div className="flex items-center mb-4">
+              <Trash2 size={24} className="text-red-500 mr-3" />
+              <h3 className="text-lg font-semibold text-gray-900">
+                Delete Order
+              </h3>
+            </div>
+
+            <div className="mb-6">
+              <p className="text-sm text-gray-600 mb-4">
+                Are you sure you want to delete this order? This action cannot be undone and will permanently remove all order data.
+              </p>
+
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Type <span className="font-bold text-red-600">DELETE</span> to confirm:
+                </label>
+                <input
+                  type="text"
+                  value={deleteConfirmationText}
+                  onChange={(e) => setDeleteConfirmationText(e.target.value)}
+                  placeholder="Type DELETE here"
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  autoFocus
+                />
+              </div>
+            </div>
+
+            <div className="flex space-x-3">
+              <button
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setDeleteConfirmationText('');
+                }}
+                className="flex-1 px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors duration-200"
+              >
+                Keep Order
+              </button>
+              <button
+                onClick={async () => {
+                  if (deleteConfirmationText === 'DELETE') {
+                    await deleteOrder();
+                    setShowDeleteModal(false);
+                    setDeleteConfirmationText('');
+                  }
+                }}
+                disabled={deleteConfirmationText !== 'DELETE'}
+                className={`flex-1 px-4 py-2 rounded-lg font-medium transition-colors duration-200 ${
+                  deleteConfirmationText === 'DELETE'
+                    ? 'bg-red-600 hover:bg-red-700 text-white'
+                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                }`}
+              >
+                Delete Order
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Location Edit Modal */}
       {editingLocation && (

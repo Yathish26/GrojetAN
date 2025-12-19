@@ -27,6 +27,9 @@ const Xpress = () => {
     totalPages: 1
   });
   const [stats, setStats] = useState({});
+  const [xpressActive, setXpressActive] = useState(true);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [pendingStatus, setPendingStatus] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
   const [checkingUser, setCheckingUser] = useState(true);
   const allowedRoles = ['super_admin', 'admin'];
@@ -97,6 +100,26 @@ const Xpress = () => {
     }
   };
 
+  const fetchXpressStatus = async () => {
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_SERVER}/admin/app-controls/xpress-status`,
+        { credentials: 'include' }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.tokenValid === false) {
+          navigate('/login', { replace: true });
+          return;
+        }
+        setXpressActive(data.xpressActive);
+      }
+    } catch (error) {
+      console.error('Error fetching xpress status:', error);
+    }
+  };
+
   const updateOrderStatus = async (orderId, newStatus) => {
     try {
       const response = await fetch(
@@ -121,6 +144,41 @@ const Xpress = () => {
     } catch (error) {
       console.error('Error updating order status:', error);
       toast.error('Failed to update order status');
+    }
+  };
+
+  const updateXpressStatus = async (status) => {
+    setPendingStatus(status);
+    setShowConfirmModal(true);
+  };
+
+  const confirmStatusUpdate = async () => {
+    const status = pendingStatus;
+    setShowConfirmModal(false);
+    setPendingStatus(null);
+
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_SERVER}/admin/app-controls/xpress-status`,
+        {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          credentials: 'include',
+          body: JSON.stringify({ xpressActive: status })
+        }
+      );
+
+      if (response.ok) {
+        setXpressActive(status);
+        toast.success(`Xpress service ${status ? 'enabled' : 'disabled'} successfully`);
+      } else {
+        toast.error(`Failed to ${status ? 'enable' : 'disable'} Xpress service`);
+      }
+    } catch (error) {
+      console.error('Error updating xpress status:', error);
+      toast.error(`Failed to ${status ? 'enable' : 'disable'} Xpress service`);
     }
   };
 
@@ -195,6 +253,7 @@ const Xpress = () => {
     if (isAuthorized) {
       fetchOrders();
       fetchStats();
+      fetchXpressStatus();
     }
   }, [currentUser, pagination.page, currentSearch, filters, isAuthorized]);
 
@@ -264,6 +323,24 @@ const Xpress = () => {
             <p className="text-gray-600">Manage and monitor Xpress delivery orders</p>
           </div>
           <div className="flex gap-3">
+            <div className="flex items-center gap-3 bg-orange-50 px-4 py-2 rounded-lg border border-orange-200 shadow-sm">
+              <div className="flex items-center gap-2">
+                <div className={`w-2 h-2 rounded-full ${xpressActive ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                <span className="text-sm font-semibold text-gray-800">Xpress Service</span>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={xpressActive}
+                  onChange={(e) => updateXpressStatus(e.target.checked)}
+                  className="sr-only peer"
+                />
+                <div className="w-12 h-6 bg-red-500 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-6 peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500"></div>
+                <span className={`ml-2 text-xs font-medium ${xpressActive ? 'text-green-600' : 'text-red-600'}`}>
+                  {xpressActive ? 'Active' : 'Disabled'}
+                </span>
+              </label>
+            </div>
             <button
               onClick={exportOrders}
               className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
@@ -574,6 +651,57 @@ const Xpress = () => {
           )}
         </div>
       </div>
+
+      {/* Confirmation Modal */}
+      {showConfirmModal && (
+        <div className="fixed inset-0 backdrop-blur-md flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <div className="flex items-center mb-4">
+              <div className="w-12 h-12 rounded-full bg-orange-100 flex items-center justify-center mr-4">
+                <svg className="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">
+                  {pendingStatus ? 'Enable Xpress Service' : 'Disable Xpress Service'}
+                </h3>
+                <p className="text-sm text-gray-600">Confirm your action</p>
+              </div>
+            </div>
+            
+            <div className="mb-6">
+              <p className="text-gray-700">
+                Are you sure you want to <span className={`font-semibold ${pendingStatus ? 'text-green-600' : 'text-red-600'}`}>
+                  {pendingStatus ? 'enable' : 'disable'}
+                </span> Xpress service?
+              </p>
+              <p className="text-sm text-gray-600 mt-2">
+                This will {pendingStatus ? 'allow new Xpress orders and enable all delivery operations' : 'stop accepting new Xpress orders and disable delivery operations'}.
+              </p>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowConfirmModal(false)}
+                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmStatusUpdate}
+                className={`flex-1 px-4 py-2 text-white rounded-lg transition-colors ${
+                  pendingStatus 
+                    ? 'bg-green-600 hover:bg-green-700' 
+                    : 'bg-red-600 hover:bg-red-700'
+                }`}
+              >
+                {pendingStatus ? 'Enable' : 'Disable'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </Layout>
   );
 };
