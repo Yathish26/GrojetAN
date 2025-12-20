@@ -339,6 +339,9 @@ export default function Users() {
                         <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                           Joined
                         </th>
+                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                          App Version
+                        </th>
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
@@ -362,6 +365,9 @@ export default function Users() {
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                             {formatDate(user.createdAt)}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {user.appVersion?.current || 'N/A'}
                           </td>
                         </tr>
                       ))}
@@ -399,6 +405,9 @@ export default function Users() {
                             </div>
                             <div className="text-xs text-gray-500">
                               Joined: {formatDate(user.createdAt)}
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              App Version: {user.appVersion?.current || 'N/A'}
                             </div>
                           </div>
                         </div>

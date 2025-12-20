@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Package, Search, AlertTriangle, CheckCircle, XCircle, Edit, Save, X, ChevronLeft, ChevronRight, Filter, SlidersHorizontal } from 'lucide-react';
+import { ArrowLeft, Package, Search, AlertTriangle, CheckCircle, XCircle, Edit, Save, X, ChevronLeft, ChevronRight, Filter, SlidersHorizontal, TreePine } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Layout from '../Components/Layout';
 
@@ -21,6 +21,7 @@ const MerchantInventory = () => {
   const [pendingSearch, setPendingSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
+  const [eventsFilter, setEventsFilter] = useState('all');
   const [availableCategories, setAvailableCategories] = useState([]);
   const [stockCounts, setStockCounts] = useState({ inStock: 0, lowStock: 0, outOfStock: 0 });
   const [editingWeight, setEditingWeight] = useState(null);
@@ -50,6 +51,11 @@ const MerchantInventory = () => {
         query.append('category', params.category);
       } else if (categoryFilter !== 'all') {
         query.append('category', categoryFilter);
+      }
+      if (params.events !== undefined) {
+        query.append('events', params.events);
+      } else if (eventsFilter !== 'all') {
+        query.append('events', eventsFilter);
       }
 
       const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/merchant-stores/${id}?${query}`, {
@@ -95,7 +101,7 @@ const MerchantInventory = () => {
     } finally {
       setLoading(false);
     }
-  }, [id, navigate, page, searchTerm, statusFilter, categoryFilter]);
+  }, [id, navigate, page, searchTerm, statusFilter, categoryFilter, eventsFilter]);
 
   useEffect(() => {
     if (id) {
@@ -130,9 +136,15 @@ const MerchantInventory = () => {
     setPage(1); // Reset to first page when filtering
   };
 
+  const handleEventsFilter = (events) => {
+    setEventsFilter(events);
+    setPage(1); // Reset to first page when filtering
+  };
+
   const clearFilters = () => {
     setStatusFilter('all');
     setCategoryFilter('all');
+    setEventsFilter('all');
     setSearchTerm('');
     setPendingSearch('');
     setPage(1);
@@ -279,6 +291,54 @@ const MerchantInventory = () => {
     }
   };
 
+  const handleToggleChristmas = async (item) => {
+    const isChristmas = item.events?.includes('C2025');
+    const updatedEvents = isChristmas
+      ? (item.events || []).filter(event => event !== 'C2025')
+      : [...(item.events || []), 'C2025'];
+
+    try {
+      const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/merchant-stores/${id}/inventory/${item._id}/events`, {
+        method: 'PUT',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ events: updatedEvents }),
+      });
+
+      if (response.status === 401) {
+        localStorage.removeItem('adminUser');
+        navigate('/login');
+        return;
+      }
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.tokenValid === false) {
+          navigate('/login', { replace: true });
+          return;
+        }
+        if (data.success) {
+          toast.success(isChristmas ? 'Removed from Christmas collection' : 'Added to Christmas collection');
+          // Update local state
+          setInventory(prev => prev.map(inv =>
+            inv._id === item._id
+              ? { ...inv, events: updatedEvents }
+              : inv
+          ));
+        } else {
+          throw new Error(data.message || 'Failed to update Christmas status');
+        }
+      } else {
+        throw new Error('Failed to update Christmas status');
+      }
+    } catch (error) {
+      console.error('Error updating Christmas status:', error);
+      toast.error(error.message || 'Failed to update Christmas status');
+    }
+  };
+
   if (loading) {
     return (
       <Layout>
@@ -416,8 +476,32 @@ const MerchantInventory = () => {
                 </select>
               </div>
 
+              {/* Events Filter */}
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-600">Events:</span>
+                <div className="flex rounded-lg border border-gray-300 overflow-hidden">
+                  {[
+                    { key: 'all', label: 'All', color: 'bg-gray-100 text-gray-700 hover:bg-gray-200' },
+                    { key: 'christmas', label: 'Christmas', color: 'bg-green-100 text-green-700 hover:bg-green-200' }
+                  ].map(({ key, label, color }) => (
+                    <button
+                      key={key}
+                      onClick={() => handleEventsFilter(key)}
+                      className={`px-3 py-1.5 text-xs font-medium transition-colors ${
+                        eventsFilter === key
+                          ? color.replace('hover:', '')
+                          : 'bg-white text-gray-600 hover:bg-gray-50'
+                      } ${key !== 'all' ? 'border-l border-gray-300' : ''}`}
+                    >
+                      {key === 'christmas' && <TreePine className="h-3 w-3 inline mr-1" />}
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               {/* Clear Filters */}
-              {(statusFilter !== 'all' || categoryFilter !== 'all' || searchTerm) && (
+              {(statusFilter !== 'all' || categoryFilter !== 'all' || eventsFilter !== 'all' || searchTerm) && (
                 <button
                   onClick={clearFilters}
                   className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
@@ -566,7 +650,16 @@ const MerchantInventory = () => {
                                 />
                               )}
                               <div>
-                                <div className="text-sm font-medium text-gray-900">{item.name}</div>
+                                <div className="flex items-center space-x-2">
+                                  <div className="text-sm font-medium text-gray-900">{item.name}</div>
+                                  <TreePine
+                                    className={`h-4 w-4 cursor-pointer transition-colors ${
+                                      item.events?.includes('C2025') ? 'text-green-600' : 'text-gray-400'
+                                    }`}
+                                    onClick={() => handleToggleChristmas(item)}
+                                    title={item.events?.includes('C2025') ? 'Remove from Christmas collection' : 'Add to Christmas collection'}
+                                  />
+                                </div>
                               </div>
                             </div>
                           </td>
