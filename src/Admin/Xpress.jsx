@@ -28,6 +28,7 @@ const Xpress = () => {
   });
   const [stats, setStats] = useState({});
   const [xpressActive, setXpressActive] = useState(true);
+  const [xpressSleep, setXpressSleep] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [pendingStatus, setPendingStatus] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
@@ -114,6 +115,7 @@ const Xpress = () => {
           return;
         }
         setXpressActive(data.xpressActive);
+        setXpressSleep(data.xpressSleep);
       }
     } catch (error) {
       console.error('Error fetching xpress status:', error);
@@ -147,17 +149,18 @@ const Xpress = () => {
     }
   };
 
-  const updateXpressStatus = async (status) => {
-    setPendingStatus(status);
+  const updateXpressStatus = async (type, status) => {
+    setPendingStatus({ type, status });
     setShowConfirmModal(true);
   };
 
   const confirmStatusUpdate = async () => {
-    const status = pendingStatus;
+    const { type, status } = pendingStatus;
     setShowConfirmModal(false);
     setPendingStatus(null);
 
     try {
+      const body = type === 'active' ? { xpressActive: status } : { xpressSleep: status };
       const response = await fetch(
         `${import.meta.env.VITE_SERVER}/admin/app-controls/xpress-status`,
         {
@@ -166,19 +169,24 @@ const Xpress = () => {
             'Content-Type': 'application/json'
           },
           credentials: 'include',
-          body: JSON.stringify({ xpressActive: status })
+          body: JSON.stringify(body)
         }
       );
 
       if (response.ok) {
-        setXpressActive(status);
-        toast.success(`Xpress service ${status ? 'enabled' : 'disabled'} successfully`);
+        if (type === 'active') {
+          setXpressActive(status);
+          toast.success(`Xpress service ${status ? 'enabled' : 'disabled'} successfully`);
+        } else {
+          setXpressSleep(status);
+          toast.success(`Xpress sleep ${status ? 'enabled' : 'disabled'} successfully`);
+        }
       } else {
-        toast.error(`Failed to ${status ? 'enable' : 'disable'} Xpress service`);
+        toast.error(`Failed to ${status ? 'enable' : 'disable'} Xpress ${type}`);
       }
     } catch (error) {
       console.error('Error updating xpress status:', error);
-      toast.error(`Failed to ${status ? 'enable' : 'disable'} Xpress service`);
+      toast.error(`Failed to ${status ? 'enable' : 'disable'} Xpress ${type}`);
     }
   };
 
@@ -332,12 +340,30 @@ const Xpress = () => {
                 <input
                   type="checkbox"
                   checked={xpressActive}
-                  onChange={(e) => updateXpressStatus(e.target.checked)}
+                  onChange={(e) => updateXpressStatus('active', e.target.checked)}
                   className="sr-only peer"
                 />
                 <div className="w-12 h-6 bg-red-500 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-6 peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500"></div>
                 <span className={`ml-2 text-xs font-medium ${xpressActive ? 'text-green-600' : 'text-red-600'}`}>
                   {xpressActive ? 'Active' : 'Disabled'}
+                </span>
+              </label>
+            </div>
+            <div className="flex items-center gap-3 bg-blue-50 px-4 py-2 rounded-lg border border-blue-200 shadow-sm">
+              <div className="flex items-center gap-2">
+                <div className={`w-2 h-2 rounded-full ${xpressSleep ? 'bg-blue-500' : 'bg-gray-500'}`}></div>
+                <span className="text-sm font-semibold text-gray-800">Xpress Sleep</span>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={xpressSleep}
+                  onChange={(e) => updateXpressStatus('sleep', e.target.checked)}
+                  className="sr-only peer"
+                />
+                <div className="w-12 h-6 bg-gray-500 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-gray-300 rounded-full peer peer-checked:after:translate-x-6 peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500"></div>
+                <span className={`ml-2 text-xs font-medium ${xpressSleep ? 'text-blue-600' : 'text-gray-600'}`}>
+                  {xpressSleep ? 'Enabled' : 'Disabled'}
                 </span>
               </label>
             </div>
@@ -497,7 +523,11 @@ const Xpress = () => {
                         <div>
                           <div className="text-sm font-medium text-gray-900">#{order.orderNumber}</div>
                           <div className="text-sm text-gray-500">
-                            {new Date(order.createdAt).toLocaleDateString()}
+                            {new Date(order.createdAt).toLocaleDateString('en-GB', {
+                              day: '2-digit',
+                              month: '2-digit',
+                              year: 'numeric'
+                            })}
                           </div>
                           <div className="text-sm text-gray-500">
                             {new Date(order.createdAt).toLocaleTimeString()}
@@ -664,7 +694,7 @@ const Xpress = () => {
               </div>
               <div>
                 <h3 className="text-lg font-semibold text-gray-900">
-                  {pendingStatus ? 'Enable Xpress Service' : 'Disable Xpress Service'}
+                  {pendingStatus?.status ? `Enable Xpress ${pendingStatus?.type === 'active' ? 'Service' : 'Sleep'}` : `Disable Xpress ${pendingStatus?.type === 'active' ? 'Service' : 'Sleep'}`}
                 </h3>
                 <p className="text-sm text-gray-600">Confirm your action</p>
               </div>
@@ -672,12 +702,12 @@ const Xpress = () => {
             
             <div className="mb-6">
               <p className="text-gray-700">
-                Are you sure you want to <span className={`font-semibold ${pendingStatus ? 'text-green-600' : 'text-red-600'}`}>
-                  {pendingStatus ? 'enable' : 'disable'}
-                </span> Xpress service?
+                Are you sure you want to <span className={`font-semibold ${pendingStatus?.status ? 'text-green-600' : 'text-red-600'}`}>
+                  {pendingStatus?.status ? 'enable' : 'disable'}
+                </span> Xpress {pendingStatus?.type === 'active' ? 'service' : 'sleep'}?
               </p>
               <p className="text-sm text-gray-600 mt-2">
-                This will {pendingStatus ? 'allow new Xpress orders and enable all delivery operations' : 'stop accepting new Xpress orders and disable delivery operations'}.
+                This will {pendingStatus?.status ? (pendingStatus?.type === 'active' ? 'allow new Xpress orders and enable all delivery operations' : 'enable Xpress sleep mode') : (pendingStatus?.type === 'active' ? 'stop accepting new Xpress orders and disable delivery operations' : 'disable Xpress sleep mode')}.
               </p>
             </div>
 
@@ -691,12 +721,12 @@ const Xpress = () => {
               <button
                 onClick={confirmStatusUpdate}
                 className={`flex-1 px-4 py-2 text-white rounded-lg transition-colors ${
-                  pendingStatus 
-                    ? 'bg-green-600 hover:bg-green-700' 
-                    : 'bg-red-600 hover:bg-red-700'
+                  pendingStatus?.status 
+                    ? (pendingStatus?.type === 'active' ? 'bg-green-600 hover:bg-green-700' : 'bg-blue-600 hover:bg-blue-700')
+                    : (pendingStatus?.type === 'active' ? 'bg-red-600 hover:bg-red-700' : 'bg-gray-600 hover:bg-gray-700')
                 }`}
               >
-                {pendingStatus ? 'Enable' : 'Disable'}
+                {pendingStatus?.status ? 'Enable' : 'Disable'}
               </button>
             </div>
           </div>

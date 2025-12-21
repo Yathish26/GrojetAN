@@ -153,6 +153,7 @@ const Layout = ({ children, title }) => {
     { name: 'Xpress (Beta)', icon: Zap, path: '/xpress', roles: ['super_admin', 'admin'] },
     { name: 'Careers', icon: Briefcase, path: '/careers', roles: ['super_admin', 'admin'] },
     { name: 'Users', icon: Users, path: '/users', roles: ['super_admin', 'admin'] },
+    { name: 'User Analytics', icon: BarChart3, path: '/user-analytics', roles: ['super_admin'] },
     { name: 'Merchant Enquiries', icon: Store, path: '/merchant-enquiries', roles: ['super_admin', 'admin'] },
     { name: 'Merchants', icon: Store, path: '/merchants', roles: ['super_admin', 'admin'] },
     { name: 'Support', icon: Headphones, path: '/support', roles: ['super_admin', 'admin', 'customer_service'] },

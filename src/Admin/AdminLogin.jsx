@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Lock, Mail, Loader2, AlertCircle, Shield, Key } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { VERSION } from '../../version.js';
 
 export default function AdminLogin() {
   const [formData, setFormData] = useState({
@@ -118,7 +119,7 @@ export default function AdminLogin() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-tr from-[#d30a02] to-white flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-tr from-pink-500 to-white flex items-center justify-center p-4">
       <div className="bg-white p-8 shadow-xl border border-gray-200 w-full max-w-md">
         {/* Header */}
         <div className="flex flex-col items-center mb-8">
@@ -138,7 +139,7 @@ export default function AdminLogin() {
 
         {/* Error Alert */}
         {error && (
-          <div className="flex items-center gap-2 bg-red-50 text-red-600 p-4 mb-6 border border-red-200">
+          <div className="flex items-center gap-2 bg-pink-50 text-pink-600 p-4 mb-6 border border-pink-200">
             <AlertCircle className="w-5 h-5 flex-shrink-0" />
             <span className="text-sm">{error}</span>
           </div>
@@ -242,7 +243,7 @@ export default function AdminLogin() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full flex justify-center items-center gap-2 py-3 px-4 border border-transparent shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-70 transition-colors cursor-pointer font-medium"
+            className="w-full flex justify-center items-center gap-2 py-3 px-4 border border-transparent shadow-sm text-white bg-pink-600 hover:bg-pink-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pink-500 disabled:opacity-70 transition-colors cursor-pointer font-medium"
           >
             {loading ? (
               <>
@@ -268,7 +269,7 @@ export default function AdminLogin() {
             </div>
             <div className="relative flex justify-center text-sm">
               <span className="px-2 bg-white text-gray-500">
-                Secure Admin Access
+                {VERSION}
               </span>
             </div>
           </div>

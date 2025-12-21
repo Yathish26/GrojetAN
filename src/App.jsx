@@ -6,6 +6,7 @@ import Categories from './Admin/Categories.jsx'
 import Products from './Admin/Products.jsx'
 import AddProduct from './Admin/AddProduct.jsx'
 import Users from './Admin/Users.jsx'
+import UserAnalytics from './Admin/UserAnalytics.jsx'
 import UserData from './Admin/UserData.jsx'
 import UserOrders from './Admin/UserOrders.jsx'
 import Orders from './Admin/Orders.jsx'
@@ -95,6 +96,7 @@ function App() {
           <Route path="/users" element={<Users />} />
           <Route path="/users/:id" element={<UserData />} />
           <Route path="/users/:id/orders" element={<UserOrders />} />
+          <Route path="/user-analytics" element={<UserAnalytics />} />
           
           {/* Merchant Management */}
           <Route path="/merchant-enquiries" element={<MerchantEnq />} />

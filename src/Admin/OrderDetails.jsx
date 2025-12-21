@@ -194,6 +194,35 @@ export default function OrderDetails() {
       console.log('getStatusValue result:', data.order?.status ? getStatusValue(data.order.status) : 'N/A');
       console.log('Delivery address coordinates:', data.order?.deliveryAddress?.coordinates);
       console.log('Delivery address full:', data.order?.deliveryAddress);
+
+      // Log coordinates used for distance calculation
+      console.log('=== DISTANCE CALCULATION COORDINATES ===');
+      console.log('Merchant Store Coordinates:', data.order?.merchantLandmark?.address?.coordinates);
+      console.log('Customer Address Coordinates:', data.order?.deliveryAddress?.coordinates);
+
+      // Fetch and log driving distance using the same coordinates
+      if (data.order?.merchantLandmark?.address?.coordinates && data.order?.deliveryAddress?.coordinates) {
+        try {
+          const storeCoords = data.order.merchantLandmark.address.coordinates;
+          const customerCoords = data.order.deliveryAddress.coordinates;
+          const distanceUrl = `${import.meta.env.VITE_SERVER}/orders/distance-test?lat1=${storeCoords.latitude}&lon1=${storeCoords.longitude}&lat2=${customerCoords.latitude}&lon2=${customerCoords.longitude}`;
+          console.log('Fetching driving distance from:', distanceUrl);
+
+          const distanceResponse = await fetch(distanceUrl);
+          if (distanceResponse.ok) {
+            const distanceData = await distanceResponse.json();
+            console.log('=== DRIVING DISTANCE CALCULATION RESULT ===');
+            console.log('Driving distance (Google API):', distanceData.distanceKm, 'km');
+            console.log('Duration:', distanceData.durationMinutes, 'minutes');
+            console.log('Raw Google response:', distanceData.raw);
+          } else {
+            console.error('Failed to fetch driving distance:', distanceResponse.status, distanceResponse.statusText);
+          }
+        } catch (distanceErr) {
+          console.error('Error fetching driving distance:', distanceErr);
+        }
+      }
+
       setOrder(data.order);
 
       // Calculate directions after order is loaded

@@ -30,6 +30,11 @@ export default function AppControls() {
   // Xpress controls states
   const [xpressGstPercentage, setXpressGstPercentage] = useState(18);
   const [xpressCodEnabled, setXpressCodEnabled] = useState(true);
+  const [xpressMaxDistanceKm, setXpressMaxDistanceKm] = useState(10);
+  const [xpressBasePrice, setXpressBasePrice] = useState(99);
+  const [xpressPackageSizeFee1to3kg, setXpressPackageSizeFee1to3kg] = useState(20);
+  const [xpressPackageSizeFee3to5kg, setXpressPackageSizeFee3to5kg] = useState(40);
+  const [xpressPackageSizeFee5to10kg, setXpressPackageSizeFee5to10kg] = useState(60);
 
   // Xpress editing states
   const [isEditingXpress, setIsEditingXpress] = useState(false);
@@ -40,6 +45,11 @@ export default function AppControls() {
   const [xpressUpdateLogs, setXpressUpdateLogs] = useState({
     xpressGstPercentage: { updatedBy: null, updatedAt: null },
     xpressCodEnabled: { updatedBy: null, updatedAt: null },
+    xpressMaxDistanceKm: { updatedBy: null, updatedAt: null },
+    xpressBasePrice: { updatedBy: null, updatedAt: null },
+    xpressPackageSizeFee1to3kg: { updatedBy: null, updatedAt: null },
+    xpressPackageSizeFee3to5kg: { updatedBy: null, updatedAt: null },
+    xpressPackageSizeFee5to10kg: { updatedBy: null, updatedAt: null },
   });
 
   // Update logs states
@@ -82,6 +92,11 @@ export default function AppControls() {
         // Set Xpress controls
         setXpressGstPercentage(data.xpressGstPercentage?.value || 18);
         setXpressCodEnabled(data.xpressCodEnabled?.value !== undefined ? data.xpressCodEnabled.value : true);
+        setXpressMaxDistanceKm(data.xpressMaxDistanceKm?.value || 10);
+        setXpressBasePrice(data.xpressBasePrice?.value || 99);
+        setXpressPackageSizeFee1to3kg(data.xpressPackageSizeFee1to3kg?.value || 20);
+        setXpressPackageSizeFee3to5kg(data.xpressPackageSizeFee3to5kg?.value || 40);
+        setXpressPackageSizeFee5to10kg(data.xpressPackageSizeFee5to10kg?.value || 60);
         
         // Set Xpress update logs
         setXpressUpdateLogs({
@@ -92,6 +107,26 @@ export default function AppControls() {
           xpressCodEnabled: {
             updatedBy: data.xpressCodEnabled?.updatedBy,
             updatedAt: data.xpressCodEnabled?.updatedAt
+          },
+          xpressMaxDistanceKm: {
+            updatedBy: data.xpressMaxDistanceKm?.updatedBy,
+            updatedAt: data.xpressMaxDistanceKm?.updatedAt
+          },
+          xpressBasePrice: {
+            updatedBy: data.xpressBasePrice?.updatedBy,
+            updatedAt: data.xpressBasePrice?.updatedAt
+          },
+          xpressPackageSizeFee1to3kg: {
+            updatedBy: data.xpressPackageSizeFee1to3kg?.updatedBy,
+            updatedAt: data.xpressPackageSizeFee1to3kg?.updatedAt
+          },
+          xpressPackageSizeFee3to5kg: {
+            updatedBy: data.xpressPackageSizeFee3to5kg?.updatedBy,
+            updatedAt: data.xpressPackageSizeFee3to5kg?.updatedAt
+          },
+          xpressPackageSizeFee5to10kg: {
+            updatedBy: data.xpressPackageSizeFee5to10kg?.updatedBy,
+            updatedAt: data.xpressPackageSizeFee5to10kg?.updatedAt
           },
         });
         
@@ -137,6 +172,11 @@ export default function AppControls() {
         setXpressOriginalValues({
           xpressGstPercentage: data.xpressGstPercentage?.value || 18,
           xpressCodEnabled: data.xpressCodEnabled?.value !== undefined ? data.xpressCodEnabled.value : true,
+          xpressMaxDistanceKm: data.xpressMaxDistanceKm?.value || 10,
+          xpressBasePrice: data.xpressBasePrice?.value || 99,
+          xpressPackageSizeFee1to3kg: data.xpressPackageSizeFee1to3kg?.value || 20,
+          xpressPackageSizeFee3to5kg: data.xpressPackageSizeFee3to5kg?.value || 40,
+          xpressPackageSizeFee5to10kg: data.xpressPackageSizeFee5to10kg?.value || 60,
         });
       }
     } catch (error) {
@@ -146,7 +186,7 @@ export default function AppControls() {
   };
 
   const formatUpdateLog = (log) => {
-    if (!log.updatedAt) return 'Never updated';
+    if (!log || !log.updatedAt) return 'Never updated';
     const date = new Date(log.updatedAt);
     const day = String(date.getDate()).padStart(2, '0');
     const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -192,6 +232,11 @@ export default function AppControls() {
     setXpressOriginalValues({
       xpressGstPercentage,
       xpressCodEnabled,
+      xpressMaxDistanceKm,
+      xpressBasePrice,
+      xpressPackageSizeFee1to3kg,
+      xpressPackageSizeFee3to5kg,
+      xpressPackageSizeFee5to10kg,
     });
     setIsEditingXpress(true);
   };
@@ -200,6 +245,11 @@ export default function AppControls() {
     // Restore original values
     setXpressGstPercentage(xpressOriginalValues.xpressGstPercentage);
     setXpressCodEnabled(xpressOriginalValues.xpressCodEnabled);
+    setXpressMaxDistanceKm(xpressOriginalValues.xpressMaxDistanceKm);
+    setXpressBasePrice(xpressOriginalValues.xpressBasePrice);
+    setXpressPackageSizeFee1to3kg(xpressOriginalValues.xpressPackageSizeFee1to3kg);
+    setXpressPackageSizeFee3to5kg(xpressOriginalValues.xpressPackageSizeFee3to5kg);
+    setXpressPackageSizeFee5to10kg(xpressOriginalValues.xpressPackageSizeFee5to10kg);
     setIsEditingXpress(false);
   };
 
@@ -222,6 +272,11 @@ export default function AppControls() {
         body: JSON.stringify({
           xpressGstPercentage: parseFloat(xpressGstPercentage),
           xpressCodEnabled: xpressCodEnabled,
+          xpressMaxDistanceKm: parseFloat(xpressMaxDistanceKm),
+          xpressBasePrice: parseFloat(xpressBasePrice),
+          xpressPackageSizeFee1to3kg: parseFloat(xpressPackageSizeFee1to3kg),
+          xpressPackageSizeFee3to5kg: parseFloat(xpressPackageSizeFee3to5kg),
+          xpressPackageSizeFee5to10kg: parseFloat(xpressPackageSizeFee5to10kg),
         }),
       });
 
@@ -237,6 +292,11 @@ export default function AppControls() {
         setXpressOriginalValues({
           xpressGstPercentage: parseFloat(xpressGstPercentage),
           xpressCodEnabled: xpressCodEnabled,
+          xpressMaxDistanceKm: parseFloat(xpressMaxDistanceKm),
+          xpressBasePrice: parseFloat(xpressBasePrice),
+          xpressPackageSizeFee1to3kg: parseFloat(xpressPackageSizeFee1to3kg),
+          xpressPackageSizeFee3to5kg: parseFloat(xpressPackageSizeFee3to5kg),
+          xpressPackageSizeFee5to10kg: parseFloat(xpressPackageSizeFee5to10kg),
         });
         // Update update logs with the returned data
         const data = result.data;
@@ -248,6 +308,26 @@ export default function AppControls() {
           xpressCodEnabled: {
             updatedBy: data.xpressCodEnabled?.updatedBy,
             updatedAt: data.xpressCodEnabled?.updatedAt
+          },
+          xpressMaxDistanceKm: {
+            updatedBy: data.xpressMaxDistanceKm?.updatedBy,
+            updatedAt: data.xpressMaxDistanceKm?.updatedAt
+          },
+          xpressBasePrice: {
+            updatedBy: data.xpressBasePrice?.updatedBy,
+            updatedAt: data.xpressBasePrice?.updatedAt
+          },
+          xpressPackageSizeFee1to3kg: {
+            updatedBy: data.xpressPackageSizeFee1to3kg?.updatedBy,
+            updatedAt: data.xpressPackageSizeFee1to3kg?.updatedAt
+          },
+          xpressPackageSizeFee3to5kg: {
+            updatedBy: data.xpressPackageSizeFee3to5kg?.updatedBy,
+            updatedAt: data.xpressPackageSizeFee3to5kg?.updatedAt
+          },
+          xpressPackageSizeFee5to10kg: {
+            updatedBy: data.xpressPackageSizeFee5to10kg?.updatedBy,
+            updatedAt: data.xpressPackageSizeFee5to10kg?.updatedAt
           },
         });
         return true;
@@ -1004,6 +1084,118 @@ export default function AppControls() {
               <p className="text-xs text-blue-600 mt-1">
                 {formatUpdateLog(xpressUpdateLogs.xpressCodEnabled)}
               </p>
+            </div>
+
+            {/* Xpress Max Distance */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Maximum Distance (km)
+              </label>
+              <input
+                type="number"
+                min="1"
+                max="50"
+                step="0.1"
+                value={xpressMaxDistanceKm}
+                onChange={(e) => setXpressMaxDistanceKm(e.target.value)}
+                disabled={!isEditingXpress}
+                className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm ${
+                  !isEditingXpress ? 'bg-gray-50 cursor-not-allowed' : ''
+                }`}
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Maximum distance allowed for Xpress deliveries from pickup location.
+              </p>
+              <p className="text-xs text-blue-600 mt-1">
+                {formatUpdateLog(xpressUpdateLogs.xpressMaxDistanceKm)}
+              </p>
+            </div>
+
+            {/* Xpress Base Price */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Base Price (₹)
+              </label>
+              <input
+                type="number"
+                min="0"
+                step="1"
+                value={xpressBasePrice}
+                onChange={(e) => setXpressBasePrice(e.target.value)}
+                disabled={!isEditingXpress}
+                className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm ${
+                  !isEditingXpress ? 'bg-gray-50 cursor-not-allowed' : ''
+                }`}
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Base delivery fee for all Xpress orders.
+              </p>
+              <p className="text-xs text-blue-600 mt-1">
+                {formatUpdateLog(xpressUpdateLogs.xpressBasePrice)}
+              </p>
+            </div>
+
+            {/* Xpress Package Size Fees */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  1-3 kg Fee (₹)
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  step="1"
+                  value={xpressPackageSizeFee1to3kg}
+                  onChange={(e) => setXpressPackageSizeFee1to3kg(e.target.value)}
+                  disabled={!isEditingXpress}
+                  className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm ${
+                    !isEditingXpress ? 'bg-gray-50 cursor-not-allowed' : ''
+                  }`}
+                />
+                <p className="text-xs text-blue-600 mt-1">
+                  {formatUpdateLog(xpressUpdateLogs.xpressPackageSizeFee1to3kg)}
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  3-5 kg Fee (₹)
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  step="1"
+                  value={xpressPackageSizeFee3to5kg}
+                  onChange={(e) => setXpressPackageSizeFee3to5kg(e.target.value)}
+                  disabled={!isEditingXpress}
+                  className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm ${
+                    !isEditingXpress ? 'bg-gray-50 cursor-not-allowed' : ''
+                  }`}
+                />
+                <p className="text-xs text-blue-600 mt-1">
+                  {formatUpdateLog(xpressUpdateLogs.xpressPackageSizeFee3to5kg)}
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  5-10 kg Fee (₹)
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  step="1"
+                  value={xpressPackageSizeFee5to10kg}
+                  onChange={(e) => setXpressPackageSizeFee5to10kg(e.target.value)}
+                  disabled={!isEditingXpress}
+                  className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm ${
+                    !isEditingXpress ? 'bg-gray-50 cursor-not-allowed' : ''
+                  }`}
+                />
+                <p className="text-xs text-blue-600 mt-1">
+                  {formatUpdateLog(xpressUpdateLogs.xpressPackageSizeFee5to10kg)}
+                </p>
+              </div>
             </div>
           </div>
 

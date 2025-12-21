@@ -33,6 +33,27 @@ export default function Users() {
     return `${day}/${month}/${year}`;
   };
 
+  // Helper function to format date and time in IST as DD/MM/YYYY HH:MM AM/PM
+  const formatDateTimeIST = (dateString) => {
+    const date = new Date(dateString);
+    // Convert to IST (UTC+5:30)
+    const istOffset = 5.5 * 60 * 60 * 1000; // 5.5 hours in milliseconds
+    const istDate = new Date(date.getTime() + istOffset);
+    
+    const day = String(istDate.getUTCDate()).padStart(2, '0');
+    const month = String(istDate.getUTCMonth() + 1).padStart(2, '0');
+    const year = istDate.getUTCFullYear();
+    let hours = istDate.getUTCHours();
+    const minutes = String(istDate.getUTCMinutes()).padStart(2, '0');
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    
+    hours = hours % 12;
+    hours = hours ? hours : 12; // the hour '0' should be '12'
+    hours = String(hours).padStart(2, '0');
+    
+    return `${day}/${month}/${year} ${hours}:${minutes} ${ampm}`;
+  };
+
   const fetchCurrentUser = useCallback(async () => {
     try {
       const local = localStorage.getItem('adminUser');
@@ -342,6 +363,9 @@ export default function Users() {
                         <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                           App Version
                         </th>
+                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                          Last Opened
+                        </th>
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
@@ -368,6 +392,9 @@ export default function Users() {
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                             {user.appVersion?.current || 'N/A'}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {user.appVersion?.lastUpdated ? formatDateTimeIST(user.appVersion.lastUpdated) : 'N/A'}
                           </td>
                         </tr>
                       ))}
@@ -408,6 +435,9 @@ export default function Users() {
                             </div>
                             <div className="text-xs text-gray-500">
                               App Version: {user.appVersion?.current || 'N/A'}
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              Last Opened: {user.appVersion?.lastUpdated && Math.abs(new Date(user.appVersion.lastUpdated) - new Date(user.createdAt)) > 60000 ? formatDateTimeIST(user.appVersion.lastUpdated) : 'N/A'}
                             </div>
                           </div>
                         </div>
