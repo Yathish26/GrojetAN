@@ -518,13 +518,13 @@ const XpressOrderDetails = () => {
               <p className="text-gray-600 mt-1">
                 Placed on {formatDate(order.createdAt)} at {formatTime12Hour(order.createdAt)}
               </p>
-              {order.status === 'delivered' && order.deliveredAt && (
+              {order.status === 'delivered' && (order.deliveredAt || order.dropOtp?.verifiedAt) && (
                 <div className="mt-1">
                   <p className="text-green-600">
-                    Delivered on {formatDate(order.deliveredAt)} at {formatTime12Hour(order.deliveredAt)}
+                    Delivered on {formatDate(order.deliveredAt || order.dropOtp?.verifiedAt)} at {formatTime12Hour(order.deliveredAt || order.dropOtp?.verifiedAt)}
                   </p>
                   <p className="text-blue-600 text-sm">
-                    Time taken: {calculateTimeTaken(order.createdAt, order.deliveredAt)}
+                    Time taken: {calculateTimeTaken(order.createdAt, order.deliveredAt || order.dropOtp?.verifiedAt)}
                   </p>
                 </div>
               )}
@@ -964,10 +964,10 @@ const XpressOrderDetails = () => {
                   <span className="text-sm text-gray-600">Distance</span>
                   <span className="text-sm text-gray-900">{order.pricing?.distance?.toFixed(1) || 0} km</span>
                 </div>
-                <div className="flex justify-between">
+                {/* <div className="flex justify-between">
                   <span className="text-sm text-gray-600">ETA</span>
                   <span className="text-sm text-gray-900">{order.pricing?.eta || 0} minutes</span>
-                </div>
+                </div> */}
                 <div className="flex justify-between">
                   <span className="text-sm text-gray-600">Estimated Cost</span>
                   <span className="text-sm text-gray-900">₹{order.pricing?.estimatedCost || 0}</span>
@@ -982,6 +982,14 @@ const XpressOrderDetails = () => {
                   <span className="text-gray-600">Payment Method</span>
                   <span className="text-gray-900 capitalize">{order.pricing?.paymentMethod || 'N/A'}</span>
                 </div>
+                {order.status === 'delivered' && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600">Time Taken</span>
+                    <span className="text-gray-900">
+                      {calculateTimeTaken(order.createdAt, order.deliveredAt || order.dropOtp?.verifiedAt) || 'N/A'}
+                    </span>
+                  </div>
+                )}
                 {order.razorpayOrderId && (
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-600">Razorpay Order ID</span>
@@ -1044,7 +1052,12 @@ const XpressOrderDetails = () => {
                     <div>
                       <p className="text-sm font-medium text-gray-900">Delivered</p>
                       <p className="text-xs text-gray-500">
-                        {order.deliveredAt ? formatDateTime(order.deliveredAt) : 'Package delivered successfully'}
+                        {order.deliveredAt ? formatDateTime(order.deliveredAt) :
+                         order.dropOtp?.verifiedAt ? formatDateTime(order.dropOtp.verifiedAt) :
+                         'Package delivered successfully'}
+                      </p>
+                      <p className="text-xs text-blue-600 mt-1">
+                        Time taken: {calculateTimeTaken(order.createdAt, order.deliveredAt || order.dropOtp?.verifiedAt)}
                       </p>
                     </div>
                   </div>

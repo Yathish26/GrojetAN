@@ -28,7 +28,6 @@ const Xpress = () => {
   });
   const [stats, setStats] = useState({});
   const [xpressActive, setXpressActive] = useState(true);
-  const [xpressSleep, setXpressSleep] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [pendingStatus, setPendingStatus] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
@@ -115,7 +114,6 @@ const Xpress = () => {
           return;
         }
         setXpressActive(data.xpressActive);
-        setXpressSleep(data.xpressSleep);
       }
     } catch (error) {
       console.error('Error fetching xpress status:', error);
@@ -160,7 +158,7 @@ const Xpress = () => {
     setPendingStatus(null);
 
     try {
-      const body = type === 'active' ? { xpressActive: status } : { xpressSleep: status };
+      const body = { xpressActive: status };
       const response = await fetch(
         `${import.meta.env.VITE_SERVER}/admin/app-controls/xpress-status`,
         {
@@ -174,15 +172,10 @@ const Xpress = () => {
       );
 
       if (response.ok) {
-        if (type === 'active') {
-          setXpressActive(status);
-          toast.success(`Xpress service ${status ? 'enabled' : 'disabled'} successfully`);
-        } else {
-          setXpressSleep(status);
-          toast.success(`Xpress sleep ${status ? 'enabled' : 'disabled'} successfully`);
-        }
+        setXpressActive(status);
+        toast.success(`Xpress service ${status ? 'enabled' : 'disabled'} successfully`);
       } else {
-        toast.error(`Failed to ${status ? 'enable' : 'disable'} Xpress ${type}`);
+        toast.error(`Failed to ${status ? 'enable' : 'disable'} Xpress service`);
       }
     } catch (error) {
       console.error('Error updating xpress status:', error);
@@ -346,24 +339,6 @@ const Xpress = () => {
                 <div className="w-12 h-6 bg-red-500 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-6 peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500"></div>
                 <span className={`ml-2 text-xs font-medium ${xpressActive ? 'text-green-600' : 'text-red-600'}`}>
                   {xpressActive ? 'Active' : 'Disabled'}
-                </span>
-              </label>
-            </div>
-            <div className="flex items-center gap-3 bg-blue-50 px-4 py-2 rounded-lg border border-blue-200 shadow-sm">
-              <div className="flex items-center gap-2">
-                <div className={`w-2 h-2 rounded-full ${xpressSleep ? 'bg-blue-500' : 'bg-gray-500'}`}></div>
-                <span className="text-sm font-semibold text-gray-800">Xpress Sleep</span>
-              </div>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={xpressSleep}
-                  onChange={(e) => updateXpressStatus('sleep', e.target.checked)}
-                  className="sr-only peer"
-                />
-                <div className="w-12 h-6 bg-gray-500 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-gray-300 rounded-full peer peer-checked:after:translate-x-6 peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500"></div>
-                <span className={`ml-2 text-xs font-medium ${xpressSleep ? 'text-blue-600' : 'text-gray-600'}`}>
-                  {xpressSleep ? 'Enabled' : 'Disabled'}
                 </span>
               </label>
             </div>

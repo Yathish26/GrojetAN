@@ -119,7 +119,7 @@ export default function AdminLogin() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-tr from-pink-500 to-white flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-tr from-blue-500 to-white flex items-center justify-center p-4">
       <div className="bg-white p-8 shadow-xl border border-gray-200 w-full max-w-md">
         {/* Header */}
         <div className="flex flex-col items-center mb-8">
@@ -127,7 +127,7 @@ export default function AdminLogin() {
             <img draggable="false" className='w-24 h-auto object-contain' src="/grojet.png" alt="Grojet" />
           </div>
           <h1 className="text-2xl font-bold text-gray-800 mb-2">
-            {isOtpStep ? 'Verify OTP' : 'Panel Center'}
+            {isOtpStep ? 'Verify OTP' : 'Ozone Center'}
           </h1>
           <p className="text-gray-500 text-center">
             {isOtpStep 
@@ -139,7 +139,7 @@ export default function AdminLogin() {
 
         {/* Error Alert */}
         {error && (
-          <div className="flex items-center gap-2 bg-pink-50 text-pink-600 p-4 mb-6 border border-pink-200">
+          <div className="flex items-center gap-2 bg-blue-50 text-blue-600 p-4 mb-6 border border-blue-200">
             <AlertCircle className="w-5 h-5 flex-shrink-0" />
             <span className="text-sm">{error}</span>
           </div>
@@ -243,7 +243,7 @@ export default function AdminLogin() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full flex justify-center items-center gap-2 py-3 px-4 border border-transparent shadow-sm text-white bg-pink-600 hover:bg-pink-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pink-500 disabled:opacity-70 transition-colors cursor-pointer font-medium"
+            className="w-full flex justify-center items-center gap-2 py-3 px-4 border border-transparent shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-70 transition-colors cursor-pointer font-medium"
           >
             {loading ? (
               <>
