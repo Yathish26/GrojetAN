@@ -102,7 +102,7 @@ const DeliveryAgents = () => {
       if (data.success) {
         toast.success('Alert sent to the agent');
       } else {
-        toast.error('Failed to send alert');
+        toast.error(data.message || 'Failed to send alert');
       }
     } catch (error) {
       console.error('Error sending alert:', error);
