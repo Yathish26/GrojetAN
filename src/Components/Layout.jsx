@@ -166,6 +166,7 @@ const Layout = ({ children, title }) => {
     { name: 'Finance', icon: IndianRupeeIcon, path: '/finance', roles: ['super_admin', 'admin'] },
     { name: 'App Controls', icon: TabletSmartphone, path: '/app-controls', roles: ['super_admin', 'admin'] },
     { name: 'Bug Reports', icon: Bug, path: '/bug-reports', roles: ['super_admin'] },
+    { name: 'S3 Media Manager', icon: Package, path: '/s3-test', roles: ['super_admin'] },
     { name: 'Admin Management', icon: Shield, path: '/admin-management', roles: ['super_admin'] },
     { name: 'Security', icon: ShieldPlus, path: '/security', roles: ['super_admin'] },
     { name: 'Update Notes', icon: Bell, path: '/update-notes', roles: ['super_admin'] },

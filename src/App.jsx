@@ -44,6 +44,7 @@ import Security from './Admin/Security.jsx'
 import Xpress from './Admin/Xpress.jsx'
 import XpressOrderDetails from './Admin/XpressOrderDetails.jsx'
 import { WebSocketProvider } from './context/WebSocketContext.jsx'
+import S3test from './Admin/S3test.jsx'
 
 function App() {
   return (
@@ -152,6 +153,7 @@ function App() {
           <Route path="/profile" element={<Profile />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/app-controls" element={<AppControls />} />
+          <Route path="/s3-test" element={<S3test />} />
 
           {/* 404 */}
           <Route path="*" element={<Error404 />} />

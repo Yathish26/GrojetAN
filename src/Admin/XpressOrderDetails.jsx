@@ -8,6 +8,10 @@ import {
   AlertCircle, Navigation, IndianRupee, RefreshCw, Trash2,X
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import io from 'socket.io-client';
+import bikeriderImg from '/assets/bikerider.png';
+
+const BIKERIDER_ICON = bikeriderImg;
 
 const XpressOrderDetails = () => {
   const [order, setOrder] = useState(null);
@@ -19,8 +23,11 @@ const XpressOrderDetails = () => {
   const [assigningAgent, setAssigningAgent] = useState(false);
   const [showAgentsList, setShowAgentsList] = useState(false);
   const [directions, setDirections] = useState(null);
+  const [agentToPickupDirections, setAgentToPickupDirections] = useState(null);
+  const [agentToDropDirections, setAgentToDropDirections] = useState(null);
   const [agentEarnings, setAgentEarnings] = useState('');
   const [refreshingStatus, setRefreshingStatus] = useState(false);
+  const [refreshingOrder, setRefreshingOrder] = useState(false);
   const [editingLocation, setEditingLocation] = useState(null); // 'pickup' or 'drop'
   const [tempCoordinates, setTempCoordinates] = useState({ latitude: 0, longitude: 0 });
   const [searchQuery, setSearchQuery] = useState('');
@@ -31,6 +38,10 @@ const XpressOrderDetails = () => {
   const [deleteConfirmationText, setDeleteConfirmationText] = useState('');
   const searchInputRef = useRef(null);
   const autocompleteRef = useRef(null);
+  const socketRef = useRef(null);
+  const joinedOrderIdRef = useRef(null);
+  const lastAgentLocationRef = useRef(null);
+  const [agentLocation, setAgentLocation] = useState(null);
   const allowedRoles = ['super_admin', 'admin'];
   const navigate = useNavigate();
   const { id } = useParams();
@@ -258,13 +269,26 @@ const XpressOrderDetails = () => {
 
   const fetchAgents = async () => {
     try {
-      const response = await fetch(
-        `${import.meta.env.VITE_SERVER}/admin/delivery-agents?online=true&applicationStatus=approved&isActive=true&limit=1000`,
-        { credentials: 'include' }
-      );
+      // Get pickup coordinates for distance calculation
+      const pickupLat = order?.pickup?.coordinates?.latitude;
+      const pickupLng = order?.pickup?.coordinates?.longitude;
+
+      let url = `${import.meta.env.VITE_SERVER}/admin/delivery-agents?online=true&applicationStatus=approved&isActive=true&limit=1000`;
+
+      // Add pickup coordinates for distance sorting if available
+      if (pickupLat && pickupLng) {
+        url += `&merchantLat=${pickupLat}&merchantLng=${pickupLng}`;
+      }
+
+      const response = await fetch(url, { credentials: 'include' });
 
       if (response.ok) {
         const data = await response.json();
+        console.log('📍 Fetched agents with distances:', data.agents?.map(agent => ({
+          name: `${agent.personalInfo.firstName} ${agent.personalInfo.lastName || ''}`,
+          distance: agent.distance,
+          isOnline: agent.status?.isOnline
+        })));
         setAgents(data.agents || []);
       }
     } catch (error) {
@@ -388,6 +412,252 @@ const XpressOrderDetails = () => {
     }
   }, [currentUser, id]);
 
+    // Seed agent location once on load (REST) so marker appears even before socket events arrive
+    const seedAgentLocation = useCallback(async () => {
+      if (!id) return;
+      try {
+        const response = await fetch(`${import.meta.env.VITE_SERVER}/xpress/${id}/agent-location`, {
+          credentials: 'include'
+        });
+        const data = await response.json();
+        if (response.ok && data.success && data.data?.location) {
+          const loc = data.data.location;
+          if (typeof loc.latitude === 'number' && typeof loc.longitude === 'number') {
+            const locationUpdate = {
+              latitude: loc.latitude,
+              longitude: loc.longitude,
+              heading: typeof loc.heading === 'number' ? ((loc.heading % 360) + 360) % 360 : null,
+              accuracy: typeof loc.accuracy === 'number' ? loc.accuracy : null,
+              lastUpdated: loc.lastUpdated ? new Date(loc.lastUpdated) : new Date()
+            };
+            lastAgentLocationRef.current = locationUpdate;
+            setAgentLocation(locationUpdate);
+          }
+        }
+      } catch (err) {
+        console.warn('Seed agent location failed', err?.message || err);
+      }
+    }, [id]);
+
+  // WebSocket connection for live agent tracking
+  useEffect(() => {
+    return () => {
+      if (socketRef.current) {
+        if (joinedOrderIdRef.current) {
+          socketRef.current.emit('leave-xpress-order', { orderId: joinedOrderIdRef.current });
+        }
+        socketRef.current.disconnect();
+        socketRef.current = null;
+        joinedOrderIdRef.current = null;
+      }
+    };
+  }, []);
+
+  // WebSocket connection logic when agent is assigned
+  useEffect(() => {
+    if (!id) {
+      return;
+    }
+
+    const normalizedOrderId = String(id);
+    const shouldTrackLocation = Boolean(
+      order?.assignment?.agent &&
+      !['delivered', 'cancelled'].includes(order?.status || '')
+    );
+
+    if (!shouldTrackLocation) {
+      if (socketRef.current && joinedOrderIdRef.current === normalizedOrderId) {
+        socketRef.current.emit('leave-xpress-order', { orderId: normalizedOrderId });
+        joinedOrderIdRef.current = null;
+      }
+      return;
+    }
+
+    // Seed current location via REST once when tracking becomes active
+    seedAgentLocation();
+
+    const socket = socketRef.current || io(import.meta.env.VITE_SERVER, {
+      transports: ['websocket', 'polling'],
+      autoConnect: false,
+      reconnection: true,
+      reconnectionAttempts: 8,
+      reconnectionDelay: 1000,
+      timeout: 20000,
+      forceNew: false,
+      withCredentials: false,
+      query: { orderId: normalizedOrderId }
+    });
+
+    if (!socketRef.current) {
+      socketRef.current = socket;
+    }
+
+    const handleLocationUpdate = (payload = {}) => {
+      console.log('Xpress Admin socket location update', payload);
+      if (payload.orderId && payload.orderId !== id) {
+        return;
+      }
+
+      const latitude = typeof payload.latitude === 'number' ? payload.latitude : null;
+      const longitude = typeof payload.longitude === 'number' ? payload.longitude : null;
+
+      if (latitude === null || longitude === null) {
+        return;
+      }
+
+      const normalizedHeading = typeof payload.heading === 'number'
+        ? ((payload.heading % 360) + 360) % 360
+        : null;
+
+      const locationUpdate = {
+        latitude,
+        longitude,
+        heading: normalizedHeading,
+        accuracy: typeof payload.accuracy === 'number' ? payload.accuracy : null,
+        lastUpdated: payload.timestamp ? new Date(payload.timestamp) : new Date()
+      };
+
+      const last = lastAgentLocationRef.current;
+      if (
+        last &&
+        Math.abs(last.latitude - locationUpdate.latitude) < 1e-6 &&
+        Math.abs(last.longitude - locationUpdate.longitude) < 1e-6 &&
+        (last.heading ?? null) === (locationUpdate.heading ?? null)
+      ) {
+        return;
+      }
+
+      lastAgentLocationRef.current = locationUpdate;
+      setAgentLocation(locationUpdate);
+    };
+
+    const handleConnect = () => {
+      console.log('Xpress Admin socket connected', socket.id);
+      if (joinedOrderIdRef.current === normalizedOrderId) {
+        return;
+      }
+      socket.emit('join-xpress-order', { orderId: normalizedOrderId });
+      console.log('Xpress Admin socket join room', normalizedOrderId);
+      joinedOrderIdRef.current = normalizedOrderId;
+    };
+
+    const handleDisconnect = (reason) => {
+      console.log('Xpress Admin socket disconnected', reason);
+    };
+
+    const handleConnectError = (error) => {
+      console.log('Xpress Admin socket connect_error', error?.message || error);
+    };
+
+    const handleReconnectAttempt = (attempt) => {
+      console.log('Xpress Admin socket reconnect attempt', attempt);
+    };
+
+    socket.on('xpress-agent-location', handleLocationUpdate);
+    socket.on('connect', handleConnect);
+    socket.on('disconnect', handleDisconnect);
+    socket.io.on('reconnect_attempt', handleReconnectAttempt);
+    socket.io.on('error', handleConnectError);
+    socket.on('connect_error', handleConnectError);
+
+    if (!socket.connected) {
+      socket.connect();
+    } else {
+      handleConnect();
+    }
+
+    return () => {
+      socket.off('xpress-agent-location', handleLocationUpdate);
+      socket.off('connect', handleConnect);
+      socket.off('disconnect', handleDisconnect);
+      socket.io.off('reconnect_attempt', handleReconnectAttempt);
+      socket.io.off('error', handleConnectError);
+      socket.off('connect_error', handleConnectError);
+      if (joinedOrderIdRef.current === normalizedOrderId) {
+        socket.emit('leave-xpress-order', { orderId: normalizedOrderId });
+        joinedOrderIdRef.current = null;
+      }
+    };
+  }, [id, order?.assignment?.agent, order?.status]);
+
+  // Request roadway route from agent to pickup (pre-pickup)
+  useEffect(() => {
+    if (!window.google || !window.google.maps || !window.google.maps.DirectionsService) return;
+
+    const pickupLat = parseFloat(order?.pickup?.coordinates?.latitude);
+    const pickupLng = parseFloat(order?.pickup?.coordinates?.longitude);
+    const agentLat = parseFloat(agentLocation?.latitude);
+    const agentLng = parseFloat(agentLocation?.longitude);
+
+    const canRoute =
+      agentLocation && order?.assignment?.agent &&
+      order?.status !== 'in_transit' &&
+      !['delivered', 'cancelled'].includes(order?.status || '') &&
+      !isNaN(pickupLat) && !isNaN(pickupLng) &&
+      !isNaN(agentLat) && !isNaN(agentLng);
+
+    if (!canRoute) {
+      setAgentToPickupDirections(null);
+      return;
+    }
+
+    const directionsService = new window.google.maps.DirectionsService();
+    directionsService.route(
+      {
+        origin: { lat: agentLat, lng: agentLng },
+        destination: { lat: pickupLat, lng: pickupLng },
+        travelMode: window.google.maps.TravelMode.DRIVING
+      },
+      (result, status) => {
+        if (status === window.google.maps.DirectionsStatus.OK) {
+          setAgentToPickupDirections(result);
+        } else {
+          console.warn('Agent→Pickup directions failed:', status);
+          setAgentToPickupDirections(null);
+        }
+      }
+    );
+  }, [agentLocation, order?.assignment?.agent, order?.status, order?.pickup?.coordinates?.latitude, order?.pickup?.coordinates?.longitude]);
+
+  // Request roadway route from agent to drop (after pickup, i.e., in transit)
+  useEffect(() => {
+    if (!window.google || !window.google.maps || !window.google.maps.DirectionsService) return;
+
+    const dropLat = parseFloat(order?.drop?.coordinates?.latitude);
+    const dropLng = parseFloat(order?.drop?.coordinates?.longitude);
+    const agentLat = parseFloat(agentLocation?.latitude);
+    const agentLng = parseFloat(agentLocation?.longitude);
+
+    const canRoute =
+      agentLocation && order?.assignment?.agent &&
+      order?.status === 'in_transit' &&
+      !['delivered', 'cancelled'].includes(order?.status || '') &&
+      !isNaN(dropLat) && !isNaN(dropLng) &&
+      !isNaN(agentLat) && !isNaN(agentLng);
+
+    if (!canRoute) {
+      setAgentToDropDirections(null);
+      return;
+    }
+
+    const directionsService = new window.google.maps.DirectionsService();
+    directionsService.route(
+      {
+        origin: { lat: agentLat, lng: agentLng },
+        destination: { lat: dropLat, lng: dropLng },
+        travelMode: window.google.maps.TravelMode.DRIVING
+      },
+      (result, status) => {
+        if (status === window.google.maps.DirectionsStatus.OK) {
+          setAgentToDropDirections(result);
+        } else {
+          console.warn('Agent→Drop directions failed:', status);
+          setAgentToDropDirections(null);
+        }
+      }
+    );
+  }, [agentLocation, order?.assignment?.agent, order?.status, order?.drop?.coordinates?.latitude, order?.drop?.coordinates?.longitude]);
+
   // Initialize Google Places Autocomplete when modal opens
   useEffect(() => {
     if (editingLocation && searchInputRef.current && window.google && window.google.maps && window.google.maps.places) {
@@ -504,13 +774,33 @@ const XpressOrderDetails = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
-          <button
-            onClick={() => navigate('/xpress')}
-            className="flex items-center text-gray-600 hover:text-gray-900 mb-4"
-          >
-            <ArrowLeft size={20} className="mr-2" />
-            Back to Xpress Orders
-          </button>
+          <div className="flex items-center justify-between mb-4">
+            <button
+              onClick={() => navigate('/xpress')}
+              className="flex items-center text-gray-600 hover:text-gray-900"
+            >
+              <ArrowLeft size={20} className="mr-2" />
+              Back to Xpress Orders
+            </button>
+            <button
+              onClick={async () => {
+                setRefreshingOrder(true);
+                try {
+                  await fetchOrderDetails();
+                  toast.success('Order details refreshed');
+                } catch (error) {
+                  toast.error('Failed to refresh order details');
+                } finally {
+                  setRefreshingOrder(false);
+                }
+              }}
+              disabled={refreshingOrder}
+              className="flex items-center px-3 py-2 text-sm bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 disabled:opacity-50"
+            >
+              <RefreshCw size={16} className={`mr-2 ${refreshingOrder ? 'animate-spin' : ''}`} />
+              {refreshingOrder ? 'Refreshing...' : 'Refresh'}
+            </button>
+          </div>
 
           <div className="flex items-center justify-between">
             <div>
@@ -591,7 +881,9 @@ const XpressOrderDetails = () => {
               <div className="bg-white rounded-lg shadow-sm border p-6 mb-6">
                 <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
                   <Navigation size={20} className="mr-2" />
-                  Route Preview
+                  {agentLocation && order?.assignment?.agent && !['delivered', 'cancelled'].includes(order?.status || '') 
+                    ? 'Live Tracking' 
+                    : 'Route Preview'}
                 </h2>
                 <div className="h-96 w-full rounded-lg overflow-hidden">
                   <GoogleMap
@@ -602,6 +894,32 @@ const XpressOrderDetails = () => {
                     zoom={12}
                     style={{ height: '400px', width: '100%', border: 'none' }}
                   >
+                    {agentToPickupDirections && (
+                      <DirectionsRenderer
+                        directions={agentToPickupDirections}
+                        options={{
+                          suppressMarkers: true,
+                          polylineOptions: {
+                            strokeColor: '#22c55e',
+                            strokeOpacity: 0.9,
+                            strokeWeight: 5
+                          }
+                        }}
+                      />
+                    )}
+                    {agentToDropDirections && (
+                      <DirectionsRenderer
+                        directions={agentToDropDirections}
+                        options={{
+                          suppressMarkers: true,
+                          polylineOptions: {
+                            strokeColor: '#ec4899',
+                            strokeOpacity: 0.9,
+                            strokeWeight: 5
+                          }
+                        }}
+                      />
+                    )}
                     <Marker
                       position={{
                         lat: parseFloat(order.pickup.coordinates.latitude),
@@ -652,6 +970,32 @@ const XpressOrderDetails = () => {
                         anchor: new window.google.maps.Point(20, 40)
                       } : null}
                     />
+                    
+                    {/* Delivery Agent Marker - Only show when agent is assigned and tracking */}
+                    {agentLocation && order?.assignment?.agent && !['delivered', 'cancelled'].includes(order?.status || '') && (
+                      <Marker
+                        position={{
+                          lat: parseFloat(agentLocation.latitude),
+                          lng: parseFloat(agentLocation.longitude)
+                        }}
+                        title="Delivery Agent (Live)"
+                        rotation={typeof agentLocation.heading === 'number' ? agentLocation.heading : 0}
+                        infoContent={`
+                          <div style="max-width: 250px;">
+                            <strong>Delivery Agent</strong><br/>
+                            ${order.assignment.agent.personalInfo?.firstName || ''} ${order.assignment.agent.personalInfo?.lastName || ''}<br/>
+                            ${order.assignment.agent.personalInfo?.phone || ''}<br/>
+                            <small>Last updated: ${agentLocation.lastUpdated ? new Date(agentLocation.lastUpdated).toLocaleTimeString() : 'Just now'}</small>
+                          </div>
+                        `}
+                        icon={window.google && window.google.maps ? {
+                          url: BIKERIDER_ICON,
+                          scaledSize: new window.google.maps.Size(46, 46),
+                          anchor: new window.google.maps.Point(23, 23)
+                        } : null}
+                      />
+                    )}
+                    
                     {directions && <DirectionsRenderer directions={directions} />}
                   </GoogleMap>
                 </div>
@@ -712,6 +1056,16 @@ const XpressOrderDetails = () => {
                                 </button>
                               )}
                             </div>
+                            {/* Live Tracking Indicator */}
+                            {agentLocation && order?.assignment?.agent && !['delivered', 'cancelled'].includes(order?.status || '') && (
+                              <div className="flex items-center mt-2">
+                                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse mr-2"></div>
+                                <span className="text-sm text-green-600 font-medium">Live tracking active</span>
+                                <span className="text-xs text-gray-500 ml-2">
+                                  Updated {agentLocation.lastUpdated ? new Date(agentLocation.lastUpdated).toLocaleTimeString() : 'just now'}
+                                </span>
+                              </div>
+                            )}
                           </div>
                         </div>
                         {order.status !== 'delivered' && (
@@ -759,7 +1113,14 @@ const XpressOrderDetails = () => {
                     ) : (
                       <div className="space-y-4">
                         <div className="flex items-center justify-between">
-                          <h3 className="text-lg font-medium text-gray-900">Online Agents ({agents.length})</h3>
+                          <div>
+                            <h3 className="text-lg font-medium text-gray-900">Online Agents ({agents.length})</h3>
+                            <p className="text-sm text-gray-500">
+                              {order?.pickup?.coordinates?.latitude && order?.pickup?.coordinates?.longitude 
+                                ? 'Sorted by distance to pickup location' 
+                                : 'Showing all online agents (pickup location not available for distance sorting)'}
+                            </p>
+                          </div>
                           <div className="flex gap-2">
                             <button
                               onClick={fetchAgents}
@@ -812,6 +1173,11 @@ const XpressOrderDetails = () => {
                                     </h4>
                                     <p className="text-sm text-gray-600">{agent.personalInfo.phone}</p>
                                     <p className="text-xs text-gray-500">{agent.vehicleInfo?.vehicleType || 'N/A'} • {agent.vehicleInfo?.vehicleNumber || 'N/A'}</p>
+                                    {agent.distance !== null && agent.distance !== undefined && (
+                                      <p className="text-xs text-blue-600 font-medium">
+                                        📍 {agent.distance.toFixed(1)} km away
+                                      </p>
+                                    )}
                                   </div>
                                 </div>
                                 <button
