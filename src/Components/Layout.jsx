@@ -7,7 +7,7 @@ import {
   TabletSmartphone, Briefcase, Smartphone,
   Bug, Headphones, Moon,
   ShieldPlus, DollarSign,
-  IndianRupeeIcon, Zap
+  IndianRupeeIcon, Zap, MessageSquare
 } from 'lucide-react';
 import { MdAdminPanelSettings } from 'react-icons/md';
 import toast from 'react-hot-toast';
@@ -170,7 +170,7 @@ const Layout = ({ children, title }) => {
     { name: 'Admin Management', icon: Shield, path: '/admin-management', roles: ['super_admin'] },
     { name: 'Security', icon: ShieldPlus, path: '/security', roles: ['super_admin'] },
     { name: 'Update Notes', icon: Bell, path: '/update-notes', roles: ['super_admin'] },
-    { name: 'Dark Store (Beta)', icon: Moon, path: '/dark-store', roles: ['super_admin', 'admin'] },
+    { name: 'Contact Queries', icon: MessageSquare, path: '/contact-qur', roles: ['super_admin', 'admin'] },
     { name: 'Live Chat (Beta)', icon: Headphones, path: '/live-chat', roles: ['super_admin', 'admin', 'customer_service'] },
   ];
 

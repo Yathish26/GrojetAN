@@ -38,13 +38,13 @@ import UpdateNotesAdmin from './Admin/UpdateNotesAdmin.jsx'
 import HomeAds from './Admin/HomeAds.jsx'
 import BugReports from './Admin/BugReports.jsx'
 import Support from './Admin/Support.jsx'
-import DarkStore from './Admin/DarkStore.jsx'
 import LiveChat from './Admin/LiveChat.jsx'
 import Security from './Admin/Security.jsx'
 import Xpress from './Admin/Xpress.jsx'
 import XpressOrderDetails from './Admin/XpressOrderDetails.jsx'
 import { WebSocketProvider } from './context/WebSocketContext.jsx'
 import S3test from './Admin/S3test.jsx'
+import ContactQur from './Admin/ContactQur.jsx'
 
 function App() {
   return (
@@ -133,7 +133,7 @@ function App() {
           <Route path="/home-ads" element={<HomeAds />} />
           
           {/* Dark Store */}
-          <Route path="/dark-store" element={<DarkStore />} />
+          <Route path="/contact-qur" element={<ContactQur />} />
           
           {/* Live Chat */}
           <Route path="/live-chat" element={<LiveChat />} />
