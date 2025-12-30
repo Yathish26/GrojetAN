@@ -143,12 +143,12 @@ const XpressOrderDetails = () => {
         }
       } else {
         toast.error('Failed to fetch order details');
-        navigate('/admin/xpress');
+        navigate('/xpress');
       }
     } catch (error) {
       console.error('Error fetching order details:', error);
       toast.error('Failed to fetch order details');
-      navigate('/admin/xpress');
+      navigate('/xpress');
     } finally {
       setLoading(false);
     }
