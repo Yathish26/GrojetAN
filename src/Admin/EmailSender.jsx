@@ -18,7 +18,8 @@ export default function EmailSender() {
   const [formData, setFormData] = useState({
     to: '',
     subject: '',
-    body: ''
+    body: '',
+    from: 'info@grojetdelivery.com'
   });
   const [sendResult, setSendResult] = useState(null);
 
@@ -102,7 +103,8 @@ export default function EmailSender() {
         body: JSON.stringify({
           to: formData.to.trim(),
           subject: formData.subject.trim(),
-          body: formData.body.trim()
+          body: formData.body.trim(),
+          from: formData.from
         })
       });
 
@@ -119,7 +121,8 @@ export default function EmailSender() {
         setFormData({
           to: '',
           subject: '',
-          body: ''
+          body: '',
+          from: 'info@grojetdelivery.com'
         });
       } else {
         setSendResult({
@@ -201,7 +204,7 @@ export default function EmailSender() {
       <div className="p-6 max-w-4xl mx-auto">
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-gray-900">Email Sender</h1>
-          <p className="text-gray-600 mt-1">Send emails using AWS SES from info@grojetdelivery.com</p>
+          <p className="text-gray-600 mt-1">Send emails using AWS SES from info@grojetdelivery.com or support@grojetdelivery.com</p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -213,6 +216,23 @@ export default function EmailSender() {
             </div>
 
             <form onSubmit={handleSendEmail} className="space-y-4">
+              <div>
+                <label htmlFor="from" className="block text-sm font-medium text-gray-700 mb-1">
+                  Sender Email *
+                </label>
+                <select
+                  id="from"
+                  name="from"
+                  value={formData.from}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  required
+                >
+                  <option value="info@grojetdelivery.com">info@grojetdelivery.com</option>
+                  <option value="support@grojetdelivery.com">support@grojetdelivery.com</option>
+                </select>
+              </div>
+
               <div>
                 <label htmlFor="to" className="block text-sm font-medium text-gray-700 mb-1">
                   Recipient Email *
