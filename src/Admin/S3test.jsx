@@ -26,7 +26,7 @@ const S3test = () => {
     try {
       const params = new URLSearchParams({
         page,
-        limit: 12,
+        limit: 50,
         ...(search && { search }),
         ...(folder && { folder })
       });
@@ -496,7 +496,20 @@ const S3test = () => {
                   <div key={image._id} className="bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
                     <div className="relative overflow-hidden bg-gray-100 flex items-center justify-center" style={{ paddingBottom: '100%' }}>
                       <div className="absolute inset-0 flex items-center justify-center">
-                        {getFileTypeIcon(image.mimeType, image.originalName)}
+                        {image.mimeType?.startsWith('image/') ? (
+                          <img
+                            src={image.url}
+                            alt={image.originalName}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              e.target.style.display = 'none';
+                              e.target.nextSibling.style.display = 'flex';
+                            }}
+                          />
+                        ) : null}
+                        <div className={`${image.mimeType?.startsWith('image/') ? 'hidden' : 'flex'}`}>
+                          {getFileTypeIcon(image.mimeType, image.originalName)}
+                        </div>
                       </div>
                     </div>
                     <div className="p-4">

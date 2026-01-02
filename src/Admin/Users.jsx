@@ -18,6 +18,7 @@ export default function Users() {
   const [searching, setSearching] = useState(false);
   const [searchLoading, setSearchLoading] = useState(false);
   const [stats, setStats] = useState({});
+  const [hasEmailFilter, setHasEmailFilter] = useState(false);
 
   const navigate = useNavigate();
   const [currentUser, setCurrentUser] = useState(null);
@@ -87,13 +88,13 @@ export default function Users() {
       fetchTotalUsers();
       fetchStats();
     }
-  }, [currentPage, isAuthorized]);
+  }, [currentPage, isAuthorized, hasEmailFilter]);
 
   const fetchUsers = async () => {
     try {
       setLoading(true);
       const response = await fetch(
-        `${import.meta.env.VITE_SERVER}/admin/users?page=${currentPage}`,
+        `${import.meta.env.VITE_SERVER}/admin/users?page=${currentPage}&hasEmail=${hasEmailFilter}`,
         {
           credentials: 'include', // <-- send cookie for auth
         }
@@ -126,7 +127,7 @@ export default function Users() {
   const fetchTotalUsers = async () => {
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_SERVER}/admin/users/count`,
+        `${import.meta.env.VITE_SERVER}/admin/users/count?hasEmail=${hasEmailFilter}`,
         {
           credentials: 'include', // <-- send cookie for auth
         }
@@ -214,7 +215,7 @@ export default function Users() {
       setSearchLoading(true);
       setSearching(true);
       const response = await fetch(
-        `${import.meta.env.VITE_SERVER}/admin/users/search?q=${encodeURIComponent(searchTerm)}`,
+        `${import.meta.env.VITE_SERVER}/admin/users/search?q=${encodeURIComponent(searchTerm)}&hasEmail=${hasEmailFilter}`,
         {
           credentials: 'include',
         }
@@ -297,7 +298,7 @@ export default function Users() {
               </h2>
             </div>
             <div className="p-6">
-              <form onSubmit={handleSearch} className="flex gap-4">
+              <form onSubmit={handleSearch} className="flex gap-4 flex-col sm:flex-row">
                 <div className="flex-1 max-w-lg">
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -313,13 +314,31 @@ export default function Users() {
                     />
                   </div>
                 </div>
-                <button
-                  onClick={handleSearch}
-                  className="inline-flex items-center px-6 py-3 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
-                >
-                  <FiSearch className="w-4 h-4 mr-2" />
-                  Search
-                </button>
+                <div className="flex items-center gap-4">
+                  <label className="flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={hasEmailFilter}
+                      onChange={(e) => {
+                        setHasEmailFilter(e.target.checked);
+                        if (searching) {
+                          setSearching(false);
+                          setSearchTerm('');
+                        }
+                        setCurrentPage(1);
+                      }}
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    />
+                    <span className="ml-2 text-sm text-gray-700">Has Email</span>
+                  </label>
+                  <button
+                    onClick={handleSearch}
+                    className="inline-flex items-center px-6 py-3 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+                  >
+                    <FiSearch className="w-4 h-4 mr-2" />
+                    Search
+                  </button>
+                </div>
               </form>
             </div>
           </div>

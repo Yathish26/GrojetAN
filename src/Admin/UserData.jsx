@@ -15,7 +15,6 @@ import {
   FiUserX,
   FiUserCheck,
   FiSettings,
-  FiHeart,
   FiBell,
   FiShield,
   FiClock,
@@ -519,13 +518,6 @@ export default function UserData() {
                       <p className="font-medium capitalize">{user.personalInfo?.gender || 'Not provided'}</p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3 p-3 bg-gray-50">
-                    <FiGlobe className="text-gray-400" />
-                    <div>
-                      <p className="text-sm text-gray-600">Language</p>
-                      <p className="font-medium uppercase">{user.preferences?.language || 'EN'}</p>
-                    </div>
-                  </div>
                 </div>
               </div>
             </div>
@@ -756,41 +748,6 @@ export default function UserData() {
               </div>
             )}
 
-            {/* Wishlist */}
-            {user.wishlist && user.wishlist.length > 0 && (
-              <div className="bg-white shadow-lg">
-                <div className="px-6 py-4 border-b bg-gradient-to-r from-pink-50 to-rose-50">
-                  <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-                    <FiHeart className="text-pink-600" />
-                    Wishlist ({user.wishlist.length} items)
-                  </h3>
-                </div>
-                <div className="p-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {user.wishlist.slice(0, 6).map((item, index) => (
-                      <div key={index} className="flex items-center gap-3 p-3 bg-gray-50">
-                        <div className="w-12 h-12 bg-gray-200 flex items-center justify-center">
-                          {item.images && item.images[0] ? (
-                            <img src={item.images[0]} alt={item.name} className="w-full h-full object-cover" />
-                          ) : (
-                            <FiHeart className="text-gray-400" />
-                          )}
-                        </div>
-                        <div className="flex-1">
-                          <p className="font-medium text-sm">{item.name}</p>
-                          <p className="text-gray-600 text-sm">₹{item.price}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  {user.wishlist.length > 6 && (
-                    <p className="text-center text-gray-500 text-sm mt-4">
-                      +{user.wishlist.length - 6} more items in wishlist
-                    </p>
-                  )}
-                </div>
-              </div>
-            )}
           </div>
 
           {/* Sidebar */}

@@ -45,6 +45,7 @@ import XpressOrderDetails from './Admin/XpressOrderDetails.jsx'
 import { WebSocketProvider } from './context/WebSocketContext.jsx'
 import S3test from './Admin/S3test.jsx'
 import ContactQur from './Admin/ContactQur.jsx'
+import EmailSender from './Admin/EmailSender.jsx'
 
 function App() {
   return (
@@ -134,6 +135,7 @@ function App() {
           
           {/* Dark Store */}
           <Route path="/contact-qur" element={<ContactQur />} />
+          <Route path="/email-sender" element={<EmailSender />} />
           
           {/* Live Chat */}
           <Route path="/live-chat" element={<LiveChat />} />
