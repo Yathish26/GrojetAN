@@ -17,6 +17,17 @@ export default function AdminLogin() {
   const [resendDisabled, setResendDisabled] = useState(false);
   const navigate = useNavigate();
 
+  const themes = [
+    { primary: '#3B82F6', hover: '#2563EB', focus: '#1D4ED8', secondary: '#22C55E' },
+    { primary: '#EF4444', hover: '#DC2626', focus: '#B91C1C', secondary: '#FB923C' },
+    { primary: '#10B981', hover: '#059669', focus: '#047857', secondary: '#3B82F6' },
+    { primary: '#8B5CF6', hover: '#7C3AED', focus: '#6D28D9', secondary: '#EC4899' },
+    { primary: '#F97316', hover: '#EA580C', focus: '#C2410C', secondary: '#EAB308' },
+  ];
+
+  const [theme, setTheme] = useState(() => themes[Math.floor(Math.random() * themes.length)]);
+  const [buttonHover, setButtonHover] = useState(false);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -119,7 +130,7 @@ export default function AdminLogin() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-tr from-blue-500 to-white flex items-center justify-center p-4">
+    <div className="min-h-screen flex items-center justify-center p-4" style={{ background: `linear-gradient(to top right, ${theme.primary}, white)` }}>
       <div className="bg-white p-8 shadow-xl border border-gray-200 w-full max-w-md">
         {/* Header */}
         <div className="flex flex-col items-center mb-8">
@@ -127,7 +138,7 @@ export default function AdminLogin() {
             <img draggable="false" className='w-24 h-auto object-contain' src="/grojet.png" alt="Grojet" />
           </div>
           <h1 className="text-2xl font-bold text-gray-800 mb-2">
-            {isOtpStep ? 'Verify OTP' : 'Ozone Center'}
+            {isOtpStep ? 'Verify OTP' : 'Panel Login'}
           </h1>
           <p className="text-gray-500 text-center">
             {isOtpStep 
@@ -139,7 +150,7 @@ export default function AdminLogin() {
 
         {/* Error Alert */}
         {error && (
-          <div className="flex items-center gap-2 bg-blue-50 text-blue-600 p-4 mb-6 border border-blue-200">
+          <div className="flex items-center gap-2 p-4 mb-6 border" style={{ backgroundColor: `${theme.primary}20`, color: theme.primary, borderColor: `${theme.primary}40` }}>
             <AlertCircle className="w-5 h-5 flex-shrink-0" />
             <span className="text-sm">{error}</span>
           </div>
@@ -162,7 +173,7 @@ export default function AdminLogin() {
                     maxLength={100}
                     id="id"
                     name="id"
-                    className="block w-full pl-10 pr-3 py-3 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
+                    className={`block w-full pl-10 pr-3 py-3 border border-gray-300 focus:ring-2 focus:ring-[${theme.secondary}] focus:border-[${theme.secondary}] transition-colors`}
                     placeholder="Enter your ID"
                     value={formData.id}
                     onChange={handleChange}
@@ -183,7 +194,7 @@ export default function AdminLogin() {
                     type="password"
                     id="password"
                     name="password"
-                    className="block w-full pl-10 pr-3 py-3 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
+                    className={`block w-full pl-10 pr-3 py-3 border border-gray-300 focus:ring-2 focus:ring-[${theme.secondary}] focus:border-[${theme.secondary}] transition-colors`}
                     placeholder="••••••••"
                     value={formData.password}
                     onChange={handleChange}
@@ -206,7 +217,7 @@ export default function AdminLogin() {
                   maxLength={6}
                   id="otp"
                   name="otp"
-                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors text-center text-lg font-mono tracking-widest"
+                  className={`block w-full pl-10 pr-3 py-3 border border-gray-300 focus:ring-2 focus:ring-[${theme.secondary}] focus:border-[${theme.secondary}] transition-colors text-center text-lg font-mono tracking-widest`}
                   placeholder="000000"
                   value={formData.otp}
                   onChange={handleChange}
@@ -243,7 +254,10 @@ export default function AdminLogin() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full flex justify-center items-center gap-2 py-3 px-4 border border-transparent shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-70 transition-colors cursor-pointer font-medium"
+            className={`w-full flex justify-center items-center gap-2 py-3 px-4 border border-transparent shadow-sm text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[${theme.focus}] disabled:opacity-70 transition-colors cursor-pointer font-medium`}
+            style={{ backgroundColor: buttonHover ? theme.hover : theme.primary, borderColor: buttonHover ? theme.hover : theme.primary }}
+            onMouseEnter={() => setButtonHover(true)}
+            onMouseLeave={() => setButtonHover(false)}
           >
             {loading ? (
               <>

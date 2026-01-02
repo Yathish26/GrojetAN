@@ -282,8 +282,13 @@ export default function UpdateNotesAdmin() {
   if (loading) {
     return (
       <Layout title="Update Notes">
-        <div className="flex items-center justify-center py-12">
-          <div className="animate-spin h-12 w-12 border-4 border-gray-300 border-t-4 border-t-green-500 rounded-full"></div>
+        <div className="min-h-screen bg-gray-50">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div className="flex items-center justify-center py-12">
+              <div className="animate-spin h-12 w-12 border-4 border-green-200 border-t-green-600 rounded-full"></div>
+              <span className="ml-3 text-gray-600 font-medium">Loading update notes...</span>
+            </div>
+          </div>
         </div>
       </Layout>
     );
@@ -291,451 +296,457 @@ export default function UpdateNotesAdmin() {
 
   return (
     <Layout title="Update Notes">
-      <div className="max-w-7xl mx-auto p-6 space-y-6">
-        <Toaster
-          position="top-center"
-          toastOptions={{
-            duration: 4000,
-            style: {
-              background: '#fff',
-              color: '#333',
-              border: '1px solid #e5e7eb',
-              padding: '16px',
-              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
-            },
-            success: { iconTheme: { primary: '#10B981', secondary: '#fff' } },
-            error: { iconTheme: { primary: '#EF4444', secondary: '#fff' } },
-          }}
-        />
-
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-800">Update Notes Management</h1>
-            <p className="text-gray-600 mt-1">Manage app updates and version releases</p>
-          </div>
-          <button
-            onClick={() => setShowCreateModal(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white hover:bg-green-700 transition"
-          >
-            <FiPlus className="text-sm" />
-            Add Update Note
-          </button>
-        </div>
-
-        {/* Filters */}
-        <div className="bg-white shadow-lg">
-          <div className="px-6 py-4 border-b">
-            <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
-              <span className="text-sm font-medium text-gray-700">Filter by App:</span>
-              <select
-                value={filterApp}
-                onChange={(e) => setFilterApp(e.target.value)}
-                className="px-3 py-2 border focus:ring-2 focus:ring-green-500 focus:border-green-500"
-              >
-                <option value="all">All Apps</option>
-                <option value="admin_panel">Admin Panel</option>
-                <option value="customer_app">Customer App</option>
-                <option value="merchant_app">Merchant App</option>
-                <option value="delivery_agent_app">Delivery Agent App</option>
-              </select>
-            </div>
-          </div>
-        </div>
-
-        {/* Update Notes List */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredNotes.map((note) => (
-            <div key={note._id} className="bg-white shadow-lg overflow-hidden">
-              <div className="px-6 py-4 border-b bg-gradient-to-r from-gray-50 to-slate-50">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    {getAppIcon(note.app)}
-                    <div>
-                      <h3 className="font-semibold text-gray-800">{getAppName(note.app)}</h3>
-                      <p className="text-sm text-gray-600">v{note.version}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {note.isActive && (
-                      <span className="px-2 py-1 bg-green-100 text-green-800 text-xs font-medium">
-                        Active
-                      </span>
-                    )}
-                    <div className="flex gap-1">
-                      <button
-                        onClick={() => openEditModal(note)}
-                        className="p-1 text-blue-600 hover:text-blue-800 transition"
-                        title="Edit"
-                      >
-                        <FiEdit3 className="text-sm" />
-                      </button>
-                      <button
-                        onClick={() => openDeleteModal(note)}
-                        className="p-1 text-red-600 hover:text-red-800 transition"
-                        title="Delete"
-                      >
-                        <FiTrash2 className="text-sm" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="p-6 space-y-4">
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <FiCalendar className="text-gray-400" />
-                  <span>Released: {formatDate(note.releaseDate)}</span>
-                </div>
-
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* Header */}
+          <div className="mb-8">
+            <div className="flex items-center justify-between">
+              <div className="hidden md:flex items-center space-x-4">
                 <div>
-                  <h4 className="font-medium text-gray-800 mb-2">Features ({note.features.length})</h4>
-                  <ul className="space-y-1">
-                    {note.features.slice(0, 3).map((feature, index) => (
-                      <li key={index} className="text-sm text-gray-600 flex items-start gap-2">
-                        <span className="text-green-500 mt-1">•</span>
-                        <span className="flex-1">{feature}</span>
-                      </li>
-                    ))}
-                    {note.features.length > 3 && (
-                      <li className="text-sm text-gray-500">
-                        +{note.features.length - 3} more features
-                      </li>
-                    )}
-                  </ul>
-                </div>
-
-                <div className="text-xs text-gray-500 pt-2 border-t">
-                  Created: {formatDate(note.createdAt)}
+                  <h1 className="text-3xl font-bold text-gray-900">Update Notes Management</h1>
+                  <p className="mt-1 text-sm text-gray-500">Manage app updates and version releases</p>
                 </div>
               </div>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={() => setShowCreateModal(true)}
+                  className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
+                >
+                  <FiPlus className="w-4 h-4 mr-2" />
+                  Add Update Note
+                </button>
+              </div>
             </div>
-          ))}
+          </div>
+
+          {/* Filters */}
+          <div className="bg-white shadow-lg rounded-lg overflow-hidden mb-8">
+            <div className="bg-green-600 px-6 py-4">
+              <h2 className="text-xl font-semibold text-white flex items-center gap-3">
+                <FiTag className="w-6 h-6" />
+                Filters
+              </h2>
+            </div>
+            <div className="p-6">
+              <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+                <span className="text-sm font-medium text-gray-700">Filter by App:</span>
+                <select
+                  value={filterApp}
+                  onChange={(e) => setFilterApp(e.target.value)}
+                  className="px-3 py-2 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                >
+                  <option value="all">All Apps</option>
+                  <option value="admin_panel">Admin Panel</option>
+                  <option value="customer_app">Customer App</option>
+                  <option value="merchant_app">Merchant App</option>
+                  <option value="delivery_agent_app">Delivery Agent App</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* Update Notes List */}
+          <div className="bg-white shadow-lg rounded-lg overflow-hidden mb-8">
+            <div className="bg-green-600 px-6 py-4">
+              <h2 className="text-xl font-semibold text-white flex items-center gap-3">
+                <FiTag className="w-6 h-6" />
+                Update Notes ({filteredNotes.length})
+              </h2>
+            </div>
+            <div className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredNotes.map((note) => (
+                  <div key={note._id} className="bg-white shadow-lg overflow-hidden border border-gray-200 rounded-lg">
+                    <div className="px-6 py-4 border-b bg-gradient-to-r from-gray-50 to-slate-50">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          {getAppIcon(note.app)}
+                          <div>
+                            <h3 className="font-semibold text-gray-800">{getAppName(note.app)}</h3>
+                            <p className="text-sm text-gray-600">v{note.version}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {note.isActive && (
+                            <span className="px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full">
+                              Active
+                            </span>
+                          )}
+                          <div className="flex gap-1">
+                            <button
+                              onClick={() => openEditModal(note)}
+                              className="p-1 text-blue-600 hover:bg-gray-100 rounded"
+                              title="Edit"
+                            >
+                              <FiEdit3 className="text-sm" />
+                            </button>
+                            <button
+                              onClick={() => openDeleteModal(note)}
+                              className="p-1 text-red-600 hover:bg-gray-100 rounded"
+                              title="Delete"
+                            >
+                              <FiTrash2 className="text-sm" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="p-6 space-y-4">
+                      <div className="flex items-center gap-2 text-sm text-gray-600">
+                        <FiCalendar className="text-gray-400" />
+                        <span>Released: {formatDate(note.releaseDate)}</span>
+                      </div>
+
+                      <div>
+                        <h4 className="font-medium text-gray-800 mb-2">Features ({note.features.length})</h4>
+                        <ul className="space-y-1">
+                          {note.features.slice(0, 3).map((feature, index) => (
+                            <li key={index} className="text-sm text-gray-600 flex items-start gap-2">
+                              <span className="text-green-500 mt-1">•</span>
+                              <span className="flex-1">{feature}</span>
+                            </li>
+                          ))}
+                          {note.features.length > 3 && (
+                            <li className="text-sm text-gray-500">
+                              +{note.features.length - 3} more features
+                            </li>
+                          )}
+                        </ul>
+                      </div>
+
+                      <div className="text-xs text-gray-500 pt-2 border-t">
+                        Created: {formatDate(note.createdAt)}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {filteredNotes.length === 0 && (
+                <div className="text-center py-12">
+                  <FiTag className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-gray-800 mb-2">No Update Notes Found</h3>
+                  <p className="text-gray-600">No update notes match your current filters.</p>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
-
-        {filteredNotes.length === 0 && (
-          <div className="text-center py-12">
-            <FiTag className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-gray-600 mb-2">No Update Notes Found</h3>
-            <p className="text-gray-500">
-              {filterApp === 'all' ? 'No update notes have been created yet.' : `No update notes found for ${getAppName(filterApp)}.`}
-            </p>
-          </div>
-        )}
-
-        {/* Create Modal */}
-        {showCreateModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-              <div className="px-6 py-4 border-b flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-gray-800">Create Update Note</h3>
-                <button
-                  onClick={() => {
-                    setShowCreateModal(false);
-                    resetForm();
-                  }}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  <FiX className="text-xl" />
-                </button>
-              </div>
-
-              <div className="p-6 space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      App *
-                    </label>
-                    <select
-                      value={formData.app}
-                      onChange={(e) => setFormData(prev => ({ ...prev, app: e.target.value }))}
-                      className="w-full p-3 border focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                      disabled={submitting}
-                    >
-                      <option value="">Select App</option>
-                      <option value="admin_panel">Admin Panel</option>
-                      <option value="customer_app">Customer App</option>
-                      <option value="merchant_app">Merchant App</option>
-                      <option value="delivery_agent_app">Delivery Agent App</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Version *
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.version}
-                      onChange={(e) => setFormData(prev => ({ ...prev, version: e.target.value }))}
-                      placeholder="e.g., 1.2.3"
-                      className="w-full p-3 border focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                      disabled={submitting}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Release Date
-                    </label>
-                    <input
-                      type="date"
-                      value={formData.releaseDate}
-                      onChange={(e) => setFormData(prev => ({ ...prev, releaseDate: e.target.value }))}
-                      className="w-full p-3 border focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                      disabled={submitting}
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Features *
-                  </label>
-                  {formData.features.map((feature, index) => (
-                    <div key={index} className="flex gap-2 mb-2">
-                      <input
-                        type="text"
-                        maxLength={200}
-                        value={feature}
-                        onChange={(e) => updateFeature(index, e.target.value)}
-                        placeholder="Enter feature description"
-                        className="flex-1 p-3 border focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                        disabled={submitting}
-                      />
-                      {formData.features.length > 1 && (
-                        <button
-                          onClick={() => removeFeature(index)}
-                          className="px-3 py-3 bg-red-100 text-red-600 hover:bg-red-200 transition"
-                          disabled={submitting}
-                        >
-                          <FiX />
-                        </button>
-                      )}
-                    </div>
-                  ))}
-                  <button
-                    onClick={addFeature}
-                    className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 hover:bg-gray-200 transition"
-                    disabled={submitting}
-                  >
-                    <FiPlus className="text-sm" />
-                    Add Feature
-                  </button>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    id="isActive"
-                    checked={formData.isActive}
-                    onChange={(e) => setFormData(prev => ({ ...prev, isActive: e.target.checked }))}
-                    disabled={submitting}
-                  />
-                  <label htmlFor="isActive" className="text-sm text-gray-700">
-                    Mark as active version
-                  </label>
-                </div>
-              </div>
-
-              <div className="px-6 py-4 border-t flex justify-end gap-2">
-                <button
-                  onClick={() => {
-                    setShowCreateModal(false);
-                    resetForm();
-                  }}
-                  className="px-4 py-2 text-gray-600 hover:text-gray-800 transition"
-                  disabled={submitting}
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleCreateNote}
-                  disabled={submitting}
-                  className="px-4 py-2 bg-green-600 text-white hover:bg-green-700 transition disabled:opacity-50"
-                >
-                  {submitting ? 'Creating...' : 'Create Note'}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Edit Modal */}
-        {showEditModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-              <div className="px-6 py-4 border-b flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-gray-800">Edit Update Note</h3>
-                <button
-                  onClick={() => {
-                    setShowEditModal(false);
-                    resetForm();
-                  }}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  <FiX className="text-xl" />
-                </button>
-              </div>
-
-              <div className="p-6 space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      App *
-                    </label>
-                    <select
-                      value={formData.app}
-                      onChange={(e) => setFormData(prev => ({ ...prev, app: e.target.value }))}
-                      className="w-full p-3 border focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                      disabled={submitting}
-                    >
-                      <option value="">Select App</option>
-                      <option value="admin_panel">Admin Panel</option>
-                      <option value="customer_app">Customer App</option>
-                      <option value="merchant_app">Merchant App</option>
-                      <option value="delivery_agent_app">Delivery Agent App</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Version *
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.version}
-                      onChange={(e) => setFormData(prev => ({ ...prev, version: e.target.value }))}
-                      placeholder="e.g., 1.2.3"
-                      className="w-full p-3 border focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                      disabled={submitting}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Release Date
-                    </label>
-                    <input
-                      type="date"
-                      value={formData.releaseDate}
-                      onChange={(e) => setFormData(prev => ({ ...prev, releaseDate: e.target.value }))}
-                      className="w-full p-3 border focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                      disabled={submitting}
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Features *
-                  </label>
-                  {formData.features.map((feature, index) => (
-                    <div key={index} className="flex gap-2 mb-2">
-                      <input
-                        type="text"
-                        value={feature}
-                        onChange={(e) => updateFeature(index, e.target.value)}
-                        placeholder="Enter feature description"
-                        className="flex-1 p-3 border focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                        disabled={submitting}
-                      />
-                      {formData.features.length > 1 && (
-                        <button
-                          onClick={() => removeFeature(index)}
-                          className="px-3 py-3 bg-red-100 text-red-600 hover:bg-red-200 transition"
-                          disabled={submitting}
-                        >
-                          <FiX />
-                        </button>
-                      )}
-                    </div>
-                  ))}
-                  <button
-                    onClick={addFeature}
-                    className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 hover:bg-gray-200 transition"
-                    disabled={submitting}
-                  >
-                    <FiPlus className="text-sm" />
-                    Add Feature
-                  </button>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    id="isActiveEdit"
-                    checked={formData.isActive}
-                    onChange={(e) => setFormData(prev => ({ ...prev, isActive: e.target.checked }))}
-                    disabled={submitting}
-                  />
-                  <label htmlFor="isActiveEdit" className="text-sm text-gray-700">
-                    Mark as active version
-                  </label>
-                </div>
-              </div>
-
-              <div className="px-6 py-4 border-t flex justify-end gap-2">
-                <button
-                  onClick={() => {
-                    setShowEditModal(false);
-                    resetForm();
-                  }}
-                  className="px-4 py-2 text-gray-600 hover:text-gray-800 transition"
-                  disabled={submitting}
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleUpdateNote}
-                  disabled={submitting}
-                  className="px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 transition disabled:opacity-50"
-                >
-                  {submitting ? 'Updating...' : 'Update Note'}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Delete Modal */}
-        {showDeleteModal && selectedNote && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white max-w-md w-full">
-              <div className="px-6 py-4 border-b">
-                <h3 className="text-lg font-semibold text-gray-800">Delete Update Note</h3>
-              </div>
-              <div className="p-6">
-                <p className="text-gray-600 mb-4">
-                  Are you sure you want to delete the update note for <strong>{getAppName(selectedNote.app)} v{selectedNote.version}</strong>?
-                </p>
-                <p className="text-sm text-gray-500">
-                  This action cannot be undone.
-                </p>
-              </div>
-              <div className="px-6 py-4 border-t flex justify-end gap-2">
-                <button
-                  onClick={() => {
-                    setShowDeleteModal(false);
-                    setSelectedNote(null);
-                  }}
-                  className="px-4 py-2 text-gray-600 hover:text-gray-800 transition"
-                  disabled={submitting}
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleDeleteNote}
-                  disabled={submitting}
-                  className="px-4 py-2 bg-red-600 text-white hover:bg-red-700 transition disabled:opacity-50"
-                >
-                  {submitting ? 'Deleting...' : 'Delete Note'}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
-    </Layout>
+
+      {/* Create Modal */}
+      {showCreateModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="px-6 py-4 border-b flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-gray-800">Create Update Note</h3>
+              <button
+                onClick={() => {
+                  setShowCreateModal(false);
+                  resetForm();
+                }}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <FiX className="text-xl" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    App *
+                  </label>
+                  <select
+                    value={formData.app}
+                    onChange={(e) => setFormData(prev => ({ ...prev, app: e.target.value }))}
+                    className="w-full p-3 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                    disabled={submitting}
+                  >
+                    <option value="">Select App</option>
+                    <option value="admin_panel">Admin Panel</option>
+                    <option value="customer_app">Customer App</option>
+                    <option value="merchant_app">Merchant App</option>
+                    <option value="delivery_agent_app">Delivery Agent App</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Version *
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.version}
+                    onChange={(e) => setFormData(prev => ({ ...prev, version: e.target.value }))}
+                    placeholder="e.g., 1.2.3"
+                    className="w-full p-3 border focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    disabled={submitting}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Release Date
+                  </label>
+                  <input
+                    type="date"
+                    value={formData.releaseDate}
+                    onChange={(e) => setFormData(prev => ({ ...prev, releaseDate: e.target.value }))}
+                    className="w-full p-3 border focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    disabled={submitting}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Features *
+                </label>
+                {formData.features.map((feature, index) => (
+                  <div key={index} className="flex gap-2 mb-2">
+                    <input
+                      type="text"
+                      maxLength={200}
+                      value={feature}
+                      onChange={(e) => updateFeature(index, e.target.value)}
+                      placeholder="Enter feature description"
+                      className="flex-1 p-3 border focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                      disabled={submitting}
+                    />
+                    {formData.features.length > 1 && (
+                      <button
+                        onClick={() => removeFeature(index)}
+                        className="px-3 py-3 bg-red-100 text-red-600 hover:bg-red-200 transition"
+                        disabled={submitting}
+                      >
+                        <FiX />
+                      </button>
+                    )}
+                  </div>
+                ))}
+                <button
+                  onClick={addFeature}
+                  className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 hover:bg-gray-200 transition"
+                  disabled={submitting}
+                >
+                  <FiPlus className="text-sm" />
+                  Add Feature
+                </button>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="isActive"
+                  checked={formData.isActive}
+                  onChange={(e) => setFormData(prev => ({ ...prev, isActive: e.target.checked }))}
+                  disabled={submitting}
+                />
+                <label htmlFor="isActive" className="text-sm text-gray-700">
+                  Mark as active version
+                </label>
+              </div>
+            </div>
+
+            <div className="px-6 py-4 border-t flex justify-end gap-2">
+              <button
+                onClick={() => {
+                  setShowCreateModal(false);
+                  resetForm();
+                }}
+                className="px-4 py-2 text-gray-600 hover:text-gray-800 transition"
+                disabled={submitting}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleCreateNote}
+                disabled={submitting}
+                className="px-4 py-2 bg-green-600 text-white hover:bg-green-700 transition disabled:opacity-50"
+              >
+                {submitting ? 'Creating...' : 'Create Note'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Modal */}
+      {showEditModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="px-6 py-4 border-b flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-gray-800">Edit Update Note</h3>
+              <button
+                onClick={() => {
+                  setShowEditModal(false);
+                  resetForm();
+                }}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <FiX className="text-xl" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    App *
+                  </label>
+                  <select
+                    value={formData.app}
+                    onChange={(e) => setFormData(prev => ({ ...prev, app: e.target.value }))}
+                    className="w-full p-3 border focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    disabled={submitting}
+                  >
+                    <option value="">Select App</option>
+                    <option value="admin_panel">Admin Panel</option>
+                    <option value="customer_app">Customer App</option>
+                    <option value="merchant_app">Merchant App</option>
+                    <option value="delivery_agent_app">Delivery Agent App</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Version *
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.version}
+                    onChange={(e) => setFormData(prev => ({ ...prev, version: e.target.value }))}
+                    placeholder="e.g., 1.2.3"
+                    className="w-full p-3 border focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    disabled={submitting}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Release Date
+                  </label>
+                  <input
+                    type="date"
+                    value={formData.releaseDate}
+                    onChange={(e) => setFormData(prev => ({ ...prev, releaseDate: e.target.value }))}
+                    className="w-full p-3 border focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    disabled={submitting}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Features *
+                </label>
+                {formData.features.map((feature, index) => (
+                  <div key={index} className="flex gap-2 mb-2">
+                    <input
+                      type="text"
+                      value={feature}
+                      onChange={(e) => updateFeature(index, e.target.value)}
+                      placeholder="Enter feature description"
+                      className="flex-1 p-3 border focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                      disabled={submitting}
+                    />
+                    {formData.features.length > 1 && (
+                      <button
+                        onClick={() => removeFeature(index)}
+                        className="px-3 py-3 bg-red-100 text-red-600 hover:bg-red-200 transition"
+                        disabled={submitting}
+                      >
+                        <FiX />
+                      </button>
+                    )}
+                  </div>
+                ))}
+                <button
+                  onClick={addFeature}
+                  className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 hover:bg-gray-200 transition"
+                  disabled={submitting}
+                >
+                  <FiPlus className="text-sm" />
+                  Add Feature
+                </button>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="isActiveEdit"
+                  checked={formData.isActive}
+                  onChange={(e) => setFormData(prev => ({ ...prev, isActive: e.target.checked }))}
+                  disabled={submitting}
+                />
+                <label htmlFor="isActiveEdit" className="text-sm text-gray-700">
+                  Mark as active version
+                </label>
+              </div>
+            </div>
+
+            <div className="px-6 py-4 border-t flex justify-end gap-2">
+              <button
+                onClick={() => {
+                  setShowEditModal(false);
+                  resetForm();
+                }}
+                className="px-4 py-2 text-gray-600 hover:text-gray-800 transition"
+                disabled={submitting}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleUpdateNote}
+                disabled={submitting}
+                className="px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 transition disabled:opacity-50"
+              >
+                {submitting ? 'Updating...' : 'Update Note'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Modal */}
+      {showDeleteModal && selectedNote && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white max-w-md w-full">
+            <div className="px-6 py-4 border-b">
+              <h3 className="text-lg font-semibold text-gray-800">Delete Update Note</h3>
+            </div>
+            <div className="p-6">
+              <p className="text-gray-600 mb-4">
+                Are you sure you want to delete the update note for <strong>{getAppName(selectedNote.app)} v{selectedNote.version}</strong>?
+              </p>
+              <p className="text-sm text-gray-500">
+                This action cannot be undone.
+              </p>
+            </div>
+            <div className="px-6 py-4 border-t flex justify-end gap-2">
+              <button
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setSelectedNote(null);
+                }}
+                className="px-4 py-2 text-gray-600 hover:text-gray-800 transition"
+                disabled={submitting}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteNote}
+                disabled={submitting}
+                className="px-4 py-2 bg-red-600 text-white hover:bg-red-700 transition disabled:opacity-50"
+              >
+                {submitting ? 'Deleting...' : 'Delete Note'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </Layout >
   );
 }
