@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import Layout from '../Components/Layout';
 
-const S3test = () => {
+const S3store = () => {
   const navigate = useNavigate();
   const [currentUser, setCurrentUser] = useState(null);
   const [checkingUser, setCheckingUser] = useState(true);
@@ -600,4 +600,4 @@ const S3test = () => {
   );
 };
 
-export default S3test;
+export default S3store;

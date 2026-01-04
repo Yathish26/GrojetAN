@@ -16,6 +16,11 @@ export default function AppControls() {
   const [bulkNotificationResults, setBulkNotificationResults] = useState(null);
   const [bulkNotificationLoading, setBulkNotificationLoading] = useState(false);
 
+  // Customer bulk notifications states
+  const [customerBulkNotificationText, setCustomerBulkNotificationText] = useState('');
+  const [customerBulkNotificationResults, setCustomerBulkNotificationResults] = useState(null);
+  const [customerBulkNotificationLoading, setCustomerBulkNotificationLoading] = useState(false);
+
   // New states for app controls
   const [taxPercentageOnDeliveryFee, setTaxPercentageOnDeliveryFee] = useState(18);
   const [deliveryFee, setDeliveryFee] = useState(40);
@@ -550,6 +555,54 @@ export default function AppControls() {
     setBulkNotificationResults(null);
   };
 
+  const handleSendCustomerBulkNotification = async () => {
+    if (!customerBulkNotificationText.trim()) {
+      toast.error('Please enter notification text');
+      return;
+    }
+
+    setCustomerBulkNotificationLoading(true);
+    try {
+      const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/notifications/send-customer-bulk-notification`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          message: customerBulkNotificationText,
+        }),
+      });
+
+      if (response.status === 401) {
+        navigate('/login', { replace: true });
+        return;
+      }
+
+      const result = await response.json();
+      if (result.tokenValid === false) {
+        navigate('/login', { replace: true });
+        return;
+      }
+
+      if (result.success) {
+        setCustomerBulkNotificationResults(result);
+        toast.success(`Bulk notification sent to all customers`);
+      } else {
+        toast.error(result.message || 'Failed to send bulk notification');
+      }
+    } catch (error) {
+      console.error('Error sending customer bulk notification:', error);
+      toast.error('Failed to send bulk notification');
+    } finally {
+      setCustomerBulkNotificationLoading(false);
+    }
+  };
+
+  const clearCustomerBulkResults = () => {
+    setCustomerBulkNotificationResults(null);
+  };
+
   return (
     <Layout title="App Controls">
       <div className="max-w-4xl mx-auto p-4 sm:p-6 space-y-4 sm:space-y-6">
@@ -802,6 +855,102 @@ export default function AppControls() {
                   <h3 className="font-medium text-gray-900 mb-3 text-sm sm:text-base">Delivery Results</h3>
                   <div className="space-y-3 max-h-96 overflow-y-auto">
                     {bulkNotificationResults.data.results.map((result, index) => (
+                      <div
+                        key={index}
+                        className={`p-3 sm:p-4 rounded-lg border ${
+                          result.success
+                            ? 'bg-green-50 border-green-200'
+                            : 'bg-red-50 border-red-200'
+                        }`}
+                      >
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">
+                          <span className={`font-medium text-sm sm:text-base ${
+                            result.success ? 'text-green-800' : 'text-red-800'
+                          }`}>
+                            {result.success ? '✅ Delivered' : '❌ Failed'}
+                          </span>
+                        </div>
+
+                        {result.error && (
+                          <div className="mt-2 text-xs text-red-600 bg-red-50 p-2 rounded">
+                            <strong>Error:</strong> {result.error}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Customer Bulk Notifications Panel */}
+        <div className="bg-white shadow-sm border border-gray-200 rounded-lg p-4 sm:p-6">
+          <h2 className="text-lg sm:text-xl font-semibold text-gray-800 mb-4">Bulk Notifications to Customer App</h2>
+          <div className="space-y-4">
+            {/* Notification Text */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Notification Text
+              </label>
+              <textarea
+                maxLength={500}
+                value={customerBulkNotificationText}
+                onChange={(e) => setCustomerBulkNotificationText(e.target.value)}
+                placeholder="Enter the notification message for customers..."
+                rows="4"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none text-sm"
+              />
+            </div>
+
+            {/* Send Button */}
+            <div className="flex justify-end pt-2">
+              <button
+                onClick={handleSendCustomerBulkNotification}
+                disabled={customerBulkNotificationLoading}
+                className="w-full sm:w-auto px-4 sm:px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed transition-colors text-sm font-medium"
+              >
+                {customerBulkNotificationLoading ? 'Sending...' : 'Send to All Customers'}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Customer Bulk Notification Results */}
+        {customerBulkNotificationResults && (
+          <div className="bg-white shadow-sm border border-gray-200 rounded-lg p-4 sm:p-6">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4">
+              <h2 className="text-lg sm:text-xl font-semibold text-gray-800">Customer Bulk Notification Results</h2>
+              <button
+                onClick={clearCustomerBulkResults}
+                className="w-full sm:w-auto px-3 py-2 text-sm bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-colors"
+              >
+                Clear Results
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div className="bg-gray-50 p-3 sm:p-4 rounded-lg">
+                <h3 className="font-medium text-gray-900 mb-2 text-sm sm:text-base">Request Summary</h3>
+                <p className="text-sm text-gray-600">
+                  <strong>Message:</strong> {customerBulkNotificationResults.message}
+                </p>
+                <p className="text-sm text-gray-600">
+                  <strong>Status:</strong> <span className="text-green-600 font-medium">Success</span>
+                </p>
+                {customerBulkNotificationResults.data && customerBulkNotificationResults.data.totalSent && (
+                  <p className="text-sm text-gray-600">
+                    <strong>Total Sent:</strong> {customerBulkNotificationResults.data.totalSent}
+                  </p>
+                )}
+              </div>
+
+              {customerBulkNotificationResults.data && customerBulkNotificationResults.data.results && customerBulkNotificationResults.data.results.length > 0 && (
+                <div>
+                  <h3 className="font-medium text-gray-900 mb-3 text-sm sm:text-base">Delivery Results</h3>
+                  <div className="space-y-3 max-h-96 overflow-y-auto">
+                    {customerBulkNotificationResults.data.results.map((result, index) => (
                       <div
                         key={index}
                         className={`p-3 sm:p-4 rounded-lg border ${

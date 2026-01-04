@@ -1135,17 +1135,6 @@ export default function DeliveryAgentDetails() {
             <span className="hidden sm:inline">Export to Excel</span>
             <span className="sm:hidden">Export</span>
           </button>
-
-          {/* Clear Data Button */}
-          <button
-            onClick={clearData}
-            className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors text-sm"
-            title="Clear all earnings and delivery data"
-          >
-            <X className="w-4 h-4" />
-            <span className="hidden sm:inline">Clear Data</span>
-            <span className="sm:hidden">Clear</span>
-          </button>
         </div>
       </div>
 
@@ -2344,6 +2333,40 @@ export default function DeliveryAgentDetails() {
                 </div>
               </div>
 
+              {/* Full Time Agent Toggle */}
+              <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+                <div className="flex-1">
+                  <label className="text-sm text-gray-700 font-medium">Full Time Agent</label>
+                  <p className="text-xs text-gray-600 mt-1">Toggle to mark agent as full-time for Grojet</p>
+                </div>
+                <div className="flex items-center">
+                  <button
+                    onClick={() => {
+                      const newFullTimeStatus = !agent.workInfo?.fullTime;
+                      updateAgentDetails({
+                        workInfo: {
+                          fullTime: newFullTimeStatus
+                        }
+                      });
+                    }}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 ${
+                      agent.workInfo?.fullTime ? 'bg-green-600' : 'bg-gray-200'
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                        agent.workInfo?.fullTime ? 'translate-x-6' : 'translate-x-1'
+                      }`}
+                    />
+                  </button>
+                  <span className={`ml-3 text-sm font-medium ${
+                    agent.workInfo?.fullTime ? 'text-green-600' : 'text-gray-500'
+                  }`}>
+                    {agent.workInfo?.fullTime ? 'Full Time' : 'Part Time'}
+                  </span>
+                </div>
+              </div>
+
               {/* Force Offline Button */}
               {agent.status?.isOnline && (currentUser?.role === 'super_admin' || currentUser?.role === 'admin') && (
                 <div className="pt-4">
@@ -2352,6 +2375,20 @@ export default function DeliveryAgentDetails() {
                     className="w-full bg-orange-600 text-white py-2 px-4 rounded-lg hover:bg-orange-700 transition-colors"
                   >
                     Force Offline
+                  </button>
+                </div>
+              )}
+
+              {/* Clear Data Button */}
+              {(currentUser?.role === 'super_admin' || currentUser?.role === 'admin') && (
+                <div className="pt-4">
+                  <button
+                    onClick={clearData}
+                    className="w-full bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 transition-colors flex items-center justify-center gap-2"
+                    title="Clear all earnings and delivery data"
+                  >
+                    <X className="w-4 h-4" />
+                    Clear Data
                   </button>
                 </div>
               )}

@@ -55,6 +55,7 @@ export default function Products() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalProducts, setTotalProducts] = useState(0);
+  const [totalAvailable, setTotalAvailable] = useState(0);
 
   // Controlled input for search box before search button is pressed
   const [pendingSearch, setPendingSearch] = useState('');
@@ -195,6 +196,50 @@ export default function Products() {
       toast.error('Failed to load categories. Please refresh the page.');
     }
   }, [navigate]);
+
+  // Fetch total available products count
+  const fetchAvailableCount = useCallback(async () => {
+    try {
+      const query = new URLSearchParams();
+      query.append('page', '1');
+      query.append('limit', '1'); // We only need the total count
+
+      // Apply current filters
+      if (searchTerm) {
+        query.append('search', searchTerm);
+      }
+      if (filters.category) {
+        query.append('category', filters.category);
+      }
+      if (filters.status && filters.status !== 'all') {
+        query.append('status', filters.status);
+      }
+      if (filters.startsWith && filters.startsWith !== 'all') {
+        query.append('startsWith', filters.startsWith);
+      }
+
+      const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/products?${query}`, {
+        credentials: 'include',
+      });
+      if (response.status === 401) {
+        return;
+      }
+      if (!response.ok) throw new Error('Failed to fetch available count');
+      const data = await response.json();
+      if (data.tokenValid === false) {
+        return;
+      }
+      setTotalAvailable(data.total || 0);
+    } catch (error) {
+      console.error('Failed to fetch available count', error);
+    }
+  }, [searchTerm, filters.category, filters.status, filters.startsWith]);
+
+  useEffect(() => {
+    fetchCurrentUser();
+    fetchCategories();
+    fetchAvailableCount();
+  }, [fetchCurrentUser, fetchCategories, fetchAvailableCount]);
 
   // Update request status
   const updateRequestStatus = async (requestId, status) => {
@@ -421,6 +466,7 @@ export default function Products() {
       }
       toast.success('Product deleted successfully');
       fetchProducts({ page, search: searchTerm, category: filters.category, status: filters.status, sort: filters.sort, startsWith: filters.startsWith });
+      fetchAvailableCount();
       // If this was the last product on this page, go back one page
       if (products.length === 1 && page > 1) {
         setPage(page - 1);
@@ -653,42 +699,104 @@ export default function Products() {
         }
       }
 
-      const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/products/${editProduct._id}`, {
+      // Prepare base product data (without variants)
+      const baseProductData = {
+        ...editProduct,
+        thumbnail: finalThumbnail,
+        images: finalImages,
+        customFields: (editProduct.customFields || []).filter(field => field.key.trim() && field.value.trim()),
+        // Only include weightDimension if both value and unit are provided
+        weightDimension: (editProduct.weightDimension?.value && editProduct.weightDimension?.unit)
+          ? {
+            value: parseFloat(editProduct.weightDimension.value),
+            unit: editProduct.weightDimension.unit
+          }
+          : undefined,
+        variants: [] // Remove variants from base product
+      };
+
+      // Update the base product
+      const baseResponse = await fetch(`${import.meta.env.VITE_SERVER}/admin/products/${editProduct._id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
         credentials: 'include',
-        body: JSON.stringify({
-          ...editProduct,
-          thumbnail: finalThumbnail,
-          images: finalImages,
-          customFields: (editProduct.customFields || []).filter(field => field.key.trim() && field.value.trim()),
-          // Only include weightDimension if both value and unit are provided
-          weightDimension: (editProduct.weightDimension?.value && editProduct.weightDimension?.unit)
-            ? {
-              value: parseFloat(editProduct.weightDimension.value),
-              unit: editProduct.weightDimension.unit
-            }
-            : undefined
-        }),
+        body: JSON.stringify(baseProductData),
       });
-      if (response.status === 401) {
+
+      if (baseResponse.status === 401) {
         toast.error('Authentication error. Please login again.');
         navigate('/login');
         return;
       }
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to update product');
+      if (!baseResponse.ok) {
+        const errorData = await baseResponse.json();
+        throw new Error(errorData.message || 'Failed to update base product');
       }
-      const data = await response.json();
-      if (data.tokenValid === false) {
+
+      const baseData = await baseResponse.json();
+      if (baseData.tokenValid === false) {
         navigate('/login', { replace: true });
         return;
       }
-      toast.success('Product updated successfully');
+
+      // Handle variants - create separate products for each variant
+      const variants = editProduct.variants || [];
+      if (variants.length > 0) {
+        for (const variant of variants) {
+          if (!variant.name || !variant.pricing?.mrp) continue; // Skip invalid variants
+
+          const variantProductData = {
+            name: variant.name, // Use only the variant name, not base name + variant name
+            description: editProduct.description,
+            brand: editProduct.brand,
+            category: editProduct.category?._id || editProduct.category,
+            hsnCode: editProduct.hsnCode,
+            thumbnail: finalThumbnail,
+            images: finalImages,
+            tags: editProduct.tags || [],
+            customFields: editProduct.customFields?.filter(field => field.key.trim() && field.value.trim()) || [],
+            weightDimension: (variant.weightDimension?.value && variant.weightDimension?.unit)
+              ? {
+                value: parseFloat(variant.weightDimension.value),
+                unit: variant.weightDimension.unit
+              }
+              : undefined,
+            pricing: {
+              mrp: parseFloat(variant.pricing.mrp)
+            },
+            isActive: variant.isActive !== false, // Default to true if not specified
+            variants: [] // No sub-variants for variant products
+          };
+
+          // Create new product for this variant
+          const variantResponse = await fetch(`${import.meta.env.VITE_SERVER}/admin/products`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            credentials: 'include',
+            body: JSON.stringify(variantProductData),
+          });
+
+          if (!variantResponse.ok) {
+            const errorData = await variantResponse.json();
+            console.warn(`Failed to create variant product "${variant.name}":`, errorData.message);
+            // Continue with other variants even if one fails
+          } else {
+            const variantData = await variantResponse.json();
+            if (variantData.tokenValid === false) {
+              navigate('/login', { replace: true });
+              return;
+            }
+          }
+        }
+      }
+
+      toast.success(`Product${variants.length > 0 ? ` and ${variants.length} variant${variants.length > 1 ? 's' : ''}` : ''} saved successfully`);
       fetchProducts({ page, search: searchTerm, category: filters.category, status: filters.status, sort: filters.sort, startsWith: filters.startsWith });
+      fetchAvailableCount();
       closeEditModal();
     } catch (error) {
       toast.error(error.message);
@@ -708,24 +816,29 @@ export default function Products() {
   const handleSearch = () => {
     setSearchTerm(pendingSearch);
     setPage(1);
+    fetchAvailableCount();
   };
 
   // Filter handlers for dropdowns, triggers fetch
   const handleCategoryFilter = (e) => {
     setFilters(f => ({ ...f, category: e.target.value }));
     setPage(1);
+    fetchAvailableCount();
   };
   const handleStatusFilter = (e) => {
     setFilters(f => ({ ...f, status: e.target.value }));
     setPage(1);
+    fetchAvailableCount();
   };
   const handleStartsWithFilter = (e) => {
     setFilters(f => ({ ...f, startsWith: e.target.value }));
     setPage(1);
+    fetchAvailableCount();
   };
   const handleSortFilter = (e) => {
     setFilters(f => ({ ...f, sort: e.target.value }));
     setPage(1);
+    fetchAvailableCount();
   };
 
   // Loading current user (guard)
@@ -794,8 +907,15 @@ export default function Products() {
           <div className="mb-8">
             <div className="flex items-center justify-between">
               <div className="hidden md:flex items-center space-x-4">
-                <div>
+                <div className="flex items-center space-x-3">
                   <h1 className="text-3xl font-bold text-gray-900">Products</h1>
+                  {!loading && totalAvailable > 0 && (
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                      {totalAvailable.toLocaleString()}
+                    </span>
+                  )}
+                </div>
+                <div>
                   <p className="mt-1 text-sm text-gray-500">Manage and organize your product inventory</p>
                 </div>
               </div>
@@ -932,7 +1052,8 @@ export default function Products() {
                       { key: 'active', label: 'Active', color: 'bg-green-100 text-green-700 hover:bg-green-200' },
                       { key: 'inactive', label: 'Inactive', color: 'bg-red-100 text-red-700 hover:bg-red-200' },
                       { key: 'no_photos', label: 'No Photos', color: 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200' },
-                      { key: 'no_tags', label: 'No Tags', color: 'bg-purple-100 text-purple-700 hover:bg-purple-200' }
+                      { key: 'no_tags', label: 'No Tags', color: 'bg-purple-100 text-purple-700 hover:bg-purple-200' },
+                      { key: 'no_description', label: 'No Description', color: 'bg-orange-100 text-orange-700 hover:bg-orange-200' }
                     ].map(({ key, label, color }) => (
                       <button
                         key={key}
@@ -979,6 +1100,8 @@ export default function Products() {
                     <option value="price_desc">Price: High to Low</option>
                     <option value="created_desc">Newest First</option>
                     <option value="created_asc">Oldest First</option>
+                    <option value="updated_desc">Last Updated First</option>
+                    <option value="updated_asc">Oldest Updated First</option>
                   </select>
                 </div>
 
@@ -990,6 +1113,7 @@ export default function Products() {
                     setFilters({ category: '', status: 'all', sort: 'name_asc', startsWith: 'all' });
                     setPage(1);
                     fetchProducts(1, '', { category: '', status: 'all', sort: 'name_asc', startsWith: 'all' });
+                    fetchAvailableCount();
                   }}
                   className="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
                 >

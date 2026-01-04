@@ -7,7 +7,10 @@ import {
   TabletSmartphone, Briefcase, Smartphone,
   Bug, Headphones, Moon,
   ShieldPlus, DollarSign,
-  IndianRupeeIcon, Zap, MessageSquare, Mail
+  IndianRupeeIcon, Zap, MessageSquare, Mail,
+  Castle,
+  CookingPot,
+  Calendar
 } from 'lucide-react';
 import { MdAdminPanelSettings } from 'react-icons/md';
 import toast from 'react-hot-toast';
@@ -145,12 +148,15 @@ const Layout = ({ children, title }) => {
 
   const menuItems = [
     { name: 'Dashboard', icon: Home, path: '/', roles: ['super_admin', 'admin', 'delivery_manager', 'inventory_manager', 'customer_service'] },
+    { name: 'Public Store', icon: Castle, path: '/public-store', roles: ['super_admin', 'admin', 'inventory_manager'], isNew: true },
     { name: 'Orders', icon: ShoppingCart, path: '/orders', roles: ['super_admin', 'admin', 'delivery_manager'] },
     { name: 'Products', icon: Package, path: '/products', roles: ['super_admin', 'admin', 'inventory_manager'] },
     { name: 'Add Product', icon: Plus, path: '/products/add', roles: ['super_admin', 'admin', 'inventory_manager'] },
     { name: 'Requested Products', icon: Shield, path: '/products/requests', roles: ['super_admin', 'admin', 'inventory_manager'] },
     { name: 'Categories', icon: ChartBarStacked, path: '/categories', roles: ['super_admin', 'admin', 'inventory_manager'] },
-    { name: 'Xpress (Beta)', icon: Zap, path: '/xpress', roles: ['super_admin', 'admin'] },
+    { name: 'Xpress', icon: Zap, path: '/xpress', roles: ['super_admin', 'admin'] },
+    { name: 'Services', icon: CookingPot, path: '/services', roles: ['super_admin', 'admin'], isNew: true },
+    { name: 'Events', icon: Calendar, path: '/events', roles: ['super_admin', 'admin'], isNew: true },
     { name: 'Careers', icon: Briefcase, path: '/careers', roles: ['super_admin', 'admin'] },
     { name: 'Users', icon: Users, path: '/users', roles: ['super_admin', 'admin'] },
     { name: 'User Analytics', icon: BarChart3, path: '/user-analytics', roles: ['super_admin'] },
@@ -166,7 +172,7 @@ const Layout = ({ children, title }) => {
     { name: 'Finance', icon: IndianRupeeIcon, path: '/finance', roles: ['super_admin', 'admin'] },
     { name: 'App Controls', icon: TabletSmartphone, path: '/app-controls', roles: ['super_admin', 'admin'] },
     { name: 'Bug Reports', icon: Bug, path: '/bug-reports', roles: ['super_admin'] },
-    { name: 'S3 Media Manager', icon: Package, path: '/s3-test', roles: ['super_admin'] },
+    { name: 'S3 Media Manager', icon: Package, path: '/s3-store', roles: ['super_admin'] },
     { name: 'Admin Management', icon: Shield, path: '/admin-management', roles: ['super_admin'] },
     { name: 'Security', icon: ShieldPlus, path: '/security', roles: ['super_admin'] },
     { name: 'Update Notes', icon: Bell, path: '/update-notes', roles: ['super_admin'] },
@@ -251,6 +257,11 @@ const Layout = ({ children, title }) => {
             >
               <item.icon size={20} />
               <span className="font-medium">{item.name}</span>
+              {item.isNew && (
+                <span className="ml-auto bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                  NEW
+                </span>
+              )}
             </button>
           ))}
         </nav>

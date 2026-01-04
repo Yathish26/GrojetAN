@@ -150,6 +150,52 @@ const MerchantInventory = () => {
     setPage(1);
   };
 
+  // Restock out of stock items
+  const handleRestock = async () => {
+    if (!window.confirm('Are you sure you want to restock all out of stock items? This will add 1 unit to each item that is currently out of stock.')) {
+      return;
+    }
+
+    try {
+      setUpdating(true);
+      const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/merchant-stores/${id}/inventory/restock`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.status === 401) {
+        localStorage.removeItem('adminUser');
+        navigate('/login');
+        return;
+      }
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.tokenValid === false) {
+          navigate('/login', { replace: true });
+          return;
+        }
+        if (data.success) {
+          toast.success(`Successfully restocked ${data.restockedCount} items`);
+          // Refetch inventory to show updated stock
+          fetchMerchantInventory({ page, search: searchTerm });
+        } else {
+          throw new Error(data.message || 'Failed to restock items');
+        }
+      } else {
+        throw new Error('Failed to restock items');
+      }
+    } catch (error) {
+      console.error('Error restocking items:', error);
+      toast.error(error.message || 'Failed to restock items');
+    } finally {
+      setUpdating(false);
+    }
+  };
+
   // Pagination handlers
   const handlePageChange = (newPage) => {
     if (newPage >= 1 && newPage <= totalPages) {
@@ -511,6 +557,30 @@ const MerchantInventory = () => {
                 </button>
               )}
             </div>
+          </div>
+
+          {/* Restock Button */}
+          <div className="mb-8">
+            <button
+              onClick={handleRestock}
+              disabled={updating}
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {updating ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Restocking...
+                </>
+              ) : (
+                <>
+                  <Package className="h-4 w-4 mr-2" />
+                  Restock Out of Stock
+                </>
+              )}
+            </button>
+            <p className="text-xs text-gray-500 mt-1">
+              Adds 1 unit to all out of stock items
+            </p>
           </div>
 
           {/* Inventory Stats */}

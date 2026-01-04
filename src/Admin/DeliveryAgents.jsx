@@ -125,11 +125,11 @@ const DeliveryAgents = () => {
 
   const handleForceOfflineAll = async () => {
     if (!isAuthorized) return;
-    
+
     const confirmed = window.confirm(
       'Are you sure you want to force all delivery agents offline? This will immediately disconnect all online agents.'
     );
-    
+
     if (!confirmed) return;
 
     try {
@@ -251,401 +251,518 @@ const DeliveryAgents = () => {
 
   return (
     <Layout title="Delivery Agents">
-      <div className="p-4 sm:p-6">
-        {/* Header Section */}
-        <div className="mb-6 sm:mb-8">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4 sm:mb-6">
-            <div>
-              <h1 className="text-xl sm:text-2xl font-bold text-gray-900 flex items-center">
-                <Truck className="mr-2 sm:mr-3 text-green-600" size={24} />
-                <span className="hidden sm:inline">Delivery Agents Management</span>
-                <span className="sm:hidden">Delivery Agents</span>
-              </h1>
-              <p className="text-gray-600 mt-1 text-sm sm:text-base">Manage and monitor delivery agents across your network</p>
-            </div>
-            <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
-              <button
-                onClick={() => navigate('/riders-zone')}
-                className="w-full sm:w-auto bg-blue-600 text-white px-4 py-2 hover:bg-blue-700 flex items-center justify-center gap-2 transition-colors duration-200"
-              >
-                <MapPin size={16} className="sm:w-4 sm:h-4" />
-                Riders Zone
-              </button>
-              <button
-                onClick={handleForceOfflineAll}
-                className="w-full sm:w-auto bg-red-600 text-white px-4 py-2 hover:bg-red-700 flex items-center justify-center gap-2 transition-colors duration-200"
-              >
-                <Ban size={16} className="sm:w-4 sm:h-4" />
-                Force Offline All
-              </button>
-              <button
-                onClick={() => navigate('/delivery-signup')}
-                className="w-full sm:w-auto bg-green-600 text-white px-4 py-2 hover:bg-green-700 flex items-center justify-center gap-2 transition-colors duration-200"
-              >
-                <Plus size={16} className="sm:w-4 sm:h-4" />
-                Add New Agent
-              </button>
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* Header */}
+          <div className="mb-8">
+            <div className="flex items-center justify-between">
+              <div className="hidden md:flex items-center space-x-4">
+                <div>
+                  <h1 className="text-3xl font-bold text-gray-900">Delivery Agents</h1>
+                  <p className="mt-1 text-sm text-gray-500">Manage and monitor all delivery agent accounts</p>
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={() => navigate('/riders-zone')}
+                  className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+                >
+                  <MapPin size={16} className="mr-2" />
+                  Riders Zone
+                </button>
+                <button
+                  onClick={handleForceOfflineAll}
+                  disabled={loading}
+                  className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {loading ? (
+                    <div className="animate-spin h-4 w-4 border-2 border-red-300 border-t-red-100 rounded-full mr-2"></div>
+                  ) : (
+                    <Ban size={16} className="mr-2" />
+                  )}
+                  {loading ? 'Processing...' : 'Force Offline All'}
+                </button>
+                <button
+                  onClick={() => navigate('/delivery-signup')}
+                  className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
+                >
+                  <Plus size={16} className="mr-2" />
+                  Add New Agent
+                </button>
+              </div>
             </div>
           </div>
 
           {/* Stats Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-            <StatCard
-              title="Total Agents"
-              value={stats.total || 0}
-              icon={Truck}
-              color="text-blue-600"
-            />
-            <StatCard
-              title="Active Agents"
-              value={stats.active || 0}
-              icon={CircleCheck}
-              color="text-yellow-600"
-            />
-            <StatCard
-              title="Online Now"
-              value={stats.online || 0}
-              icon={MapPin}
-              color="text-green-600"
-            />
-            <StatCard
-              title="Total Deliveries"
-              value={stats.totalDeliveries || 0}
-              icon={Star}
-              color="text-purple-600"
-            />
-          </div>
-        </div>
-
-        {/* Filters and Search */}
-        <div className="bg-white shadow-sm border border-gray-200 mb-4 sm:mb-6">
-          <div className="p-4 sm:p-6">
-            <div className="flex flex-col gap-4">
-              {/* Search */}
-              <form onSubmit={handleSearch} className="w-full">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
-                  <input
-                    type="text"
-                    placeholder="Search by name, email, or phone..."
-                    className="w-full pl-10 pr-4 py-2 sm:py-3 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors duration-200"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                  />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div className="bg-white shadow-lg rounded-lg overflow-hidden">
+              <div className="bg-green-600 px-6 py-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-blue-100 uppercase tracking-wide">Total Agents</p>
+                    <p className="text-3xl font-bold text-white">{stats.total || 0}</p>
+                  </div>
+                  <div className="w-8 h-8 bg-blue-200 flex items-center justify-center rounded-lg">
+                    <Truck className="w-5 h-5 text-blue-700" />
+                  </div>
                 </div>
-              </form>
+              </div>
+            </div>
+            <div className="bg-white shadow-lg rounded-lg overflow-hidden">
+              <div className="bg-green-600 px-6 py-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-blue-100 uppercase tracking-wide">Active Agents</p>
+                    <p className="text-3xl font-bold text-white">{stats.active || 0}</p>
+                  </div>
+                  <div className="w-8 h-8 bg-blue-200 flex items-center justify-center rounded-lg">
+                    <CircleCheck className="w-5 h-5 text-blue-700" />
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="bg-white shadow-lg rounded-lg overflow-hidden">
+              <div className="bg-green-600 px-6 py-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-blue-100 uppercase tracking-wide">Online Now</p>
+                    <p className="text-3xl font-bold text-white">{stats.online || 0}</p>
+                  </div>
+                  <div className="w-8 h-8 bg-blue-200 flex items-center justify-center rounded-lg">
+                    <MapPin className="w-5 h-5 text-blue-700" />
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="bg-white shadow-lg rounded-lg overflow-hidden">
+              <div className="bg-green-600 px-6 py-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-blue-100 uppercase tracking-wide">Total Deliveries</p>
+                    <p className="text-3xl font-bold text-white">{stats.totalDeliveries || 0}</p>
+                  </div>
+                  <div className="w-8 h-8 bg-blue-200 flex items-center justify-center rounded-lg">
+                    <Star className="w-5 h-5 text-blue-700" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Search and Filters */}
+          <div className="bg-white shadow-lg rounded-lg overflow-hidden mb-8">
+            <div className="bg-green-600 px-6 py-4">
+              <h2 className="text-xl font-semibold text-white flex items-center gap-3">
+                <Search className="w-6 h-6" />
+                Search & Filters
+              </h2>
+            </div>
+            <div className="p-6">
+              {/* Search Bar */}
+              <div className="mb-6">
+                <div className="flex gap-4">
+                  <div className="flex-1 max-w-lg">
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <Search className="h-5 w-5 text-gray-400" />
+                      </div>
+                      <input
+                        type="text"
+                        placeholder="Search agents by name, email, or phone..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                        className="block w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                      />
+                    </div>
+                  </div>
+                  <button
+                    onClick={handleSearch}
+                    className="inline-flex items-center px-6 py-3 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+                  >
+                    <Search size={16} className="mr-2" />
+                    Search
+                  </button>
+                </div>
+              </div>
 
               {/* Filters */}
-              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
-                <select
-                  value={filters.applicationStatus}
-                  onChange={(e) => handleFilterChange('applicationStatus', e.target.value)}
-                  className="flex-1 px-3 py-2 sm:py-3 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors duration-200"
-                >
-                  <option value="">All Applications</option>
-                  <option value="pending">Pending</option>
-                  <option value="approved">Approved</option>
-                  <option value="rejected">Rejected</option>
-                </select>
+              <div className="flex flex-wrap items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <Filter className="h-5 w-5 text-gray-500" />
+                  <span className="text-sm font-medium text-gray-700">Filters:</span>
+                </div>
 
-                <select
-                  value={filters.status}
-                  onChange={(e) => handleFilterChange('status', e.target.value)}
-                  className="flex-1 px-3 py-2 sm:py-3 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors duration-200"
-                >
-                  <option value="">All Status</option>
-                  <option value="active">Active</option>
-                  <option value="inactive">Inactive</option>
-                </select>
+                {/* Application Status Filter */}
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-gray-600">Application Status:</span>
+                  <div className="flex rounded-lg border border-gray-300 overflow-hidden">
+                    {[
+                      { key: '', label: 'All', color: 'bg-gray-100 text-gray-700 hover:bg-gray-200' },
+                      { key: 'pending', label: 'Pending', color: 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200' },
+                      { key: 'approved', label: 'Approved', color: 'bg-green-100 text-green-700 hover:bg-green-200' },
+                      { key: 'rejected', label: 'Rejected', color: 'bg-red-100 text-red-700 hover:bg-red-200' }
+                    ].map(({ key, label, color }) => (
+                      <button
+                        key={key}
+                        onClick={() => handleFilterChange('applicationStatus', key)}
+                        className={`px-3 py-1.5 text-xs font-medium transition-colors ${filters.applicationStatus === key
+                          ? color.replace('hover:', '')
+                          : 'bg-white text-gray-600 hover:bg-gray-50'
+                          } ${key !== '' ? 'border-l border-gray-300' : ''}`}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
 
-                <select
-                  value={filters.online}
-                  onChange={(e) => handleFilterChange('online', e.target.value)}
-                  className="flex-1 px-3 py-2 sm:py-3 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors duration-200"
-                >
-                  <option value="">All Online Status</option>
-                  <option value="true">Online</option>
-                  <option value="false">Offline</option>
-                </select>
+                {/* Status Filter */}
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-gray-600">Account Status:</span>
+                  <div className="flex rounded-lg border border-gray-300 overflow-hidden">
+                    {[
+                      { key: '', label: 'All', color: 'bg-gray-100 text-gray-700 hover:bg-gray-200' },
+                      { key: 'active', label: 'Active', color: 'bg-green-100 text-green-700 hover:bg-green-200' },
+                      { key: 'inactive', label: 'Inactive', color: 'bg-red-100 text-red-700 hover:bg-red-200' }
+                    ].map(({ key, label, color }) => (
+                      <button
+                        key={key}
+                        onClick={() => handleFilterChange('status', key)}
+                        className={`px-3 py-1.5 text-xs font-medium transition-colors ${filters.status === key
+                          ? color.replace('hover:', '')
+                          : 'bg-white text-gray-600 hover:bg-gray-50'
+                          } ${key !== '' ? 'border-l border-gray-300' : ''}`}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Online Status Filter */}
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-gray-600">Online Status:</span>
+                  <div className="flex rounded-lg border border-gray-300 overflow-hidden">
+                    {[
+                      { key: '', label: 'All', color: 'bg-gray-100 text-gray-700 hover:bg-gray-200' },
+                      { key: 'true', label: 'Online', color: 'bg-green-100 text-green-700 hover:bg-green-200' },
+                      { key: 'false', label: 'Offline', color: 'bg-red-100 text-red-700 hover:bg-red-200' }
+                    ].map(({ key, label, color }) => (
+                      <button
+                        key={key}
+                        onClick={() => handleFilterChange('online', key)}
+                        className={`px-3 py-1.5 text-xs font-medium transition-colors ${filters.online === key
+                          ? color.replace('hover:', '')
+                          : 'bg-white text-gray-600 hover:bg-gray-50'
+                          } ${key !== '' ? 'border-l border-gray-300' : ''}`}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
 
                 <button
                   onClick={fetchAgents}
-                  className="px-4 py-2 sm:py-3 bg-green-600 text-white hover:bg-green-700 flex items-center justify-center gap-2 transition-colors duration-200 whitespace-nowrap"
+                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
                 >
-                  <RefreshCw size={16} />
+                  <RefreshCw size={16} className="mr-2" />
                   Refresh
                 </button>
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Agents Table */}
-        <div className="bg-white shadow-sm border border-gray-200 overflow-hidden">
-          {loading ? (
-            <div className="flex justify-center items-center p-8 sm:p-12">
-              <div className="animate-spin rounded-full h-8 w-8 sm:h-12 sm:w-12 border-b-2 border-green-500"></div>
+          {/* Delivery Agents List */}
+          <div className="bg-white shadow-lg rounded-lg overflow-hidden mb-8">
+            <div className="bg-green-600 px-6 py-4">
+              <h2 className="text-xl font-semibold text-white flex items-center gap-3">
+                <Truck className="w-6 h-6" />
+                Delivery Agents ({agents.length})
+              </h2>
             </div>
-          ) : agents.length === 0 ? (
-            <div className="p-8 sm:p-12 text-center text-gray-500">
-              <Truck size={40} className="mx-auto mb-4 text-gray-300" />
-              <p className="text-sm sm:text-base">No delivery agents found</p>
-            </div>
-          ) : (
-            <>
-              {/* Desktop Table View */}
-              <div className="hidden md:block overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Agent Details
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Contact
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Status
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Vehicle
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        App Version
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Last Updated
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {agents.map((agent) => (
-                      <tr key={agent._id} className="hover:bg-gray-50 cursor-pointer" onClick={() => navigate(`/delivery-agents/${agent._id}`)}>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center">
-                            <div className="ml-4">
-                              <div className="text-sm font-medium text-gray-900">
-                                {agent.personalInfo.firstName} {agent.personalInfo.lastName}
-                              </div>
-                              <div className="text-sm text-gray-500">
-                                Zone: {agent.status.deliveryZone?.name || 'Not assigned'}
-                              </div>
-                              <div className="flex items-center mt-1 gap-2">
-                                {agent.status.isOnline && (
-                                  <>
-                                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
-                                      Online
-                                    </span>
-                                    <Bell
-                                      size={14}
-                                      className="text-green-500 cursor-pointer hover:text-green-600"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        sendAlert(agent.agentId);
-                                      }}
-                                    />
-                                  </>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">
-                            <div className="flex items-center gap-1">
-                              <Phone size={14} />
-                              {agent.personalInfo.phone}
-                            </div>
-                            <div className="flex items-center gap-1 mt-1">
-                              <Mail size={14} />
-                              {agent.personalInfo.email}
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(agent.status.applicationStatus)}`}>
-                            {getStatusIcon(agent.status.applicationStatus)}
-                            {agent.status.applicationStatus.replace('_', ' ')}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">
-                            <div className="capitalize">{agent.vehicleInfo.vehicleType}</div>
-                            <div className="text-xs text-gray-500">{agent.vehicleInfo.vehicleNumber}</div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">
-                            <div className="font-medium">
-                              {agent.authentication.deviceInfo?.appVersion || 'Unknown'}
-                            </div>
-                            <div className="text-xs text-gray-500">
-                              {agent.authentication.deviceInfo?.lastAppUpdate ? 
-                                `Updated: ${new Date(agent.authentication.deviceInfo.lastAppUpdate).toLocaleDateString('en-GB')}` : 
-                                'Not updated'
-                              }
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">
-                            {agent.status.currentLocation?.lastUpdated ? 
-                              new Date(agent.status.currentLocation.lastUpdated).toLocaleString('en-GB') : 
-                              'Never'
-                            }
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+
+            {loading ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="animate-spin h-8 w-8 border-4 border-indigo-200 border-t-indigo-600 rounded-full"></div>
+                <span className="ml-3 text-gray-600 font-medium">Loading delivery agents...</span>
               </div>
-
-              {/* Mobile Card View */}
-              <div className="md:hidden">
-                <div className="divide-y divide-gray-200">
-                  {agents.map((agent) => (
-                    <div key={agent._id} className="p-4 hover:bg-gray-50 cursor-pointer" onClick={() => navigate(`/delivery-agents/${agent._id}`)}>
-                      <div className="flex items-start gap-3">
-                        <div className="flex-shrink-0 w-12 h-12">
-                          <div className="w-full h-full rounded-full bg-gray-200 flex items-center justify-center">
-                            <User className="w-6 h-6 text-gray-400" />
-                          </div>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-start justify-between mb-2">
-                            <div className="flex-1 min-w-0">
-                              <h3 className="text-sm font-medium text-gray-900 truncate">
-                                {agent.personalInfo.firstName} {agent.personalInfo.lastName}
-                              </h3>
-                              <p className="text-xs text-gray-500 mt-0.5">
-                                Zone: {agent.status.deliveryZone?.name || 'Not assigned'}
-                              </p>
+            ) : agents.length === 0 ? (
+              <div className="p-8 sm:p-12 text-center text-gray-500">
+                <Truck size={40} className="mx-auto mb-4 text-gray-300" />
+                <p className="text-sm sm:text-base">No delivery agents found</p>
+              </div>
+            ) : (
+              <>
+                {/* Desktop Table View */}
+                <div className="hidden md:block overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Agent Details
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Contact
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Status
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Vehicle
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          App Version
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Last Updated
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {agents.map((agent) => (
+                        <tr key={agent._id} className="hover:bg-gray-50 cursor-pointer" onClick={() => navigate(`/delivery-agents/${agent._id}`)}>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center">
+                              <div className="ml-4">
+                                <div className="flex items-center gap-2">
+                                  <div className="text-sm font-medium text-gray-900">
+                                    {agent.personalInfo.firstName} {agent.personalInfo.lastName}
+                                  </div>
+                                  {agent.workInfo?.fullTime && (
+                                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                                      FT
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="text-sm text-gray-500">
+                                  Zone: {agent.status.deliveryZone?.name || 'Not assigned'}
+                                </div>
+                                <div className="flex items-center mt-1 gap-2">
+                                  {agent.status.isOnline && (
+                                    <>
+                                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                                        Online
+                                      </span>
+                                      <Bell
+                                        size={14}
+                                        className="text-green-500 cursor-pointer hover:text-green-600"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          sendAlert(agent.agentId);
+                                        }}
+                                      />
+                                    </>
+                                  )}
+                                </div>
+                              </div>
                             </div>
-                            <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ml-2 flex-shrink-0 ${getStatusColor(agent.status.applicationStatus)}`}>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm text-gray-900">
+                              <div className="flex items-center gap-1">
+                                <Phone size={14} />
+                                {agent.personalInfo.phone}
+                              </div>
+                              <div className="flex items-center gap-1 mt-1">
+                                <Mail size={14} />
+                                {agent.personalInfo.email}
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(agent.status.applicationStatus)}`}>
                               {getStatusIcon(agent.status.applicationStatus)}
                               {agent.status.applicationStatus.replace('_', ' ')}
                             </span>
-                          </div>
-
-                          <div className="flex items-center gap-3 mb-3">
-                            <div className="flex items-center gap-1 text-xs text-gray-600">
-                              <Phone size={12} />
-                              {agent.personalInfo.phone}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm text-gray-900">
+                              <div className="capitalize">{agent.vehicleInfo.vehicleType}</div>
+                              <div className="text-xs text-gray-500">{agent.vehicleInfo.vehicleNumber}</div>
                             </div>
-                            {agent.status.isOnline && (
-                              <div className="flex items-center gap-1">
-                                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
-                                  Online
-                                </span>
-                                <Bell
-                                  size={12}
-                                  className="text-green-500 cursor-pointer hover:text-green-600"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    sendAlert(agent.agentId);
-                                  }}
-                                />
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm text-gray-900">
+                              <div className="font-medium">
+                                {agent.authentication.deviceInfo?.appVersion || 'Unknown'}
                               </div>
-                            )}
-                          </div>
-
-                          <div className="grid grid-cols-2 gap-3 mb-3">
-                            <div className="text-xs">
-                              <span className="text-gray-500">Vehicle:</span>
-                              <div className="font-medium text-gray-900 capitalize">{agent.vehicleInfo.vehicleType}</div>
-                              <div className="text-gray-600">{agent.vehicleInfo.vehicleNumber}</div>
-                            </div>
-                            <div className="text-xs">
-                              <span className="text-gray-500">App Version:</span>
-                              <div className="font-medium text-gray-900">
-                                {agent.authentication?.appVersion || 'Unknown'}
-                              </div>
-                              <div className="text-gray-600 text-xs">
-                                {agent.authentication?.lastAppUpdate ? 
-                                  `Updated: ${new Date(agent.authentication.lastAppUpdate).toLocaleString('en-GB')}` : 
+                              <div className="text-xs text-gray-500">
+                                {agent.authentication.deviceInfo?.lastAppUpdate ?
+                                  `Updated: ${new Date(agent.authentication.deviceInfo.lastAppUpdate).toLocaleDateString('en-GB')}` :
                                   'Not updated'
                                 }
                               </div>
                             </div>
-                          </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm text-gray-900">
+                              {agent.status.currentLocation?.lastUpdated ?
+                                new Date(agent.status.currentLocation.lastUpdated).toLocaleString('en-GB') :
+                                'Never'
+                              }
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
 
-                          <div className="mb-3">
-                            <div className="text-xs">
-                              <span className="text-gray-500">Last Updated:</span>
-                              <div className="font-medium text-gray-900">
-                                {agent.status.currentLocation?.lastUpdated ? 
-                                  new Date(agent.status.currentLocation.lastUpdated).toLocaleString('en-GB') : 
-                                  'Never'
-                                }
+                {/* Mobile Card View */}
+                <div className="md:hidden">
+                  <div className="divide-y divide-gray-200">
+                    {agents.map((agent) => (
+                      <div key={agent._id} className="p-4 hover:bg-gray-50 cursor-pointer" onClick={() => navigate(`/delivery-agents/${agent._id}`)}>
+                        <div className="flex items-start gap-3">
+                          <div className="flex-shrink-0 w-12 h-12">
+                            <div className="w-full h-full rounded-full bg-gray-200 flex items-center justify-center">
+                              <User className="w-6 h-6 text-gray-400" />
+                            </div>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-start justify-between mb-2">
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2">
+                                  <h3 className="text-sm font-medium text-gray-900 truncate">
+                                    {agent.personalInfo.firstName} {agent.personalInfo.lastName}
+                                  </h3>
+                                  {agent.workInfo?.fullTime && (
+                                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 flex-shrink-0">
+                                      FT
+                                    </span>
+                                  )}
+                                </div>
+                                <p className="text-xs text-gray-500 mt-0.5">
+                                  Zone: {agent.status.deliveryZone?.name || 'Not assigned'}
+                                </p>
+                              </div>
+                              <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ml-2 flex-shrink-0 ${getStatusColor(agent.status.applicationStatus)}`}>
+                                {getStatusIcon(agent.status.applicationStatus)}
+                                {agent.status.applicationStatus.replace('_', ' ')}
+                              </span>
+                            </div>
+
+                            <div className="flex items-center gap-3 mb-3">
+                              <div className="flex items-center gap-1 text-xs text-gray-600">
+                                <Phone size={12} />
+                                {agent.personalInfo.phone}
+                              </div>
+                              {agent.status.isOnline && (
+                                <div className="flex items-center gap-1">
+                                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                                    Online
+                                  </span>
+                                  <Bell
+                                    size={12}
+                                    className="text-green-500 cursor-pointer hover:text-green-600"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      sendAlert(agent.agentId);
+                                    }}
+                                  />
+                                </div>
+                              )}
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-3 mb-3">
+                              <div className="text-xs">
+                                <span className="text-gray-500">Vehicle:</span>
+                                <div className="font-medium text-gray-900 capitalize">{agent.vehicleInfo.vehicleType}</div>
+                                <div className="text-gray-600">{agent.vehicleInfo.vehicleNumber}</div>
+                              </div>
+                              <div className="text-xs">
+                                <span className="text-gray-500">App Version:</span>
+                                <div className="font-medium text-gray-900">
+                                  {agent.authentication?.appVersion || 'Unknown'}
+                                </div>
+                                <div className="text-gray-600 text-xs">
+                                  {agent.authentication?.lastAppUpdate ?
+                                    `Updated: ${new Date(agent.authentication.lastAppUpdate).toLocaleString('en-GB')}` :
+                                    'Not updated'
+                                  }
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="mb-3">
+                              <div className="text-xs">
+                                <span className="text-gray-500">Last Updated:</span>
+                                <div className="font-medium text-gray-900">
+                                  {agent.status.currentLocation?.lastUpdated ?
+                                    new Date(agent.status.currentLocation.lastUpdated).toLocaleString('en-GB') :
+                                    'Never'
+                                  }
+                                </div>
                               </div>
                             </div>
                           </div>
                         </div>
                       </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Pagination */}
+                <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200">
+                  <div className="flex-1 flex justify-between sm:hidden">
+                    <button
+                      onClick={() => setPagination(prev => ({ ...prev, page: prev.page - 1 }))}
+                      disabled={pagination.page === 1}
+                      className="relative inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 transition-colors duration-200"
+                    >
+                      Previous
+                    </button>
+                    <button
+                      onClick={() => setPagination(prev => ({ ...prev, page: prev.page + 1 }))}
+                      disabled={pagination.page === pagination.totalPages}
+                      className="ml-3 relative inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 transition-colors duration-200"
+                    >
+                      Next
+                    </button>
+                  </div>
+                  <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                    <div>
+                      <p className="text-sm text-gray-700">
+                        Showing{' '}
+                        <span className="font-medium">
+                          {(pagination.page - 1) * pagination.limit + 1}
+                        </span>{' '}
+                        to{' '}
+                        <span className="font-medium">
+                          {Math.min(pagination.page * pagination.limit, pagination.total)}
+                        </span>{' '}
+                        of{' '}
+                        <span className="font-medium">{pagination.total}</span>{' '}
+                        results
+                      </p>
                     </div>
-                  ))}
+                    <div>
+                      <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
+                        <button
+                          onClick={() => setPagination(prev => ({ ...prev, page: prev.page - 1 }))}
+                          disabled={pagination.page === 1}
+                          className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 transition-colors duration-200"
+                        >
+                          Previous
+                        </button>
+                        <button
+                          onClick={() => setPagination(prev => ({ ...prev, page: prev.page + 1 }))}
+                          disabled={pagination.page === pagination.totalPages}
+                          className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 transition-colors duration-200"
+                        >
+                          Next
+                        </button>
+                      </nav>
+                    </div>
+                  </div>
                 </div>
-              </div>
+              </>
+            )}
+          </div>
 
-              {/* Pagination */}
-              <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200">
-                <div className="flex-1 flex justify-between sm:hidden">
-                  <button
-                    onClick={() => setPagination(prev => ({ ...prev, page: prev.page - 1 }))}
-                    disabled={pagination.page === 1}
-                    className="relative inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 transition-colors duration-200"
-                  >
-                    Previous
-                  </button>
-                  <button
-                    onClick={() => setPagination(prev => ({ ...prev, page: prev.page + 1 }))}
-                    disabled={pagination.page === pagination.totalPages}
-                    className="ml-3 relative inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 transition-colors duration-200"
-                  >
-                    Next
-                  </button>
-                </div>
-                <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-                  <div>
-                    <p className="text-sm text-gray-700">
-                      Showing{' '}
-                      <span className="font-medium">
-                        {(pagination.page - 1) * pagination.limit + 1}
-                      </span>{' '}
-                      to{' '}
-                      <span className="font-medium">
-                        {Math.min(pagination.page * pagination.limit, pagination.total)}
-                      </span>{' '}
-                      of{' '}
-                      <span className="font-medium">{pagination.total}</span>{' '}
-                      results
-                    </p>
-                  </div>
-                  <div>
-                    <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
-                      <button
-                        onClick={() => setPagination(prev => ({ ...prev, page: prev.page - 1 }))}
-                        disabled={pagination.page === 1}
-                        className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 transition-colors duration-200"
-                      >
-                        Previous
-                      </button>
-                      <button
-                        onClick={() => setPagination(prev => ({ ...prev, page: prev.page + 1 }))}
-                        disabled={pagination.page === pagination.totalPages}
-                        className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 transition-colors duration-200"
-                      >
-                        Next
-                      </button>
-                    </nav>
-                  </div>
-                </div>
-              </div>
-            </>
-          )}
         </div>
-
       </div>
     </Layout>
   );

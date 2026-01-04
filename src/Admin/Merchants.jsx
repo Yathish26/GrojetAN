@@ -814,14 +814,14 @@ const Merchants = () => {
                                                     Status
                                                 </th>
                                                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                                                    Today's Performance
+                                                    Actions
                                                 </th>
                                             </tr>
                                         </thead>
                                         <tbody className="bg-white divide-y divide-gray-200">
                                             {filteredMerchants.length === 0 ? (
                                                 <tr>
-                                                    <td colSpan="6" className="px-6 py-12 text-center text-gray-500">
+                                                    <td colSpan="4" className="px-6 py-12 text-center text-gray-500">
                                                         <div className="flex flex-col items-center gap-2">
                                                             <Store className="w-12 h-12 text-gray-300" />
                                                             <p className="text-lg font-medium">No merchants found</p>
@@ -873,27 +873,17 @@ const Merchants = () => {
                                                                 {getStatusIcon(merchant.storeStatus)} {merchant.storeStatus}
                                                             </span>
                                                         </td>
-                                                        <td className="px-6 py-4 whitespace-nowrap">
-                                                            <div className="flex items-center justify-between">
-                                                                <div>
-                                                                    <div className="text-sm font-semibold text-gray-900">
-                                                                        {merchant.todaysOrders} orders today
-                                                                    </div>
-                                                                    <div className="text-sm text-gray-500">
-                                                                        {formatCurrency(merchant.todaysRevenue)}
-                                                                    </div>
-                                                                </div>
-                                                                <button
-                                                                    onClick={(e) => {
-                                                                        e.stopPropagation();
-                                                                        openPushNotificationModal(merchant);
-                                                                    }}
-                                                                    className="ml-3 p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                                                                    title="Send Push Notification"
-                                                                >
-                                                                    <Bell size={16} />
-                                                                </button>
-                                                            </div>
+                                                        <td className="px-6 py-4 whitespace-nowrap text-center">
+                                                            <button
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    openPushNotificationModal(merchant);
+                                                                }}
+                                                                className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                                                title="Send Push Notification"
+                                                            >
+                                                                <Bell size={16} />
+                                                            </button>
                                                         </td>
                                                     </tr>
                                                 ))
@@ -950,12 +940,6 @@ const Merchants = () => {
                                                                 <div className="flex items-center gap-2 text-sm text-gray-600">
                                                                     <Phone className="w-4 h-4 text-gray-400" />
                                                                     <span>{merchant.phone}</span>
-                                                                </div>
-                                                            </div>
-
-                                                            <div className="flex items-center justify-between pt-2 border-t border-gray-200">
-                                                                <div className="text-sm text-gray-600">
-                                                                    <span className="font-medium">{merchant.todaysOrders}</span> orders • <span className="font-medium">{formatCurrency(merchant.todaysRevenue)}</span>
                                                                 </div>
                                                             </div>
                                                         </div>

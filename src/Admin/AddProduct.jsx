@@ -297,8 +297,24 @@ export default function AddProduct() {
         finalImages = uploadedUrls;
       }
 
-      // Prepare payload
-      const payload = {
+      // Filter valid variants
+      const validVariants = formData.variants.filter(variant => 
+        variant.name.trim() && 
+        variant.pricing?.mrp && 
+        variant.pricing.mrp > 0
+      ).map(variant => ({
+        ...variant,
+        weightDimension: variant.weightDimension?.value && variant.weightDimension?.unit ? {
+          value: parseFloat(variant.weightDimension.value),
+          unit: variant.weightDimension.unit
+        } : undefined,
+        pricing: {
+          mrp: parseFloat(variant.pricing.mrp)
+        }
+      })).filter(variant => variant.weightDimension); // Only include variants with weightDimension
+
+      // Prepare base product data
+      const baseProductData = {
         ...formData,
         thumbnail: finalThumbnail,
         pricing: {
@@ -306,68 +322,134 @@ export default function AddProduct() {
           mrp: parseFloat(formData.pricing.mrp),
         },
         tags: formData.tags,
-  // highlights removed from product schema
         images: finalImages.filter(img => img.trim() !== ''),
-  // searchKeywords removed from product schema
         customFields: formData.customFields.filter(field => field.key.trim() && field.value.trim()),
-        variants: formData.variants.filter(variant => 
-          variant.name.trim() && 
-          variant.pricing?.mrp && 
-          variant.pricing.mrp > 0
-        ).map(variant => ({
-          ...variant,
-          weightDimension: variant.weightDimension?.value && variant.weightDimension?.unit ? {
-            value: parseFloat(variant.weightDimension.value),
-            unit: variant.weightDimension.unit
-          } : undefined,
-          pricing: {
-            mrp: parseFloat(variant.pricing.mrp)
-          }
-        })).filter(variant => variant.weightDimension) // Only include variants with weightDimension
+        variants: [] // Remove variants from base product
       };
 
       // Only include weightDimension if both value and unit are provided
       if (formData.weightDimension?.value && formData.weightDimension?.unit) {
-        payload.weightDimension = {
+        baseProductData.weightDimension = {
           value: parseFloat(formData.weightDimension.value),
           unit: formData.weightDimension.unit
         };
       }
 
-      const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/products`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include', // use cookie for auth
-        body: JSON.stringify(payload)
-      });
+      let successMessage = '';
+      let createdCount = 0;
 
-      if (response.status === 401) {
-        toast.error('Authentication error. Please login again.');
-        navigate('/login');
-        return;
+      // If there are variants, create separate products for each
+      if (validVariants.length > 0) {
+        // Create base product first (if it has valid data)
+        if (formData.name.trim() && formData.pricing?.mrp > 0) {
+          const baseResponse = await fetch(`${import.meta.env.VITE_SERVER}/admin/products`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            credentials: 'include',
+            body: JSON.stringify(baseProductData)
+          });
+
+          if (baseResponse.status === 401) {
+            toast.error('Authentication error. Please login again.');
+            navigate('/login');
+            return;
+          }
+
+          if (baseResponse.ok) {
+            createdCount++;
+          } else {
+            const errorData = await baseResponse.json();
+            throw new Error(`Failed to create base product: ${errorData.message}`);
+          }
+        }
+
+        // Create separate products for each variant
+        for (const variant of validVariants) {
+          const variantProductData = {
+            name: variant.name, // Use only the variant name
+            description: formData.description,
+            brand: formData.brand,
+            category: formData.category,
+            hsnCode: formData.hsnCode,
+            thumbnail: finalThumbnail,
+            images: finalImages.filter(img => img.trim() !== ''),
+            tags: formData.tags,
+            customFields: formData.customFields.filter(field => field.key.trim() && field.value.trim()),
+            weightDimension: variant.weightDimension,
+            pricing: variant.pricing,
+            isActive: variant.isActive !== false,
+            variants: [] // No sub-variants
+          };
+
+          const variantResponse = await fetch(`${import.meta.env.VITE_SERVER}/admin/products`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            credentials: 'include',
+            body: JSON.stringify(variantProductData)
+          });
+
+          if (variantResponse.status === 401) {
+            toast.error('Authentication error. Please login again.');
+            navigate('/login');
+            return;
+          }
+
+          if (variantResponse.ok) {
+            createdCount++;
+          } else {
+            const errorData = await variantResponse.json();
+            console.warn(`Failed to create variant product "${variant.name}":`, errorData.message);
+            // Continue with other variants
+          }
+        }
+
+        successMessage = `${createdCount} product${createdCount > 1 ? 's' : ''} created successfully!`;
+      } else {
+        // No variants - create single product as usual
+        const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/products`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+          body: JSON.stringify(baseProductData)
+        });
+
+        if (response.status === 401) {
+          toast.error('Authentication error. Please login again.');
+          navigate('/login');
+          return;
+        }
+
+        const data = await response.json();
+        if (data.tokenValid === false) {
+          navigate('/login', { replace: true });
+          return;
+        }
+
+        if (response.ok) {
+          successMessage = `"${formData.name}" added successfully!`;
+          createdCount = 1;
+        } else {
+          throw new Error(data.message || 'Failed to add product');
+        }
       }
 
-      const data = await response.json();
-      if (data.tokenValid === false) {
-        navigate('/login', { replace: true });
-        return;
-      }
-
-      if (response.ok) {
-        toast.success(`"${formData.name}" added successfully!`);
-        // Reset form but keep category selection
+      if (createdCount > 0) {
+        toast.success(successMessage);
+        // Reset form
         setFormData({
           name: '',
           description: '',
-          // highlights removed
           images: [],
           thumbnail: '',
           brand: '',
           category: '',
           hsnCode: '',
-          // Weight/Dimension field
           weightDimension: {
             value: '',
             unit: ''
@@ -380,8 +462,6 @@ export default function AddProduct() {
           tags: [],
           customFields: []
         });
-      } else {
-        throw new Error(data.message || 'Failed to add product');
       }
     } catch (error) {
       toast.error(error.message);
@@ -396,13 +476,16 @@ export default function AddProduct() {
     }
   };
 
+  // Loading state
   if (checkingUser) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+        <div className="animate-spin h-12 w-12 border-4 border-green-200 border-t-green-600 rounded-full"></div>
       </div>
     );
   }
+
+  // Authorization check
   if (!isAuthorized) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen">

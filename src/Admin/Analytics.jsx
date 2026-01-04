@@ -12,7 +12,7 @@ import {
   PieChart,
   Download,
   RefreshCw,
-  ArrowUp,  
+  ArrowUp,
   ShoppingCart,
   Target,
   MapPin,
@@ -92,7 +92,7 @@ export default function Analytics() {
     }
   }, []);
 
-  useEffect(()=>{ fetchCurrentUser(); }, [fetchCurrentUser]);
+  useEffect(() => { fetchCurrentUser(); }, [fetchCurrentUser]);
   const isAuthorized = allowedRoles.includes(currentUser?.role);
 
   // Derived metrics
@@ -116,7 +116,8 @@ export default function Analytics() {
     successRateChange: 0,
     newCustomers: 0,
     returningCustomers: 0,
-    todaysOrders: 0,
+    todaysMerchantOrders: 0,
+    todaysXpressOrders: 0,
     topAreas: [],
     recentActivity: [],
     // Xpress Orders
@@ -269,7 +270,8 @@ export default function Analytics() {
       successRateChange: 0,
       newCustomers: 0,
       returningCustomers: 0,
-      todaysOrders: 0,
+      todaysMerchantOrders: 0,
+      todaysXpressOrders: 0,
       topAreas: [],
       recentActivity: []
     }));
@@ -322,7 +324,7 @@ export default function Analytics() {
     return (
       <Layout title="Analytics">
         <div className="flex flex-col items-center justify-center py-12">
-          <Ban className='w-16 h-16 text-red-500 mb-2'/>
+          <Ban className='w-16 h-16 text-red-500 mb-2' />
           <h2 className="text-xl font-semibold text-gray-800 mb-2">Access Denied</h2>
           <p className="text-gray-600">Only Admins and Super Admins can view analytics.</p>
         </div>
@@ -379,7 +381,7 @@ export default function Analytics() {
       },
       tooltip: {
         callbacks: {
-          label: function(context) {
+          label: function (context) {
             const label = context.label || '';
             const value = context.parsed;
             const total = context.dataset.data.reduce((a, b) => a + b, 0);
@@ -391,7 +393,7 @@ export default function Analytics() {
     }
   };
 
-  // Line chart for orders & revenue trend
+  // Line chart for orders trend
   const ordersLineData = {
     labels: chartLabels,
     datasets: [
@@ -410,15 +412,6 @@ export default function Analytics() {
         borderColor: 'rgba(239,68,68,1)',
         backgroundColor: 'rgba(239,68,68,0.2)',
         tension: 0.3
-      },
-      {
-        label: 'Revenue (₹)',
-        data: chartRevenue,
-        fill: false,
-        borderColor: 'rgba(59,130,246,1)',
-        backgroundColor: 'rgba(59,130,246,0.2)',
-        tension: 0.3,
-        yAxisID: 'y1'
       }
     ]
   };
@@ -429,13 +422,7 @@ export default function Analytics() {
       legend: { display: true }
     },
     scales: {
-      y: { beginAtZero: true, title: { display: true, text: 'Orders' } },
-      y1: {
-        beginAtZero: true,
-        position: 'right',
-        title: { display: true, text: 'Revenue (₹)' },
-        grid: { drawOnChartArea: false }
-      }
+      y: { beginAtZero: true, title: { display: true, text: 'Orders' } }
     }
   };
 
@@ -492,339 +479,149 @@ export default function Analytics() {
   return (
     <Layout title="Analytics">
       <div className="max-w-7xl mx-auto p-6 space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-800">Analytics Dashboard</h1>
-          <p className="text-gray-600">Comprehensive insights into your grocery delivery business</p>
-        </div>
-        <div className="flex items-center gap-3">
-          <select
-            value={timeRange}
-            onChange={(e) => setTimeRange(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-          >
-            <option value="today">Today</option>
-            <option value="7d">Last 7 Days</option>
-            <option value="30d">Last 30 Days</option>
-            <option value="90d">Last 3 Months</option>
-            <option value="1y">Last Year</option>
-          </select>
-          <button
-            onClick={refreshAnalytics}
-            disabled={refreshing}
-            type="button"
-            className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
-          >
-            <RefreshCw className={`w-5 h-5 ${refreshing ? 'animate-spin' : ''}`} />
-          </button>
-          <button
-            onClick={exportAnalytics}
-            type="button"
-            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-          >
-            <Download className="w-4 h-4" />
-            Export
-          </button>
-        </div>
-      </div>
-
-      {/* Key Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-7 gap-6">
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Merchant Orders</p>
-              <p className="text-2xl font-bold text-gray-800">{metrics.totalOrders}</p>
-              <div className="flex items-center gap-1 mt-1">
-                <ArrowUp className="w-4 h-4 text-green-500" />
-                <span className="text-sm text-green-600">+{metrics.orderGrowth}%</span>
-              </div>
-            </div>
-            <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-              <ShoppingCart className="w-6 h-6 text-blue-600" />
-            </div>
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-800">Analytics Dashboard</h1>
+            <p className="text-gray-600">Comprehensive insights into your grocery delivery business</p>
           </div>
-        </div>
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Xpress Orders</p>
-              <p className="text-2xl font-bold text-gray-800">{metrics.totalXpressOrders}</p>
-              <div className="flex items-center gap-1 mt-1">
-                <ArrowUp className="w-4 h-4 text-red-500" />
-                <span className="text-sm text-red-600">+{metrics.xpressOrderGrowth}%</span>
-              </div>
-            </div>
-            <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
-              <Package className="w-6 h-6 text-red-600" />
-            </div>
-          </div>
-        </div>
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Today's Orders</p>
-              <p className="text-2xl font-bold text-gray-800">{metrics.todaysOrders}</p>
-              <div className="flex items-center gap-1 mt-1">
-                <span className="text-sm text-gray-500">Orders today</span>
-              </div>
-            </div>
-            <div className="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center">
-              <Package className="w-6 h-6 text-indigo-600" />
-            </div>
-          </div>
-        </div>
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Merchant Revenue</p>
-              <p className="text-2xl font-bold text-gray-800">₹{metrics.totalRevenue.toLocaleString()}</p>
-              <div className="flex items-center gap-1 mt-1">
-                <ArrowUp className="w-4 h-4 text-green-500" />
-                <span className="text-sm text-green-600">+{metrics.revenueGrowth}%</span>
-              </div>
-            </div>
-            <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-              <DollarSign className="w-6 h-6 text-green-600" />
-            </div>
-          </div>
-        </div>
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Xpress Revenue</p>
-              <p className="text-2xl font-bold text-gray-800">₹{metrics.totalXpressRevenue.toLocaleString()}</p>
-              <div className="flex items-center gap-1 mt-1">
-                <ArrowUp className="w-4 h-4 text-red-500" />
-                <span className="text-sm text-red-600">+{metrics.xpressRevenueGrowth}%</span>
-              </div>
-            </div>
-            <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
-              <DollarSign className="w-6 h-6 text-red-600" />
-            </div>
-          </div>
-        </div>
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Active Customers</p>
-              <p className="text-2xl font-bold text-gray-800">{metrics.activeCustomers}</p>
-              <div className="flex items-center gap-1 mt-1">
-                <ArrowUp className="w-4 h-4 text-green-500" />
-                <span className="text-sm text-green-600">+{metrics.customerGrowth}%</span>
-              </div>
-            </div>
-            <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-              <Users className="w-6 h-6 text-purple-600" />
-            </div>
-          </div>
-        </div>
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Delivery Success Rate</p>
-              <p className="text-2xl font-bold text-gray-800">{metrics.deliverySuccessRate}%</p>
-              <div className="flex items-center gap-1 mt-1">
-                <ArrowUp className="w-4 h-4 text-green-500" />
-                <span className="text-sm text-green-600">+{metrics.successRateChange}%</span>
-              </div>
-            </div>
-            <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
-              <Target className="w-6 h-6 text-orange-600" />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Order Trends with Chart */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-          <div className="p-6 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-              <TrendingUp className="w-5 h-5" />
-              Order & Revenue Trends
-            </h2>
-            <p className="text-sm text-gray-600 mt-1">Merchant Orders (Green), Xpress Orders (Red), Revenue (Blue)</p>
-          </div>
-          <div className="p-6">
-            {analytics.length > 0 ? (
-              <Line data={ordersLineData} options={ordersLineOptions} height={230} />
-            ) : (
-              <div className="h-52 flex items-center justify-center text-gray-400">
-                No data available.
-              </div>
-            )}
-            {/* Order Status Breakdown */}
-            <div className="mt-6 grid grid-cols-2 gap-4">
-              <div className="text-center">
-                <p className="text-2xl font-bold text-green-600">{metrics.completedOrders}</p>
-                <p className="text-sm text-gray-600">Completed</p>
-              </div>
-              <div className="text-center">
-                <p className="text-2xl font-bold text-yellow-600">{metrics.pendingOrders}</p>
-                <p className="text-sm text-gray-600">Pending</p>
-              </div>
-            </div>
+          <div className="flex items-center gap-3">
+            <select
+              value={timeRange}
+              onChange={(e) => setTimeRange(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+            >
+              <option value="today">Today</option>
+              <option value="7d">Last 7 Days</option>
+              <option value="30d">Last 30 Days</option>
+              <option value="90d">Last 3 Months</option>
+              <option value="1y">Last Year</option>
+            </select>
+            <button
+              onClick={refreshAnalytics}
+              disabled={refreshing}
+              type="button"
+              className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+            >
+              <RefreshCw className={`w-5 h-5 ${refreshing ? 'animate-spin' : ''}`} />
+            </button>
+            <button
+              onClick={exportAnalytics}
+              type="button"
+              className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+            >
+              <Download className="w-4 h-4" />
+              Export
+            </button>
           </div>
         </div>
 
-        {/* Revenue Breakdown with Pie Chart */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-          <div className="p-6 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-              <PieChart className="w-5 h-5" />
-              Revenue Breakdown
-            </h2>
-          </div>
-          <div className="p-6">
-            <div className="h-64 flex items-center justify-center">
-              <Pie data={revenuePieData} options={revenuePieOptions} />
-            </div>
-            {/* Revenue Categories */}
-            <div className="mt-6 space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                  <span className="text-sm text-gray-600">Product Sales</span>
+        {/* Key Metrics */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-bold text-gray-600 uppercase">Merchant Orders</p>
+                <p className="text-2xl font-bold text-gray-800">{metrics.totalOrders}</p>
+                <div className="flex items-center gap-1 mt-1">
+                  <ArrowUp className="w-4 h-4 text-green-500" />
+                  <span className="text-sm text-green-600">+{metrics.orderGrowth}%</span>
                 </div>
-                <span className="font-medium">₹{metrics.productRevenue.toLocaleString()}</span>
               </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  <span className="text-sm text-gray-600">Delivery Fees</span>
+              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                <ShoppingCart className="w-6 h-6 text-blue-600" />
+              </div>
+            </div>
+          </div>
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-bold text-gray-600 uppercase">Xpress Orders</p>
+                <p className="text-2xl font-bold text-gray-800">{metrics.totalXpressOrders}</p>
+                <div className="flex items-center gap-1 mt-1">
+                  <ArrowUp className="w-4 h-4 text-red-500" />
+                  <span className="text-sm text-red-600">+{metrics.xpressOrderGrowth}%</span>
                 </div>
-                <span className="font-medium">₹{metrics.deliveryRevenue.toLocaleString()}</span>
               </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
-                  <span className="text-sm text-gray-600">Service Charges</span>
-                </div>
-                <span className="font-medium">₹{metrics.serviceRevenue.toLocaleString()}</span>
+              <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
+                <Package className="w-6 h-6 text-red-600" />
               </div>
             </div>
           </div>
-        </div>
-      </div>
-
-      {/* Orders Bar Chart Section */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <div className="flex items-center gap-2 mb-4">
-          <BarChart3 className="w-5 h-5" />
-          <span className="text-lg font-semibold text-gray-800">Order Counts by Day</span>
-        </div>
-        <div className="overflow-x-auto">
-          {analytics.length > 0 ? (
-            <Bar data={ordersBarData} options={ordersBarOptions} height={140} />
-          ) : (
-            <div className="h-32 flex items-center justify-center text-gray-400">
-              No data available.
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Performance Metrics */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Delivery Performance */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-          <div className="p-6 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-              <Truck className="w-5 h-5" />
-              Delivery Performance
-            </h2>
-          </div>
-          <div className="p-6 space-y-4">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
             <div className="flex items-center justify-between">
-              <span className="text-gray-600">On-time Delivery Rate</span>
-              <span className="font-medium text-green-600">{metrics.onTimeDeliveryRate}%</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-gray-600">Active Delivery Agents</span>
-              <span className="font-medium">{metrics.activeAgents}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-gray-600">Average Agent Rating</span>
-              <div className="flex items-center gap-1">
-                <Star className="w-4 h-4 text-yellow-500 fill-current" />
-                <span className="font-medium">{metrics.averageAgentRating}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Customer Insights */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-          <div className="p-6 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-              <Users className="w-5 h-5" />
-              Customer Insights
-            </h2>
-          </div>
-          <div className="p-6 space-y-4">
-            <div className="flex items-center justify-between">
-              <span className="text-gray-600">New Customers</span>
-              <span className="font-medium">{metrics.newCustomers}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-gray-600">Returning Customers</span>
-              <span className="font-medium">{metrics.returningCustomers}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-gray-600">Average Order Value</span>
-              <span className="font-medium">₹{metrics.averageOrderValue}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-      {/* Recent Activity */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-        <div className="p-6 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-            <Clock className="w-5 h-5" />
-            Recent Activity
-          </h2>
-        </div>
-        <div className="p-6">
-          <div className="space-y-4">
-            {metrics.recentActivity && metrics.recentActivity.length > 0 ? (
-              metrics.recentActivity.slice(0, 8).map((activity, index) => (
-                <div 
-                  key={index} 
-                  className="flex items-center gap-4 p-3 border border-gray-100 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
-                  onClick={() => activity._id && navigate(`/orders/${activity._id}`)}
-                >
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                    activity.type === 'order' ? 'bg-blue-100' :
-                    activity.type === 'delivery' ? 'bg-green-100' :
-                    activity.type === 'customer' ? 'bg-purple-100' :
-                    'bg-gray-100'
-                  }`}>
-                    {activity.type === 'order' && <Package className="w-4 h-4 text-blue-600" />}
-                    {activity.type === 'delivery' && <Truck className="w-4 h-4 text-green-600" />}
-                    {activity.type === 'customer' && <Users className="w-4 h-4 text-purple-600" />}
+              <div className="flex-1">
+                <p className="text-sm font-bold text-gray-600 uppercase">TODAY'S ORDERS</p>
+                <div className="grid grid-cols-2 gap-4 mt-2">
+                  <div>
+                    <p className="text-lg font-bold text-green-600">{metrics.todaysMerchantOrders || 0}</p>
+                    <p className="text-xs text-gray-500">Merchant</p>
                   </div>
-                  <div className="flex-1">
-                    <p className="font-medium text-gray-800">{activity.description}</p>
-                    <p className="text-sm text-gray-600">{new Date(activity.timestamp).toLocaleString('en-IN')}</p>
+                  <div>
+                    <p className="text-lg font-bold text-red-600">{metrics.todaysXpressOrders || 0}</p>
+                    <p className="text-xs text-gray-500">Xpress</p>
                   </div>
-                  {activity.value && (
-                    <div className="text-right">
-                      <p className="font-medium text-gray-800">{activity.value}</p>
-                    </div>
-                  )}
                 </div>
-              ))
-            ) : (
-              <p className="text-gray-500 text-center py-8">No recent activity</p>
-            )}
+                <div className="flex items-center gap-1 mt-2">
+                  <span className="text-sm text-gray-500">Total: {(metrics.todaysMerchantOrders || 0) + (metrics.todaysXpressOrders || 0)}</span>
+                </div>
+              </div>
+              <div className="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center">
+                <Package className="w-6 h-6 text-indigo-600" />
+              </div>
+            </div>
+          </div>
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-bold text-gray-600 uppercase">DELIVERY SUCCESS RATE</p>
+                <p className="text-2xl font-bold text-gray-800">{metrics.deliverySuccessRate}%</p>
+                <div className="flex items-center gap-1 mt-1">
+                  <ArrowUp className="w-4 h-4 text-green-500" />
+                  <span className="text-sm text-green-600">+{metrics.successRateChange}%</span>
+                </div>
+              </div>
+              <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
+                <Target className="w-6 h-6 text-orange-600" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Charts Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Order Trends with Chart */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+            <div className="p-6 border-b border-gray-200">
+              <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                <TrendingUp className="w-5 h-5" />
+                Order Trends
+              </h2>
+              <p className="text-sm text-gray-600 mt-1">Merchant Orders (Green), Xpress Orders (Red)</p>
+            </div>
+            <div className="p-6">
+              {analytics.length > 0 ? (
+                <Line data={ordersLineData} options={ordersLineOptions} height={230} />
+              ) : (
+                <div className="h-52 flex items-center justify-center text-gray-400">
+                  No data available.
+                </div>
+              )}
+              {/* Order Status Breakdown */}
+              <div className="mt-6 grid grid-cols-2 gap-4">
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-green-600">{metrics.completedOrders}</p>
+                  <p className="text-sm text-gray-600">Completed</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-yellow-600">{metrics.pendingOrders}</p>
+                  <p className="text-sm text-gray-600">Pending</p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
-    </div>
     </Layout>
   );
 }

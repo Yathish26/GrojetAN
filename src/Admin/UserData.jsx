@@ -43,6 +43,18 @@ export default function UserData() {
   const [selectedStatus, setSelectedStatus] = useState('');
   const [statusReason, setStatusReason] = useState('');
   const [adminRole, setAdminRole] = useState('');
+  const [isEditingPersonalInfo, setIsEditingPersonalInfo] = useState(false);
+  const [personalInfoForm, setPersonalInfoForm] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    dateOfBirth: '',
+    gender: ''
+  });
+  const [updatingPersonalInfo, setUpdatingPersonalInfo] = useState(false);
+  const [showNotificationModal, setShowNotificationModal] = useState(false);
+  const [notificationMessage, setNotificationMessage] = useState('');
+  const [sendingNotification, setSendingNotification] = useState(false);
 
   useEffect(() => {
     fetchUserDetails();
@@ -76,6 +88,13 @@ export default function UserData() {
         return;
       }
       setUser(data.user);
+      setPersonalInfoForm({
+        name: data.user.personalInfo?.name || '',
+        email: data.user.personalInfo?.email || '',
+        phone: data.user.personalInfo?.phone || '',
+        dateOfBirth: data.user.personalInfo?.dateOfBirth ? new Date(data.user.personalInfo.dateOfBirth).toISOString().split('T')[0] : '',
+        gender: data.user.personalInfo?.gender || ''
+      });
     } catch (error) {
       console.error('Error fetching user details:', error);
       toast.error(error.message);
@@ -321,6 +340,90 @@ export default function UserData() {
     }
   };
 
+  const handleUpdatePersonalInfo = async () => {
+    try {
+      setUpdatingPersonalInfo(true);
+      const response = await fetch(
+        `${import.meta.env.VITE_SERVER}/admin/users/${id}/personal-info`,
+        {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+          body: JSON.stringify({
+            name: personalInfoForm.name,
+            email: personalInfoForm.email,
+            phone: personalInfoForm.phone,
+            dateOfBirth: personalInfoForm.dateOfBirth ? new Date(personalInfoForm.dateOfBirth).toISOString() : null,
+            gender: personalInfoForm.gender
+          }),
+        }
+      );
+
+      if (response.ok) {
+        toast.success('Personal information updated successfully');
+        setIsEditingPersonalInfo(false);
+        fetchUserDetails(); // Refresh user details
+      } else {
+        const data = await response.json();
+        toast.error(data.message || 'Failed to update personal information');
+      }
+    } catch (error) {
+      console.error('Error updating personal information:', error);
+      toast.error('Failed to update personal information');
+    } finally {
+      setUpdatingPersonalInfo(false);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditingPersonalInfo(false);
+    setPersonalInfoForm({
+      name: user.personalInfo?.name || '',
+      email: user.personalInfo?.email || '',
+      phone: user.personalInfo?.phone || '',
+      dateOfBirth: user.personalInfo?.dateOfBirth ? new Date(user.personalInfo.dateOfBirth).toISOString().split('T')[0] : '',
+      gender: user.personalInfo?.gender || ''
+    });
+  };
+
+  const handleSendNotification = async () => {
+    if (!notificationMessage.trim()) {
+      toast.error('Please enter a notification message');
+      return;
+    }
+
+    try {
+      setSendingNotification(true);
+      const response = await fetch(
+        `${import.meta.env.VITE_SERVER}/admin/users/${id}/send-notification`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+          body: JSON.stringify({ message: notificationMessage }),
+        }
+      );
+
+      if (response.ok) {
+        toast.success('Notification sent successfully');
+        setShowNotificationModal(false);
+        setNotificationMessage('');
+      } else {
+        const data = await response.json();
+        toast.error(data.message || 'Failed to send notification');
+      }
+    } catch (error) {
+      console.error('Error sending notification:', error);
+      toast.error('Failed to send notification');
+    } finally {
+      setSendingNotification(false);
+    }
+  };
+
   if (loading) {
     return (
       <Layout title="User Details">
@@ -351,37 +454,46 @@ export default function UserData() {
 
   return (
     <Layout title="User Details">
-      <div className="max-w-7xl mx-auto p-6 space-y-6">
-        <Toaster
-          position="top-center"
-          toastOptions={{
-            duration: 4000,
-            style: {
-              background: '#fff',
-              color: '#333',
-              border: '1px solid #e5e7eb',
-              padding: '16px',
-              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
-            },
-            success: { iconTheme: { primary: '#10B981', secondary: '#fff' } },
-            error: { iconTheme: { primary: '#EF4444', secondary: '#fff' } },
-          }}
-        />
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <Toaster
+            position="top-center"
+            toastOptions={{
+              duration: 4000,
+              style: {
+                background: '#fff',
+                color: '#333',
+                border: '1px solid #e5e7eb',
+                padding: '16px',
+                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
+              },
+              success: { iconTheme: { primary: '#10B981', secondary: '#fff' } },
+              error: { iconTheme: { primary: '#EF4444', secondary: '#fff' } },
+            }}
+          />
 
-        {/* Header */}
-        <div className="flex items-center gap-4 mb-6">
-          <button
-            onClick={() => navigate('/users')}
-            className="flex items-center gap-2 text-gray-600 hover:text-gray-800 transition"
-          >
-            <FiArrowLeft className="text-xl" />
-            <span>Back to Users</span>
-          </button>
-        </div>
+          {/* Header */}
+          <div className="mb-8">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900">User Details</h1>
+                <p className="mt-1 text-sm text-gray-500">View and manage user information</p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={() => navigate('/users')}
+                  className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+                >
+                  <FiArrowLeft className="mr-2" />
+                  Back to Users
+                </button>
+              </div>
+            </div>
+          </div>
 
         {/* User Profile Header */}
-        <div className="bg-white shadow-lg overflow-hidden">
-          <div className="bg-gradient-to-r from-green-500 to-blue-500 px-6 py-8">
+        <div className="bg-white shadow-lg rounded-lg overflow-hidden mb-8">
+          <div className="bg-green-600 px-6 py-8">
             <div className="text-white">
               <h1 className="text-2xl font-bold">{user.personalInfo?.name || 'N/A'}</h1>
               <p className="text-green-100">{user.personalInfo?.email || user.personalInfo?.phone || 'N/A'}</p>
@@ -406,47 +518,47 @@ export default function UserData() {
             <div className="flex gap-2 flex-wrap">
               <button
                 onClick={() => navigate(`/users/${id}/orders`)}
-                className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white hover:bg-purple-700 transition disabled:opacity-50"
+                className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 disabled={updatingStatus}
               >
-                <FiShoppingBag className="text-sm" />
+                <FiShoppingBag className="mr-2" />
                 User Orders
               </button>
 
               <button
                 onClick={() => setShowWarnModal(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-yellow-600 text-white hover:bg-yellow-700 transition disabled:opacity-50"
+                className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-yellow-600 hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 disabled={updatingStatus}
               >
-                <FiAlertTriangle className="text-sm" />
+                <FiAlertTriangle className="mr-2" />
                 Issue Warning
               </button>
 
               <button
                 onClick={() => setShowStatusModal(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 transition disabled:opacity-50"
+                className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 disabled={updatingStatus}
               >
-                <FiEdit3 className="text-sm" />
+                <FiEdit3 className="mr-2" />
                 Update Status
               </button>
 
               {user.status?.accountStatus !== 'suspended' ? (
                 <button
                   onClick={() => setShowSuspendModal(true)}
-                  className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white hover:bg-red-700 transition disabled:opacity-50"
+                  className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   disabled={updatingStatus}
                 >
-                  <FiUserX className="text-sm" />
+                  <FiUserX className="mr-2" />
                   {updatingStatus ? 'Processing...' : 'Suspend User'}
                 </button>
               ) : (
                 <button
                   onClick={handleActivateUser}
-                  className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white hover:bg-green-700 transition disabled:opacity-50"
+                  className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   disabled={updatingStatus}
                 >
-                  <FiUserCheck className="text-sm" />
+                  <FiUserCheck className="mr-2" />
                   {updatingStatus ? 'Processing...' : 'Activate User'}
                 </button>
               )}
@@ -454,10 +566,10 @@ export default function UserData() {
               {adminRole === 'super_admin' && (
                 <button
                   onClick={handleDeleteUser}
-                  className="flex items-center gap-2 px-4 py-2 bg-red-800 text-white hover:bg-red-900 transition disabled:opacity-50"
+                  className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-red-800 hover:bg-red-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   disabled={updatingStatus}
                 >
-                  <FiTrash2 className="text-sm" />
+                  <FiTrash2 className="mr-2" />
                   {updatingStatus ? 'Deleting...' : 'Delete User'}
                 </button>
               )}
@@ -469,88 +581,179 @@ export default function UserData() {
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
             {/* Personal Information */}
-            <div className="bg-white shadow-lg">
-              <div className="px-6 py-4 border-b bg-gradient-to-r from-blue-50 to-indigo-50">
-                <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-                  <FiUser className="text-blue-600" />
-                  Personal Information
-                </h3>
+            <div className="bg-white shadow-lg rounded-lg overflow-hidden">
+              <div className="bg-green-600 px-6 py-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                    <FiUser className="w-6 h-6" />
+                    Personal Information
+                  </h3>
+                  {!isEditingPersonalInfo && (
+                    <button
+                      onClick={() => setIsEditingPersonalInfo(true)}
+                      className="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-lg text-green-600 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-white transition-colors"
+                    >
+                      <FiEdit3 className="mr-2" />
+                      Edit
+                    </button>
+                  )}
+                </div>
               </div>
               <div className="p-6 space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="flex items-center gap-3 p-3 bg-gray-50">
-                    <FiUser className="text-gray-400" />
-                    <div>
-                      <p className="text-sm text-gray-600">Full Name</p>
-                      <p className="font-medium">{user.personalInfo?.name || 'Not provided'}</p>
+                {!isEditingPersonalInfo ? (
+                  // Display Mode
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                      <FiUser className="text-gray-400" />
+                      <div>
+                        <p className="text-sm text-gray-600">Full Name</p>
+                        <p className="font-medium">{user.personalInfo?.name || 'Not provided'}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                      <FiMail className="text-gray-400" />
+                      <div>
+                        <p className="text-sm text-gray-600">Email</p>
+                        <p className="font-medium">{user.personalInfo?.email || 'Not provided'}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                      <FiPhone className="text-gray-400" />
+                      <div>
+                        <p className="text-sm text-gray-600">Phone</p>
+                        <p className="font-medium">{user.personalInfo?.phone || 'Not provided'}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                      <FiCalendar className="text-gray-400" />
+                      <div>
+                        <p className="text-sm text-gray-600">Date of Birth</p>
+                        <p className="font-medium">
+                          {user.personalInfo?.dateOfBirth
+                            ? new Date(user.personalInfo.dateOfBirth).toLocaleDateString('en-IN')
+                            : 'Not provided'
+                          }
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                      <FiUsers className="text-gray-400" />
+                      <div>
+                        <p className="text-sm text-gray-600">Gender</p>
+                        <p className="font-medium capitalize">{user.personalInfo?.gender || 'Not provided'}</p>
+                      </div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3 p-3 bg-gray-50">
-                    <FiMail className="text-gray-400" />
-                    <div>
-                      <p className="text-sm text-gray-600">Email</p>
-                      <p className="font-medium">{user.personalInfo?.email || 'Not provided'}</p>
+                ) : (
+                  // Edit Mode
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label className="block text-sm font-medium text-gray-700">Full Name</label>
+                        <input
+                          type="text"
+                          value={personalInfoForm.name}
+                          onChange={(e) => setPersonalInfoForm({...personalInfoForm, name: e.target.value})}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          disabled={updatingPersonalInfo}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="block text-sm font-medium text-gray-700">Email</label>
+                        <input
+                          type="email"
+                          value={personalInfoForm.email}
+                          onChange={(e) => setPersonalInfoForm({...personalInfoForm, email: e.target.value})}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          disabled={updatingPersonalInfo}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="block text-sm font-medium text-gray-700">Phone</label>
+                        <input
+                          type="tel"
+                          value={personalInfoForm.phone}
+                          onChange={(e) => setPersonalInfoForm({...personalInfoForm, phone: e.target.value})}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          disabled={updatingPersonalInfo}
+                          maxLength="10"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="block text-sm font-medium text-gray-700">Date of Birth</label>
+                        <input
+                          type="date"
+                          value={personalInfoForm.dateOfBirth}
+                          onChange={(e) => setPersonalInfoForm({...personalInfoForm, dateOfBirth: e.target.value})}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          disabled={updatingPersonalInfo}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="block text-sm font-medium text-gray-700">Gender</label>
+                        <select
+                          value={personalInfoForm.gender}
+                          onChange={(e) => setPersonalInfoForm({...personalInfoForm, gender: e.target.value})}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          disabled={updatingPersonalInfo}
+                        >
+                          <option value="">Select Gender</option>
+                          <option value="male">Male</option>
+                          <option value="female">Female</option>
+                          <option value="other">Other</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div className="flex justify-end gap-3 pt-4 border-t">
+                      <button
+                        onClick={handleCancelEdit}
+                        className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors"
+                        disabled={updatingPersonalInfo}
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={handleUpdatePersonalInfo}
+                        disabled={updatingPersonalInfo}
+                        className="px-4 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 disabled:bg-green-400 disabled:cursor-not-allowed rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
+                      >
+                        {updatingPersonalInfo ? 'Saving...' : 'Save Changes'}
+                      </button>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3 p-3 bg-gray-50">
-                    <FiPhone className="text-gray-400" />
-                    <div>
-                      <p className="text-sm text-gray-600">Phone</p>
-                      <p className="font-medium">{user.personalInfo?.phone || 'Not provided'}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3 p-3 bg-gray-50">
-                    <FiCalendar className="text-gray-400" />
-                    <div>
-                      <p className="text-sm text-gray-600">Date of Birth</p>
-                      <p className="font-medium">
-                        {user.personalInfo?.dateOfBirth
-                          ? new Date(user.personalInfo.dateOfBirth).toLocaleDateString('en-IN')
-                          : 'Not provided'
-                        }
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3 p-3 bg-gray-50">
-                    <FiUsers className="text-gray-400" />
-                    <div>
-                      <p className="text-sm text-gray-600">Gender</p>
-                      <p className="font-medium capitalize">{user.personalInfo?.gender || 'Not provided'}</p>
-                    </div>
-                  </div>
-                </div>
+                )}
               </div>
             </div>
 
             {/* Authentication & Security */}
-            <div className="bg-white shadow-lg">
-              <div className="px-6 py-4 border-b bg-gradient-to-r from-green-50 to-emerald-50">
-                <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-                  <FiShield className="text-green-600" />
+            <div className="bg-white shadow-lg rounded-lg overflow-hidden">
+              <div className="bg-green-600 px-6 py-4">
+                <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                  <FiShield className="w-6 h-6" />
                   Authentication & Security
                 </h3>
               </div>
               <div className="p-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="flex items-center justify-between p-3 bg-gray-50">
+                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                     <span className="text-gray-600">Email Verified</span>
                     <span className={`font-medium ${user.authentication?.isEmailVerified ? 'text-green-600' : 'text-red-600'}`}>
                       {user.authentication?.isEmailVerified ? '✓ Verified' : '✗ Not Verified'}
                     </span>
                   </div>
-                  <div className="flex items-center justify-between p-3 bg-gray-50">
+                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                     <span className="text-gray-600">Phone Verified</span>
                     <span className={`font-medium ${user.authentication?.isPhoneVerified ? 'text-green-600' : 'text-red-600'}`}>
                       {user.authentication?.isPhoneVerified ? '✓ Verified' : '✗ Not Verified'}
                     </span>
                   </div>
-                  <div className="flex items-center justify-between p-3 bg-gray-50">
+                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                     <span className="text-gray-600">Last Login</span>
                     <span className="font-medium">
                       {user.authentication?.lastLogin ? new Date(user.authentication.lastLogin).toLocaleString('en-IN') : 'Never'}
                     </span>
                   </div>
-                  <div className="flex items-center justify-between p-3 bg-gray-50">
+                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                     <span className="text-gray-600">Login Attempts</span>
                     <span className="font-medium">{user.authentication?.loginAttempts || 0}</span>
                   </div>
@@ -559,30 +762,30 @@ export default function UserData() {
             </div>
 
             {/* Order History & Statistics */}
-            <div className="bg-white shadow-lg">
-              <div className="px-6 py-4 border-b bg-gradient-to-r from-purple-50 to-pink-50">
-                <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-                  <FiShoppingBag className="text-purple-600" />
+            <div className="bg-white shadow-lg rounded-lg overflow-hidden">
+              <div className="bg-green-600 px-6 py-4">
+                <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                  <FiShoppingBag className="w-6 h-6" />
                   Order History & Statistics
                 </h3>
               </div>
               <div className="p-6">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                  <div className="text-center p-4 bg-gradient-to-br from-blue-50 to-blue-100">
+                  <div className="text-center p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg shadow">
                     <FiShoppingBag className="text-2xl text-blue-600 mx-auto mb-2" />
                     <p className="text-2xl font-bold text-gray-800">
                       {ordersCount}
                     </p>
                     <p className="text-sm text-gray-600">Total Orders</p>
                   </div>
-                  <div className="text-center p-4 bg-gradient-to-br from-green-50 to-green-100">
+                  <div className="text-center p-4 bg-gradient-to-br from-green-50 to-green-100 rounded-lg shadow">
                     <FiDollarSign className="text-2xl text-green-600 mx-auto mb-2" />
                     <p className="text-2xl font-bold text-gray-800">
                       ₹{user.orderHistory?.totalSpent?.toLocaleString() || 0}
                     </p>
                     <p className="text-sm text-gray-600">Total Spent</p>
                   </div>
-                  <div className="text-center p-4 bg-gradient-to-br from-yellow-50 to-yellow-100">
+                  <div className="text-center p-4 bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-lg shadow">
                     <FiTrendingUp className="text-2xl text-yellow-600 mx-auto mb-2" />
                     <p className="text-2xl font-bold text-gray-800">
                       ₹{user.orderHistory?.averageOrderValue?.toLocaleString() || 0}
@@ -592,17 +795,17 @@ export default function UserData() {
                 </div>
 
                 <div className="space-y-3">
-                  <div className="flex justify-between items-center p-3 bg-gray-50">
+                  <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
                     <span className="text-gray-600">Last Order Date</span>
                     <span className="font-medium">
                       {user.orderHistory?.lastOrderDate ? new Date(user.orderHistory.lastOrderDate).toLocaleDateString('en-IN') : 'No orders yet'}
                     </span>
                   </div>
-                  <div className="flex justify-between items-center p-3 bg-gray-50">
+                  <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
                     <span className="text-gray-600">Favorite Items Count</span>
                     <span className="font-medium">{user.orderHistory?.favoriteItems?.length || 0}</span>
                   </div>
-                  <div className="flex justify-between items-center p-3 bg-gray-50">
+                  <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
                     <span className="text-gray-600">Preferred Merchants</span>
                     <span className="font-medium">{user.orderHistory?.preferredMerchants?.length || 0}</span>
                   </div>
@@ -612,16 +815,16 @@ export default function UserData() {
 
             {/* Addresses */}
             {user.addresses && user.addresses.length > 0 && (
-              <div className="bg-white shadow-lg">
-                <div className="px-6 py-4 border-b bg-gradient-to-r from-red-50 to-pink-50">
-                  <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-                    <FiMapPin className="text-red-600" />
+              <div className="bg-white shadow-lg rounded-lg overflow-hidden">
+                <div className="bg-green-600 px-6 py-4">
+                  <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                    <FiMapPin className="w-6 h-6" />
                     Addresses ({user.addresses.length})
                   </h3>
                 </div>
                 <div className="p-6 space-y-4">
                   {user.addresses.map((address, index) => (
-                    <div key={index} className="border border-gray-200 p-4">
+                    <div key={index} className="border border-gray-200 p-4 rounded-lg">
                       <div className="flex items-start gap-3">
                         <FiMapPin className="text-gray-400 mt-1" />
                         <div className="flex-1">
@@ -657,10 +860,10 @@ export default function UserData() {
             )}
 
             {/* Preferences & Notifications */}
-            <div className="bg-white shadow-lg">
-              <div className="px-6 py-4 border-b bg-gradient-to-r from-teal-50 to-cyan-50">
-                <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-                  <FiSettings className="text-teal-600" />
+            <div className="bg-white shadow-lg rounded-lg overflow-hidden">
+              <div className="bg-green-600 px-6 py-4">
+                <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                  <FiSettings className="w-6 h-6" />
                   Preferences & Notifications
                 </h3>
               </div>
@@ -670,19 +873,19 @@ export default function UserData() {
                   <div className="space-y-3">
                     <h4 className="font-medium text-gray-800">Notification Settings</h4>
                     <div className="space-y-2">
-                      <div className="flex justify-between items-center p-2 bg-gray-50">
+                      <div className="flex justify-between items-center p-2 bg-gray-50 rounded-lg">
                         <span className="text-gray-600 text-sm">Email Notifications</span>
                         <span className={`text-xs px-2 py-1 ${user.notificationPreferences?.emailNotifications ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
                           {user.notificationPreferences?.emailNotifications ? 'On' : 'Off'}
                         </span>
                       </div>
-                      <div className="flex justify-between items-center p-2 bg-gray-50">
+                      <div className="flex justify-between items-center p-2 bg-gray-50 rounded-lg">
                         <span className="text-gray-600 text-sm">Order Updates</span>
                         <span className={`text-xs px-2 py-1 ${user.notificationPreferences?.orderUpdates ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
                           {user.notificationPreferences?.orderUpdates ? 'On' : 'Off'}
                         </span>
                       </div>
-                      <div className="flex justify-between items-center p-2 bg-gray-50">
+                      <div className="flex justify-between items-center p-2 bg-gray-50 rounded-lg">
                         <span className="text-gray-600 text-sm">Promotions</span>
                         <span className={`text-xs px-2 py-1 ${user.notificationPreferences?.promotionsOffers ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
                           {user.notificationPreferences?.promotionsOffers ? 'On' : 'Off'}
@@ -696,16 +899,16 @@ export default function UserData() {
 
             {/* Push Tokens & Device Info */}
             {user.pushTokens && user.pushTokens.length > 0 && (
-              <div className="bg-white shadow-lg">
-                <div className="px-6 py-4 border-b bg-gradient-to-r from-blue-50 to-indigo-50">
-                  <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-                    <FiBell className="text-blue-600" />
+              <div className="bg-white shadow-lg rounded-lg overflow-hidden">
+                <div className="bg-green-600 px-6 py-4">
+                  <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                    <FiBell className="w-6 h-6" />
                     Push Tokens & Devices ({user.pushTokens.length})
                   </h3>
                 </div>
                 <div className="p-6 space-y-4">
                   {user.pushTokens.map((tokenData, index) => (
-                    <div key={index} className="border border-gray-200 p-4">
+                    <div key={index} className="border border-gray-200 p-4 rounded-lg">
                       <div className="flex items-start gap-3">
                         <FiBell className="text-gray-400 mt-1" />
                         <div className="flex-1">
@@ -753,15 +956,15 @@ export default function UserData() {
           {/* Sidebar */}
           <div className="space-y-6">
             {/* Account Status */}
-            <div className="bg-white shadow-lg">
-              <div className="px-6 py-4 border-b bg-gradient-to-r from-gray-50 to-slate-50">
-                <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-                  <FiShield className="text-gray-600" />
+            <div className="bg-white shadow-lg rounded-lg overflow-hidden">
+              <div className="bg-green-600 px-6 py-4">
+                <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                  <FiShield className="w-6 h-6" />
                   Account Status
                 </h3>
               </div>
               <div className="p-6 space-y-3">
-                <div className="flex justify-between items-center p-2 bg-gray-50">
+                <div className="flex justify-between items-center p-2 bg-gray-50 rounded-lg">
                   <span className="text-gray-600 text-sm">Account Status</span>
                   <span className={`font-medium text-sm px-2 py-1 ${user.status?.accountStatus === 'active' ? 'bg-green-100 text-green-800' :
                       user.status?.accountStatus === 'active' ? 'bg-green-100 text-green-800' :
@@ -773,34 +976,44 @@ export default function UserData() {
                     {user.status?.accountStatus || 'active'}
                   </span>
                 </div>
-                <div className="flex justify-between items-center p-2 bg-gray-50">
+                <div className="flex justify-between items-center p-2 bg-gray-50 rounded-lg">
                   <span className="text-gray-600 text-sm">Active</span>
                   <span className={`font-medium ${user.status?.isActive ? 'text-green-600' : 'text-red-600'}`}>
                     {user.status?.isActive ? 'Yes' : 'No'}
                   </span>
                 </div>
                 {user.status?.suspensionReason && (
-                  <div className="p-3 bg-red-50 border border-red-200">
+                  <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
                     <p className="text-sm text-red-800 font-medium">Suspension Reason:</p>
                     <p className="text-sm text-red-700 mt-1">{user.status.suspensionReason}</p>
                   </div>
                 )}
-                <div className="flex justify-between items-center p-2 bg-gray-50">
+                <div className="flex justify-between items-center p-2 bg-gray-50 rounded-lg">
                   <span className="text-gray-600 text-sm">Member Since</span>
                   <span className="font-medium text-sm">{new Date(user.createdAt).toLocaleDateString('en-IN')}</span>
                 </div>
-                <div className="flex justify-between items-center p-2 bg-gray-50">
+                <div className="flex justify-between items-center p-2 bg-gray-50 rounded-lg">
                   <span className="text-gray-600 text-sm">Last Updated</span>
-                  <span className="font-medium text-sm">{new Date(user.updatedAt).toLocaleDateString('en-IN')}</span>
+                  <span className="font-medium text-sm">{new Date(user.updatedAt).toLocaleString('en-IN')}</span>
+                </div>
+                <div className="pt-3">
+                  <button
+                    onClick={() => setShowNotificationModal(true)}
+                    className="w-full inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled={sendingNotification}
+                  >
+                    <FiBell className="mr-2" />
+                    Send Notification
+                  </button>
                 </div>
               </div>
             </div>
 
             {/* Warnings */}
-            <div className="bg-white shadow-lg">
-              <div className="px-6 py-4 border-b bg-gradient-to-r from-yellow-50 to-amber-50">
-                <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-                  <FiAlertTriangle className="text-yellow-600" />
+            <div className="bg-white shadow-lg rounded-lg overflow-hidden">
+              <div className="bg-green-600 px-6 py-4">
+                <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                  <FiAlertTriangle className="w-6 h-6" />
                   Warnings ({user.warnings?.length || 0})
                 </h3>
               </div>
@@ -808,7 +1021,7 @@ export default function UserData() {
                 {user.warnings && user.warnings.length > 0 ? (
                   <div className="space-y-3">
                     {user.warnings.slice(0, 3).map((warning, index) => (
-                      <div key={index} className="border-l-4 border-yellow-400 pl-4 py-2 bg-yellow-50">
+                      <div key={index} className="border-l-4 border-yellow-400 pl-4 py-2 bg-yellow-50 rounded-lg">
                         <p className="text-sm text-gray-800">{warning.reason}</p>
                         <div className="flex justify-between items-center mt-2">
                           <p className="text-xs text-gray-500">
@@ -837,17 +1050,17 @@ export default function UserData() {
 
             {/* Support Tickets */}
             {user.support && user.support.tickets && user.support.tickets.length > 0 && (
-              <div className="bg-white shadow-lg">
-                <div className="px-6 py-4 border-b bg-gradient-to-r from-blue-50 to-indigo-50">
-                  <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-                    <FiClock className="text-blue-600" />
+              <div className="bg-white shadow-lg rounded-lg overflow-hidden">
+                <div className="bg-green-600 px-6 py-4">
+                  <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                    <FiClock className="w-6 h-6" />
                     Support Tickets ({user.support.tickets.length})
                   </h3>
                 </div>
                 <div className="p-6">
                   <div className="space-y-2">
                     {user.support.tickets.slice(0, 3).map((ticket, index) => (
-                      <div key={index} className="flex items-center justify-between p-2 bg-gray-50">
+                      <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
                         <span className="text-sm font-medium">#{ticket.ticketNumber || ticket._id}</span>
                         <span className={`text-xs px-2 py-1 ${ticket.status === 'open' ? 'bg-green-100 text-green-800' :
                             ticket.status === 'open' ? 'bg-green-100 text-green-800' :
@@ -865,17 +1078,17 @@ export default function UserData() {
 
             {/* Support Notes */}
             {user.support && user.support.notes && user.support.notes.length > 0 && (
-              <div className="bg-white shadow-lg">
-                <div className="px-6 py-4 border-b bg-gradient-to-r from-purple-50 to-violet-50">
-                  <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-                    <FiBell className="text-purple-600" />
+              <div className="bg-white shadow-lg rounded-lg overflow-hidden">
+                <div className="bg-green-600 px-6 py-4">
+                  <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                    <FiBell className="w-6 h-6" />
                     Support Notes ({user.support.notes.length})
                   </h3>
                 </div>
                 <div className="p-6">
                   <div className="space-y-3">
                     {user.support.notes.slice(0, 2).map((note, index) => (
-                      <div key={index} className="p-3 bg-gray-50">
+                      <div key={index} className="p-3 bg-gray-50 rounded-lg">
                         <p className="text-sm text-gray-800">{note.note}</p>
                         <div className="flex justify-between items-center mt-2">
                           <p className="text-xs text-gray-500">
@@ -1044,6 +1257,64 @@ export default function UserData() {
           </div>
         </div>
       )}
+
+      {/* Notification Modal */}
+      {showNotificationModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white max-w-md w-full rounded-lg shadow-xl">
+            <div className="px-6 py-4 border-b bg-green-600 rounded-t-lg">
+              <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                <FiBell className="w-5 h-5" />
+                Send Notification
+              </h3>
+            </div>
+            <div className="p-6">
+              <p className="text-gray-600 mb-4">
+                Send a push notification to <strong>{user?.personalInfo?.name || 'this user'}</strong>
+              </p>
+
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Notification Message
+                </label>
+                <textarea
+                  value={notificationMessage}
+                  onChange={(e) => setNotificationMessage(e.target.value)}
+                  placeholder="Enter your notification message..."
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+                  rows="4"
+                  disabled={sendingNotification}
+                  maxLength="500"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  {notificationMessage.length}/500 characters
+                </p>
+              </div>
+
+              <div className="flex justify-end gap-3">
+                <button
+                  onClick={() => {
+                    setShowNotificationModal(false);
+                    setNotificationMessage('');
+                  }}
+                  className="px-4 py-2 text-gray-600 hover:text-gray-800 transition"
+                  disabled={sendingNotification}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSendNotification}
+                  disabled={sendingNotification || !notificationMessage.trim()}
+                  className="px-4 py-2 bg-green-600 text-white hover:bg-green-700 transition disabled:opacity-50 rounded-lg"
+                >
+                  {sendingNotification ? 'Sending...' : 'Send Notification'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
     </Layout>
   );
 }
