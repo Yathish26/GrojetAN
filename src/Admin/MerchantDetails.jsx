@@ -795,6 +795,18 @@ const MerchantDetails = () => {
                     {operationalInfo.closingTime || 'N/A'}
                   </p>
                 </div>
+                <div>
+                  <label className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Home Store</label>
+                  <p className="mt-2 text-gray-900 text-base font-medium break-words">
+                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+                      operationalInfo.homeStore
+                        ? 'bg-green-100 text-green-800'
+                        : 'bg-gray-100 text-gray-800'
+                    }`}>
+                      {operationalInfo.homeStore ? 'Yes' : 'No'}
+                    </span>
+                  </p>
+                </div>
               </div>
             </div>
           </div>

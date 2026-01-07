@@ -20,6 +20,7 @@ export default function AppControls() {
   const [customerBulkNotificationText, setCustomerBulkNotificationText] = useState('');
   const [customerBulkNotificationResults, setCustomerBulkNotificationResults] = useState(null);
   const [customerBulkNotificationLoading, setCustomerBulkNotificationLoading] = useState(false);
+  const [customerBulkNotificationProgress, setCustomerBulkNotificationProgress] = useState(null);
 
   // New states for app controls
   const [taxPercentageOnDeliveryFee, setTaxPercentageOnDeliveryFee] = useState(18);
@@ -562,6 +563,9 @@ export default function AppControls() {
     }
 
     setCustomerBulkNotificationLoading(true);
+    setCustomerBulkNotificationProgress(null);
+    setCustomerBulkNotificationResults(null);
+
     try {
       const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/notifications/send-customer-bulk-notification`, {
         method: 'POST',
@@ -579,21 +583,44 @@ export default function AppControls() {
         return;
       }
 
-      const result = await response.json();
-      if (result.tokenValid === false) {
-        navigate('/login', { replace: true });
-        return;
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop(); // Keep incomplete line in buffer
+
+        for (const line of lines) {
+          if (line.trim()) {
+            try {
+              const data = JSON.parse(line.trim());
+
+              if (data.type === 'progress') {
+                setCustomerBulkNotificationProgress(data);
+              } else if (data.type === 'complete') {
+                setCustomerBulkNotificationResults(data);
+                setCustomerBulkNotificationProgress(null);
+                toast.success(`Bulk notification completed! Sent to ${data.data.totalSent} devices`);
+              } else if (data.type === 'error') {
+                toast.error(data.message || 'Failed to send bulk notification');
+                setCustomerBulkNotificationProgress(null);
+              }
+            } catch (parseError) {
+              console.error('Error parsing progress data:', parseError);
+            }
+          }
+        }
       }
 
-      if (result.success) {
-        setCustomerBulkNotificationResults(result);
-        toast.success(`Bulk notification sent to all customers`);
-      } else {
-        toast.error(result.message || 'Failed to send bulk notification');
-      }
     } catch (error) {
       console.error('Error sending customer bulk notification:', error);
       toast.error('Failed to send bulk notification');
+      setCustomerBulkNotificationProgress(null);
     } finally {
       setCustomerBulkNotificationLoading(false);
     }
@@ -601,6 +628,7 @@ export default function AppControls() {
 
   const clearCustomerBulkResults = () => {
     setCustomerBulkNotificationResults(null);
+    setCustomerBulkNotificationProgress(null);
   };
 
   return (
@@ -914,6 +942,33 @@ export default function AppControls() {
                 {customerBulkNotificationLoading ? 'Sending...' : 'Send to All Customers'}
               </button>
             </div>
+
+            {/* Progress Display */}
+            {customerBulkNotificationProgress && (
+              <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-sm font-medium text-blue-800">Sending Progress</h3>
+                  <span className="text-sm text-blue-600">
+                    {customerBulkNotificationProgress.processed} / {customerBulkNotificationProgress.totalDevices}
+                  </span>
+                </div>
+                <div className="w-full bg-blue-200 rounded-full h-2 mb-2">
+                  <div
+                    className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                    style={{
+                      width: `${customerBulkNotificationProgress.totalDevices > 0
+                        ? (customerBulkNotificationProgress.processed / customerBulkNotificationProgress.totalDevices) * 100
+                        : 0}%`
+                    }}
+                  ></div>
+                </div>
+                <div className="flex justify-between text-xs text-blue-600">
+                  <span>Success: {customerBulkNotificationProgress.successCount}</span>
+                  <span>Failed: {customerBulkNotificationProgress.failureCount}</span>
+                  <span>Total Users: {customerBulkNotificationProgress.totalUsers}</span>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 

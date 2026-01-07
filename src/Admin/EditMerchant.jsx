@@ -134,6 +134,7 @@ const EditMerchant = () => {
     deliveryPreferences: {
       deliveryType: 'platform_delivery'
     },
+    homeStore: false,
     productCategories: [],
     storeType: '',    // Documents (Text inputs)
     documents: {
@@ -236,6 +237,7 @@ const EditMerchant = () => {
             deliveryPreferences: {
               deliveryType: merchant.operationalInfo?.deliveryPreferences?.deliveryType || 'platform_delivery'
             },
+            homeStore: merchant.operationalInfo?.homeStore || false,
             storeType: merchant.operationalInfo?.storeType || '',
             productCategories: merchant.operationalInfo?.productCategories || [],
 
@@ -550,6 +552,7 @@ const EditMerchant = () => {
           deliveryPreferences: {
             deliveryType: formData.deliveryPreferences.deliveryType
           },
+          homeStore: formData.homeStore,
           storeType: formData.storeType,
           productCategories: formData.productCategories
         },
@@ -1190,6 +1193,17 @@ const EditMerchant = () => {
                     <option value="self_delivery">Self Delivery</option>
                     <option value="both">Both</option>
                   </select>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <input
+                    type="checkbox"
+                    checked={formData.homeStore}
+                    onChange={(e) => setFormData(prev => ({ ...prev, homeStore: e.target.checked }))}
+                    className="w-4 h-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                  />
+                  <label className="text-sm font-medium text-gray-700">
+                    Home Store
+                  </label>
                 </div>
               </div>
             </div>

@@ -1,58 +1,247 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import {
+    Home, Store, MapPin, Phone, Mail, Star, Package,
+    DollarSign, Calendar, User, Eye, Search, Filter
+} from 'lucide-react';
 import Layout from '../Components/Layout';
+import toast from 'react-hot-toast';
 
 const PublicStore = () => {
-  return (
-    <Layout title="Public Store">
-      <div className="min-h-screen bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {/* Header */}
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900">Public Store</h1>
-            <p className="mt-1 text-sm text-gray-500">Manage your public store settings and configuration</p>
-          </div>
+    const navigate = useNavigate();
+    const [stores, setStores] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [currentUser, setCurrentUser] = useState(null);
+    const [checkingUser, setCheckingUser] = useState(true);
 
-          {/* Content */}
-          <div className="bg-white shadow-lg rounded-lg overflow-hidden">
-            <div className="bg-orange-600 px-6 py-4">
-              <h2 className="text-xl font-semibold text-white flex items-center gap-3">
-                🏪 Public Store Management
-              </h2>
-            </div>
-            <div className="p-6">
-              <div className="text-center py-12">
-                <div className="mx-auto w-24 h-24 bg-orange-100 rounded-full flex items-center justify-center mb-4">
-                  <span className="text-4xl">🏪</span>
+    // Fetch current user
+    const fetchCurrentUser = async () => {
+        try {
+            const local = localStorage.getItem('adminUser');
+            if (local) {
+                setCurrentUser(JSON.parse(local));
+            } else {
+                const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/auth/profile`, { credentials: 'include' });
+                const data = await response.json();
+                if (data.tokenValid === false) {
+                    navigate('/login', { replace: true });
+                    return;
+                }
+                if (response.ok && data.admin) {
+                    setCurrentUser(data.admin);
+                    localStorage.setItem('adminUser', JSON.stringify(data.admin));
+                }
+            }
+        } catch (err) {
+            console.error('Failed to fetch current user', err);
+        } finally {
+            setCheckingUser(false);
+        }
+    };
+
+    // Fetch public stores
+    const fetchHomeStores = async () => {
+        try {
+            setLoading(true);
+            setError(null);
+
+            const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/merchant-stores/home-stores?page=1&limit=100`, {
+                method: 'GET',
+                credentials: 'include',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                if (data.tokenValid === false) {
+                    navigate('/login', { replace: true });
+                    return;
+                }
+                if (data.success) {
+                    setStores(data.merchants || []);
+                } else {
+                    throw new Error(data.message || 'Failed to fetch public stores');
+                }
+            } else {
+                throw new Error('Failed to fetch public stores');
+            }
+        } catch (error) {
+            console.error('Error fetching public stores:', error);
+            setError(error.message);
+            toast.error(error.message || 'Failed to load public stores');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchCurrentUser();
+    }, []);
+
+    useEffect(() => {
+        if (currentUser) {
+            fetchHomeStores();
+        }
+    }, [currentUser]);
+
+    // Filter stores based on search term
+    const filteredStores = stores.filter(store =>
+        store.displayName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        store.merchantId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        store.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        store.mobile?.includes(searchTerm)
+    );
+
+    if (checkingUser) {
+        return (
+            <Layout title="Public Store">
+                <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
                 </div>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">Public Store Coming Soon</h3>
-                <p className="text-gray-500 max-w-md mx-auto">
-                  This section will allow you to manage your public store settings, including store appearance,
-                  product visibility, customer access controls, and more.
-                </p>
-                <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4 max-w-2xl mx-auto">
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <div className="text-2xl mb-2">🎨</div>
-                    <h4 className="font-medium text-gray-900">Store Design</h4>
-                    <p className="text-sm text-gray-500">Customize store appearance</p>
-                  </div>
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <div className="text-2xl mb-2">📦</div>
-                    <h4 className="font-medium text-gray-900">Product Management</h4>
-                    <p className="text-sm text-gray-500">Control product visibility</p>
-                  </div>
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <div className="text-2xl mb-2">👥</div>
-                    <h4 className="font-medium text-gray-900">Customer Access</h4>
-                    <p className="text-sm text-gray-500">Manage customer permissions</p>
-                  </div>
+            </Layout>
+        );
+    }
+
+    return (
+        <Layout title="Public Store">
+            <div className="min-h-screen bg-gray-50">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                    {/* Header */}
+                    <div className="mb-8">
+                        <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
+                            <Home className="w-8 h-8 text-green-600" />
+                            Public Store
+                        </h1>
+                        <p className="mt-1 text-sm text-gray-500">
+                            Browse and manage public store merchants
+                        </p>
+                    </div>
+
+                    {/* Search and Filter */}
+                    <div className="mb-6">
+                        <div className="flex flex-col sm:flex-row gap-4">
+                            <div className="flex-1">
+                                <div className="relative">
+                                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                                    <input
+                                        type="text"
+                                        placeholder="Search public stores by name, ID, email, or phone..."
+                                        value={searchTerm}
+                                        onChange={(e) => setSearchTerm(e.target.value)}
+                                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Content */}
+                    {loading ? (
+                        <div className="flex items-center justify-center py-12">
+                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+                        </div>
+                    ) : error ? (
+                        <div className="bg-red-50 border border-red-200 rounded-lg p-6">
+                            <div className="flex items-center">
+                                <div className="flex-shrink-0">
+                                    <span className="text-red-400">⚠️</span>
+                                </div>
+                                <div className="ml-3">
+                                    <h3 className="text-sm font-medium text-red-800">Error loading public stores</h3>
+                                    <p classNames="mt-1 text-sm text-red-700">{error}</p>
+                                </div>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {filteredStores.length === 0 ? (
+                                <div className="col-span-full bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+                                    <div className="text-center">
+                                        <Home className="mx-auto h-12 w-12 text-gray-400" />
+                                        <h3 className="mt-2 text-sm font-medium text-gray-900">No public stores found</h3>
+                                        <p className="mt-1 text-sm text-gray-500">
+                                            {searchTerm ? 'Try adjusting your search criteria.' : 'There are no public stores available yet.'}
+                                        </p>
+                                    </div>
+                                </div>
+                            ) : (
+                                filteredStores.map((store) => (
+                                    <div key={store.id} className="bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
+                                        <div className="p-6">
+                                            {/* Store Header */}
+                                            <div className="flex items-start justify-between mb-4">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                                                        <Home className="w-5 h-5 text-green-600" />
+                                                    </div>
+                                                    <div>
+                                                        <h3 className="text-lg font-semibold text-gray-900 truncate">
+                                                            {store.displayName}
+                                                        </h3>
+                                                        <p className="text-sm text-gray-500">ID: {store.merchantId}</p>
+                                                    </div>
+                                                </div>
+                                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                    Public Store
+                                                </span>
+                                            </div>
+
+                                            {/* Store Details */}
+                                            <div className="space-y-3">
+                                                <div className="flex items-center gap-2 text-sm text-gray-600">
+                                                    <MapPin className="w-4 h-4" />
+                                                    <span className="truncate">
+                                                        {store.storeAddress?.city || 'Unknown City'}, {store.storeAddress?.state || 'Unknown State'}
+                                                    </span>
+                                                </div>
+
+                                                {store.inventoryCount > 0 && (
+                                                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                                                        <Package className="w-4 h-4" />
+                                                        <span>{store.inventoryCount} products in stock</span>
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            {/* Store Status */}
+                                            <div className="mt-4 pt-4 border-t border-gray-200">
+                                                <div className="flex items-center justify-between">
+                                                    <span className="text-sm font-medium text-gray-700">Status</span>
+                                                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${store.status === 'active'
+                                                            ? 'bg-green-100 text-green-800'
+                                                            : store.status === 'hold'
+                                                                ? 'bg-yellow-100 text-yellow-800'
+                                                                : 'bg-red-100 text-red-800'
+                                                        }`}>
+                                                        {store.status === 'active' ? 'Active' : store.status === 'hold' ? 'On Hold' : 'Banned'}
+                                                    </span>
+                                                </div>
+                                            </div>
+
+                                            {/* Action Button */}
+                                            <div className="mt-4">
+                                                <button
+                                                    onClick={() => navigate(`/public-store-details/${store.id}`)}
+                                                    className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors"
+                                                >
+                                                    <Eye className="w-4 h-4" />
+                                                    View Details
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    )}
                 </div>
-              </div>
             </div>
-          </div>
-        </div>
-      </div>
-    </Layout>
-  );
+        </Layout>
+    );
 };
 
 export default PublicStore;

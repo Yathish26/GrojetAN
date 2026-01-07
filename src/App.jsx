@@ -49,6 +49,7 @@ import ContactQur from './Admin/ContactQur.jsx'
 import EmailSender from './Admin/EmailSender.jsx'
 import S3store from './Admin/S3store.jsx'
 import PublicStore from './Admin/PublicStore.jsx'
+import PublicStoreDetails from './Admin/PublicStoreDetails.jsx'
 
 function App() {
   return (
@@ -85,6 +86,7 @@ function App() {
           {/* Main Dashboard */}
           <Route path="/" element={<AdminNew />} />
           <Route path="/public-store" element={<PublicStore />} />
+          <Route path="/public-store-details/:id" element={<PublicStoreDetails />} />
           
           {/* Authentication */}
           <Route path="/login" element={<AdminLogin />} />
