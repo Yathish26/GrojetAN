@@ -10,7 +10,8 @@ import {
   IndianRupeeIcon, Zap, MessageSquare, Mail,
   Castle,
   CookingPot,
-  Calendar
+  Calendar,
+  Cloud
 } from 'lucide-react';
 import { MdAdminPanelSettings } from 'react-icons/md';
 import toast from 'react-hot-toast';
@@ -169,6 +170,7 @@ const Layout = ({ children, title }) => {
     { name: 'Offers', icon: Gift, path: '/offers', roles: ['super_admin', 'admin'] },
     { name: 'Home Ads', icon: Smartphone, path: '/home-ads', roles: ['super_admin'] },
     { name: 'Analytics', icon: BarChart3, path: '/analytics', roles: ['super_admin', 'admin'] },
+    { name: 'Cloud Analytics', icon: Cloud, path: '/cloud-analytics', roles: ['super_admin', 'admin'], isNew: true },
     { name: 'Finance', icon: IndianRupeeIcon, path: '/finance', roles: ['super_admin', 'admin'] },
     { name: 'App Controls', icon: TabletSmartphone, path: '/app-controls', roles: ['super_admin', 'admin'] },
     { name: 'Bug Reports', icon: Bug, path: '/bug-reports', roles: ['super_admin'] },
