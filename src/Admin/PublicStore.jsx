@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     Home, Store, MapPin, Phone, Mail, Star, Package,
-    DollarSign, Calendar, User, Eye, Search, Filter
+    DollarSign, Calendar, User, Eye, Search, Filter, ToggleLeft, ToggleRight
 } from 'lucide-react';
 import Layout from '../Components/Layout';
 import toast from 'react-hot-toast';
@@ -15,6 +15,8 @@ const PublicStore = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [currentUser, setCurrentUser] = useState(null);
     const [checkingUser, setCheckingUser] = useState(true);
+    const [publicStoreEnabled, setPublicStoreEnabled] = useState(true);
+    const [updatingStatus, setUpdatingStatus] = useState(false);
 
     // Fetch current user
     const fetchCurrentUser = async () => {
@@ -78,6 +80,56 @@ const PublicStore = () => {
         }
     };
 
+    // Fetch public store status
+    const fetchPublicStoreStatus = async () => {
+        try {
+            const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/app-controls/public-store-status`, {
+                method: 'GET',
+                credentials: 'include',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                setPublicStoreEnabled(data.publicStoreEnabled);
+            } else {
+                console.error('Failed to fetch public store status');
+            }
+        } catch (error) {
+            console.error('Error fetching public store status:', error);
+        }
+    };
+
+    // Update public store status
+    const updatePublicStoreStatus = async (enabled) => {
+        try {
+            setUpdatingStatus(true);
+            const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/app-controls/public-store-status`, {
+                method: 'PATCH',
+                credentials: 'include',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ publicStoreEnabled: enabled }),
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                setPublicStoreEnabled(data.publicStoreEnabled);
+                toast.success(`Public store ${enabled ? 'enabled' : 'disabled'} successfully`);
+            } else {
+                toast.error('Failed to update public store status');
+            }
+        } catch (error) {
+            console.error('Error updating public store status:', error);
+            toast.error('Failed to update public store status');
+        } finally {
+            setUpdatingStatus(false);
+        }
+    };
+
     useEffect(() => {
         fetchCurrentUser();
     }, []);
@@ -85,6 +137,7 @@ const PublicStore = () => {
     useEffect(() => {
         if (currentUser) {
             fetchHomeStores();
+            fetchPublicStoreStatus();
         }
     }, [currentUser]);
 
@@ -112,13 +165,35 @@ const PublicStore = () => {
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                     {/* Header */}
                     <div className="mb-8">
-                        <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-                            <Home className="w-8 h-8 text-green-600" />
-                            Public Store
-                        </h1>
-                        <p className="mt-1 text-sm text-gray-500">
-                            Browse and manage public store merchants
-                        </p>
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
+                                    <Home className="w-8 h-8 text-green-600" />
+                                    Public Store
+                                </h1>
+                                <p className="mt-1 text-sm text-gray-500">
+                                    Browse and manage public store merchants
+                                </p>
+                            </div>
+                            <div className="flex items-center gap-3">
+                                <span className="text-sm font-medium text-gray-700">
+                                    Public Store {publicStoreEnabled ? 'Enabled' : 'Disabled'}
+                                </span>
+                                <button
+                                    onClick={() => updatePublicStoreStatus(!publicStoreEnabled)}
+                                    disabled={updatingStatus}
+                                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 ${
+                                        publicStoreEnabled ? 'bg-green-600' : 'bg-gray-200'
+                                    } ${updatingStatus ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                >
+                                    <span
+                                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                                            publicStoreEnabled ? 'translate-x-6' : 'translate-x-1'
+                                        }`}
+                                    />
+                                </button>
+                            </div>
+                        </div>
                     </div>
 
                     {/* Search and Filter */}
@@ -152,7 +227,7 @@ const PublicStore = () => {
                                 </div>
                                 <div className="ml-3">
                                     <h3 className="text-sm font-medium text-red-800">Error loading public stores</h3>
-                                    <p classNames="mt-1 text-sm text-red-700">{error}</p>
+                                    <p className="mt-1 text-sm text-red-700">{error}</p>
                                 </div>
                             </div>
                         </div>
