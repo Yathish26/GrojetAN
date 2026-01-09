@@ -15,6 +15,7 @@ export default function AppControls() {
   const [bulkSelectedApps, setBulkSelectedApps] = useState([]);
   const [bulkNotificationResults, setBulkNotificationResults] = useState(null);
   const [bulkNotificationLoading, setBulkNotificationLoading] = useState(false);
+  const [sendToClosedStores, setSendToClosedStores] = useState(false);
 
   // Customer bulk notifications states
   const [customerBulkNotificationText, setCustomerBulkNotificationText] = useState('');
@@ -508,23 +509,39 @@ export default function AppControls() {
       toast.error('Please enter notification text');
       return;
     }
-    if (bulkSelectedApps.length === 0) {
-      toast.error('Please select at least one app to send to');
+    if (bulkSelectedApps.length === 0 && !sendToClosedStores) {
+      toast.error('Please select at least one app to send to or check "Merchants with Closed Stores"');
       return;
     }
 
     setBulkNotificationLoading(true);
     try {
-      const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/notifications/send-bulk-notification`, {
+      let response;
+      let endpoint;
+      let requestBody;
+
+      if (sendToClosedStores) {
+        // Send to merchants with closed stores
+        endpoint = `${import.meta.env.VITE_SERVER}/admin/notifications/send-closed-stores-notification`;
+        requestBody = {
+          message: bulkNotificationText,
+        };
+      } else {
+        // Send regular bulk notification
+        endpoint = `${import.meta.env.VITE_SERVER}/admin/notifications/send-bulk-notification`;
+        requestBody = {
+          message: bulkNotificationText,
+          appType: bulkSelectedApps.join(', '),
+        };
+      }
+
+      response = await fetch(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         credentials: 'include',
-        body: JSON.stringify({
-          message: bulkNotificationText,
-          appType: bulkSelectedApps.join(', '),
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       if (response.status === 401) {
@@ -540,7 +557,10 @@ export default function AppControls() {
 
       if (result.success) {
         setBulkNotificationResults(result);
-        toast.success(`Bulk notification sent to ${bulkSelectedApps.join(', ')}`);
+        const targetDescription = sendToClosedStores 
+          ? 'merchants with closed stores' 
+          : bulkSelectedApps.join(', ');
+        toast.success(`Bulk notification sent to ${targetDescription}`);
       } else {
         toast.error(result.message || 'Failed to send bulk notification');
       }
@@ -833,6 +853,15 @@ export default function AppControls() {
                     <span className="text-sm text-gray-700">{app}</span>
                   </label>
                 ))}
+                <label className="flex items-center cursor-pointer p-2 sm:p-0 border sm:border-0 border-gray-200 rounded-lg sm:rounded-none">
+                  <input
+                    type="checkbox"
+                    checked={sendToClosedStores}
+                    onChange={(e) => setSendToClosedStores(e.target.checked)}
+                    className="mr-2 text-green-600 focus:ring-green-500 h-4 w-4"
+                  />
+                  <span className="text-sm text-gray-700">Merchants with Closed Stores</span>
+                </label>
               </div>
             </div>
 
@@ -843,7 +872,7 @@ export default function AppControls() {
                 disabled={bulkNotificationLoading}
                 className="w-full sm:w-auto px-4 sm:px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-green-400 disabled:cursor-not-allowed transition-colors text-sm font-medium"
               >
-                {bulkNotificationLoading ? 'Sending...' : 'Send Bulk Notification'}
+                {bulkNotificationLoading ? 'Sending...' : sendToClosedStores ? 'Send to Closed Stores' : 'Send Bulk Notification'}
               </button>
             </div>
           </div>

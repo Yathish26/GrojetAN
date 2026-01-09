@@ -51,8 +51,6 @@ export const WebSocketProvider = ({ children }) => {
         // Note: Admin auth uses cookies, so we don't need to send token in auth
         const adminToken = localStorage.getItem('adminToken');
 
-        console.log('🔌 [WS] Connecting to WebSocket server...');
-
         // Connect to the server (admin auth is handled via cookies)
         socketRef.current = io(import.meta.env.VITE_SERVER, {
           // Remove auth token since admin uses cookie-based auth
@@ -64,14 +62,12 @@ export const WebSocketProvider = ({ children }) => {
         });
 
         socketRef.current.on('connect', () => {
-          console.log('✅ [WS] Connected to WebSocket server');
           setIsConnected(true);
 
           // Join admin room (send adminId/token if available)
           try {
             const adminToken = localStorage.getItem('adminToken');
             const adminId = localStorage.getItem('adminId');
-            console.log('🔑 [WS] Joining admin room with:', { adminId, hasToken: !!adminToken });
             socketRef.current.emit('join-admin', { adminId, token: adminToken });
           } catch (e) {
             console.error('❌ [WS] Error joining admin room:', e);
@@ -80,7 +76,6 @@ export const WebSocketProvider = ({ children }) => {
         });
 
         socketRef.current.on('disconnect', () => {
-          console.log('❌ [WS] Disconnected from WebSocket server');
           setIsConnected(false);
         });
 
@@ -91,8 +86,6 @@ export const WebSocketProvider = ({ children }) => {
 
         // Listen for agent location updates
         socketRef.current.on('agent-location-update', (data) => {
-          console.log('📍 [WS] Agent location update received:', data);
-          console.log('🎯 [WS] Heading received:', data.heading, 'Type:', typeof data.heading);
           setAgentLocations(prev => {
             const updated = { ...prev };
             const prevEntry = prev[data.agentId];
@@ -131,7 +124,6 @@ export const WebSocketProvider = ({ children }) => {
 
         // Listen for agent offline events
         socketRef.current.on('agent-offline', (data) => {
-          console.log('🔴 [WS] Agent went offline:', data.agentId);
           setAgentLocations(prev => {
             const updated = { ...prev };
             delete updated[data.agentId];
@@ -141,7 +133,6 @@ export const WebSocketProvider = ({ children }) => {
 
         // Listen for agent status updates
         socketRef.current.on('agent-status-update', (data) => {
-          console.log('🔄 [WS] Agent status update:', data);
           if (!data.isOnline) {
             // If agent went offline, remove from locations
             setAgentLocations(prev => {
@@ -164,7 +155,6 @@ export const WebSocketProvider = ({ children }) => {
               if (entry.timestamp && (now - new Date(entry.timestamp)) > 300000) { // 5 minutes
                 delete updated[agentId];
                 cleaned = true;
-                console.log('🧹 [WS] Cleaned up stale location for agent:', agentId);
               }
             });
             
@@ -185,7 +175,6 @@ export const WebSocketProvider = ({ children }) => {
     // Cleanup on unmount
     return () => {
       if (socketRef.current) {
-        console.log('🔌 [WS] Disconnecting WebSocket...');
         socketRef.current.disconnect();
         socketRef.current = null;
         setIsConnected(false);

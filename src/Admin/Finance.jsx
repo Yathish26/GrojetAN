@@ -6,7 +6,8 @@ import {
   TrendingDown,
   CreditCard,
   Wallet,
-  BarChart3
+  BarChart3,
+  RefreshCw
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Layout from '../Components/Layout';
@@ -42,6 +43,8 @@ export default function Finance() {
   const [loading, setLoading] = useState(false);
   const [selectedPeriod, setSelectedPeriod] = useState('7days');
   const [chartData, setChartData] = useState([]);
+  const [transactions, setTransactions] = useState([]);
+  const [loadingTransactions, setLoadingTransactions] = useState(false);
 
   // Map frontend period to API period
   const getApiPeriod = (period) => {
@@ -237,6 +240,22 @@ export default function Finance() {
 
   const allowedRoles = ['super_admin', 'admin'];
 
+  // Function to fetch transactions
+  const fetchTransactions = async () => {
+    setLoadingTransactions(true);
+    try {
+      const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/analytics/transactions`, { credentials: 'include' });
+      const data = await response.json();
+      if (data.success) {
+        setTransactions(data.transactions);
+      }
+    } catch (err) {
+      console.error('Failed to fetch transactions', err);
+    } finally {
+      setLoadingTransactions(false);
+    }
+  };
+
   useEffect(() => {
     const fetchChartData = async () => {
       try {
@@ -255,6 +274,12 @@ export default function Finance() {
       fetchChartData();
     }
   }, [selectedPeriod, currentUser]);
+
+  useEffect(() => {
+    if (currentUser) {
+      fetchTransactions();
+    }
+  }, [currentUser]);
 
   useEffect(() => {
     const fetchCurrentUser = async () => {
@@ -391,6 +416,107 @@ export default function Finance() {
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Transaction History Section */}
+        <div className="bg-white rounded-lg shadow p-6 mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-semibold text-gray-900">Recent Transactions</h2>
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={fetchTransactions}
+                disabled={loadingTransactions}
+                className="p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Refresh transactions"
+              >
+                <RefreshCw className={`h-5 w-5 ${loadingTransactions ? 'animate-spin' : ''}`} />
+              </button>
+              <CreditCard className="h-5 w-5 text-blue-500" />
+            </div>
+          </div>
+          {loadingTransactions ? (
+            <div className="flex justify-center items-center h-32">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Date
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Contact
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Transaction ID
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Amount
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Method
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Status
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Description
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {transactions.slice(0, 10).map((transaction) => (
+                    <tr key={transaction.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {new Date(transaction.createdAt).toLocaleDateString('en-IN', {
+                          day: '2-digit',
+                          month: 'short',
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-lg font-semibold text-gray-900">
+                        {transaction.contact}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-xs text-gray-500 font-mono">
+                        {transaction.id}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        ₹{transaction.amount.toLocaleString()}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 capitalize">
+                        {transaction.method}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                          transaction.status === 'captured'
+                            ? 'bg-green-100 text-green-800'
+                            : transaction.status === 'failed'
+                            ? 'bg-red-100 text-red-800'
+                            : transaction.status === 'refunded'
+                            ? 'bg-yellow-100 text-yellow-800'
+                            : 'bg-gray-100 text-gray-800'
+                        }`}>
+                          {transaction.status.charAt(0).toUpperCase() + transaction.status.slice(1)}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                        {transaction.description}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {transactions.length === 0 && (
+                <div className="text-center py-8 text-gray-500">
+                  No transactions found
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
     </Layout>

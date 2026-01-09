@@ -95,88 +95,7 @@ const CloudAnalytics = () => {
     } catch (error) {
       console.error('CloudWatch data fetch error:', error);
       setError(error.message);
-      // Fallback data
-      setAnalyticsData({
-        infrastructure: {
-          cpuUtilization: 65.4,
-          memoryUtilization: 72.1,
-          networkIn: 2.4,
-          networkOut: 1.8,
-          diskReadOps: 15420,
-          timestamp: new Date().toISOString()
-        },
-        application: {
-          avgResponseTime: 145,
-          maxResponseTime: 320,
-          minResponseTime: 45,
-          errorRate: 0.02,
-          requestCount: 8923401,
-          timestamp: new Date().toISOString()
-        },
-        database: {
-          activeConnections: 45,
-          maxConnections: 67,
-          avgQueryTime: 12.5,
-          maxQueryTime: 89.3,
-          timestamp: new Date().toISOString()
-        },
-        cost: {
-          estimatedCharges: 245.67,
-          currency: 'USD',
-          timestamp: new Date().toISOString()
-        },
-        lastUpdated: new Date().toISOString()
-      });
-
-      // Fallback chart data
-      setChartData({
-        network: {
-          networkIn: [
-            { timestamp: new Date(Date.now() - 20*3600000), value: 1.2 },
-            { timestamp: new Date(Date.now() - 16*3600000), value: 0.8 },
-            { timestamp: new Date(Date.now() - 12*3600000), value: 2.1 },
-            { timestamp: new Date(Date.now() - 8*3600000), value: 3.4 },
-            { timestamp: new Date(Date.now() - 4*3600000), value: 2.8 },
-            { timestamp: new Date(), value: 1.9 }
-          ],
-          networkOut: [
-            { timestamp: new Date(Date.now() - 20*3600000), value: 0.9 },
-            { timestamp: new Date(Date.now() - 16*3600000), value: 0.6 },
-            { timestamp: new Date(Date.now() - 12*3600000), value: 1.8 },
-            { timestamp: new Date(Date.now() - 8*3600000), value: 2.9 },
-            { timestamp: new Date(Date.now() - 4*3600000), value: 2.3 },
-            { timestamp: new Date(), value: 1.4 }
-          ]
-        },
-        performance: {
-          cpu: [
-            { timestamp: new Date(Date.now() - 20*3600000), value: 45 },
-            { timestamp: new Date(Date.now() - 16*3600000), value: 52 },
-            { timestamp: new Date(Date.now() - 12*3600000), value: 48 },
-            { timestamp: new Date(Date.now() - 8*3600000), value: 65 },
-            { timestamp: new Date(Date.now() - 4*3600000), value: 58 },
-            { timestamp: new Date(), value: analyticsData?.infrastructure?.cpuUtilization || 62 }
-          ],
-          memory: [
-            { timestamp: new Date(Date.now() - 20*3600000), value: 68 },
-            { timestamp: new Date(Date.now() - 16*3600000), value: 72 },
-            { timestamp: new Date(Date.now() - 12*3600000), value: 65 },
-            { timestamp: new Date(Date.now() - 8*3600000), value: 78 },
-            { timestamp: new Date(Date.now() - 4*3600000), value: 71 },
-            { timestamp: new Date(), value: analyticsData?.infrastructure?.memoryUtilization || 69 }
-          ]
-        },
-        application: {
-          requestCount: [
-            { timestamp: new Date(Date.now() - 20*3600000), value: 520 },
-            { timestamp: new Date(Date.now() - 16*3600000), value: 680 },
-            { timestamp: new Date(Date.now() - 12*3600000), value: 450 },
-            { timestamp: new Date(Date.now() - 8*3600000), value: 890 },
-            { timestamp: new Date(Date.now() - 4*3600000), value: 720 },
-            { timestamp: new Date(), value: 650 }
-          ]
-        }
-      });
+      // Don't set fallback dummy data - show empty state instead
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -234,7 +153,7 @@ const CloudAnalytics = () => {
     },
     {
       title: 'Network In',
-      value: analyticsData?.infrastructure?.networkIn ? `${analyticsData.infrastructure.networkIn} GB` : 'N/A',
+      value: analyticsData?.infrastructure?.networkIn ? `${analyticsData.infrastructure.networkIn.toFixed(2)} GB` : 'N/A',
       icon: Cloud,
       color: 'bg-cyan-500',
       change: '+15.3%'
@@ -256,11 +175,11 @@ const CloudAnalytics = () => {
         minute: '2-digit',
         timeZone: 'Asia/Kolkata'
       })
-    ) || ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00'],
+    ) || [],
     datasets: [
       {
         label: 'Network In (GB)',
-        data: chartData?.network?.networkIn?.map(point => point.value) || [1.2, 0.8, 2.1, 3.4, 2.8, 1.9],
+        data: chartData?.network?.networkIn?.map(point => point.value) || [],
         borderColor: 'rgba(59, 130, 246, 1)',
         backgroundColor: 'rgba(59, 130, 246, 0.1)',
         tension: 0.4,
@@ -268,7 +187,7 @@ const CloudAnalytics = () => {
       },
       {
         label: 'Network Out (GB)',
-        data: chartData?.network?.networkOut?.map(point => point.value) || [0.9, 0.6, 1.8, 2.9, 2.3, 1.4],
+        data: chartData?.network?.networkOut?.map(point => point.value) || [],
         borderColor: 'rgba(239, 68, 68, 1)',
         backgroundColor: 'rgba(239, 68, 68, 0.1)',
         tension: 0.4,
@@ -314,7 +233,7 @@ const CloudAnalytics = () => {
       tooltip: {
         callbacks: {
           label: function(context) {
-            return `${context.dataset.label}: ${context.parsed.y} GB`;
+            return `${context.dataset.label}: ${context.parsed.y.toFixed(2)} GB`;
           }
         }
       }
@@ -409,18 +328,18 @@ const CloudAnalytics = () => {
         minute: '2-digit',
         timeZone: 'Asia/Kolkata'
       })
-    ) || ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00'],
+    ) || [],
     datasets: [
       {
         label: 'CPU Utilization (%)',
-        data: chartData?.performance?.cpu?.map(point => point.value) || [45, 52, 48, 65, 58, 62],
+        data: chartData?.performance?.cpu?.map(point => point.value) || [],
         borderColor: 'rgba(59, 130, 246, 1)',
         backgroundColor: 'rgba(59, 130, 246, 0.1)',
         tension: 0.4
       },
       {
         label: 'Memory Usage (%)',
-        data: chartData?.performance?.memory?.map(point => point.value) || [68, 72, 65, 78, 71, 69],
+        data: chartData?.performance?.memory?.map(point => point.value) || [],
         borderColor: 'rgba(34, 197, 94, 1)',
         backgroundColor: 'rgba(34, 197, 94, 0.1)',
         tension: 0.4
@@ -467,11 +386,11 @@ const CloudAnalytics = () => {
         minute: '2-digit',
         timeZone: 'Asia/Kolkata'
       })
-    ) || ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00'],
+    ) || [],
     datasets: [
       {
         label: 'API Requests',
-        data: chartData?.application?.requestCount?.map(point => point.value) || [520, 680, 450, 890, 720, 650],
+        data: chartData?.application?.requestCount?.map(point => point.value) || [],
         borderColor: 'rgba(147, 51, 234, 1)',
         backgroundColor: 'rgba(147, 51, 234, 0.1)',
         tension: 0.4,
@@ -598,7 +517,17 @@ const CloudAnalytics = () => {
               Network Traffic (24h)
             </h3>
             <div className="h-64">
-              <Line data={networkChartData} options={networkChartOptions} />
+              {networkChartData.datasets[0].data.length > 0 || networkChartData.datasets[1].data.length > 0 ? (
+                <Line data={networkChartData} options={networkChartOptions} />
+              ) : (
+                <div className="flex items-center justify-center h-full text-gray-500">
+                  <div className="text-center">
+                    <Cloud className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                    <p>No data available</p>
+                    <p className="text-sm">Network traffic metrics will appear here when available</p>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
@@ -634,7 +563,17 @@ const CloudAnalytics = () => {
               Performance History (24h)
             </h3>
             <div className="h-64">
-              <Line data={performanceHistoryData} options={performanceHistoryOptions} />
+              {performanceHistoryData.datasets[0].data.length > 0 || performanceHistoryData.datasets[1].data.length > 0 ? (
+                <Line data={performanceHistoryData} options={performanceHistoryOptions} />
+              ) : (
+                <div className="flex items-center justify-center h-full text-gray-500">
+                  <div className="text-center">
+                    <Activity className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                    <p>No data available</p>
+                    <p className="text-sm">Performance metrics will appear here when available</p>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -647,7 +586,17 @@ const CloudAnalytics = () => {
               API Requests Over Time (24h)
             </h3>
             <div className="h-64">
-              <Line data={apiRequestsData} options={apiRequestsOptions} />
+              {apiRequestsData.datasets[0].data.length > 0 ? (
+                <Line data={apiRequestsData} options={apiRequestsOptions} />
+              ) : (
+                <div className="flex items-center justify-center h-full text-gray-500">
+                  <div className="text-center">
+                    <TrendingUp className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                    <p>No data available</p>
+                    <p className="text-sm">API request metrics will appear here when available</p>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>

@@ -37,6 +37,7 @@ const PublicStoreDetails = () => {
   const [editValues, setEditValues] = useState({ quantity: '', price: '', weightValue: '', weightUnit: '' });
   const [imageViewer, setImageViewer] = useState({ isOpen: false, imageUrl: '', altText: '' });
   const [addProductModal, setAddProductModal] = useState({ isOpen: false, products: [], loading: false, searchTerm: '', selectedProducts: [] });
+  const [updatingStoreStatus, setUpdatingStoreStatus] = useState(false);
 
   // Fetch current user
   const fetchCurrentUser = async () => {
@@ -366,6 +367,49 @@ const PublicStoreDetails = () => {
     }
   };
 
+  // Toggle store open/close status
+  const toggleStoreStatus = async () => {
+    if (!store) return;
+
+    const newStatus = store.storeStatus === 'open' ? 'closed' : 'open';
+
+    try {
+      setUpdatingStoreStatus(true);
+
+      const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/merchant-stores/${id}`, {
+        method: 'PUT',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          storeStatus: newStatus
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          toast.success(`Store ${newStatus === 'open' ? 'opened' : 'closed'} successfully`);
+          // Update local state
+          setStore(prev => ({
+            ...prev,
+            storeStatus: newStatus
+          }));
+        } else {
+          throw new Error(data.message || 'Failed to update store status');
+        }
+      } else {
+        throw new Error('Failed to update store status');
+      }
+    } catch (error) {
+      console.error('Error toggling store status:', error);
+      toast.error(error.message || 'Failed to update store status');
+    } finally {
+      setUpdatingStoreStatus(false);
+    }
+  };
+
   if (checkingUser) {
     return (
       <Layout title="Public Store Details">
@@ -382,24 +426,49 @@ const PublicStoreDetails = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* Header */}
           <div className="mb-8">
-            <div className="flex items-center gap-4 mb-4">
-              <button
-                onClick={() => navigate('/public-store')}
-                className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                <ArrowLeft className="w-5 h-5" />
-                Back to Public Stores
-              </button>
-              <button
-                onClick={fetchStoreDetails}
-                disabled={loading}
-                className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                title="Refresh store data"
-              >
-                <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
-                Refresh
-              </button>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={() => navigate('/public-store')}
+                  className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  <ArrowLeft className="w-5 h-5" />
+                  Back to Public Stores
+                </button>
+                <button
+                  onClick={fetchStoreDetails}
+                  disabled={loading}
+                  className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="Refresh store data"
+                >
+                  <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
+                  Refresh
+                </button>
+              </div>
+
+              {/* Store Status Toggle */}
+              {store && (
+                <div className="flex items-center gap-3">
+                  <span className="text-sm font-medium text-gray-700">
+                    {store.storeStatus === 'open' ? 'Store Open' : 'Store Closed'}
+                  </span>
+                  <button
+                    onClick={toggleStoreStatus}
+                    disabled={updatingStoreStatus}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 ${
+                      store.storeStatus === 'open' ? 'bg-green-600' : 'bg-gray-200'
+                    } ${updatingStoreStatus ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  >
+                    <span
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                        store.storeStatus === 'open' ? 'translate-x-6' : 'translate-x-1'
+                      }`}
+                    />
+                  </button>
+                </div>
+              )}
             </div>
+
             <div className="flex items-center gap-3">
               {store?.brandingInfo?.logoUrl ? (
                 <img

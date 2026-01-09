@@ -12,12 +12,8 @@
 
     <!-- Google Maps API with callback -->
     <script>
-      console.log('=== Google Maps Script Starting ===');
-      console.log('Document readyState:', document.readyState);
-
       // Load Google Maps API key from environment
       const GOOGLE_MAPS_API_KEY = 'AIzaSyBr2ZjmWuIEG17BgAx3VAoDc6hdxFyOGZw';
-      console.log('API Key loaded:', GOOGLE_MAPS_API_KEY ? 'Yes' : 'No');
 
       // Global state for Maps loading to avoid loops/double-injection
       window.__GMAPS = window.__GMAPS || {
@@ -32,8 +28,6 @@
         window.googleMapsLoaded = true;
         window.__GMAPS.failed = false;
         window.__GMAPS.loadedAt = Date.now();
-        console.log('Google Maps loaded successfully');
-        console.log('Google Maps version:', window.google?.maps?.version);
       };
 
       // Error handler for Google Maps loading
@@ -44,26 +38,18 @@
 
       // Test API key validity
       window.testAPIKey = function() {
-        console.log('=== Testing Google Maps API Key ===');
         const testUrl = `https://maps.googleapis.com/maps/api/geocode/json?address=Bangalore&key=${GOOGLE_MAPS_API_KEY}`;
 
         fetch(testUrl)
           .then(response => {
-            console.log('API Key test response status:', response.status);
             if (response.status === 200) {
-              console.log('✅ API Key appears to be valid');
               return response.json();
             } else {
-              console.log('❌ API Key test failed with status:', response.status);
               return response.text();
             }
           })
           .then(data => {
-            if (typeof data === 'object' && data.status === 'OK') {
-              console.log('✅ API Key is working correctly');
-            } else if (typeof data === 'string') {
-              console.log('❌ API Key error:', data);
-            }
+            // API key validation completed
           })
           .catch(error => {
             console.error('❌ API Key test failed with error:', error);
@@ -73,14 +59,10 @@
       // Dynamically load Google Maps script
       const loadGoogleMaps = () => {
         // Check if script is already loaded
-        if (window.googleMapsLoaded) { console.log('Google Maps already loaded'); return; }
+        if (window.googleMapsLoaded) { return; }
         if (window.__GMAPS.scriptAppended || document.getElementById('gmaps-script')) {
-          console.log('Google Maps script already appended or loading');
           return;
         }
-
-        console.log('Loading Google Maps script...');
-        console.log('API Key being used:', GOOGLE_MAPS_API_KEY);
 
         const script = document.createElement('script');
         script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=drawing,geometry,places&callback=initGoogleMaps`;
@@ -89,52 +71,37 @@
         script.defer = true;
 
         script.onload = function() {
-          console.log('Google Maps script loaded successfully');
-          console.log('Script src that loaded:', script.src);
-          console.log('window.google exists:', !!window.google);
-          console.log('window.google.maps exists:', !!(window.google && window.google.maps));
         };
 
         script.onerror = function(event) {
           console.error('Failed to load Google Maps script');
-          console.error('Script src that failed:', script.src);
-          console.error('Error event:', event);
-          console.error('Error type:', event.type);
           window.__GMAPS.failed = true;
           alert('Failed to load Google Maps. Please check your internet connection.');
         };
-
-        console.log('Appending script to document head...');
         document.head.appendChild(script);
-        console.log('Google Maps script appended to DOM');
         window.__GMAPS.scriptAppended = true;
       };
 
       // Manual trigger for testing
       window.forceLoadGoogleMaps = function() {
-        console.log('Manually triggering Google Maps load...');
         loadGoogleMaps();
       };
 
       // Load Google Maps when DOM is ready
       if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', function() {
-          console.log('DOM loaded, loading Google Maps...');
           loadGoogleMaps();
         });
       } else {
         // DOM already loaded
-        console.log('DOM already loaded, loading Google Maps...');
         loadGoogleMaps();
       }
 
       // Emergency static script loader
       window.loadStaticGoogleMaps = function() {
         if (window.__GMAPS.fallbackAppended || document.getElementById('gmaps-script-fallback')) {
-          console.log('Static Google Maps script already appended');
           return;
         }
-        console.log('Loading Google Maps with static script...');
         const staticScript = document.createElement('script');
         staticScript.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=drawing,geometry,places&callback=initGoogleMaps`;
         staticScript.id = 'gmaps-script-fallback';
@@ -142,7 +109,6 @@
         staticScript.defer = true;
 
         staticScript.onload = function() {
-          console.log('Static Google Maps script loaded successfully');
         };
 
         staticScript.onerror = function() {
@@ -155,22 +121,6 @@
 
       // Debug function to check Google Maps status
       window.debugGoogleMaps = function() {
-        console.log('=== Google Maps Debug Info ===');
-        console.log('googleMapsLoaded:', window.googleMapsLoaded);
-        console.log('window.google:', !!window.google);
-        console.log('window.google.maps:', !!(window.google && window.google.maps));
-        console.log('window.google.maps.places:', !!(window.google && window.google.maps && window.google.maps.places));
-        console.log('window.google.maps.drawing:', !!(window.google && window.google.maps && window.google.maps.drawing));
-        console.log('API Key:', GOOGLE_MAPS_API_KEY ? 'Set' : 'Not set');
-        console.log('Script in DOM:', !!document.querySelector('script[src*="maps.googleapis.com"]'));
-        console.log('Callback function defined:', typeof window.initGoogleMaps === 'function');
-
-        if (window.google && window.google.maps) {
-          console.log('✅ Google Maps API loaded successfully');
-        } else {
-          console.log('❌ Google Maps API not loaded');
-        }
-
         return {
           loaded: window.googleMapsLoaded,
           google: !!window.google,
@@ -184,7 +134,6 @@
 
       // Manual map creation test
       window.testMapCreation = function() {
-        console.log('=== Testing Manual Map Creation ===');
         if (!window.google || !window.google.maps) {
           console.error('Google Maps not loaded');
           return;
@@ -207,8 +156,6 @@
             center: { lat: 12.9716, lng: 77.5946 },
             zoom: 12
           });
-          console.log('✅ Manual map creation successful');
-          console.log('Test map created:', testMap);
 
           // Add a close button
           const closeBtn = document.createElement('button');
@@ -230,11 +177,6 @@
 
       // Quick test function
       window.quickTest = function() {
-        console.log('=== Quick Google Maps Test ===');
-        console.log('Time:', new Date().toLocaleTimeString());
-        console.log('googleMapsLoaded:', window.googleMapsLoaded);
-        console.log('window.google exists:', !!window.google);
-        console.log('Script in DOM:', !!document.querySelector('script[src*="maps.googleapis.com"]'));
         testScriptLoading();
         debugGoogleMaps();
         testAPIKey();
@@ -250,7 +192,6 @@
       // Fallback: Load static script after 2 seconds only if dynamic loading failed
       setTimeout(() => {
         if (!window.googleMapsLoaded && (window.__GMAPS.failed || !window.__GMAPS.scriptAppended) && !window.__GMAPS.fallbackAppended) {
-          console.log('Fallback: Loading Google Maps with static script...');
           window.loadStaticGoogleMaps();
         }
       }, 2000);
