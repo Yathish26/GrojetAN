@@ -1481,6 +1481,7 @@ export default function Products() {
                             {/* Quantity units */}
                             <option value="pack">Pack</option>
                             <option value="piece">Piece</option>
+                            <option value="pcs">Pcs</option>
                             <option value="unit">Unit</option>
                             <option value="dozen">Dozen</option>
                             <option value="other">Other</option>
