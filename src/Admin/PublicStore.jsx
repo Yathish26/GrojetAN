@@ -283,7 +283,7 @@ const PublicStore = () => {
                                             </div>
 
                                             {/* Store Status */}
-                                            <div className="mt-4 pt-4 border-t border-gray-200">
+                                            {/* <div className="mt-4 pt-4 border-t border-gray-200">
                                                 <div className="flex items-center justify-between">
                                                     <span className="text-sm font-medium text-gray-700">Store Status</span>
                                                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${(store.storeStatus || '').toLowerCase() === 'open'
@@ -295,7 +295,7 @@ const PublicStore = () => {
                                                         {(store.storeStatus || '').toLowerCase() === 'open' ? 'Open' : (store.storeStatus || '').toLowerCase() === 'closed' ? 'Closed' : store.storeStatus}
                                                     </span>
                                                 </div>
-                                            </div>
+                                            </div> */}
 
                                             {/* Action Button */}
                                             <div className="mt-4">
