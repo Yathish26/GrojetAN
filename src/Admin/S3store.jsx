@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import Layout from '../Components/Layout';
+import { FolderInput, FolderOpen } from 'lucide-react';
 
 const S3store = () => {
   const navigate = useNavigate();
@@ -14,12 +15,15 @@ const S3store = () => {
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [images, setImages] = useState([]);
+  const [folders, setFolders] = useState([]);
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(1);
   const [pagination, setPagination] = useState(null);
   const [search, setSearch] = useState('');
   const [folder, setFolder] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+  const [currentPath, setCurrentPath] = useState([]); // Array of folder names representing current path
+  const [viewMode, setViewMode] = useState('folders'); // 'folders' or 'files'
 
   const fetchImages = async () => {
     setLoading(true);
@@ -28,20 +32,55 @@ const S3store = () => {
         page,
         limit: 50,
         ...(search && { search }),
-        ...(folder && { folder })
       });
 
-      const response = await fetch(`${import.meta.env.VITE_SERVER}/image/s3/images?${params}`, {
-        credentials: 'include'
-      });
+      // If we're at root level, fetch both folders and root-level files
+      if (currentPath.length === 0) {
+        // First, fetch folders (search doesn't apply to folder names in this simple implementation)
+        const folderParams = new URLSearchParams({ listFolders: 'true' });
+        const folderResponse = await fetch(`${import.meta.env.VITE_SERVER}/image/s3/images?${folderParams}`, {
+          credentials: 'include'
+        });
+        const folderData = await folderResponse.json();
 
-      const data = await response.json();
+        // Then, fetch files that don't belong to any folder
+        const rootFileParams = new URLSearchParams({
+          page: 1,
+          limit: 50,
+          folder: '', // Empty folder means root level files
+          ...(search && { search })
+        });
+        const rootFileResponse = await fetch(`${import.meta.env.VITE_SERVER}/image/s3/images?${rootFileParams}`, {
+          credentials: 'include'
+        });
+        const rootFileData = await rootFileResponse.json();
 
-      if (data.success) {
-        setImages(data.images);
-        setPagination(data.pagination);
+        if (folderData.success && rootFileData.success) {
+          setFolders(folderData.folders);
+          setImages(rootFileData.images);
+          setPagination(rootFileData.pagination);
+          setViewMode('root');
+        } else {
+          toast.error('Failed to fetch content');
+        }
       } else {
-        toast.error('Failed to fetch images');
+        // If we're in a folder, fetch files from that folder
+        params.append('folder', currentPath[currentPath.length - 1]);
+
+        const response = await fetch(`${import.meta.env.VITE_SERVER}/image/s3/images?${params}`, {
+          credentials: 'include'
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          setImages(data.images);
+          setFolders([]);
+          setViewMode('files');
+          setPagination(data.pagination);
+        } else {
+          toast.error('Failed to fetch images');
+        }
       }
     } catch (error) {
       console.error('Fetch images error:', error);
@@ -54,6 +93,36 @@ const S3store = () => {
   const handleSearch = () => {
     setSearch(searchTerm);
     setPage(1); // Reset to first page when searching
+  };
+
+  const handleFolderClick = (folderName) => {
+    setCurrentPath([...currentPath, folderName]);
+    setPage(1);
+    setSearch('');
+    setSearchTerm('');
+  };
+
+  const handleNavigateBack = () => {
+    if (currentPath.length > 0) {
+      setCurrentPath(currentPath.slice(0, -1));
+      setPage(1);
+      setSearch('');
+      setSearchTerm('');
+    }
+  };
+
+  const handleNavigateToPath = (index) => {
+    setCurrentPath(currentPath.slice(0, index + 1));
+    setPage(1);
+    setSearch('');
+    setSearchTerm('');
+  };
+
+  const handleGoToRoot = () => {
+    setCurrentPath([]);
+    setPage(1);
+    setSearch('');
+    setSearchTerm('');
   };
 
   useEffect(() => {
@@ -97,7 +166,7 @@ const S3store = () => {
     if (currentUser && allowedRoles.includes(currentUser.role)) {
       fetchImages();
     }
-  }, [page, search, folder, currentUser]);
+  }, [page, search, currentPath, currentUser]);
 
   if (checkingUser) {
     return (
@@ -433,65 +502,136 @@ const S3store = () => {
             </button>
           </div>
 
-          {/* Filters */}
-          <div className="flex flex-col sm:flex-row gap-4 mb-8">
-            <div className="flex-1">
-              <div className="relative">
-                <svg className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-                <input
-                  type="text"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                  placeholder="Search files..."
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
-                />
-              </div>
-            </div>
-            <div className="flex gap-2">
+          {/* Navigation Breadcrumbs */}
+          <div className="mb-6">
+            <nav className="flex items-center space-x-2 text-sm text-gray-600">
               <button
-                onClick={handleSearch}
-                className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors font-medium"
+                onClick={handleGoToRoot}
+                className="flex items-center hover:text-blue-600 transition-colors"
               >
-                Search
+                <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5a2 2 0 012-2h4a2 2 0 012 2v2H8V5z" />
+                </svg>
+                Root
               </button>
-              <div className="sm:w-64">
+              {currentPath.map((folder, index) => (
+                <div key={index} className="flex items-center">
+                  <svg className="w-4 h-4 text-gray-400 mx-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                  <button
+                    onClick={() => handleNavigateToPath(index)}
+                    className="hover:text-blue-600 transition-colors"
+                  >
+                    {folder}
+                  </button>
+                </div>
+              ))}
+            </nav>
+            {currentPath.length > 0 && (
+              <button
+                onClick={handleNavigateBack}
+                className="mt-3 flex items-center px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+              >
+                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+                Back to {currentPath.length === 1 ? 'Root' : currentPath[currentPath.length - 2]}
+              </button>
+            )}
+          </div>
+
+          {/* Filters */}
+          {viewMode === 'files' || (viewMode === 'root' && images.length > 0) ? (
+            <div className="flex flex-col sm:flex-row gap-4 mb-8">
+              <div className="flex-1">
                 <div className="relative">
                   <svg className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5a2 2 0 012-2h4a2 2 0 012 2v2H8V5z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                   </svg>
                   <input
                     type="text"
-                    value={folder}
-                    onChange={(e) => setFolder(e.target.value)}
-                    placeholder="Filter by folder..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                    placeholder="Search files..."
                     className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
                   />
                 </div>
               </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={handleSearch}
+                  className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors font-medium"
+                >
+                  Search
+                </button>
+              </div>
             </div>
-          </div>
+          ) : null}
 
-          {/* Images Grid */}
+          {/* Content Grid */}
           {loading ? (
             <div className="flex flex-col items-center justify-center py-16">
               <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 mb-4"></div>
               <p className="text-gray-600 text-lg">Loading your media files...</p>
             </div>
-          ) : images.length === 0 ? (
+          ) : viewMode === 'folders' && folders.length === 0 ? (
+            <div className="text-center py-16">
+              <svg className="mx-auto h-24 w-24 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M8 5a2 2 0 012-2h4a2 2 0 012 2v2H8V5z" />
+              </svg>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No folders found</h3>
+              <p className="text-gray-600">Upload files with folder names to create folders</p>
+            </div>
+          ) : viewMode === 'files' && images.length === 0 ? (
             <div className="text-center py-16">
               <svg className="mx-auto h-24 w-24 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
               </svg>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No media files found</h3>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No files found</h3>
+              <p className="text-gray-600">This folder is empty</p>
+            </div>
+          ) : viewMode === 'root' && folders.length === 0 && images.length === 0 ? (
+            <div className="text-center py-16">
+              <svg className="mx-auto h-24 w-24 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+              </svg>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No content found</h3>
               <p className="text-gray-600">Upload your first file to get started</p>
             </div>
           ) : (
             <>
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+                {/* Render folders first */}
+                {folders.map((folderName) => (
+                  <div
+                    key={`folder-${folderName}`}
+                    onClick={() => handleFolderClick(folderName)}
+                    className="bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 cursor-pointer"
+                  >
+                    <div className="relative overflow-hidden bg-blue-50 flex items-center justify-center" style={{ paddingBottom: '100%' }}>
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <FolderInput className='w-12 h-12 text-blue-500'/>
+                      </div>
+                    </div>
+                    <div className="p-4">
+                      <h3 className="text-sm font-semibold text-gray-900 truncate mb-2" title={folderName}>
+                        {folderName}
+                      </h3>
+                      <div className="text-xs text-gray-600 mb-3">
+                        Folder
+                      </div>
+                      <button className="w-full px-3 py-2 bg-blue-600 text-white text-xs rounded-lg hover:bg-blue-700 transition-colors">
+                        Open Folder
+                      </button>
+                    </div>
+                  </div>
+                ))}
+
+                {/* Render root-level files */}
                 {images.map((image) => (
                   <div key={image._id} className="bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
                     <div className="relative overflow-hidden bg-gray-100 flex items-center justify-center" style={{ paddingBottom: '100%' }}>
@@ -520,11 +660,6 @@ const S3store = () => {
                         <p>Size: {formatFileSize(image.size)}</p>
                         <p>{formatDate(image.uploadedAt)}</p>
                       </div>
-                      {image.folder && (
-                        <span className="inline-block mt-2 px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
-                          {image.folder}
-                        </span>
-                      )}
                       <div className="flex gap-2 mt-3">
                         <button
                           onClick={() => window.open(image.url, '_blank')}
@@ -546,8 +681,8 @@ const S3store = () => {
                 ))}
               </div>
 
-              {/* Pagination */}
-              {pagination && pagination.totalPages > 1 && (
+              {/* Pagination - only show for files in folder view */}
+              {viewMode === 'files' && pagination && pagination.totalPages > 1 && (
                 <div className="flex items-center justify-center gap-2 mt-8">
                   <button
                     onClick={() => setPage(prev => Math.max(1, prev - 1))}
