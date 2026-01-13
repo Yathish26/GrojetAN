@@ -35,11 +35,15 @@ const PublicStoreDetails = () => {
   const [checkingUser, setCheckingUser] = useState(true);
   const [editingItem, setEditingItem] = useState(null);
   const [editValues, setEditValues] = useState({ quantity: '', price: '', weightValue: '', weightUnit: '' });
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const [hasNextPage, setHasNextPage] = useState(false);
+  const [hasPrevPage, setHasPrevPage] = useState(false);
+  const [itemsPerPage] = useState(20); // Fixed items per page
   const [imageViewer, setImageViewer] = useState({ isOpen: false, imageUrl: '', altText: '' });
   const [addProductModal, setAddProductModal] = useState({ isOpen: false, products: [], loading: false, searchTerm: '', selectedProducts: [] });
   const [updatingStoreStatus, setUpdatingStoreStatus] = useState(false);
-
-  // Fetch current user
   const fetchCurrentUser = async () => {
     try {
       const local = localStorage.getItem('adminUser');
@@ -65,12 +69,21 @@ const PublicStoreDetails = () => {
   };
 
   // Fetch store details with inventory
-  const fetchStoreDetails = async () => {
+  const fetchStoreDetails = async (page = 1, searchParam = '', statusParam = 'all', categoryParam = 'all') => {
     try {
       setLoading(true);
       setError(null);
 
-      const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/merchant-stores/${id}?page=1&limit=100&status=all&category=all&events=all`, {
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: itemsPerPage.toString(),
+        search: searchParam,
+        status: statusParam,
+        category: categoryParam,
+        events: 'all'
+      });
+
+      const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/merchant-stores/${id}?${params}`, {
         method: 'GET',
         credentials: 'include',
         headers: {
@@ -88,6 +101,13 @@ const PublicStoreDetails = () => {
           setStore(data.merchant);
           console.log('Fetched merchant inventory:', data.merchant);
           setInventory(data.merchant.inventory || []);
+
+          // Update pagination state
+          setCurrentPage(data.pagination.currentPage);
+          setTotalPages(data.pagination.totalPages);
+          setTotalItems(data.pagination.totalItems);
+          setHasNextPage(data.pagination.hasNextPage);
+          setHasPrevPage(data.pagination.hasPrevPage);
         } else {
           throw new Error(data.message || 'Failed to fetch store details');
         }
@@ -109,28 +129,25 @@ const PublicStoreDetails = () => {
 
   useEffect(() => {
     if (currentUser) {
-      fetchStoreDetails();
+      fetchStoreDetails(currentPage, searchTerm, statusFilter, categoryFilter);
     }
-  }, [currentUser, id]);
+  }, [currentUser, currentPage, searchTerm, statusFilter, categoryFilter]);
 
-  // Filter inventory based on search term and filters
-  const filteredInventory = inventory.filter(item => {
-    const matchesSearch = item.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         item.categoryName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         item.productId?.toLowerCase().includes(searchTerm.toLowerCase());
+  // Handle filter changes (reset to page 1)
+  const handleSearchChange = (value) => {
+    setSearchTerm(value);
+    setCurrentPage(1);
+  };
 
-    const matchesStatus = statusFilter === 'all' ||
-                         (statusFilter === 'in_stock' && item.quantity > item.minStock) ||
-                         (statusFilter === 'low_stock' && item.quantity > 0 && item.quantity <= item.minStock) ||
-                         (statusFilter === 'out_of_stock' && item.quantity === 0);
+  const handleStatusFilterChange = (value) => {
+    setStatusFilter(value);
+    setCurrentPage(1);
+  };
 
-    const matchesCategory = categoryFilter === 'all' || item.categoryName?.toLowerCase() === categoryFilter.toLowerCase();
-
-    return matchesSearch && matchesStatus && matchesCategory;
-  });
-
-  // Get unique categories for filter dropdown
-  const categories = [...new Set(inventory.map(item => item.categoryName).filter(Boolean))];
+  const handleCategoryFilterChange = (value) => {
+    setCategoryFilter(value);
+    setCurrentPage(1);
+  };
 
   // Handle edit functions
   const startEditing = (item) => {
@@ -176,8 +193,8 @@ const PublicStoreDetails = () => {
         const data = await response.json();
         if (data.success) {
           toast.success(`${field === 'quantity' ? 'Stock' : field === 'price' ? 'Price' : 'Weight'} updated successfully`);
-          // Refresh the store data
-          fetchStoreDetails();
+          // Refresh the current page data
+          fetchStoreDetails(currentPage, searchTerm, statusFilter, categoryFilter);
         } else {
           throw new Error(data.message || `Failed to update ${field}`);
         }
@@ -242,8 +259,8 @@ const PublicStoreDetails = () => {
         const data = await response.json();
         if (data.success) {
           toast.success('Product deleted successfully');
-          // Refresh the store data
-          fetchStoreDetails();
+          // Refresh the current page data
+          fetchStoreDetails(currentPage, searchTerm, statusFilter, categoryFilter);
         } else {
           throw new Error(data.message || 'Failed to delete product');
         }
@@ -359,8 +376,8 @@ const PublicStoreDetails = () => {
 
       toast.success(`${addProductModal.selectedProducts.length} product(s) added to inventory successfully`);
       closeAddProductModal();
-      // Refresh the store data
-      fetchStoreDetails();
+      // Refresh the current page data
+      fetchStoreDetails(currentPage, searchTerm, statusFilter, categoryFilter);
     } catch (error) {
       console.error('Error adding products:', error);
       toast.error(error.message || 'Failed to add some products');
@@ -410,6 +427,9 @@ const PublicStoreDetails = () => {
     }
   };
 
+  // Get unique categories for filter dropdown (from backend response)
+  const categories = store?.inventory ? [...new Set(store.inventory.map(item => item.categoryName).filter(Boolean))] : [];
+
   if (checkingUser) {
     return (
       <Layout title="Public Store Details">
@@ -436,7 +456,10 @@ const PublicStoreDetails = () => {
                   Back to Public Stores
                 </button>
                 <button
-                  onClick={fetchStoreDetails}
+                  onClick={() => {
+                    setCurrentPage(1);
+                    fetchStoreDetails(1, searchTerm, statusFilter, categoryFilter);
+                  }}
                   disabled={loading}
                   className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   title="Refresh store data"
@@ -537,7 +560,7 @@ const PublicStoreDetails = () => {
                         type="text"
                         placeholder="Search inventory by name, category, or product ID..."
                         value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
+                        onChange={(e) => handleSearchChange(e.target.value)}
                         className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                       />
                     </div>
@@ -545,7 +568,7 @@ const PublicStoreDetails = () => {
                   <div className="flex gap-2">
                     <select
                       value={statusFilter}
-                      onChange={(e) => setStatusFilter(e.target.value)}
+                      onChange={(e) => handleStatusFilterChange(e.target.value)}
                       className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                     >
                       <option value="all">All Status</option>
@@ -555,7 +578,7 @@ const PublicStoreDetails = () => {
                     </select>
                     <select
                       value={categoryFilter}
-                      onChange={(e) => setCategoryFilter(e.target.value)}
+                      onChange={(e) => handleCategoryFilterChange(e.target.value)}
                       className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                     >
                       <option value="all">All Categories</option>
@@ -586,7 +609,7 @@ const PublicStoreDetails = () => {
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                  {filteredInventory.length === 0 ? (
+                  {inventory.length === 0 ? (
                     <div className="col-span-full bg-gray-50 rounded-lg p-12 text-center">
                       <div className="flex flex-col items-center">
                         <Package className="w-16 h-16 text-gray-400 mb-4" />
@@ -599,7 +622,7 @@ const PublicStoreDetails = () => {
                       </div>
                     </div>
                   ) : (
-                    filteredInventory.map((item, index) => (
+                    inventory.map((item, index) => (
                       <div key={index} className="bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow overflow-hidden">
                         {/* Product Image */}
                         <div className="aspect-square bg-gray-100 flex items-center justify-center p-4">
@@ -761,6 +784,65 @@ const PublicStoreDetails = () => {
                 </div>
               )}
             </div>
+
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <div className="px-6 py-4 bg-gray-50 border-t border-gray-200">
+                <div className="flex items-center justify-between">
+                  <div className="text-sm text-gray-700">
+                    Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, totalItems)} of {totalItems} items
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                      disabled={!hasPrevPage || loading}
+                      className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Previous
+                    </button>
+
+                    {/* Page Numbers */}
+                    <div className="flex items-center gap-1">
+                      {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                        let pageNum;
+                        if (totalPages <= 5) {
+                          pageNum = i + 1;
+                        } else if (currentPage <= 3) {
+                          pageNum = i + 1;
+                        } else if (currentPage >= totalPages - 2) {
+                          pageNum = totalPages - 4 + i;
+                        } else {
+                          pageNum = currentPage - 2 + i;
+                        }
+
+                        return (
+                          <button
+                            key={pageNum}
+                            onClick={() => setCurrentPage(pageNum)}
+                            disabled={loading}
+                            className={`px-3 py-2 text-sm font-medium rounded-md ${
+                              currentPage === pageNum
+                                ? 'text-blue-600 bg-blue-50 border border-blue-300'
+                                : 'text-gray-500 bg-white border border-gray-300 hover:bg-gray-50'
+                            } disabled:opacity-50 disabled:cursor-not-allowed`}
+                          >
+                            {pageNum}
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    <button
+                      onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                      disabled={!hasNextPage || loading}
+                      className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Next
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 

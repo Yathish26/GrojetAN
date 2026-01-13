@@ -25,8 +25,17 @@ export default function EmailSender() {
     body: '',
     from: 'info@grojetdelivery.com'
   });
+  const [bulkFormData, setBulkFormData] = useState({
+    recipients: '',
+    subject: '',
+    body: '',
+    from: 'info@grojetdelivery.com'
+  });
+  const [bulkAttachments, setBulkAttachments] = useState([]);
   const [attachments, setAttachments] = useState([]);
   const [sendResult, setSendResult] = useState(null);
+  const [bulkSendResult, setBulkSendResult] = useState(null);
+  const [emailMode, setEmailMode] = useState('single'); // 'single' or 'bulk'
 
   const allowedRoles = ['super_admin', 'admin'];
 
@@ -91,8 +100,155 @@ export default function EmailSender() {
     e.target.value = '';
   };
 
+  const handleBulkInputChange = (e) => {
+    const { name, value } = e.target;
+    setBulkFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleBulkFileSelect = (e) => {
+    const files = Array.from(e.target.files);
+    const maxSize = 10 * 1024 * 1024; // 10MB limit per file
+    const validFiles = [];
+    const invalidFiles = [];
+
+    files.forEach(file => {
+      if (file.size > maxSize) {
+        invalidFiles.push(`${file.name} (too large, max 10MB)`);
+      } else {
+        validFiles.push(file);
+      }
+    });
+
+    if (invalidFiles.length > 0) {
+      toast.error(`Some files were not added: ${invalidFiles.join(', ')}`);
+    }
+
+    if (validFiles.length > 0) {
+      setBulkAttachments(prev => [...prev, ...validFiles]);
+      toast.success(`Added ${validFiles.length} file(s)`);
+    }
+
+    // Clear the input
+    e.target.value = '';
+  };
+
+  const removeBulkAttachment = (index) => {
+    setBulkAttachments(prev => prev.filter((_, i) => i !== index));
+  };
+
   const removeAttachment = (index) => {
     setAttachments(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const validateBulkForm = () => {
+    if (!bulkFormData.recipients.trim()) {
+      toast.error('Recipients are required');
+      return false;
+    }
+
+    // Parse recipients
+    const recipientList = bulkFormData.recipients.split(',').map(email => email.trim()).filter(email => email);
+
+    if (recipientList.length === 0) {
+      toast.error('No valid recipients provided');
+      return false;
+    }
+
+    if (recipientList.length > 100) {
+      toast.error('Maximum 100 recipients allowed');
+      return false;
+    }
+
+    // Validate email formats
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const invalidEmails = recipientList.filter(email => !emailRegex.test(email));
+
+    if (invalidEmails.length > 0) {
+      toast.error(`Invalid email format(s): ${invalidEmails.join(', ')}`);
+      return false;
+    }
+
+    if (!bulkFormData.subject.trim()) {
+      toast.error('Subject is required');
+      return false;
+    }
+
+    if (!bulkFormData.body.trim()) {
+      toast.error('Email body is required');
+      return false;
+    }
+
+    return true;
+  };
+
+  const handleSendBulkEmail = async (e) => {
+    e.preventDefault();
+
+    if (!validateBulkForm()) {
+      return;
+    }
+
+    setLoading(true);
+    setBulkSendResult(null);
+
+    try {
+      const formDataToSend = new FormData();
+      formDataToSend.append('recipients', bulkFormData.recipients.trim());
+      formDataToSend.append('subject', bulkFormData.subject.trim());
+      formDataToSend.append('body', bulkFormData.body.trim());
+      formDataToSend.append('from', bulkFormData.from);
+
+      // Add attachments
+      bulkAttachments.forEach((file, index) => {
+        formDataToSend.append('attachments', file);
+      });
+
+      const response = await fetch(`${import.meta.env.VITE_SERVER}/email/send-bulk`, {
+        method: 'POST',
+        body: formDataToSend
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        setBulkSendResult({
+          success: true,
+          total: data.total,
+          successful: data.successful,
+          failed: data.failed,
+          results: data.results,
+          errors: data.errors,
+          attachmentsCount: data.attachmentsCount
+        });
+        toast.success(`Bulk email sent to ${data.successful} recipients!`);
+        // Clear form on success
+        setBulkFormData({
+          recipients: '',
+          subject: '',
+          body: '',
+          from: 'info@grojetdelivery.com'
+        });
+        setBulkAttachments([]);
+      } else {
+        setBulkSendResult({
+          success: false,
+          error: data.message || 'Failed to send bulk email'
+        });
+        toast.error(data.message || 'Failed to send bulk email');
+      }
+    } catch (error) {
+      console.error('Error sending bulk email:', error);
+      setBulkSendResult({
+        success: false,
+        error: 'Network error occurred'
+      });
+      toast.error('Network error occurred');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const formatFileSize = (bytes) => {
@@ -268,6 +424,30 @@ export default function EmailSender() {
                   <p className="mt-1 text-sm text-gray-500">Send emails using AWS SES with attachment support</p>
                 </div>
               </div>
+              <div className="flex items-center space-x-4">
+                <div className="flex bg-gray-100 rounded-lg p-1">
+                  <button
+                    onClick={() => setEmailMode('single')}
+                    className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                      emailMode === 'single'
+                        ? 'bg-white text-gray-900 shadow-sm'
+                        : 'text-gray-500 hover:text-gray-700'
+                    }`}
+                  >
+                    Single Email
+                  </button>
+                  <button
+                    onClick={() => setEmailMode('bulk')}
+                    className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                      emailMode === 'bulk'
+                        ? 'bg-white text-gray-900 shadow-sm'
+                        : 'text-gray-500 hover:text-gray-700'
+                    }`}
+                  >
+                    Bulk Email
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -316,11 +496,11 @@ export default function EmailSender() {
               <div className="bg-green-600 px-6 py-4">
                 <h2 className="text-xl font-semibold text-white flex items-center gap-3">
                   <Mail className="w-6 h-6" />
-                  Send Email
+                  {emailMode === 'single' ? 'Send Email' : 'Send Bulk Email'}
                 </h2>
               </div>
               <div className="p-6">
-                <form onSubmit={handleSendEmail} className="space-y-6">
+                <form onSubmit={emailMode === 'single' ? handleSendEmail : handleSendBulkEmail} className="space-y-6">
                   <div>
                     <label htmlFor="from" className="block text-sm font-medium text-gray-700 mb-2">
                       Sender Email *
@@ -328,8 +508,8 @@ export default function EmailSender() {
                     <select
                       id="from"
                       name="from"
-                      value={formData.from}
-                      onChange={handleInputChange}
+                      value={emailMode === 'single' ? formData.from : bulkFormData.from}
+                      onChange={emailMode === 'single' ? handleInputChange : handleBulkInputChange}
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
                       required
                     >
@@ -339,19 +519,32 @@ export default function EmailSender() {
                   </div>
 
                   <div>
-                    <label htmlFor="to" className="block text-sm font-medium text-gray-700 mb-2">
-                      Recipient Email *
+                    <label htmlFor={emailMode === 'single' ? 'to' : 'recipients'} className="block text-sm font-medium text-gray-700 mb-2">
+                      {emailMode === 'single' ? 'Recipient Email *' : 'Recipients *'}
                     </label>
-                    <input
-                      type="email"
-                      id="to"
-                      name="to"
-                      value={formData.to}
-                      onChange={handleInputChange}
-                      placeholder="recipient@example.com"
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
-                      required
-                    />
+                    {emailMode === 'single' ? (
+                      <input
+                        type="email"
+                        id="to"
+                        name="to"
+                        value={formData.to}
+                        onChange={handleInputChange}
+                        placeholder="recipient@example.com"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                        required
+                      />
+                    ) : (
+                      <textarea
+                        id="recipients"
+                        name="recipients"
+                        value={bulkFormData.recipients}
+                        onChange={handleBulkInputChange}
+                        placeholder="email1@example.com, email2@example.com, ..."
+                        rows={3}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-vertical transition-colors"
+                        required
+                      />
+                    )}
                   </div>
 
                   <div>
@@ -362,8 +555,8 @@ export default function EmailSender() {
                       type="text"
                       id="subject"
                       name="subject"
-                      value={formData.subject}
-                      onChange={handleInputChange}
+                      value={emailMode === 'single' ? formData.subject : bulkFormData.subject}
+                      onChange={emailMode === 'single' ? handleInputChange : handleBulkInputChange}
                       placeholder="Email subject"
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
                       required
@@ -377,8 +570,8 @@ export default function EmailSender() {
                     <textarea
                       id="body"
                       name="body"
-                      value={formData.body}
-                      onChange={handleInputChange}
+                      value={emailMode === 'single' ? formData.body : bulkFormData.body}
+                      onChange={emailMode === 'single' ? handleInputChange : handleBulkInputChange}
                       placeholder="Type your message here..."
                       rows={8}
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-vertical transition-colors"
@@ -397,7 +590,7 @@ export default function EmailSender() {
                           id="attachments"
                           multiple
                           accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png,.gif,.zip,.rar"
-                          onChange={handleFileSelect}
+                          onChange={emailMode === 'single' ? handleFileSelect : handleBulkFileSelect}
                           className="hidden"
                         />
                         <label
@@ -415,10 +608,10 @@ export default function EmailSender() {
                       </div>
 
                       {/* Display selected attachments */}
-                      {attachments.length > 0 && (
+                      {(emailMode === 'single' ? attachments : bulkAttachments).length > 0 && (
                         <div className="space-y-3">
-                          <p className="text-sm font-medium text-gray-700">Selected Files ({attachments.length}):</p>
-                          {attachments.map((file, index) => (
+                          <p className="text-sm font-medium text-gray-700">Selected Files ({(emailMode === 'single' ? attachments : bulkAttachments).length}):</p>
+                          {(emailMode === 'single' ? attachments : bulkAttachments).map((file, index) => (
                             <div
                               key={index}
                               className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors"
@@ -436,7 +629,7 @@ export default function EmailSender() {
                               </div>
                               <button
                                 type="button"
-                                onClick={() => removeAttachment(index)}
+                                onClick={() => (emailMode === 'single' ? removeAttachment : removeBulkAttachment)(index)}
                                 className="ml-3 p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded transition-colors flex-shrink-0"
                                 title="Remove file"
                               >
@@ -460,7 +653,7 @@ export default function EmailSender() {
                       ) : (
                         <Send className="h-5 w-5 mr-2" />
                       )}
-                      {loading ? 'Sending...' : 'Send Email'}
+                      {loading ? (emailMode === 'single' ? 'Sending...' : 'Sending Bulk...') : (emailMode === 'single' ? 'Send Email' : 'Send Bulk Email')}
                     </button>
                   </div>
                 </form>
@@ -476,43 +669,61 @@ export default function EmailSender() {
                 </h2>
               </div>
               <div className="p-6">
-                {sendResult ? (
-                  <div className={`p-4 rounded-lg border ${sendResult.success ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
+                {(emailMode === 'single' ? sendResult : bulkSendResult) ? (
+                  <div className={`p-4 rounded-lg border ${(emailMode === 'single' ? sendResult : bulkSendResult).success ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
                     <div className="flex items-start gap-3">
-                      {sendResult.success ? (
+                      {(emailMode === 'single' ? sendResult : bulkSendResult).success ? (
                         <CheckCircle className="h-6 w-6 text-green-600 mt-0.5 flex-shrink-0" />
                       ) : (
                         <XCircle className="h-6 w-6 text-red-600 mt-0.5 flex-shrink-0" />
                       )}
                       <div className="flex-1">
-                        <h3 className={`font-semibold text-lg ${sendResult.success ? 'text-green-800' : 'text-red-800'}`}>
-                          {sendResult.success ? 'Email Sent Successfully!' : 'Email Send Failed'}
+                        <h3 className={`font-semibold text-lg ${(emailMode === 'single' ? sendResult : bulkSendResult).success ? 'text-green-800' : 'text-red-800'}`}>
+                          {(emailMode === 'single' ? sendResult : bulkSendResult).success ? 
+                            (emailMode === 'single' ? 'Email Sent Successfully!' : 'Bulk Email Sent Successfully!') : 
+                            (emailMode === 'single' ? 'Email Send Failed' : 'Bulk Email Send Failed')}
                         </h3>
-                        {sendResult.isTest && (
+                        {(emailMode === 'single' ? sendResult : bulkSendResult).isTest && (
                           <p className="text-sm text-gray-600 mt-2">This was a test email sent to your configured test email address.</p>
                         )}
-                        {sendResult.messageId && (
+                        {(emailMode === 'single' ? sendResult : bulkSendResult).total && (
+                          <div className="mt-3 grid grid-cols-3 gap-4">
+                            <div className="text-center p-3 bg-white rounded border">
+                              <p className="text-2xl font-bold text-green-600">{(emailMode === 'single' ? sendResult : bulkSendResult).successful || 0}</p>
+                              <p className="text-xs text-gray-600">Successful</p>
+                            </div>
+                            <div className="text-center p-3 bg-white rounded border">
+                              <p className="text-2xl font-bold text-red-600">{(emailMode === 'single' ? sendResult : bulkSendResult).failed || 0}</p>
+                              <p className="text-xs text-gray-600">Failed</p>
+                            </div>
+                            <div className="text-center p-3 bg-white rounded border">
+                              <p className="text-2xl font-bold text-blue-600">{(emailMode === 'single' ? sendResult : bulkSendResult).total || 0}</p>
+                              <p className="text-xs text-gray-600">Total</p>
+                            </div>
+                          </div>
+                        )}
+                        {(emailMode === 'single' ? sendResult : bulkSendResult).messageId && (
                           <div className="mt-3 p-3 bg-white rounded border">
                             <p className="text-sm text-gray-600">
                               <strong className="text-gray-800">Message ID:</strong>
                             </p>
-                            <p className="text-xs font-mono text-gray-700 mt-1 break-all">{sendResult.messageId}</p>
+                            <p className="text-xs font-mono text-gray-700 mt-1 break-all">{(emailMode === 'single' ? sendResult : bulkSendResult).messageId}</p>
                           </div>
                         )}
-                        {sendResult.recipient && (
+                        {(emailMode === 'single' ? sendResult : bulkSendResult).recipient && (
                           <p className="text-sm text-gray-600 mt-2">
-                            <strong className="text-gray-800">Recipient:</strong> {sendResult.recipient}
+                            <strong className="text-gray-800">Recipient:</strong> {(emailMode === 'single' ? sendResult : bulkSendResult).recipient}
                           </p>
                         )}
-                        {sendResult.attachmentsCount !== undefined && (
+                        {(emailMode === 'single' ? sendResult : bulkSendResult).attachmentsCount !== undefined && (
                           <p className="text-sm text-gray-600 mt-2">
-                            <strong className="text-gray-800">Attachments:</strong> {sendResult.attachmentsCount}
+                            <strong className="text-gray-800">Attachments:</strong> {(emailMode === 'single' ? sendResult : bulkSendResult).attachmentsCount}
                           </p>
                         )}
-                        {sendResult.error && (
+                        {(emailMode === 'single' ? sendResult : bulkSendResult).error && (
                           <div className="mt-3 p-3 bg-red-100 rounded border border-red-300">
                             <p className="text-sm text-red-700">
-                              <strong className="text-red-800">Error:</strong> {sendResult.error}
+                              <strong className="text-red-800">Error:</strong> {(emailMode === 'single' ? sendResult : bulkSendResult).error}
                             </p>
                           </div>
                         )}
@@ -523,7 +734,7 @@ export default function EmailSender() {
                   <div className="text-center py-12">
                     <Mail className="h-16 w-16 text-gray-300 mx-auto mb-4" />
                     <h3 className="text-lg font-medium text-gray-800 mb-2">Ready to Send</h3>
-                    <p className="text-gray-600">Fill out the form and send an email to see the results here</p>
+                    <p className="text-gray-600">Fill out the form and send {emailMode === 'single' ? 'an email' : 'bulk emails'} to see the results here</p>
                   </div>
                 )}
 
