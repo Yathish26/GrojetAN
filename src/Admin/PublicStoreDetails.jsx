@@ -318,7 +318,7 @@ const PublicStoreDetails = () => {
   const searchGlobalProducts = async (searchTerm) => {
     try {
       setAddProductModal(prev => ({ ...prev, loading: true }));
-      const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/products?search=${encodeURIComponent(searchTerm)}&limit=50&page=1`, {
+      const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/products?search=${encodeURIComponent(searchTerm)}&limit=1000&page=1`, {
         method: 'GET',
         credentials: 'include',
         headers: {
@@ -899,7 +899,7 @@ const PublicStoreDetails = () => {
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                     <input
                       type="text"
-                      placeholder="Search products by name, brand, or HSN code..."
+                      placeholder="Search products by name, brand, HSN code, or tags..."
                       value={addProductModal.searchTerm}
                       onChange={(e) => {
                         const value = e.target.value;
