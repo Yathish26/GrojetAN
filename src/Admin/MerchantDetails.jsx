@@ -189,7 +189,7 @@ const MerchantDetails = () => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          storeStatus: 'Closed'
+          storeStatus: 'closed'
         })
       });
 
