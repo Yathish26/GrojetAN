@@ -6,12 +6,14 @@ import Layout from '../Components/Layout';
 export default function AppControls() {
   const navigate = useNavigate();
   const [notificationText, setNotificationText] = useState('');
+  const [notificationTitle, setNotificationTitle] = useState('');
   const [selectedApps, setSelectedApps] = useState([]);
   const [pushToken, setPushToken] = useState('');
   const [notificationResults, setNotificationResults] = useState(null);
 
   // Bulk notifications states
   const [bulkNotificationText, setBulkNotificationText] = useState('');
+  const [bulkNotificationTitle, setBulkNotificationTitle] = useState('');
   const [bulkSelectedApps, setBulkSelectedApps] = useState([]);
   const [bulkNotificationResults, setBulkNotificationResults] = useState(null);
   const [bulkNotificationLoading, setBulkNotificationLoading] = useState(false);
@@ -19,6 +21,7 @@ export default function AppControls() {
 
   // Customer bulk notifications states
   const [customerBulkNotificationText, setCustomerBulkNotificationText] = useState('');
+  const [customerBulkNotificationTitle, setCustomerBulkNotificationTitle] = useState('');
   const [customerBulkNotificationResults, setCustomerBulkNotificationResults] = useState(null);
   const [customerBulkNotificationLoading, setCustomerBulkNotificationLoading] = useState(false);
   const [customerBulkNotificationProgress, setCustomerBulkNotificationProgress] = useState(null);
@@ -439,6 +442,7 @@ export default function AppControls() {
   const clearResults = () => {
     setNotificationResults(null);
     setNotificationText('');
+    setNotificationTitle('');
     setSelectedApps([]);
     setPushToken('');
   };
@@ -467,6 +471,11 @@ export default function AppControls() {
     }
 
     try {
+      if (notificationTitle && notificationTitle.length > 150) {
+        toast.error('Title cannot exceed 150 characters');
+        return;
+      }
+
       const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/notifications/send-notification`, {
         method: 'POST',
         headers: {
@@ -474,6 +483,7 @@ export default function AppControls() {
         },
         credentials: 'include',
         body: JSON.stringify({
+          title: notificationTitle,
           message: notificationText,
           appType: selectedApps.join(', '), // or handle multiple
           pushToken: pushToken,
@@ -520,16 +530,24 @@ export default function AppControls() {
       let endpoint;
       let requestBody;
 
+      if (bulkNotificationTitle && bulkNotificationTitle.length > 150) {
+        toast.error('Title cannot exceed 150 characters');
+        setBulkNotificationLoading(false);
+        return;
+      }
+
       if (sendToClosedStores) {
         // Send to merchants with closed stores
         endpoint = `${import.meta.env.VITE_SERVER}/admin/notifications/send-closed-stores-notification`;
         requestBody = {
+          title: bulkNotificationTitle,
           message: bulkNotificationText,
         };
       } else {
         // Send regular bulk notification
         endpoint = `${import.meta.env.VITE_SERVER}/admin/notifications/send-bulk-notification`;
         requestBody = {
+          title: bulkNotificationTitle,
           message: bulkNotificationText,
           appType: bulkSelectedApps.join(', '),
         };
@@ -574,6 +592,10 @@ export default function AppControls() {
 
   const clearBulkResults = () => {
     setBulkNotificationResults(null);
+    setBulkNotificationText('');
+    setBulkNotificationTitle('');
+    setBulkSelectedApps([]);
+    setSendToClosedStores(false);
   };
 
   const handleSendCustomerBulkNotification = async () => {
@@ -587,6 +609,12 @@ export default function AppControls() {
     setCustomerBulkNotificationResults(null);
 
     try {
+      if (customerBulkNotificationTitle && customerBulkNotificationTitle.length > 150) {
+        toast.error('Title cannot exceed 150 characters');
+        setCustomerBulkNotificationLoading(false);
+        return;
+      }
+
       const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/notifications/send-customer-bulk-notification`, {
         method: 'POST',
         headers: {
@@ -594,9 +622,11 @@ export default function AppControls() {
         },
         credentials: 'include',
         body: JSON.stringify({
+          title: customerBulkNotificationTitle,
           message: customerBulkNotificationText,
         }),
       });
+
 
       if (response.status === 401) {
         navigate('/login', { replace: true });
@@ -649,6 +679,7 @@ export default function AppControls() {
   const clearCustomerBulkResults = () => {
     setCustomerBulkNotificationResults(null);
     setCustomerBulkNotificationProgress(null);
+    setCustomerBulkNotificationTitle('');
   };
 
   return (
@@ -666,6 +697,20 @@ export default function AppControls() {
         <div className="bg-white shadow-sm border border-gray-200 rounded-lg p-4 sm:p-6">
           <h2 className="text-lg sm:text-xl font-semibold text-gray-800 mb-4">Push Notifications</h2>
           <div className="space-y-4">
+            {/* Notification Title (optional) */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Notification Title (optional)
+              </label>
+              <input
+                maxLength={150}
+                value={notificationTitle}
+                onChange={(e) => setNotificationTitle(e.target.value)}
+                placeholder="Short title (appears on the device)"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm"
+              />
+            </div>
+
             {/* Notification Text */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -814,6 +859,20 @@ export default function AppControls() {
         <div className="bg-white shadow-sm border border-gray-200 rounded-lg p-4 sm:p-6">
           <h2 className="text-lg sm:text-xl font-semibold text-gray-800 mb-4">Bulk Notifications</h2>
           <div className="space-y-4">
+            {/* Notification Title (optional) */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Notification Title (optional)
+              </label>
+              <input
+                maxLength={150}
+                value={bulkNotificationTitle}
+                onChange={(e) => setBulkNotificationTitle(e.target.value)}
+                placeholder="Short title for the bulk message"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm"
+              />
+            </div>
+
             {/* Notification Text */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -946,6 +1005,20 @@ export default function AppControls() {
         <div className="bg-white shadow-sm border border-gray-200 rounded-lg p-4 sm:p-6">
           <h2 className="text-lg sm:text-xl font-semibold text-gray-800 mb-4">Bulk Notifications to Customer App</h2>
           <div className="space-y-4">
+            {/* Notification Title (optional) */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Notification Title (optional)
+              </label>
+              <input
+                maxLength={150}
+                value={customerBulkNotificationTitle}
+                onChange={(e) => setCustomerBulkNotificationTitle(e.target.value)}
+                placeholder="Short title for customer notifications"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+              />
+            </div>
+
             {/* Notification Text */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">

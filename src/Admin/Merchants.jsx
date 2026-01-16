@@ -30,6 +30,7 @@ const Merchants = () => {
     const [loadingMap, setLoadingMap] = useState(false);
     const [showPushNotificationModal, setShowPushNotificationModal] = useState(false);
     const [selectedMerchant, setSelectedMerchant] = useState(null);
+    const [notificationTitle, setNotificationTitle] = useState('');
     const [notificationMessage, setNotificationMessage] = useState('');
     const [sendingNotification, setSendingNotification] = useState(false);
     const [stats, setStats] = useState({
@@ -501,6 +502,11 @@ const Merchants = () => {
             return;
         }
 
+        if (notificationTitle && notificationTitle.length > 150) {
+            toast.error('Title cannot exceed 150 characters');
+            return;
+        }
+
         if (!selectedMerchant) {
             toast.error('No merchant selected');
             return;
@@ -515,6 +521,7 @@ const Merchants = () => {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
+                    title: notificationTitle,
                     message: notificationMessage.trim()
                 }),
             });
@@ -529,6 +536,7 @@ const Merchants = () => {
                 toast.success('Push notification sent successfully');
                 setShowPushNotificationModal(false);
                 setNotificationMessage('');
+                setNotificationTitle('');
                 setSelectedMerchant(null);
             } else {
                 throw new Error(data.message || 'Failed to send notification');
@@ -1183,6 +1191,7 @@ const Merchants = () => {
                                 onClick={() => {
                                     setShowPushNotificationModal(false);
                                     setNotificationMessage('');
+                                    setNotificationTitle('');
                                     setSelectedMerchant(null);
                                 }}
                                 disabled={sendingNotification}
