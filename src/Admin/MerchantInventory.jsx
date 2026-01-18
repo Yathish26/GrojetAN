@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Package, Search, AlertTriangle, CheckCircle, XCircle, Edit, Save, X, ChevronLeft, ChevronRight, Filter, SlidersHorizontal, TreePine } from 'lucide-react';
+import { ArrowLeft, Package, Search, AlertTriangle, CheckCircle, XCircle, Edit, Save, X, ChevronLeft, ChevronRight, Filter, SlidersHorizontal, TreePine, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Layout from '../Components/Layout';
 
@@ -15,6 +15,7 @@ const MerchantInventory = () => {
   const [editingItem, setEditingItem] = useState(null);
   const [editedPrice, setEditedPrice] = useState('');
   const [updating, setUpdating] = useState(false);
+  const [removing, setRemoving] = useState(null);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
@@ -27,6 +28,8 @@ const MerchantInventory = () => {
   const [editingWeight, setEditingWeight] = useState(null);
   const [editedWeightValue, setEditedWeightValue] = useState('');
   const [editedWeightUnit, setEditedWeightUnit] = useState('');
+  const [editingMarkupPrice, setEditingMarkupPrice] = useState(null);
+  const [editedMarkupPrice, setEditedMarkupPrice] = useState('');
 
   // Fetch merchant details with inventory
   const fetchMerchantInventory = useCallback(async (params = {}) => {
@@ -337,6 +340,66 @@ const MerchantInventory = () => {
     }
   };
 
+  const handleEditMarkupPrice = (item) => {
+    setEditingMarkupPrice(item._id);
+    setEditedMarkupPrice(item.markupPrice?.toString() || '0');
+  };
+
+  const handleCancelEditMarkupPrice = () => {
+    setEditingMarkupPrice(null);
+    setEditedMarkupPrice('');
+  };
+
+  const handleSaveMarkupPrice = async (item) => {
+    const markupPrice = parseFloat(editedMarkupPrice);
+    if (isNaN(markupPrice) || markupPrice < 0) {
+      toast.error('Please enter a valid markup price');
+      return;
+    }
+
+    setUpdating(true);
+    try {
+      const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/merchant-stores/${id}/inventory/${item._id}/markup-price`, {
+        method: 'PUT',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ markupPrice }),
+      });
+
+      if (response.status === 401) {
+        localStorage.removeItem('adminUser');
+        navigate('/login');
+        return;
+      }
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.tokenValid === false) {
+          navigate('/login', { replace: true });
+          return;
+        }
+        if (data.success) {
+          toast.success('Markup price updated successfully');
+          setEditingMarkupPrice(null);
+          setEditedMarkupPrice('');
+          // Refetch the current page to ensure data consistency
+          fetchMerchantInventory({ page, search: searchTerm });
+        } else {
+          throw new Error(data.message || 'Failed to update markup price');
+        }
+      } else {
+        throw new Error('Failed to update markup price');
+      }
+    } catch (error) {
+      console.error('Error updating markup price:', error);
+      toast.error(error.message || 'Failed to update markup price');
+    } finally {
+      setUpdating(false);
+    }
+  };
+
   const handleToggleChristmas = async (item) => {
     const isChristmas = item.events?.includes('C2025');
     const updatedEvents = isChristmas
@@ -382,6 +445,53 @@ const MerchantInventory = () => {
     } catch (error) {
       console.error('Error updating Christmas status:', error);
       toast.error(error.message || 'Failed to update Christmas status');
+    }
+  };
+
+  const handleRemoveItem = async (item) => {
+    if (!window.confirm(`Are you sure you want to remove "${item.name}" from this merchant's inventory? This action cannot be undone.`)) {
+      return;
+    }
+
+    setRemoving(item._id);
+    try {
+      const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/merchant-stores/${id}/inventory/${item._id}`, {
+        method: 'DELETE',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.status === 401) {
+        localStorage.removeItem('adminUser');
+        navigate('/login');
+        return;
+      }
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.tokenValid === false) {
+          navigate('/login', { replace: true });
+          return;
+        }
+        if (data.success) {
+          toast.success('Item removed from inventory successfully');
+          // Remove from local state
+          setInventory(prev => prev.filter(inv => inv._id !== item._id));
+          // Refetch to ensure data consistency
+          fetchMerchantInventory({ page, search: searchTerm });
+        } else {
+          throw new Error(data.message || 'Failed to remove item');
+        }
+      } else {
+        throw new Error('Failed to remove item');
+      }
+    } catch (error) {
+      console.error('Error removing item:', error);
+      toast.error(error.message || 'Failed to remove item');
+    } finally {
+      setRemoving(null);
     }
   };
 
@@ -490,7 +600,7 @@ const MerchantInventory = () => {
                     { key: 'all', label: 'All', color: 'bg-gray-100 text-gray-700 hover:bg-gray-200' },
                     { key: 'in_stock', label: 'In Stock', color: 'bg-green-100 text-green-700 hover:bg-green-200' },
                     { key: 'low_stock', label: 'Low Stock', color: 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200' },
-                    { key: 'out_of_stock', label: ' ', color: 'bg-red-100 text-red-700 hover:bg-red-200' }
+                    { key: 'out_of_stock', label: 'Out of Stock', color: 'bg-red-100 text-red-700 hover:bg-red-200' }
                   ].map(({ key, label, color }) => (
                     <button
                       key={key}
@@ -696,6 +806,9 @@ const MerchantInventory = () => {
                         Price
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Markup Price
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Status
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -806,6 +919,24 @@ const MerchantInventory = () => {
                               <span className="text-lg">₹{item.price}</span>
                             )}
                           </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                            {editingMarkupPrice === item._id ? (
+                              <div className="flex items-center space-x-2">
+                                <span className="text-gray-500">₹</span>
+                                <input
+                                  type="number"
+                                  value={editedMarkupPrice}
+                                  onChange={(e) => setEditedMarkupPrice(e.target.value)}
+                                  className="w-24 px-3 py-1 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm"
+                                  min="0"
+                                  step="0.01"
+                                  disabled={updating}
+                                />
+                              </div>
+                            ) : (
+                              <span className="text-lg">₹{item.markupPrice || 0}</span>
+                            )}
+                          </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-full ${stockStatus.color}`}>
                               <StatusIcon size={14} />
@@ -851,6 +982,25 @@ const MerchantInventory = () => {
                                   Cancel
                                 </button>
                               </div>
+                            ) : editingMarkupPrice === item._id ? (
+                              <div className="flex items-center space-x-2">
+                                <button
+                                  className="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 transition-colors"
+                                  onClick={() => handleSaveMarkupPrice(item)}
+                                  disabled={updating}
+                                >
+                                  <Save size={14} className="mr-1" />
+                                  Save
+                                </button>
+                                <button
+                                  className="inline-flex items-center px-2.5 py-1.5 border border-gray-300 text-xs font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 transition-colors"
+                                  onClick={handleCancelEditMarkupPrice}
+                                  disabled={updating}
+                                >
+                                  <X size={14} className="mr-1" />
+                                  Cancel
+                                </button>
+                              </div>
                             ) : (
                               <div className="flex space-x-2">
                                 <button
@@ -866,6 +1016,30 @@ const MerchantInventory = () => {
                                 >
                                   <Edit size={14} className="mr-1.5" />
                                   Edit Weight
+                                </button>
+                                <button
+                                  className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-purple-700 bg-purple-100 hover:bg-purple-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-colors"
+                                  onClick={() => handleEditMarkupPrice(item)}
+                                >
+                                  <Edit size={14} className="mr-1.5" />
+                                  Edit Markup Price
+                                </button>
+                                <button
+                                  className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-red-700 bg-red-100 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors disabled:opacity-50"
+                                  onClick={() => handleRemoveItem(item)}
+                                  disabled={removing === item._id}
+                                >
+                                  {removing === item._id ? (
+                                    <>
+                                      <div className="animate-spin rounded-full h-3 w-3 border-b border-red-700 mr-1.5"></div>
+                                      Removing...
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Trash2 size={14} className="mr-1.5" />
+                                      Remove
+                                    </>
+                                  )}
                                 </button>
                               </div>
                             )}
