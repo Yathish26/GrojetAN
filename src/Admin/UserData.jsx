@@ -30,12 +30,8 @@ export default function UserData() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
-  const [warnings, setWarnings] = useState([]);
   const [ordersCount, setOrdersCount] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [showWarnModal, setShowWarnModal] = useState(false);
-  const [warningText, setWarningText] = useState('');
-  const [submittingWarning, setSubmittingWarning] = useState(false);
   const [showSuspendModal, setShowSuspendModal] = useState(false);
   const [suspensionReason, setSuspensionReason] = useState('');
   const [updatingStatus, setUpdatingStatus] = useState(false);
@@ -56,10 +52,10 @@ export default function UserData() {
   const [notificationTitle, setNotificationTitle] = useState('');
   const [notificationMessage, setNotificationMessage] = useState('');
   const [sendingNotification, setSendingNotification] = useState(false);
+  const [deletingToken, setDeletingToken] = useState(null);
 
   useEffect(() => {
     fetchUserDetails();
-    fetchUserWarnings();
     fetchOrdersCount();
     fetchAdminRole();
   }, [id]);
@@ -104,24 +100,6 @@ export default function UserData() {
     }
   };
 
-  const fetchUserWarnings = async () => {
-    try {
-      const response = await fetch(
-        `${import.meta.env.VITE_SERVER}/admin/users/${id}/warnings`,
-        {
-          credentials: 'include',
-        }
-      );
-
-      if (response.ok) {
-        const data = await response.json();
-        setWarnings(data.warnings || []);
-      }
-    } catch (error) {
-      console.error('Error fetching user warnings:', error);
-    }
-  };
-
   const fetchOrdersCount = async () => {
     try {
       const response = await fetch(
@@ -155,43 +133,6 @@ export default function UserData() {
       }
     } catch (error) {
       console.error('Error fetching admin role:', error);
-    }
-  };
-
-  const handleWarnUser = async () => {
-    if (!warningText.trim()) {
-      toast.error('Please enter a warning message');
-      return;
-    }
-
-    try {
-      setSubmittingWarning(true);
-      const response = await fetch(
-        `${import.meta.env.VITE_SERVER}/admin/users/${id}/warn`,
-        {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          credentials: 'include',
-          body: JSON.stringify({ warning: warningText }),
-        }
-      );
-
-      if (response.ok) {
-        toast.success('Warning issued successfully');
-        setShowWarnModal(false);
-        setWarningText('');
-        fetchUserWarnings(); // Refresh warnings
-      } else {
-        const data = await response.json();
-        toast.error(data.message || 'Failed to issue warning');
-      }
-    } catch (error) {
-      console.error('Error issuing warning:', error);
-      toast.error('Failed to issue warning');
-    } finally {
-      setSubmittingWarning(false);
     }
   };
 
@@ -432,6 +373,36 @@ export default function UserData() {
     }
   };
 
+  const handleDeletePushToken = async (deviceId) => {
+    if (!window.confirm('Are you sure you want to delete this push token? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      setDeletingToken(deviceId);
+      const response = await fetch(
+        `${import.meta.env.VITE_SERVER}/admin/users/${id}/push-tokens/${deviceId}`,
+        {
+          method: 'DELETE',
+          credentials: 'include',
+        }
+      );
+
+      if (response.ok) {
+        toast.success('Push token deleted successfully');
+        fetchUserDetails(); // Refresh user details
+      } else {
+        const data = await response.json();
+        toast.error(data.message || 'Failed to delete push token');
+      }
+    } catch (error) {
+      console.error('Error deleting push token:', error);
+      toast.error('Failed to delete push token');
+    } finally {
+      setDeletingToken(null);
+    }
+  };
+
   if (loading) {
     return (
       <Layout title="User Details">
@@ -531,15 +502,6 @@ export default function UserData() {
                 >
                   <FiShoppingBag className="mr-2" />
                   User Orders
-                </button>
-
-                <button
-                  onClick={() => setShowWarnModal(true)}
-                  className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-yellow-600 hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  disabled={updatingStatus}
-                >
-                  <FiAlertTriangle className="mr-2" />
-                  Issue Warning
                 </button>
 
                 <button
@@ -649,6 +611,13 @@ export default function UserData() {
                         <div>
                           <p className="text-sm text-gray-600">Gender</p>
                           <p className="font-medium capitalize">{user.personalInfo?.gender || 'Not provided'}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                        <FiGlobe className="text-gray-400" />
+                        <div>
+                          <p className="text-sm text-gray-600">App Version</p>
+                          <p className="font-medium">{user.appVersion?.current || 'Not available'}</p>
                         </div>
                       </div>
                     </div>
@@ -916,7 +885,17 @@ export default function UserData() {
                   </div>
                   <div className="p-6 space-y-4">
                     {user.pushTokens.map((tokenData, index) => (
-                      <div key={index} className="border border-gray-200 p-4 rounded-lg">
+                      <div key={index} className="border border-gray-200 p-4 rounded-lg relative">
+                        {!tokenData.isActive && (
+                          <button
+                            onClick={() => handleDeletePushToken(tokenData.deviceInfo?.deviceId)}
+                            disabled={deletingToken === tokenData.deviceInfo?.deviceId}
+                            className="absolute top-2 right-2 p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            title="Delete push token"
+                          >
+                            <FiTrash2 className="w-4 h-4" />
+                          </button>
+                        )}
                         <div className="flex items-start gap-3">
                           <FiBell className="text-gray-400 mt-1" />
                           <div className="flex-1">
@@ -1017,45 +996,6 @@ export default function UserData() {
                 </div>
               </div>
 
-              {/* Warnings */}
-              <div className="bg-white shadow-lg rounded-lg overflow-hidden">
-                <div className="bg-green-600 px-6 py-4">
-                  <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-                    <FiAlertTriangle className="w-6 h-6" />
-                    Warnings ({user.warnings?.length || 0})
-                  </h3>
-                </div>
-                <div className="p-6">
-                  {user.warnings && user.warnings.length > 0 ? (
-                    <div className="space-y-3">
-                      {user.warnings.slice(0, 3).map((warning, index) => (
-                        <div key={index} className="border-l-4 border-yellow-400 pl-4 py-2 bg-yellow-50 rounded-lg">
-                          <p className="text-sm text-gray-800">{warning.reason}</p>
-                          <div className="flex justify-between items-center mt-2">
-                            <p className="text-xs text-gray-500">
-                              By: {warning.addedBy?.name || 'Admin'}
-                            </p>
-                            <p className="text-xs text-gray-500">
-                              {new Date(warning.addedAt).toLocaleDateString('en-IN')}
-                            </p>
-                          </div>
-                        </div>
-                      ))}
-                      {user.warnings.length > 3 && (
-                        <p className="text-sm text-gray-500 text-center">
-                          +{user.warnings.length - 3} more warnings
-                        </p>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="text-center py-6">
-                      <FiAlertTriangle className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-                      <p className="text-gray-500 text-sm">No warnings issued</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-
               {/* Support Tickets */}
               {user.support && user.support.tickets && user.support.tickets.length > 0 && (
                 <div className="bg-white shadow-lg rounded-lg overflow-hidden">
@@ -1115,45 +1055,6 @@ export default function UserData() {
             </div>
           </div>
         </div>
-
-        {/* Warning Modal */}
-        {showWarnModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white max-w-md w-full">
-              <div className="px-6 py-4 border-b">
-                <h3 className="text-lg font-semibold text-gray-800">Issue Warning</h3>
-              </div>
-              <div className="p-6">
-                <textarea
-                  value={warningText}
-                  onChange={(e) => setWarningText(e.target.value)}
-                  placeholder="Enter warning message..."
-                  className="w-full h-24 p-3 border focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
-                  disabled={submittingWarning}
-                />
-              </div>
-              <div className="px-6 py-4 border-t flex justify-end gap-2">
-                <button
-                  onClick={() => {
-                    setShowWarnModal(false);
-                    setWarningText('');
-                  }}
-                  className="px-4 py-2 text-gray-600 hover:text-gray-800 transition"
-                  disabled={submittingWarning}
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleWarnUser}
-                  disabled={submittingWarning}
-                  className="px-4 py-2 bg-yellow-600 text-white hover:bg-yellow-700 transition disabled:opacity-50"
-                >
-                  {submittingWarning ? 'Issuing...' : 'Issue Warning'}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* Suspension Modal */}
         {showSuspendModal && (
@@ -1285,14 +1186,6 @@ export default function UserData() {
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Notification Title (optional)
                   </label>
-                  <input
-                    value={notificationTitle}
-                    onChange={(e) => setNotificationTitle(e.target.value)}
-                    placeholder="Short title (appears on device)"
-                    maxLength={150}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    disabled={sendingNotification}
-                  />
                 </div>
 
                 <div className="mb-4">

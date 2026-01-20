@@ -83,6 +83,14 @@ export default function UserOrders() {
       const data = await response.json();
       setOrders(data.orders || []);
       setPagination(data.pagination);
+
+      // Debug: Log the first order's items to see image data
+      if (data.orders && data.orders.length > 0 && data.orders[0].items && data.orders[0].items.length > 0) {
+        console.log('Sample order item:', data.orders[0].items[0]);
+        console.log('Item image:', data.orders[0].items[0].image);
+        console.log('Product images:', data.orders[0].items[0].productId?.images);
+        console.log('Product thumbnail:', data.orders[0].items[0].productId?.thumbnail);
+      }
     } catch (error) {
       console.error('Error fetching user orders:', error);
       toast.error(error.message);
@@ -226,7 +234,15 @@ export default function UserOrders() {
                       <div className="flex items-center gap-3">
                         {getStatusIcon(order.status)}
                         <div>
-                          <h4 className="font-semibold text-gray-800">Order #{order._id.slice(-8)}</h4>
+                          <div className="flex items-center gap-2 mb-1">
+                            <h4 className="font-semibold text-gray-800">Order #{order.orderNumber || order._id.slice(-8)}</h4>
+                            <button
+                              onClick={() => navigate(`/orders/${order._id}`)}
+                              className="inline-flex items-center cursor-pointer px-2 py-1 border border-transparent text-xs font-medium rounded-md text-blue-600 bg-blue-50 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+                            >
+                              View Details
+                            </button>
+                          </div>
                           <p className="text-sm text-gray-600 flex items-center gap-1">
                             <FiCalendar className="text-gray-400" />
                             {formatDate(order.createdAt)}
@@ -260,25 +276,34 @@ export default function UserOrders() {
                     <div className="space-y-2 mb-3">
                       <h5 className="text-sm font-medium text-gray-700">Items ({order.items?.length || 0})</h5>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                        {order.items?.slice(0, 3).map((item, index) => (
-                          <div key={index} className="flex items-center gap-2 p-2 bg-gray-50 rounded">
-                            {item.productId?.images?.[0] ? (
-                              <img
-                                src={item.productId.images[0]}
-                                alt={item.productId.name}
-                                className="w-8 h-8 object-cover rounded"
-                              />
-                            ) : (
-                              <div className="w-8 h-8 bg-gray-200 rounded flex items-center justify-center">
-                                <FiPackage className="text-gray-400 text-xs" />
+                        {order.items?.slice(0, 3).map((item, index) => {
+                          const imageUrl = item.image || item.productId?.images?.[0] || item.productId?.thumbnail;
+                          const fullImageUrl = imageUrl?.startsWith('http') ? imageUrl : `${import.meta.env.VITE_SERVER}${imageUrl}`;
+
+                          return (
+                            <div key={index} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                              {imageUrl ? (
+                                <img
+                                  src={fullImageUrl}
+                                  alt={item.productId?.name || item.name}
+                                  className="w-12 h-12 object-cover rounded-lg border border-gray-200"
+                                  onError={(e) => {
+                                    e.target.style.display = 'none';
+                                    e.target.nextSibling.style.display = 'flex';
+                                  }}
+                                />
+                              ) : null}
+                              <div className={`w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center ${imageUrl ? 'hidden' : ''}`}>
+                                <FiPackage className="text-gray-400 text-lg" />
                               </div>
-                            )}
-                            <div className="flex-1">
-                              <p className="text-sm font-medium text-gray-800 truncate">{item.productId?.name || item.name}</p>
-                              <p className="text-xs text-gray-600">Qty: {item.quantity} × ₹{item.price}</p>
+                              <div className="flex-1">
+                                <p className="text-sm font-medium text-gray-800 truncate">{item.productId?.name || item.name}</p>
+                                <p className="text-xs text-gray-600">Qty: {item.quantity} × ₹{item.price}</p>
+                                <p className="text-xs text-gray-500">₹{(item.quantity * item.price).toLocaleString()}</p>
+                              </div>
                             </div>
-                          </div>
-                        ))}
+                          );
+                        })}
                         {order.items?.length > 3 && (
                           <div className="flex items-center justify-center p-2 bg-gray-50 rounded">
                             <span className="text-sm text-gray-500">+{order.items.length - 3} more items</span>

@@ -24,10 +24,7 @@ const ACTIONS = ['read', 'create', 'update', 'delete'];
 
 const roleHierarchy = {
   super_admin: 'Super Admin',
-  admin: 'Admin',
-  operations: 'Operations',
-  delivery_manager: 'Delivery Manager',
-  inventory_manager: 'Inventory Manager'
+  admin: 'Admin'
 };
 
 // Helper function to format date as DD/MM/YYYY
@@ -224,8 +221,6 @@ export default function AdminManagement() {
         return <Crown className="w-5 h-5 text-yellow-600" />;
       case 'admin':
         return <Shield className="w-5 h-5 text-blue-600" />;
-      case 'operations':
-        return <Settings className="w-5 h-5 text-green-600" />;
       default:
         return <User className="w-5 h-5 text-gray-600" />;
     }

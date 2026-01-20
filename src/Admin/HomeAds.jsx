@@ -27,7 +27,7 @@ const HomeAds = () => {
   const [selectedAd, setSelectedAd] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
   const [checkingUser, setCheckingUser] = useState(true);
-  const allowedRoles = ['super_admin'];
+  const allowedRoles = ['super_admin', 'admin'];
   const navigate = useNavigate();
 
   // Image upload states
