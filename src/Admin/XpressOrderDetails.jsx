@@ -774,7 +774,7 @@ const XpressOrderDetails = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-4">
             <button
               onClick={() => navigate('/xpress')}
               className="flex items-center text-gray-600 hover:text-gray-900"
@@ -802,7 +802,7 @@ const XpressOrderDetails = () => {
             </button>
           </div>
 
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div>
               <h1 className="text-3xl font-bold text-gray-900">Order #{order.orderNumber}</h1>
               <p className="text-gray-600 mt-1">
@@ -819,7 +819,7 @@ const XpressOrderDetails = () => {
                 </div>
               )}
             </div>
-            <div className="flex items-center space-x-4">
+            <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
               <span className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-medium border ${getStatusColor(order.status)}`}>
                 {getStatusIcon(order.status)}
                 <span className="ml-2 capitalize">{order.status.replace('_', ' ')}</span>
@@ -851,11 +851,11 @@ const XpressOrderDetails = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-8">
           {/* Order Details */}
           <div className="lg:col-span-2 space-y-6">
             {/* Customer Information */}
-            <div className="bg-white rounded-lg shadow-sm border p-6">
+            <div className="bg-white rounded-lg shadow-sm border p-4 md:p-6">
               <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
                 <User size={20} className="mr-2" />
                 Customer Information
@@ -878,7 +878,7 @@ const XpressOrderDetails = () => {
             {order.pickup?.coordinates?.latitude && order.drop?.coordinates?.latitude &&
              !isNaN(parseFloat(order.pickup.coordinates.latitude)) && !isNaN(parseFloat(order.drop.coordinates.latitude)) &&
              parseFloat(order.pickup.coordinates.latitude) !== 0 && parseFloat(order.drop.coordinates.latitude) !== 0 && (
-              <div className="bg-white rounded-lg shadow-sm border p-6 mb-6">
+              <div className="bg-white rounded-lg shadow-sm border p-4 md:p-6 mb-6">
                 <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
                   <Navigation size={20} className="mr-2" />
                   {agentLocation && order?.assignment?.agent && !['delivered', 'cancelled'].includes(order?.status || '') 
@@ -1004,7 +1004,7 @@ const XpressOrderDetails = () => {
 
             {/* Delivery Agent Assignment */}
             {['super_admin', 'admin'].includes(currentUser?.role) && (
-              <div className="bg-white rounded-lg shadow-sm border p-6">
+              <div className="bg-white rounded-lg shadow-sm border p-4 md:p-6">
                 <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
                   <User size={20} className="mr-2" />
                   Delivery Agent Assignment
@@ -1199,13 +1199,13 @@ const XpressOrderDetails = () => {
             )}
 
             {/* Pickup & Drop Details */}
-            <div className="bg-white rounded-lg shadow-sm border p-6">
+            <div className="bg-white rounded-lg shadow-sm border p-4 md:p-6">
               <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
                 <MapPin size={20} className="mr-2" />
                 Delivery Details
               </h2>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                 {/* Pickup */}
                 <div className="space-y-4">
                   <div className="flex items-center">
@@ -1291,7 +1291,7 @@ const XpressOrderDetails = () => {
             </div>
 
             {/* Package Details */}
-            <div className="bg-white rounded-lg shadow-sm border p-6">
+            <div className="bg-white rounded-lg shadow-sm border p-4 md:p-6">
               <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
                 <Package size={20} className="mr-2" />
                 Package Details
@@ -1320,7 +1320,7 @@ const XpressOrderDetails = () => {
           {/* Order Summary */}
           <div className="space-y-6">
             {/* Pricing Details */}
-            <div className="bg-white rounded-lg shadow-sm border p-6">
+            <div className="bg-white rounded-lg shadow-sm border p-4 md:p-6">
               <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
                 <IndianRupee size={20} className="mr-2" />
                 Pricing Details
@@ -1378,7 +1378,7 @@ const XpressOrderDetails = () => {
             </div>
 
             {/* Order Timeline */}
-            <div className="bg-white rounded-lg shadow-sm border p-6">
+            <div className="bg-white rounded-lg shadow-sm border p-4 md:p-6">
               <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
                 <Clock size={20} className="mr-2" />
                 Order Timeline
@@ -1455,7 +1455,7 @@ const XpressOrderDetails = () => {
 
             {/* Cancel Order Button */}
             {order && order.status !== 'delivered' && order.status !== 'cancelled' && (
-              <div className="bg-white rounded-lg shadow-sm border p-6">
+              <div className="bg-white rounded-lg shadow-sm border p-4 md:p-6">
                 <div className="flex justify-center">
                   <button
                     onClick={() => setShowCancelModal(true)}
