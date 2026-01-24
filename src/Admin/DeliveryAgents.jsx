@@ -28,6 +28,7 @@ const DeliveryAgents = () => {
   const [stats, setStats] = useState({});
   const [currentUser, setCurrentUser] = useState(null);
   const [checkingUser, setCheckingUser] = useState(true);
+  const [zones, setZones] = useState([]);
   const allowedRoles = ['super_admin', 'admin'];
   const navigate = useNavigate();
 
@@ -89,6 +90,26 @@ const DeliveryAgents = () => {
       }
     } catch (error) {
       console.error('Error fetching stats:', error);
+    }
+  };
+
+  const fetchZones = async () => {
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_SERVER}/admin/delivery-zones`,
+        { credentials: 'include' }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.tokenValid === false) {
+          navigate('/login', { replace: true });
+          return;
+        }
+        setZones(data.zones || []);
+      }
+    } catch (error) {
+      console.error('Error fetching zones:', error);
     }
   };
 
@@ -228,6 +249,7 @@ const DeliveryAgents = () => {
     if (isAuthorized) {
       fetchAgents();
       fetchStats();
+      fetchZones();
     }
   }, [pagination.page, filters, isAuthorized]);
 
@@ -461,6 +483,23 @@ const DeliveryAgents = () => {
                       </button>
                     ))}
                   </div>
+                </div>
+
+                {/* Zone Filter */}
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-gray-600">Zone:</span>
+                  <select
+                    value={filters.zone}
+                    onChange={(e) => handleFilterChange('zone', e.target.value)}
+                    className="px-3 py-1.5 text-xs font-medium border border-gray-300 rounded-lg bg-white text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="">All Zones</option>
+                    {zones.map((zone) => (
+                      <option key={zone._id} value={zone._id}>
+                        {zone.name}
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
                 <button
