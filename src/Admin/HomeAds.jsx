@@ -27,6 +27,8 @@ const HomeAds = () => {
   const [selectedAd, setSelectedAd] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
   const [checkingUser, setCheckingUser] = useState(true);
+  const [zones, setZones] = useState([]);
+  const [loadingZones, setLoadingZones] = useState(true);
   const allowedRoles = ['super_admin', 'admin'];
   const navigate = useNavigate();
 
@@ -45,7 +47,8 @@ const HomeAds = () => {
     appNavigateMerchantId: '',
     displayOrder: 0,
     targetAudience: 'all',
-    isActive: true
+    isActive: true,
+    zoneIds: []
   });
 
   const fetchAds = async () => {
@@ -117,9 +120,29 @@ const HomeAds = () => {
     }
   }, [navigate]);
 
+  const fetchZones = useCallback(async () => {
+    try {
+      setLoadingZones(true);
+      const response = await fetch(
+        `${import.meta.env.VITE_SERVER}/admin/delivery-zones`,
+        { credentials: 'include' }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        setZones(data.zones || []);
+      }
+    } catch (error) {
+      console.error('Error fetching zones:', error);
+    } finally {
+      setLoadingZones(false);
+    }
+  }, []);
+
   useEffect(() => {
     checkUser();
-  }, [checkUser]);
+    fetchZones();
+  }, [checkUser, fetchZones]);
 
   useEffect(() => {
     if (currentUser && allowedRoles.includes(currentUser.role)) {
@@ -154,7 +177,8 @@ const HomeAds = () => {
       appNavigateMerchantId: '',
       displayOrder: 0,
       targetAudience: 'all',
-      isActive: true
+      isActive: true,
+      zoneIds: []
     });
     setImagePreview(null);
     setShowAddModal(true);
@@ -174,7 +198,8 @@ const HomeAds = () => {
       appNavigateMerchantId: ad.appNavigateMerchantId || '',
       displayOrder: ad.displayOrder,
       targetAudience: ad.targetAudience,
-      isActive: ad.isActive
+      isActive: ad.isActive,
+      zoneIds: ad.zoneIds ? ad.zoneIds.map(z => z._id || z) : []
     });
     setImagePreview(ad.image);
     setShowEditModal(true);
@@ -320,7 +345,8 @@ const HomeAds = () => {
       startDate: '',
       endDate: '',
       targetAudience: 'all',
-      isActive: true
+      isActive: true,
+      zoneIds: []
     });
     setImagePreview(null);
   };
@@ -455,6 +481,7 @@ const HomeAds = () => {
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Link Type</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Order</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">App ID</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Zones</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                     </tr>
@@ -488,6 +515,9 @@ const HomeAds = () => {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                           {ad.appNavigateMerchantId || 'N/A'}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {ad.zoneIds && ad.zoneIds.length > 0 ? ad.zoneIds[0].name : 'All Zones'}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span className={`px-2 py-1 text-xs font-medium ${
@@ -565,6 +595,7 @@ const HomeAds = () => {
                     <div className="mt-2 flex items-center justify-between text-xs text-gray-500">
                       <span>Order: {ad.displayOrder}</span>
                       <span>App ID: {ad.appNavigateMerchantId || 'N/A'}</span>
+                      <span>Zones: {ad.zoneIds && ad.zoneIds.length > 0 ? ad.zoneIds[0].name : 'All'}</span>
                       <span className={`px-2 py-1 text-xs font-medium ${
                         ad.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
                       }`}>
@@ -708,6 +739,33 @@ const HomeAds = () => {
                         <option value="new">New Users</option>
                         <option value="returning">Returning Users</option>
                       </select>
+                    </div>
+
+                    <div className="sm:col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Delivery Zone (optional)</label>
+                      {loadingZones ? (
+                        <div className="flex items-center gap-2 text-sm text-gray-600">
+                          <div className="animate-spin h-4 w-4 border-4 border-green-200 border-t-green-500 rounded-full"></div>
+                          Loading zones...
+                        </div>
+                      ) : (
+                        <select
+                          value={formData.zoneIds[0] || ''}
+                          onChange={(e) => {
+                            const selected = e.target.value;
+                            setFormData(prev => ({ ...prev, zoneIds: selected ? [selected] : [] }));
+                          }}
+                          className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                        >
+                          <option value="">All Zones</option>
+                          {zones.map(zone => (
+                            <option key={zone._id} value={zone._id}>
+                              {zone.name}
+                            </option>
+                          ))}
+                        </select>
+                      )}
+                      <p className="text-xs text-gray-500 mt-1">Leave empty to show ad in all zones</p>
                     </div>
 
                     <div className="flex items-center">

@@ -68,6 +68,7 @@ const ZonePolygon = ({ map, zone }) => {
           <div style="font-weight:600;margin-bottom:4px">${zone.name || 'Zone'}</div>
           <div>Status: ${zone.isActive ? 'Active' : 'Inactive'}</div>
           <div>Xpress: ${zone.supportsXpress ? 'Yes' : 'No'}</div>
+          <div>Merchant: ${zone.supportsMerchant ? 'Yes' : 'No'}</div>
           <div>Boundary Points: ${zone.boundaries?.coordinates?.[0]?.length || 0}</div>
         </div>
       `
@@ -229,6 +230,7 @@ const AllZonesView = ({ map, zones }) => {
               <div style="font-weight:600;margin-bottom:4px">${zone.name || 'Zone'}</div>
               <div>Status: ${zone.isActive ? 'Active' : 'Inactive'}</div>
               <div>Xpress: ${zone.supportsXpress ? 'Yes' : 'No'}</div>
+              <div>Merchant: ${zone.supportsMerchant ? 'Yes' : 'No'}</div>
               <div>Boundary Points: ${zone.boundaries?.coordinates?.[0]?.length || 0}</div>
             </div>
           `
@@ -289,7 +291,6 @@ export default function DeliveryZones() {
   // Google Maps state
   const [showMapModal, setShowMapModal] = useState(false);
   const [mapCoordinates, setMapCoordinates] = useState([]);
-  const [googleMapsLoaded, setGoogleMapsLoaded] = useState(false);
   const [zoneStats, setZoneStats] = useState(null);
   const [selectedLocation, setSelectedLocation] = useState(null);
   const [showViewMapModal, setShowViewMapModal] = useState(false);
@@ -315,7 +316,8 @@ export default function DeliveryZones() {
       coordinates: []
     },
     isActive: true,
-    supportsXpress: false
+    supportsXpress: false,
+    supportsMerchant: false
   });
 
   // Initialize edit form when a zone is selected for editing
@@ -328,6 +330,7 @@ export default function DeliveryZones() {
         description: editingZone.description || '',
         isActive: !!editingZone.isActive,
         supportsXpress: !!editingZone.supportsXpress,
+        supportsMerchant: !!editingZone.supportsMerchant,
         boundaries: {
           type: 'Polygon',
           coordinates: editingZone.boundaries?.coordinates || []
@@ -390,6 +393,7 @@ export default function DeliveryZones() {
       description: createForm.description,
       isActive: createForm.isActive,
       supportsXpress: createForm.supportsXpress,
+      supportsMerchant: createForm.supportsMerchant,
       boundaries: {
         type: 'Polygon',
         coordinates: createForm.boundaries.coordinates
@@ -423,7 +427,8 @@ export default function DeliveryZones() {
         description: '',
         boundaries: { type: 'Polygon', coordinates: [] },
         isActive: true,
-        supportsXpress: false
+        supportsXpress: false,
+        supportsMerchant: false
       });
       toast.success('Delivery zone created successfully');
     } catch (err) {
@@ -736,6 +741,12 @@ export default function DeliveryZones() {
                     }`}>
                     {zone.supportsXpress ? 'Xpress' : 'Standard'}
                   </div>
+                  <div className={`px-2 py-1 rounded-full text-xs font-medium ${zone.supportsMerchant
+                    ? 'bg-purple-100 text-purple-800'
+                    : 'bg-gray-100 text-gray-800'
+                    }`}>
+                    {zone.supportsMerchant ? 'Merchant' : 'No Merchant'}
+                  </div>
                 </div>
               </div>
               <div className="space-y-3">
@@ -936,6 +947,18 @@ export default function DeliveryZones() {
                       Supports Xpress
                     </label>
                   </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      id="supportsMerchant"
+                      checked={createForm.supportsMerchant}
+                      onChange={(e) => setCreateForm({ ...createForm, supportsMerchant: e.target.checked })}
+                      className="text-purple-600 focus:ring-purple-500"
+                    />
+                    <label htmlFor="supportsMerchant" className="text-sm text-gray-700">
+                      Supports Merchant
+                    </label>
+                  </div>
                 </div>
               </div>
               <div className="flex justify-end gap-3 pt-4">
@@ -1121,6 +1144,7 @@ export default function DeliveryZones() {
                   name: editForm.name,
                   description: editForm.description,
                   supportsXpress: editForm.supportsXpress,
+                  supportsMerchant: editForm.supportsMerchant,
                   boundaries: {
                     type: 'Polygon',
                     coordinates: editForm.boundaries?.coordinates || []
@@ -1213,6 +1237,16 @@ export default function DeliveryZones() {
                         className="text-blue-600 focus:ring-blue-500"
                       />
                       <label htmlFor="supportsXpressEdit" className="text-sm text-gray-700">Supports Xpress</label>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        id="supportsMerchantEdit"
+                        checked={editForm.supportsMerchant}
+                        onChange={(e) => setEditForm({ ...editForm, supportsMerchant: e.target.checked })}
+                        className="text-purple-600 focus:ring-purple-500"
+                      />
+                      <label htmlFor="supportsMerchantEdit" className="text-sm text-gray-700">Supports Merchant</label>
                     </div>
                   </div>
                 )}
