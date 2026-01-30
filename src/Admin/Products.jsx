@@ -2210,6 +2210,14 @@ export default function Products() {
                     <h3 className="text-lg font-semibold text-gray-800 mb-4">Additional Information</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
+                        <label className="block text-sm font-medium text-gray-600">Added By</label>
+                        <p className="text-sm text-gray-900 mt-1">{viewProduct.addedBy || '—'}</p>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-600">Updated By</label>
+                        <p className="text-sm text-gray-900 mt-1">{viewProduct.updatedBy || '—'}</p>
+                      </div>
+                      <div>
                         <label className="block text-sm font-medium text-gray-600">Created At</label>
                         <p className="text-sm text-gray-900 mt-1">
                           {viewProduct.createdAt ? new Date(viewProduct.createdAt).toLocaleString() : '—'}
