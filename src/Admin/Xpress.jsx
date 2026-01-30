@@ -471,12 +471,13 @@ const Xpress = () => {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[100px]">Amount</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[100px]">Payment</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[120px]">Status</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[100px]">Source</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {loading ? (
                   <tr>
-                    <td colSpan="8" className="px-6 py-4 text-center">
+                    <td colSpan="9" className="px-6 py-4 text-center">
                       <div className="flex items-center justify-center">
                         <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
                         <span className="ml-2 text-gray-500">Loading orders...</span>
@@ -485,7 +486,7 @@ const Xpress = () => {
                   </tr>
                 ) : orders.length === 0 ? (
                   <tr>
-                    <td colSpan="8" className="px-6 py-4 text-center text-gray-500">
+                    <td colSpan="9" className="px-6 py-4 text-center text-gray-500">
                       No orders found
                     </td>
                   </tr>
@@ -511,6 +512,7 @@ const Xpress = () => {
                           </div>
                         </div>
                       </td>
+                    
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div>
                           <div className="text-sm font-medium text-gray-900">
@@ -580,6 +582,15 @@ const Xpress = () => {
                           <span className="ml-1 capitalize">{order.status.replace('_', ' ')}</span>
                         </span>
                       </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+    order.source === 'website'
+      ? 'bg-blue-100 text-blue-800 border border-blue-200'
+      : 'bg-purple-100 text-purple-800 border border-purple-200'
+  }`}>
+    {order.source === 'website' ? '🌐 Website' : '📱 Mobile App'}
+  </span>
+</td>
                     </tr>
                   ))
                 )}
