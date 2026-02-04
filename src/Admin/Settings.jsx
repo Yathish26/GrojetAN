@@ -530,6 +530,7 @@ export default function Settings() {
                         faq: { ...prev.faq, website: faqs }
                       }))}
                       appType="website"
+                      navigate={navigate}
                     />
                   </div>
 
@@ -546,6 +547,7 @@ export default function Settings() {
                         faq: { ...prev.faq, mobileApp: faqs }
                       }))}
                       appType="mobileApp"
+                      navigate={navigate}
                     />
                   </div>
 
@@ -562,6 +564,7 @@ export default function Settings() {
                         faq: { ...prev.faq, merchantApp: faqs }
                       }))}
                       appType="merchantApp"
+                      navigate={navigate}
                     />
                   </div>
 
@@ -578,6 +581,7 @@ export default function Settings() {
                         faq: { ...prev.faq, deliveryAgentApp: faqs }
                       }))}
                       appType="deliveryAgentApp"
+                      navigate={navigate}
                     />
                   </div>
                 </div>
@@ -1314,7 +1318,7 @@ export default function Settings() {
   );
 }
 
-function FaqManager({ faqs, onUpdate, appType }) {
+function FaqManager({ faqs, onUpdate, appType, navigate }) {
   const [editingIndex, setEditingIndex] = useState(-1);
   const [newQuestion, setNewQuestion] = useState('');
   const [newAnswer, setNewAnswer] = useState('');
@@ -1329,16 +1333,19 @@ function FaqManager({ faqs, onUpdate, appType }) {
     }
 
     const newFaq = {
-      id: Date.now(),
       question: newQuestion.trim(),
       answer: newAnswer.trim(),
       createdAt: new Date().toISOString()
     };
 
-    onUpdate([...faqs, newFaq]);
+    const updatedFaqs = [...faqs, newFaq];
+    onUpdate(updatedFaqs);
     setNewQuestion('');
     setNewAnswer('');
     toast.success('FAQ added successfully');
+    
+    // Auto-save to database
+    saveFaqsToDatabase(updatedFaqs);
   };
 
   const handleEditFaq = (index) => {
@@ -1366,6 +1373,9 @@ function FaqManager({ faqs, onUpdate, appType }) {
     setEditingQuestion('');
     setEditingAnswer('');
     toast.success('FAQ updated successfully');
+    
+    // Auto-save to database
+    saveFaqsToDatabase(updatedFaqs);
   };
 
   const handleCancelEdit = () => {
@@ -1378,19 +1388,27 @@ function FaqManager({ faqs, onUpdate, appType }) {
     const updatedFaqs = faqs.filter((_, i) => i !== index);
     onUpdate(updatedFaqs);
     toast.success('FAQ deleted successfully');
+    
+    // Auto-save to database
+    saveFaqsToDatabase(updatedFaqs);
   };
 
-  const handleSaveFaqs = async () => {
-    setSaving(true);
+  const saveFaqsToDatabase = async (faqsToSave, showSuccessToast = false) => {
+    const isManualSave = showSuccessToast;
+    if (isManualSave) setSaving(true);
+    
     try {
+      
       const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/faq/${appType}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json'
         },
         credentials: 'include',
-        body: JSON.stringify({ faqs })
+        body: JSON.stringify({ faqs: faqsToSave })
       });
+
+      
 
       if (response.status === 401) {
         navigate('/login', { replace: true });
@@ -1398,14 +1416,24 @@ function FaqManager({ faqs, onUpdate, appType }) {
       }
 
       if (!response.ok) {
-        throw new Error('Failed to save FAQs');
+        const errorData = await response.text();
+        console.error('Save FAQ Error Response:', errorData);
+        toast.error('Failed to save FAQ changes to database');
+        return;
       }
 
-      toast.success(`${appType} FAQs saved successfully`);
+      const data = await response.json();
+      
+      
+      if (showSuccessToast) {
+        toast.success(`${appType} FAQs saved successfully`);
+      }
+      
     } catch (err) {
-      toast.error(err.message || 'Failed to save FAQs');
+      console.error('Save FAQ Error:', err);
+      toast.error('Failed to save FAQ changes to database');
     } finally {
-      setSaving(false);
+      if (isManualSave) setSaving(false);
     }
   };
 
@@ -1413,7 +1441,7 @@ function FaqManager({ faqs, onUpdate, appType }) {
     <div className="space-y-4">
       {/* Existing FAQs */}
       {faqs.map((faq, index) => (
-        <div key={faq.id || `faq-${index}`} className="border border-gray-200 rounded-lg p-4">
+        <div key={`faq-${index}`} className="border border-gray-200 rounded-lg p-4">
           {editingIndex === index ? (
             <div className="space-y-3">
               <input
@@ -1504,7 +1532,7 @@ function FaqManager({ faqs, onUpdate, appType }) {
       {/* Save Button */}
       <div className="flex justify-end pt-4 border-t border-gray-200">
         <button
-          onClick={handleSaveFaqs}
+          onClick={() => saveFaqsToDatabase(faqs, true)}
           disabled={saving}
           className="flex items-center gap-2 px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
         >

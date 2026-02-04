@@ -5,7 +5,8 @@ import { GoogleMap, Marker, DirectionsRenderer } from '../Components/GoogleMapCo
 import {
   ArrowLeft, MapPin, Phone, Package, Clock,
   User, Calendar, Truck, CheckCircle, XCircle,
-  AlertCircle, Navigation, IndianRupee, RefreshCw, Trash2,X
+  AlertCircle, Navigation, IndianRupee, RefreshCw, Trash2,X,
+  Download
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import io from 'socket.io-client';
@@ -782,24 +783,58 @@ const XpressOrderDetails = () => {
               <ArrowLeft size={20} className="mr-2" />
               Back to Xpress Orders
             </button>
-            <button
-              onClick={async () => {
-                setRefreshingOrder(true);
-                try {
-                  await fetchOrderDetails();
-                  toast.success('Order details refreshed');
-                } catch (error) {
-                  toast.error('Failed to refresh order details');
-                } finally {
-                  setRefreshingOrder(false);
-                }
-              }}
-              disabled={refreshingOrder}
-              className="flex items-center px-3 py-2 text-sm bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 disabled:opacity-50"
-            >
-              <RefreshCw size={16} className={`mr-2 ${refreshingOrder ? 'animate-spin' : ''}`} />
-              {refreshingOrder ? 'Refreshing...' : 'Refresh'}
-            </button>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <button
+                onClick={async () => {
+                  setRefreshingOrder(true);
+                  try {
+                    await fetchOrderDetails();
+                    toast.success('Order details refreshed');
+                  } catch (error) {
+                    toast.error('Failed to refresh order details');
+                  } finally {
+                    setRefreshingOrder(false);
+                  }
+                }}
+                disabled={refreshingOrder}
+                className="flex items-center px-3 py-2 text-sm bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 disabled:opacity-50"
+              >
+                <RefreshCw size={16} className={`mr-2 ${refreshingOrder ? 'animate-spin' : ''}`} />
+                {refreshingOrder ? 'Refreshing...' : 'Refresh'}
+              </button>
+              <button
+                onClick={async () => {
+                  try {
+                    const response = await fetch(
+                      `${import.meta.env.VITE_SERVER}/admin/xpress/${id}/export/excel`,
+                      { credentials: 'include' }
+                    );
+
+                    if (response.ok) {
+                      const blob = await response.blob();
+                      const url = window.URL.createObjectURL(blob);
+                      const a = document.createElement('a');
+                      a.href = url;
+                      a.download = `xpress-order-${order.orderNumber}.xlsx`;
+                      document.body.appendChild(a);
+                      a.click();
+                      window.URL.revokeObjectURL(url);
+                      document.body.removeChild(a);
+                      toast.success('Order exported successfully');
+                    } else {
+                      toast.error('Failed to export order');
+                    }
+                  } catch (error) {
+                    console.error('Error exporting order:', error);
+                    toast.error('Failed to export order');
+                  }
+                }}
+                className="flex items-center px-3 py-2 text-sm bg-green-100 text-green-700 rounded-lg hover:bg-green-200"
+              >
+                <Download size={16} className="mr-2" />
+                Export to Excel
+              </button>
+            </div>
           </div>
 
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -860,16 +895,29 @@ const XpressOrderDetails = () => {
                 <User size={20} className="mr-2" />
                 Customer Information
               </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div
+                className="grid grid-cols-1 md:grid-cols-2 gap-4 cursor-pointer hover:bg-gray-50 transition-colors duration-200 rounded-lg p-2 -m-2"
+                onClick={() => order.userId?._id && navigate(`/users/${order.userId._id}`)}
+                title="Click to view customer details"
+              >
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Name</label>
-                  <p className="text-sm text-gray-900">{order.userId?.personalInfo?.name || 'N/A'}</p>
+                  <p className="text-sm text-gray-900 hover:text-blue-600 transition-colors">
+                    {order.userId?.personalInfo?.name || 'N/A'}
+                  </p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Phone</label>
-                  <p className="text-sm text-gray-900">{order.userId?.personalInfo?.phone || 'N/A'}</p>
+                  <p className="text-sm text-gray-900 hover:text-blue-600 transition-colors">
+                    {order.userId?.personalInfo?.phone || 'N/A'}
+                  </p>
                 </div>
               </div>
+              {order.userId?._id && (
+                <div className="mt-3 text-xs text-blue-600 hover:text-blue-800 cursor-pointer" onClick={() => navigate(`/users/${order.userId._id}`)}>
+                  Click to view full customer profile →
+                </div>
+              )}
             </div>
 
             
@@ -1304,6 +1352,16 @@ const XpressOrderDetails = () => {
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Size</label>
                   <p className="text-sm text-gray-900">{order.packageDetails?.size || 'N/A'}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Source</label>
+                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                    order.source === 'website'
+                      ? 'bg-blue-100 text-blue-800 border border-blue-200'
+                      : 'bg-purple-100 text-purple-800 border border-purple-200'
+                  }`}>
+                    {order.source === 'website' ? '🌐 Website' : '📱 Mobile App'}
+                  </span>
                 </div>
               </div>
               {order.schedule && (

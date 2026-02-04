@@ -608,6 +608,10 @@ const DeliveryAgents = () => {
                                 <Mail size={14} />
                                 {agent.personalInfo.email}
                               </div>
+                              <div className="flex items-center gap-1 mt-1">
+                                <Star size={14} className="text-yellow-500" />
+                                <span className="text-sm text-gray-900">{agent.status?.rating ? `${agent.status.rating.toFixed(1)} (${agent.status.totalRatings || 0})` : 'No ratings'}</span>
+                              </div>
                             </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
@@ -687,6 +691,10 @@ const DeliveryAgents = () => {
                               <div className="flex items-center gap-1 text-xs text-gray-600">
                                 <Phone size={12} />
                                 {agent.personalInfo.phone}
+                              </div>
+                              <div className="flex items-center gap-1 text-xs text-gray-600">
+                                <Star size={12} className="text-yellow-500" />
+                                {agent.status?.rating ? `${agent.status.rating.toFixed(1)} (${agent.status.totalRatings || 0})` : 'No ratings'}
                               </div>
                               {agent.status.isOnline && (
                                 <div className="flex items-center gap-1">

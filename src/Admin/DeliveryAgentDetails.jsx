@@ -66,6 +66,14 @@ export default function DeliveryAgentDetails() {
   const [availableZones, setAvailableZones] = useState([]);
   const [zonesLoading, setZonesLoading] = useState(true);
   const [zoneNames, setZoneNames] = useState({});
+  const [ratings, setRatings] = useState([]);
+  const [ratingsLoading, setRatingsLoading] = useState(false);
+  const [ratingsPagination, setRatingsPagination] = useState({
+    page: 1,
+    limit: 10,
+    total: 0,
+    totalPages: 1
+  });
 
   // Handle live location updates for this agent
   useEffect(() => {
@@ -172,6 +180,7 @@ export default function DeliveryAgentDetails() {
     fetchAgentOrders();
     fetchAgentStats();
     fetchDeliveryZones();
+    fetchAgentRatings();
   }, []);
 
   const fetchAgentDetails = async () => {
@@ -274,6 +283,34 @@ export default function DeliveryAgentDetails() {
       setAvailableZones([]);
     } finally {
       setZonesLoading(false);
+    }
+  };
+
+  const fetchAgentRatings = async (page = 1) => {
+    setRatingsLoading(true);
+    try {
+      const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/delivery-agents/${id}/ratings?page=${page}&limit=${ratingsPagination.limit}`, {
+        credentials: 'include'
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.tokenValid === false) {
+          navigate('/login', { replace: true });
+          return;
+        }
+        setRatings(data.ratings || []);
+        setRatingsPagination(prev => ({
+          ...prev,
+          page: data.pagination.page,
+          total: data.pagination.total,
+          totalPages: data.pagination.totalPages
+        }));
+      }
+    } catch (err) {
+      console.error('Failed to fetch agent ratings:', err);
+    } finally {
+      setRatingsLoading(false);
     }
   };
 
@@ -849,17 +886,12 @@ export default function DeliveryAgentDetails() {
     if (!dateString) return 'Not available';
 
     try {
-      // Parse the UTC timestamp as-is (don't convert to IST)
-      let utcString = dateString;
-      if (dateString.includes('+00:00')) {
-        utcString = dateString.replace('+00:00', 'Z');
-      }
+      // Parse the UTC timestamp
+      const date = new Date(dateString);
 
-      const date = new Date(utcString);
-
-      // Format in UTC timezone (no conversion to IST)
+      // Format in IST timezone (UTC+5:30)
       const formatter = new Intl.DateTimeFormat('en-IN', {
-        timeZone: 'UTC',
+        timeZone: 'Asia/Kolkata',
         year: 'numeric',
         month: 'short',
         day: 'numeric',
@@ -995,7 +1027,7 @@ export default function DeliveryAgentDetails() {
       { Field: 'IFSC Code', Value: agent.documents?.bankAccount?.ifscCode || 'N/A' },
       { Field: 'Experience (Years)', Value: agent.workInfo?.experience || 'N/A' },
       { Field: 'Delivery Zone', Value: agent.status?.deliveryZone || 'N/A' },
-      { Field: 'Rating', Value: agentStats?.averageRating || 'N/A' },
+      { Field: 'Rating', Value: agent.status?.rating ? `${agent.status.rating.toFixed(1)} (${agent.status.totalRatings || 0} ratings)` : 'No ratings' },
       { Field: 'Total Deliveries', Value: agentStats?.totalDeliveries || 'N/A' },
       { Field: 'Completed Deliveries', Value: agentStats?.completedDeliveries || 'N/A' },
       { Field: 'Cancelled Deliveries', Value: agentStats?.cancelledDeliveries || 'N/A' },
@@ -1565,6 +1597,109 @@ export default function DeliveryAgentDetails() {
             </div>
           </div>
 
+          {/* Ratings History */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+            <div className="p-6 border-b border-gray-200">
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                  <Star className="w-5 h-5" />
+                  Ratings History
+                </h2>
+                <button
+                  onClick={() => fetchAgentRatings(1)}
+                  disabled={ratingsLoading}
+                  className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-lg transition-colors disabled:opacity-50"
+                  title="Refresh ratings"
+                >
+                  <RefreshCw className={`w-4 h-4 ${ratingsLoading ? 'animate-spin' : ''}`} />
+                </button>
+              </div>
+            </div>
+            <div className="p-6">
+              {ratingsLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
+                  <span className="ml-3 text-gray-600">Loading ratings...</span>
+                </div>
+              ) : ratings.length > 0 ? (
+                <div className="space-y-4">
+                  {ratings.map((rating) => (
+                    <div key={rating._id} className="border border-gray-200 rounded-lg p-4">
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                          <div className="flex items-center">
+                            {[...Array(5)].map((_, i) => (
+                              <Star
+                                key={i}
+                                className={`w-4 h-4 ${
+                                  i < rating.rating
+                                    ? 'text-yellow-400 fill-current'
+                                    : 'text-gray-300'
+                                }`}
+                              />
+                            ))}
+                          </div>
+                          <span className="text-sm font-medium text-gray-900">
+                            {rating.rating}/5
+                          </span>
+                        </div>
+                        <span className="text-xs text-gray-500">
+                          {formatISTTime(rating.ratedAt)}
+                        </span>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <User className="w-4 h-4 text-gray-400" />
+                          <span className="text-sm text-gray-700">{rating.customerName}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Package className="w-4 h-4 text-gray-400" />
+                          <span className="text-sm text-gray-700">Order #{rating.orderNumber}</span>
+                        </div>
+                        {rating.review && (
+                          <div className="mt-3">
+                            <p className="text-sm text-gray-600 italic">"{rating.review}"</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                  
+                  {/* Pagination */}
+                  {ratingsPagination.totalPages > 1 && (
+                    <div className="flex items-center justify-between pt-4 border-t border-gray-200">
+                      <div className="text-sm text-gray-700">
+                        Showing {((ratingsPagination.page - 1) * ratingsPagination.limit) + 1} to {Math.min(ratingsPagination.page * ratingsPagination.limit, ratingsPagination.total)} of {ratingsPagination.total} ratings
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => fetchAgentRatings(ratingsPagination.page - 1)}
+                          disabled={!ratingsPagination.hasPrevPage}
+                          className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          Previous
+                        </button>
+                        <button
+                          onClick={() => fetchAgentRatings(ratingsPagination.page + 1)}
+                          disabled={!ratingsPagination.hasNextPage}
+                          className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          Next
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <Star className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                  <p className="text-sm text-gray-500">No ratings yet</p>
+                  <p className="text-xs text-gray-400 mt-1">Ratings will appear here once customers rate this delivery agent</p>
+                </div>
+              )}
+            </div>
+          </div>
+
           {/* Current Location - Always visible for monitoring */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200">
             <div className="p-6 border-b border-gray-200">
@@ -1905,6 +2040,96 @@ export default function DeliveryAgentDetails() {
                   </div>
                 </div>
               </div>
+            </div>
+          </div>
+
+          {/* Ratings History */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+            <div className="p-6 border-b border-gray-200">
+              <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                <Star className="w-5 h-5" />
+                Ratings History ({ratingsPagination.total})
+              </h2>
+            </div>
+            <div className="p-6">
+              {ratingsLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="animate-spin h-8 w-8 border-4 border-green-200 border-t-green-600 rounded-full"></div>
+                  <span className="ml-3 text-gray-600 font-medium">Loading ratings...</span>
+                </div>
+              ) : ratings.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  <Star className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                  <p className="text-sm">No ratings received yet</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {ratings.map((rating) => (
+                    <div key={rating._id} className="border border-gray-200 rounded-lg p-4">
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                          <div className="flex">
+                            {[...Array(5)].map((_, i) => (
+                              <Star
+                                key={i}
+                                className={`w-4 h-4 ${
+                                  i < rating.rating ? 'text-yellow-400 fill-current' : 'text-gray-300'
+                                }`}
+                              />
+                            ))}
+                          </div>
+                          <span className="text-sm font-medium text-gray-900">
+                            {rating.rating}/5
+                          </span>
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          {formatISTTime(rating.ratedAt)}
+                        </div>
+                      </div>
+                      <div className="mb-2">
+                        <p className="text-sm text-gray-600">
+                          <span className="font-medium">Customer:</span> {rating.customerName}
+                        </p>
+                        <p className="text-sm text-gray-600">
+                          <span className="font-medium">Order:</span> {rating.orderNumber}
+                        </p>
+                      </div>
+                      {rating.review && (
+                        <div className="bg-gray-50 rounded-lg p-3">
+                          <p className="text-sm text-gray-700 italic">"{rating.review}"</p>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+
+                  {/* Pagination */}
+                  {ratingsPagination.totalPages > 1 && (
+                    <div className="flex items-center justify-between pt-4 border-t border-gray-200">
+                      <div className="text-sm text-gray-700">
+                        Showing {((ratingsPagination.page - 1) * ratingsPagination.limit) + 1} to{' '}
+                        {Math.min(ratingsPagination.page * ratingsPagination.limit, ratingsPagination.total)} of{' '}
+                        {ratingsPagination.total} ratings
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => fetchAgentRatings(ratingsPagination.page - 1)}
+                          disabled={ratingsPagination.page === 1}
+                          className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          Previous
+                        </button>
+                        <button
+                          onClick={() => fetchAgentRatings(ratingsPagination.page + 1)}
+                          disabled={ratingsPagination.page === ratingsPagination.totalPages}
+                          className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          Next
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
 
@@ -2285,8 +2510,13 @@ export default function DeliveryAgentDetails() {
                 <span className="text-gray-600">Rating</span>
                 <div className="flex items-center gap-1">
                   <Star className="w-4 h-4 text-yellow-500 fill-current" />
-                  <span className="font-medium">{agent.status?.rating || 5.0}</span>
+                  <span className="font-medium">{agent.status?.rating ? agent.status.rating.toFixed(1) : 5.0}</span>
                 </div>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <span className="text-gray-600">Total Ratings</span>
+                <span className="font-medium">{agent.status?.totalRatings || 0}</span>
               </div>
 
               <div className="flex items-center justify-between">

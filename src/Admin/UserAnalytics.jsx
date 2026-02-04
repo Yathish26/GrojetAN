@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BarChart3, Users, TrendingUp, Smartphone, Search, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -28,6 +29,7 @@ ChartJS.register(
 );
 
 export default function UserAnalytics() {
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [analyticsData, setAnalyticsData] = useState({});
   const [chartData, setChartData] = useState([]);
@@ -597,7 +599,11 @@ export default function UserAnalytics() {
                       </thead>
                       <tbody className="bg-white divide-y divide-gray-200">
                         {users.map((user) => (
-                          <tr key={user._id} className="hover:bg-gray-50">
+                          <tr 
+                            key={user._id} 
+                            className="hover:bg-gray-50 cursor-pointer"
+                            onClick={() => navigate(`/users/${user._id}`)}
+                          >
                             <td className="px-6 py-4 whitespace-nowrap">
                               <div className="text-sm font-medium text-gray-900">
                                 {user.name || 'N/A'}

@@ -21,15 +21,20 @@ export default function UserOrders() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [orders, setOrders] = useState([]);
+  const [xpressOrders, setXpressOrders] = useState([]);
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [pagination, setPagination] = useState(null);
+  const [xpressPagination, setXpressPagination] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [xpressCurrentPage, setXpressCurrentPage] = useState(1);
+  const [activeTab, setActiveTab] = useState('merchant');
 
   useEffect(() => {
     fetchUserDetails();
     fetchUserOrders(currentPage);
-  }, [id, currentPage]);
+    fetchUserXpressOrders(xpressCurrentPage);
+  }, [id, currentPage, xpressCurrentPage]);
 
   const fetchUserDetails = async () => {
     try {
@@ -96,6 +101,33 @@ export default function UserOrders() {
       toast.error(error.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchUserXpressOrders = async (page = 1) => {
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_SERVER}/admin/users/${id}/xpress-orders?page=${page}&limit=10`,
+        {
+          credentials: 'include',
+        }
+      );
+
+      if (response.status === 401) {
+        navigate('/login');
+        return;
+      }
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch user xpress orders');
+      }
+
+      const data = await response.json();
+      setXpressOrders(data.orders || []);
+      setXpressPagination(data.pagination);
+    } catch (error) {
+      console.error('Error fetching user xpress orders:', error);
+      toast.error(error.message);
     }
   };
 
@@ -208,10 +240,34 @@ export default function UserOrders() {
 
         {/* Orders List */}
         <div className="bg-white shadow-lg">
+          {/* Tabs */}
+          <div className="flex border-b">
+            <button
+              onClick={() => setActiveTab('merchant')}
+              className={`flex-1 py-4 px-6 text-center font-medium transition-colors ${
+                activeTab === 'merchant'
+                  ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50'
+                  : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+              }`}
+            >
+              Merchant Orders ({pagination?.total || 0})
+            </button>
+            <button
+              onClick={() => setActiveTab('xpress')}
+              className={`flex-1 py-4 px-6 text-center font-medium transition-colors ${
+                activeTab === 'xpress'
+                  ? 'text-orange-600 border-b-2 border-orange-600 bg-orange-50'
+                  : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+              }`}
+            >
+              Xpress Orders ({xpressPagination?.total || 0})
+            </button>
+          </div>
+
           <div className="px-6 py-4 border-b bg-gradient-to-r from-gray-50 to-slate-50">
             <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
               <FiShoppingBag className="text-gray-600" />
-              Order History ({pagination?.total || 0})
+              {activeTab === 'merchant' ? 'Merchant Order History' : 'Xpress Order History'} ({activeTab === 'merchant' ? (pagination?.total || 0) : (xpressPagination?.total || 0)})
             </h3>
           </div>
 
@@ -220,15 +276,15 @@ export default function UserOrders() {
               <div className="flex items-center justify-center py-12">
                 <div className="animate-spin h-8 w-8 border-t-2 border-b-2 rounded-full border-blue-500"></div>
               </div>
-            ) : orders.length === 0 ? (
+            ) : (activeTab === 'merchant' ? orders : xpressOrders).length === 0 ? (
               <div className="text-center py-12">
                 <FiShoppingBag className="w-16 h-16 text-gray-300 mx-auto mb-4" />
                 <h3 className="text-xl font-semibold text-gray-600 mb-2">No Orders Found</h3>
-                <p className="text-gray-500">This user hasn't placed any orders yet.</p>
+                <p className="text-gray-500">This user hasn't placed any {activeTab === 'merchant' ? 'merchant' : 'xpress'} orders yet.</p>
               </div>
             ) : (
               <div className="space-y-4">
-                {orders.map((order) => (
+                {(activeTab === 'merchant' ? orders : xpressOrders).map((order) => (
                   <div key={order._id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition">
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex items-center gap-3">
@@ -237,7 +293,7 @@ export default function UserOrders() {
                           <div className="flex items-center gap-2 mb-1">
                             <h4 className="font-semibold text-gray-800">Order #{order.orderNumber || order._id.slice(-8)}</h4>
                             <button
-                              onClick={() => navigate(`/orders/${order._id}`)}
+                              onClick={() => navigate(activeTab === 'merchant' ? `/orders/${order._id}` : `/xpress/${order._id}`)}
                               className="inline-flex items-center cursor-pointer px-2 py-1 border border-transparent text-xs font-medium rounded-md text-blue-600 bg-blue-50 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
                             >
                               View Details
@@ -250,116 +306,158 @@ export default function UserOrders() {
                         </div>
                       </div>
                       <div className="text-right">
-                        <span className={`px-3 py-1 text-xs font-semibold rounded-full ${getStatusColor(order.status?.current)}`}>
-                          {order.status?.current?.charAt(0).toUpperCase() + order.status?.current?.slice(1)}
+                        <span className={`px-3 py-1 text-xs font-semibold rounded-full ${getStatusColor(order.status)}`}>
+                          {(order.status?.current || order.status)?.charAt(0).toUpperCase() + (order.status?.current || order.status)?.slice(1)}
                         </span>
-                        <p className="text-lg font-bold text-gray-800 mt-1">₹{order.pricing?.totalAmount?.toLocaleString() || order.totalAmount?.toLocaleString() || 0}</p>
-                      </div>
-                    </div>
-
-                    {/* Merchant Info */}
-                    {order.store?.storeId && (
-                      <div className="flex items-center gap-2 mb-3 p-2 bg-gray-50 rounded">
-                        <FiMapPin className="text-gray-400" />
-                        <span className="text-sm font-medium text-gray-700">
-                          {order.store.storeId.businessInfo?.displayName || 'Store'}
-                        </span>
-                        {order.store.storeId.operationalInfo?.storeAddress && (
-                          <span className="text-sm text-gray-500">
-                            • {order.store.storeId.operationalInfo.storeAddress.city}
-                          </span>
-                        )}
-                      </div>
-                    )}
-
-                    {/* Order Items */}
-                    <div className="space-y-2 mb-3">
-                      <h5 className="text-sm font-medium text-gray-700">Items ({order.items?.length || 0})</h5>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                        {order.items?.slice(0, 3).map((item, index) => {
-                          const imageUrl = item.image || item.productId?.images?.[0] || item.productId?.thumbnail;
-                          const fullImageUrl = imageUrl?.startsWith('http') ? imageUrl : `${import.meta.env.VITE_SERVER}${imageUrl}`;
-
-                          return (
-                            <div key={index} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                              {imageUrl ? (
-                                <img
-                                  src={fullImageUrl}
-                                  alt={item.productId?.name || item.name}
-                                  className="w-12 h-12 object-cover rounded-lg border border-gray-200"
-                                  onError={(e) => {
-                                    e.target.style.display = 'none';
-                                    e.target.nextSibling.style.display = 'flex';
-                                  }}
-                                />
-                              ) : null}
-                              <div className={`w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center ${imageUrl ? 'hidden' : ''}`}>
-                                <FiPackage className="text-gray-400 text-lg" />
-                              </div>
-                              <div className="flex-1">
-                                <p className="text-sm font-medium text-gray-800 truncate">{item.productId?.name || item.name}</p>
-                                <p className="text-xs text-gray-600">Qty: {item.quantity} × ₹{item.price}</p>
-                                <p className="text-xs text-gray-500">₹{(item.quantity * item.price).toLocaleString()}</p>
-                              </div>
-                            </div>
-                          );
-                        })}
-                        {order.items?.length > 3 && (
-                          <div className="flex items-center justify-center p-2 bg-gray-50 rounded">
-                            <span className="text-sm text-gray-500">+{order.items.length - 3} more items</span>
-                          </div>
-                        )}
+                        <p className="text-lg font-bold text-gray-800 mt-1">₹{order.pricing?.totalAmount?.toLocaleString() || order.pricing?.finalCost?.toLocaleString() || order.totalAmount?.toLocaleString() || 0}</p>
                       </div>
                     </div>
 
                     {/* Order Details */}
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                      <div>
-                        <span className="text-gray-600">Payment:</span>
-                        <p className="font-medium flex items-center gap-1">
-                          <FiCreditCard className="text-gray-400" />
-                          {order.payment?.method ? order.payment.method.charAt(0).toUpperCase() + order.payment.method.slice(1) : 'N/A'}
-                        </p>
-                      </div>
-                      <div>
-                        <span className="text-gray-600">Type:</span>
-                        <p className="font-medium">{order.orderType || 'Delivery'}</p>
-                      </div>
-                      {order.customer?.address && (
-                        <div className="col-span-2">
-                          <span className="text-gray-600">Delivery Address:</span>
-                          <p className="font-medium text-xs">
-                            {order.customer.address.street}, {order.customer.address.city}
-                          </p>
+                    {activeTab === 'merchant' ? (
+                      <>
+                        {/* Merchant Info */}
+                        {order.store?.storeId && (
+                          <div className="flex items-center gap-2 mb-3 p-2 bg-gray-50 rounded">
+                            <FiMapPin className="text-gray-400" />
+                            <span className="text-sm font-medium text-gray-700">
+                              {order.store.storeId.businessInfo?.displayName || 'Store'}
+                            </span>
+                            {order.store.storeId.operationalInfo?.storeAddress && (
+                              <span className="text-sm text-gray-500">
+                                • {order.store.storeId.operationalInfo.storeAddress.city}
+                              </span>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Order Items */}
+                        <div className="space-y-2 mb-3">
+                          <h5 className="text-sm font-medium text-gray-700">Items ({order.items?.length || 0})</h5>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                            {order.items?.slice(0, 3).map((item, index) => {
+                              const imageUrl = item.image || item.productId?.images?.[0] || item.productId?.thumbnail;
+                              const fullImageUrl = imageUrl?.startsWith('http') ? imageUrl : `${import.meta.env.VITE_SERVER}${imageUrl}`;
+
+                              return (
+                                <div key={index} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                                  {imageUrl ? (
+                                    <img
+                                      src={fullImageUrl}
+                                      alt={item.productId?.name || item.name}
+                                      className="w-12 h-12 object-cover rounded-lg border border-gray-200"
+                                      onError={(e) => {
+                                        e.target.style.display = 'none';
+                                        e.target.nextSibling.style.display = 'flex';
+                                      }}
+                                    />
+                                  ) : null}
+                                  <div className={`w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center ${imageUrl ? 'hidden' : ''}`}>
+                                    <FiPackage className="text-gray-400 text-lg" />
+                                  </div>
+                                  <div className="flex-1">
+                                    <p className="text-sm font-medium text-gray-800 truncate">{item.productId?.name || item.name}</p>
+                                    <p className="text-xs text-gray-600">Qty: {item.quantity} × ₹{item.price}</p>
+                                    <p className="text-xs text-gray-500">₹{(item.quantity * item.price).toLocaleString()}</p>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                            {order.items?.length > 3 && (
+                              <div className="flex items-center justify-center p-2 bg-gray-50 rounded">
+                                <span className="text-sm text-gray-500">+{order.items.length - 3} more items</span>
+                              </div>
+                            )}
+                          </div>
                         </div>
-                      )}
-                    </div>
+
+                        {/* Order Details */}
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                          <div>
+                            <span className="text-gray-600">Payment:</span>
+                            <p className="font-medium flex items-center gap-1">
+                              <FiCreditCard className="text-gray-400" />
+                              {order.payment?.method ? order.payment.method.charAt(0).toUpperCase() + order.payment.method.slice(1) : 'N/A'}
+                            </p>
+                          </div>
+                          <div>
+                            <span className="text-gray-600">Type:</span>
+                            <p className="font-medium">{order.orderType || 'Delivery'}</p>
+                          </div>
+                          {order.customer?.address && (
+                            <div className="col-span-2">
+                              <span className="text-gray-600">Delivery Address:</span>
+                              <p className="font-medium text-xs">
+                                {order.customer.address.street}, {order.customer.address.city}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        {/* Xpress Order Details */}
+                        <div className="space-y-2 mb-3">
+                          <h5 className="text-sm font-medium text-gray-700">Package Details</h5>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-3 bg-gray-50 rounded-lg">
+                            <div>
+                              <span className="text-gray-600">Package Type:</span>
+                              <p className="font-medium">{order.packageDetails?.category ? order.packageDetails.category.charAt(0).toUpperCase() + order.packageDetails.category.slice(1) : 'N/A'}</p>
+                            </div>
+                            <div>
+                              <span className="text-gray-600">Size:</span>
+                              <p className="font-medium">{order.packageDetails?.size || 'N/A'}</p>
+                            </div>
+                            <div>
+                              <span className="text-gray-600">Fragile:</span>
+                              <p className="font-medium">{order.packageDetails?.fragile ? 'Yes' : 'No'}</p>
+                            </div>
+                            <div>
+                              <span className="text-gray-600">Distance:</span>
+                              <p className="font-medium">{order.pricing?.distance ? `${order.pricing.distance} km` : 'N/A'}</p>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Pickup and Drop Details */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                          <div>
+                            <span className="text-gray-600">Pickup:</span>
+                            <p className="font-medium">{order.pickup?.address || 'N/A'}</p>
+                          </div>
+                          <div>
+                            <span className="text-gray-600">Drop:</span>
+                            <p className="font-medium">{order.drop?.address || 'N/A'}</p>
+                          </div>
+                        </div>
+                      </>
+                    )}
                   </div>
                 ))}
               </div>
             )}
 
             {/* Pagination */}
-            {pagination && pagination.totalPages > 1 && (
+            {(activeTab === 'merchant' ? pagination : xpressPagination) && (activeTab === 'merchant' ? pagination : xpressPagination).totalPages > 1 && (
               <div className="flex items-center justify-between mt-6 pt-4 border-t">
                 <div className="text-sm text-gray-600">
-                  Showing {((pagination.page - 1) * 10) + 1} to {Math.min(pagination.page * 10, pagination.total)} of {pagination.total} orders
+                  Showing {(((activeTab === 'merchant' ? currentPage : xpressCurrentPage) - 1) * 10) + 1} to {Math.min((activeTab === 'merchant' ? currentPage : xpressCurrentPage) * 10, (activeTab === 'merchant' ? pagination : xpressPagination).total)} of {(activeTab === 'merchant' ? pagination : xpressPagination).total} orders
                 </div>
                 <div className="flex items-center gap-2">
                   <button
-                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                    disabled={!pagination.hasPrevPage}
+                    onClick={() => activeTab === 'merchant' ? setCurrentPage(prev => Math.max(1, prev - 1)) : setXpressCurrentPage(prev => Math.max(1, prev - 1))}
+                    disabled={!(activeTab === 'merchant' ? pagination : xpressPagination).hasPrevPage}
                     className="flex items-center gap-1 px-3 py-2 text-sm border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <FiChevronLeft />
                     Previous
                   </button>
                   <span className="px-3 py-2 text-sm border border-gray-300 rounded bg-blue-50 text-blue-700">
-                    Page {pagination.page} of {pagination.totalPages}
+                    Page {activeTab === 'merchant' ? currentPage : xpressCurrentPage} of {(activeTab === 'merchant' ? pagination : xpressPagination).totalPages}
                   </span>
                   <button
-                    onClick={() => setCurrentPage(prev => Math.min(pagination.totalPages, prev + 1))}
-                    disabled={!pagination.hasNextPage}
+                    onClick={() => activeTab === 'merchant' ? setCurrentPage(prev => Math.min(pagination.totalPages, prev + 1)) : setXpressCurrentPage(prev => Math.min(xpressPagination.totalPages, prev + 1))}
+                    disabled={!(activeTab === 'merchant' ? pagination : xpressPagination).hasNextPage}
                     className="flex items-center gap-1 px-3 py-2 text-sm border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Next

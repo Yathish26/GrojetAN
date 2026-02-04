@@ -848,7 +848,20 @@ export default function OrderDetails() {
                         </div>
                         <div className="flex-1">
                           <h3 className="font-medium text-gray-800">{item.productId?.name || item.name || 'Product Name'}</h3>
-                          <p className="text-sm text-gray-600">Qty: {item.quantity}</p>
+                          <div className="flex items-center gap-2">
+                            <p className="text-sm text-gray-600">Qty: {item.quantity}</p>
+                            {(() => {
+                              const weightDimension = item.productId?.weightDimension;
+                              const variantWeightDimension = item.variant?.weightDimension;
+                              const finalWeightDimension = variantWeightDimension || weightDimension;
+                              const weightText = finalWeightDimension?.value && finalWeightDimension?.unit 
+                                ? `(${finalWeightDimension.value}${finalWeightDimension.unit})` 
+                                : '';
+                              return weightText ? (
+                                <p className="text-xs text-gray-500">{weightText}</p>
+                              ) : null;
+                            })()}
+                          </div>
                           <p className="text-sm text-gray-500">Unit Price: ₹{item.price}</p>
                         </div>
                         <div className="text-right">
@@ -862,6 +875,86 @@ export default function OrderDetails() {
                 </div>
               </div>
             </div>
+
+            {/* Customer Feedback */}
+            {(order.feedback?.deliveryRating || order.feedback?.foodRating) && (
+              <div className="bg-white shadow-lg rounded-lg overflow-hidden">
+                <div className="p-6 border-b border-gray-200">
+                  <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                    <Star className="w-5 h-5" />
+                    Customer Feedback
+                  </h2>
+                </div>
+                <div className="p-6">
+                  <div className="space-y-4">
+                    {/* Delivery Rating */}
+                    {order.feedback.deliveryRating && (
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium text-gray-700">Delivery Rating:</span>
+                        <div className="flex items-center gap-2">
+                          <div className="flex">
+                            {[1, 2, 3, 4, 5].map((star) => (
+                              <Star
+                                key={star}
+                                className={`w-4 h-4 ${star <= order.feedback.deliveryRating ? 'text-yellow-400 fill-current' : 'text-gray-300'}`}
+                              />
+                            ))}
+                          </div>
+                          <span className="text-sm text-gray-600">({order.feedback.deliveryRating}/5)</span>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Delivery Comment */}
+                    {order.feedback.deliveryComment && (
+                      <div>
+                        <span className="text-sm font-medium text-gray-700">Delivery Feedback:</span>
+                        <p className="text-sm text-gray-600 mt-1 bg-gray-50 p-3 rounded-lg">
+                          {order.feedback.deliveryComment}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Food Rating */}
+                    {order.feedback.foodRating && (
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium text-gray-700">Food Rating:</span>
+                        <div className="flex items-center gap-2">
+                          <div className="flex">
+                            {[1, 2, 3, 4, 5].map((star) => (
+                              <Star
+                                key={star}
+                                className={`w-4 h-4 ${star <= order.feedback.foodRating ? 'text-yellow-400 fill-current' : 'text-gray-300'}`}
+                              />
+                            ))}
+                          </div>
+                          <span className="text-sm text-gray-600">({order.feedback.foodRating}/5)</span>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Food Comment */}
+                    {order.feedback.foodComment && (
+                      <div>
+                        <span className="text-sm font-medium text-gray-700">Food Feedback:</span>
+                        <p className="text-sm text-gray-600 mt-1 bg-gray-50 p-3 rounded-lg">
+                          {order.feedback.foodComment}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Feedback Submitted Date */}
+                    {order.feedback.submittedAt && (
+                      <div className="pt-2 border-t border-gray-200">
+                        <span className="text-xs text-gray-500">
+                          Feedback submitted on {new Date(order.feedback.submittedAt).toLocaleDateString('en-IN')} at {new Date(order.feedback.submittedAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Order Timeline */}
             <div className="bg-white shadow-lg rounded-lg overflow-hidden">
@@ -1339,6 +1432,47 @@ export default function OrderDetails() {
                 </div>
               )}
             </div>
+
+            {/* Delivery Ratings */}
+            {order.status?.current === 'delivered' && (
+              <div className="bg-white shadow-lg rounded-lg overflow-hidden">
+                <div className="p-6 border-b border-gray-200">
+                  <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                    <Star className="w-5 h-5" />
+                    Delivery Ratings
+                  </h2>
+                </div>
+                <div className="p-6">
+                  {assignedAgentInfo.name && (
+                    <div className="mb-4">
+                      <div className="flex items-center gap-2 mb-2">
+                        <User className="w-4 h-4 text-gray-600" />
+                        <span className="text-sm font-medium text-gray-800">{assignedAgentInfo.name}</span>
+                        <div className="flex items-center gap-1">
+                          <Star className="w-4 h-4 text-yellow-400 fill-current" />
+                          <span className="text-sm font-medium text-gray-800">
+                            {assignedAgentInfo.rating || '5.0'}
+                          </span>
+                        </div>
+                      </div>
+                      <p className="text-xs text-gray-500">
+                        Current average rating from all deliveries
+                      </p>
+                    </div>
+                  )}
+
+                  <div className="text-center py-8">
+                    <Star className="w-12 h-12 text-gray-300 mx-auto mb-2" />
+                    <p className="text-gray-500 text-sm">
+                      Customer ratings will appear here once submitted
+                    </p>
+                    <p className="text-gray-400 text-xs mt-1">
+                      Ratings help improve delivery service quality
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Customer Information */}
             <div className="bg-white shadow-lg rounded-lg overflow-hidden">

@@ -18,11 +18,12 @@ import {
   FiBell,
   FiShield,
   FiClock,
-  FiTrendingUp,
   FiUsers,
   FiGlobe,
-  FiDollarSign
+  FiBriefcase,
+  FiTruck
 } from 'react-icons/fi';
+import { BiRupee } from 'react-icons/bi';
 import toast, { Toaster } from 'react-hot-toast';
 import Layout from '../Components/Layout.jsx';
 
@@ -31,6 +32,12 @@ export default function UserData() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [ordersCount, setOrdersCount] = useState(0);
+  const [merchantOrdersCount, setMerchantOrdersCount] = useState(0);
+  const [xpressOrdersCount, setXpressOrdersCount] = useState(0);
+  const [merchantSpend, setMerchantSpend] = useState(0);
+  const [xpressSpend, setXpressSpend] = useState(0);
+  const [lastMerchantOrderDate, setLastMerchantOrderDate] = useState(null);
+  const [lastXpressOrderDate, setLastXpressOrderDate] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showSuspendModal, setShowSuspendModal] = useState(false);
   const [suspensionReason, setSuspensionReason] = useState('');
@@ -56,7 +63,12 @@ export default function UserData() {
 
   useEffect(() => {
     fetchUserDetails();
-    fetchOrdersCount();
+    fetchMerchantOrdersCount();
+    fetchXpressOrdersCount();
+    fetchMerchantSpend();
+    fetchXpressSpend();
+    fetchLastMerchantOrderDate();
+    fetchLastXpressOrderDate();
     fetchAdminRole();
   }, [id]);
 
@@ -100,23 +112,9 @@ export default function UserData() {
     }
   };
 
-  const fetchOrdersCount = async () => {
-    try {
-      const response = await fetch(
-        `${import.meta.env.VITE_SERVER}/admin/users/${id}/orders/count`,
-        {
-          credentials: 'include',
-        }
-      );
-
-      if (response.ok) {
-        const data = await response.json();
-        setOrdersCount(data.count || 0);
-      }
-    } catch (error) {
-      console.error('Error fetching orders count:', error);
-    }
-  };
+  useEffect(() => {
+    setOrdersCount(merchantOrdersCount + xpressOrdersCount);
+  }, [merchantOrdersCount, xpressOrdersCount]);
 
   const fetchAdminRole = async () => {
     try {
@@ -133,6 +131,114 @@ export default function UserData() {
       }
     } catch (error) {
       console.error('Error fetching admin role:', error);
+    }
+  };
+
+  const fetchMerchantOrdersCount = async () => {
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_SERVER}/admin/users/${id}/merchant-orders/count`,
+        {
+          credentials: 'include',
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        setMerchantOrdersCount(data.count || 0);
+      }
+    } catch (error) {
+      console.error('Error fetching merchant orders count:', error);
+    }
+  };
+
+  const fetchXpressOrdersCount = async () => {
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_SERVER}/admin/users/${id}/xpress-orders/count`,
+        {
+          credentials: 'include',
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        setXpressOrdersCount(data.count || 0);
+      }
+    } catch (error) {
+      console.error('Error fetching xpress orders count:', error);
+    }
+  };
+
+  const fetchMerchantSpend = async () => {
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_SERVER}/admin/users/${id}/merchant-orders/spend`,
+        {
+          credentials: 'include',
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        setMerchantSpend(data.totalSpent || 0);
+      }
+    } catch (error) {
+      console.error('Error fetching merchant spend:', error);
+    }
+  };
+
+  const fetchXpressSpend = async () => {
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_SERVER}/admin/users/${id}/xpress-orders/spend`,
+        {
+          credentials: 'include',
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        setXpressSpend(data.totalSpent || 0);
+      }
+    } catch (error) {
+      console.error('Error fetching xpress spend:', error);
+    }
+  };
+
+  const fetchLastMerchantOrderDate = async () => {
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_SERVER}/admin/users/${id}/merchant-orders/last-date`,
+        {
+          credentials: 'include',
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        setLastMerchantOrderDate(data.lastOrderDate);
+      }
+    } catch (error) {
+      console.error('Error fetching last merchant order date:', error);
+    }
+  };
+
+  const fetchLastXpressOrderDate = async () => {
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_SERVER}/admin/users/${id}/xpress-orders/last-date`,
+        {
+          credentials: 'include',
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        setLastXpressOrderDate(data.lastOrderDate);
+      }
+    } catch (error) {
+      console.error('Error fetching last xpress order date:', error);
     }
   };
 
@@ -747,44 +853,60 @@ export default function UserData() {
                   </h3>
                 </div>
                 <div className="p-6">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                    <div className="text-center p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg shadow">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+                    <div className="text-center p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg shadow cursor-pointer hover:shadow-lg transition-shadow" onClick={() => navigate(`/users/${id}/orders`)}>
                       <FiShoppingBag className="text-2xl text-blue-600 mx-auto mb-2" />
                       <p className="text-2xl font-bold text-gray-800">
                         {ordersCount}
                       </p>
                       <p className="text-sm text-gray-600">Total Orders</p>
                     </div>
-                    <div className="text-center p-4 bg-gradient-to-br from-green-50 to-green-100 rounded-lg shadow">
-                      <FiDollarSign className="text-2xl text-green-600 mx-auto mb-2" />
+                    <div className="text-center p-4 bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg shadow">
+                      <FiBriefcase className="text-2xl text-purple-600 mx-auto mb-2" />
                       <p className="text-2xl font-bold text-gray-800">
-                        ₹{user.orderHistory?.totalSpent?.toLocaleString() || 0}
+                        {merchantOrdersCount}
                       </p>
-                      <p className="text-sm text-gray-600">Total Spent</p>
+                      <p className="text-sm text-gray-600">Merchant Orders</p>
                     </div>
-                    <div className="text-center p-4 bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-lg shadow">
-                      <FiTrendingUp className="text-2xl text-yellow-600 mx-auto mb-2" />
+                    <div className="text-center p-4 bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg shadow">
+                      <FiTruck className="text-2xl text-orange-600 mx-auto mb-2" />
                       <p className="text-2xl font-bold text-gray-800">
-                        ₹{user.orderHistory?.averageOrderValue?.toLocaleString() || 0}
+                        {xpressOrdersCount}
                       </p>
-                      <p className="text-sm text-gray-600">Avg Order Value</p>
+                      <p className="text-sm text-gray-600">Xpress Orders</p>
+                    </div>
+                    <div className="text-center p-4 bg-gradient-to-br from-green-50 to-green-100 rounded-lg shadow">
+                      <BiRupee className="text-2xl text-green-600 mx-auto mb-2" />
+                      <p className="text-2xl font-bold text-gray-800">
+                        ₹{merchantSpend.toLocaleString()}
+                      </p>
+                      <p className="text-sm text-gray-600">Merchant Spend</p>
+                    </div>
+                    <div className="text-center p-4 bg-gradient-to-br from-teal-50 to-teal-100 rounded-lg shadow">
+                      <BiRupee className="text-2xl text-teal-600 mx-auto mb-2" />
+                      <p className="text-2xl font-bold text-gray-800">
+                        ₹{xpressSpend.toLocaleString()}
+                      </p>
+                      <p className="text-sm text-gray-600">Xpress Spend</p>
                     </div>
                   </div>
 
                   <div className="space-y-3">
                     <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                      <span className="text-gray-600">Last Order Date</span>
+                      <span className="text-gray-600">Last Merchant Order Date</span>
                       <span className="font-medium">
-                        {user.orderHistory?.lastOrderDate ? new Date(user.orderHistory.lastOrderDate).toLocaleDateString('en-IN') : 'No orders yet'}
+                        {lastMerchantOrderDate ? new Date(lastMerchantOrderDate).toLocaleString('en-IN') : 'No orders yet'}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                      <span className="text-gray-600">Last Xpress Order Date</span>
+                      <span className="font-medium">
+                        {lastXpressOrderDate ? new Date(lastXpressOrderDate).toLocaleString('en-IN') : 'No orders yet'}
                       </span>
                     </div>
                     <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
                       <span className="text-gray-600">Favorite Items Count</span>
                       <span className="font-medium">{user.orderHistory?.favoriteItems?.length || 0}</span>
-                    </div>
-                    <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                      <span className="text-gray-600">Preferred Merchants</span>
-                      <span className="font-medium">{user.orderHistory?.preferredMerchants?.length || 0}</span>
                     </div>
                   </div>
                 </div>

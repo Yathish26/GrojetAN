@@ -11,7 +11,8 @@ import {
   Castle,
   CookingPot,
   Calendar,
-  Cloud
+  Cloud,
+  Star
 } from 'lucide-react';
 import { MdAdminPanelSettings } from 'react-icons/md';
 import toast from 'react-hot-toast';
@@ -165,6 +166,7 @@ const Layout = ({ children, title }) => {
     { name: 'Merchants', icon: Store, path: '/merchants', roles: ['super_admin', 'admin'] },
     { name: 'Support', icon: Headphones, path: '/support', roles: ['super_admin', 'admin'] },
     { name: 'Delivery Agents', icon: Truck, path: '/delivery-agents', roles: ['super_admin', 'admin'] },
+    { name: 'Delivery Ratings', icon: Star, path: '/delivery-ratings', roles: ['super_admin', 'admin'] },
     { name: 'Delivery Zones', icon: MapPin, path: '/delivery-zones', roles: ['super_admin', 'admin'] },
     { name: 'Market Area', icon: MapPin, path: '/market-area', roles: ['super_admin', 'admin'] },
     { name: 'Offers', icon: Gift, path: '/offers', roles: ['super_admin', 'admin'] },

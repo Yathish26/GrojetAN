@@ -13,6 +13,7 @@ import Orders from './Admin/Orders.jsx'
 import OrderDetails from './Admin/OrderDetails.jsx'
 import DeliveryAgents from './Admin/DeliveryAgents.jsx'
 import DeliveryAgentDetails from './Admin/DeliveryAgentDetails.jsx'
+import DeliveryRatings from './Admin/DeliveryRatings.jsx'
 import RidersZone from './Admin/RidersZone.jsx'
 import DeliveryZones from './Admin/DeliveryZones.jsx'
 import Analytics from './Admin/Analytics.jsx'
@@ -137,6 +138,7 @@ function App() {
           {/* Delivery Management */}
           <Route path="/delivery-agents" element={<DeliveryAgents />} />
           <Route path="/delivery-agents/:id" element={<DeliveryAgentDetails />} />
+          <Route path="/delivery-ratings" element={<DeliveryRatings />} />
           <Route path="/riders-zone" element={<RidersZone />} />
           <Route path="/delivery-zones" element={<DeliveryZones />} />
           <Route path="/market-area" element={<MarketArea />} />
