@@ -321,6 +321,36 @@ export default function OrderDetails() {
     }
   };
 
+  const reassignDeliveryAgent = async () => {
+    setUpdating(true);
+    try {
+      const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/orders/${orderId}/unassign-agent`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include'
+      });
+
+      const data = await response.json();
+      if (data.tokenValid === false) {
+        navigate('/login', { replace: true });
+        return;
+      }
+
+      if (!response.ok) {
+        throw new Error('Failed to unassign delivery agent');
+      }
+
+      setOrder(data.order);
+      toast.success('Delivery agent unassigned successfully');
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setUpdating(false);
+    }
+  };
+
   const fetchDeliveryAgents = async () => {
     setLoadingAgents(true);
     try {
@@ -1323,9 +1353,21 @@ export default function OrderDetails() {
               <div className="p-6">
                 {order.assignment?.deliveryAgent ? (
                   <div className="p-3 bg-green-50 rounded-none">
-                    <div className="flex items-center gap-2 mb-2">
-                      <User className="w-4 h-4 text-green-600" />
-                      <span className="text-sm font-medium text-green-800">Delivery Agent Assigned</span>
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <User className="w-4 h-4 text-green-600" />
+                        <span className="text-sm font-medium text-green-800">Delivery Agent Assigned</span>
+                      </div>
+                      {order.status?.current !== 'delivered' && (
+                        <button
+                          onClick={() => {
+                            setOrder(prev => ({ ...prev, assignment: null }));
+                          }}
+                          className="px-3 py-1 text-sm bg-red-100 text-red-700 rounded-lg hover:bg-red-200"
+                        >
+                          Reassign
+                        </button>
+                      )}
                     </div>
                     <div className="space-y-1 text-sm text-green-700">
                       {assignedAgentInfo.name && (
