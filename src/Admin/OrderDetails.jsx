@@ -880,17 +880,6 @@ export default function OrderDetails() {
                           <h3 className="font-medium text-gray-800">{item.productId?.name || item.name || 'Product Name'}</h3>
                           <div className="flex items-center gap-2">
                             <p className="text-sm text-gray-600">Qty: {item.quantity}</p>
-                            {(() => {
-                              const weightDimension = item.productId?.weightDimension;
-                              const variantWeightDimension = item.variant?.weightDimension;
-                              const finalWeightDimension = variantWeightDimension || weightDimension;
-                              const weightText = finalWeightDimension?.value && finalWeightDimension?.unit 
-                                ? `(${finalWeightDimension.value}${finalWeightDimension.unit})` 
-                                : '';
-                              return weightText ? (
-                                <p className="text-xs text-gray-500">{weightText}</p>
-                              ) : null;
-                            })()}
                           </div>
                           <p className="text-sm text-gray-500">Unit Price: ₹{item.price}</p>
                         </div>

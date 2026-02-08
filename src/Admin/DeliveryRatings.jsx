@@ -346,7 +346,10 @@ const DeliveryRatings = () => {
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="text-sm text-gray-900">
-                              <div className="flex items-center gap-1">
+                              <div 
+                                className="flex items-center gap-1 cursor-pointer hover:text-blue-600 transition-colors"
+                                onClick={() => navigate(`/delivery-agents/${rating.deliveryAgentDbId}`)}
+                              >
                                 <Truck size={14} />
                                 {rating.agentName || 'Unknown Agent'}
                               </div>
@@ -423,7 +426,10 @@ const DeliveryRatings = () => {
                           <div className="flex-1 min-w-0">
                             <div className="flex items-start justify-between mb-2">
                               <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2 mb-1">
+                                <div 
+                                  className="flex items-center gap-2 mb-1 cursor-pointer hover:text-blue-600 transition-colors"
+                                  onClick={() => navigate(`/delivery-agents/${rating.deliveryAgentDbId}`)}
+                                >
                                   <Truck size={12} />
                                   <span className="text-sm font-medium text-gray-900 truncate">
                                     {rating.agentName || 'Unknown Agent'}
