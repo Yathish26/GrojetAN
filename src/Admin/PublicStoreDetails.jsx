@@ -34,7 +34,7 @@ const PublicStoreDetails = () => {
   const [currentUser, setCurrentUser] = useState(null);
   const [checkingUser, setCheckingUser] = useState(true);
   const [editingItem, setEditingItem] = useState(null);
-  const [editValues, setEditValues] = useState({ quantity: '', price: '', weightValue: '', weightUnit: '' });
+  const [editValues, setEditValues] = useState({ quantity: '', price: '', weightValue: '', weightUnit: '', category: '' });
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
@@ -156,13 +156,14 @@ const PublicStoreDetails = () => {
       quantity: item.quantity || 0,
       price: item.price || 0,
       weightValue: item.weightDimension?.value || '',
-      weightUnit: item.weightDimension?.unit || ''
+      weightUnit: item.weightDimension?.unit || '',
+      category: item.category || ''
     });
   };
 
   const cancelEditing = () => {
     setEditingItem(null);
-    setEditValues({ quantity: '', price: '', weightValue: '', weightUnit: '' });
+    setEditValues({ quantity: '', price: '', weightValue: '', weightUnit: '', category: '' });
   };
 
   const updateInventoryItem = async (itemId, field, value) => {
@@ -178,6 +179,9 @@ const PublicStoreDetails = () => {
       } else if (field === 'price') {
         endpoint = `${import.meta.env.VITE_SERVER}/admin/merchant-stores/${id}/inventory/${itemId}/price`;
         body = { price: parseFloat(value) };
+      } else if (field === 'category') {
+        endpoint = `${import.meta.env.VITE_SERVER}/admin/merchant-stores/${id}/inventory/${itemId}/category`;
+        body = { category: value };
       }
 
       const response = await fetch(endpoint, {
@@ -192,7 +196,7 @@ const PublicStoreDetails = () => {
       if (response.ok) {
         const data = await response.json();
         if (data.success) {
-          toast.success(`${field === 'quantity' ? 'Stock' : field === 'price' ? 'Price' : 'Weight'} updated successfully`);
+          toast.success(`${field === 'quantity' ? 'Stock' : field === 'price' ? 'Price' : field === 'category' ? 'Category' : 'Weight'} updated successfully`);
           // Refresh the current page data
           fetchStoreDetails(currentPage, searchTerm, statusFilter, categoryFilter);
         } else {
@@ -233,6 +237,12 @@ const PublicStoreDetails = () => {
             weightUnit: editValues.weightUnit
           });
         }
+      }
+
+      // Update category if changed
+      const currentCategory = currentItem?.category || '';
+      if (editValues.category !== currentCategory) {
+        await updateInventoryItem(editingItem, 'category', editValues.category);
       }
 
       cancelEditing();
@@ -691,7 +701,17 @@ const PublicStoreDetails = () => {
                           <div className="space-y-2 mb-3">
                             <div className="flex items-center justify-between">
                               <span className="text-sm text-gray-600">Category:</span>
-                              <span className="text-sm font-medium text-gray-900">{item.categoryName || item.category}</span>
+                              {editingItem === item._id ? (
+                                <input
+                                  type="text"
+                                  value={editValues.category}
+                                  onChange={(e) => setEditValues(prev => ({ ...prev, category: e.target.value }))}
+                                  placeholder="Category"
+                                  className="w-24 px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-green-500 focus:border-transparent"
+                                />
+                              ) : (
+                                <span className="text-sm font-medium text-gray-900">{item.category}</span>
+                              )}
                             </div>
 
                             <div className="flex items-center justify-between">
