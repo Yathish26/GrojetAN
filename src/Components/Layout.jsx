@@ -9,8 +9,6 @@ import {
   ShieldPlus, DollarSign,
   IndianRupeeIcon, Zap, MessageSquare, Mail,
   Castle,
-  CookingPot,
-  Calendar,
   Cloud,
   Star
 } from 'lucide-react';
@@ -157,8 +155,6 @@ const Layout = ({ children, title }) => {
     { name: 'Requested Products', icon: Shield, path: '/products/requests', roles: ['super_admin', 'admin'] },
     { name: 'Categories', icon: ChartBarStacked, path: '/categories', roles: ['super_admin', 'admin'] },
     { name: 'Xpress', icon: Zap, path: '/xpress', roles: ['super_admin', 'admin'] },
-    { name: 'Services', icon: CookingPot, path: '/services', roles: ['super_admin', 'admin']},
-    { name: 'Events', icon: Calendar, path: '/events', roles: ['super_admin', 'admin']},
     { name: 'Careers', icon: Briefcase, path: '/careers', roles: ['super_admin', 'admin'] },
     { name: 'Users', icon: Users, path: '/users', roles: ['super_admin', 'admin'] },
     { name: 'User Analytics', icon: BarChart3, path: '/user-analytics', roles: ['super_admin'] },

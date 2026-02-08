@@ -44,8 +44,6 @@ import LiveChat from './Admin/LiveChat.jsx'
 import Security from './Admin/Security.jsx'
 import Xpress from './Admin/Xpress.jsx'
 import XpressOrderDetails from './Admin/XpressOrderDetails.jsx'
-import Services from './Admin/Services.jsx'
-import Events from './Admin/Events.jsx'
 import { WebSocketProvider } from './context/WebSocketContext.jsx'
 import ContactQur from './Admin/ContactQur.jsx'
 import EmailSender from './Admin/EmailSender.jsx'
@@ -125,12 +123,6 @@ function App() {
           {/* Xpress */}
           <Route path="/xpress" element={<Xpress />} />
           <Route path="/xpress/:id" element={<XpressOrderDetails />} />
-          
-          {/* Services */}
-          <Route path="/services" element={<Services />} />
-          
-          {/* Events */}
-          <Route path="/events" element={<Events />} />
           
           {/* Careers Management */}
           <Route path="/careers" element={<Careers />} />

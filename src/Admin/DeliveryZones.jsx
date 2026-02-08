@@ -719,94 +719,101 @@ export default function DeliveryZones() {
       </div>
 
       {/* Zones Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredZones.map((zone) => (
-          <div key={zone._id} className="bg-white  shadow-sm border border-gray-200 overflow-hidden">
-            <div className="p-6">
-              <div className="flex items-start justify-between mb-4">
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-800">{zone.name}</h3>
-                  <p className="text-sm text-gray-600 mt-1">{zone.description}</p>
-                </div>
-                <div className="flex flex-col gap-2">
-                  <div className={`px-2 py-1 rounded-full text-xs font-medium ${zone.isActive
-                    ? 'bg-green-100 text-green-800'
-                    : 'bg-gray-100 text-gray-800'
-                    }`}>
-                    {zone.isActive ? 'Active' : 'Inactive'}
+      {loading ? (
+        <div className="flex items-center justify-center py-12">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+          <span className="ml-3 text-gray-600">Loading delivery zones...</span>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredZones.map((zone) => (
+            <div key={zone._id} className="bg-white  shadow-sm border border-gray-200 overflow-hidden">
+              <div className="p-6">
+                <div className="flex items-start justify-between mb-4">
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-800">{zone.name}</h3>
+                    <p className="text-sm text-gray-600 mt-1">{zone.description}</p>
                   </div>
-                  <div className={`px-2 py-1 rounded-full text-xs font-medium ${zone.supportsXpress
-                    ? 'bg-blue-100 text-blue-800'
-                    : 'bg-gray-100 text-gray-800'
-                    }`}>
-                    {zone.supportsXpress ? 'Xpress' : 'Standard'}
-                  </div>
-                  <div className={`px-2 py-1 rounded-full text-xs font-medium ${zone.supportsMerchant
-                    ? 'bg-purple-100 text-purple-800'
-                    : 'bg-gray-100 text-gray-800'
-                    }`}>
-                    {zone.supportsMerchant ? 'Merchant' : 'No Merchant'}
+                  <div className="flex flex-col gap-2">
+                    <div className={`px-2 py-1 rounded-full text-xs font-medium ${zone.isActive
+                      ? 'bg-green-100 text-green-800'
+                      : 'bg-gray-100 text-gray-800'
+                      }`}>
+                      {zone.isActive ? 'Active' : 'Inactive'}
+                    </div>
+                    <div className={`px-2 py-1 rounded-full text-xs font-medium ${zone.supportsXpress
+                      ? 'bg-blue-100 text-blue-800'
+                      : 'bg-gray-100 text-gray-800'
+                      }`}>
+                      {zone.supportsXpress ? 'Xpress' : 'Standard'}
+                    </div>
+                    <div className={`px-2 py-1 rounded-full text-xs font-medium ${zone.supportsMerchant
+                      ? 'bg-purple-100 text-purple-800'
+                      : 'bg-gray-100 text-gray-800'
+                      }`}>
+                      {zone.supportsMerchant ? 'Merchant' : 'No Merchant'}
+                    </div>
                   </div>
                 </div>
-              </div>
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-600">Boundary Points</span>
-                  <span className="font-medium">
-                    {Array.isArray(zone.boundaries?.coordinates) && zone.boundaries.coordinates[0]
-                      ? zone.boundaries.coordinates[0].length
-                      : 0} points
-                  </span>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-600">Boundary Points</span>
+                    <span className="font-medium">
+                      {Array.isArray(zone.boundaries?.coordinates) && zone.boundaries.coordinates[0]
+                        ? zone.boundaries.coordinates[0].length
+                        : 0} points
+                    </span>
+                  </div>
                 </div>
-              </div>
-              <div className="mt-6 pt-4 border-t border-gray-200">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    {currentUser?.role === 'super_admin' && (
+                <div className="mt-6 pt-4 border-t border-gray-200">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      {currentUser?.role === 'super_admin' && (
+                        <button
+                          onClick={() => toggleZoneStatus(zone._id, zone.isActive)}
+                          className={`p-1 rounded ${zone.isActive
+                            ? 'text-red-600 hover:bg-red-50'
+                            : 'text-green-600 hover:bg-green-50'
+                            }`}
+                          title={zone.isActive ? 'Deactivate' : 'Activate'}
+                        >
+                          {zone.isActive ? <X className="w-4 h-4" /> : <CircleCheck className="w-4 h-4" />}
+                        </button>
+                      )}
+                      {/* Edit and delete can be implemented similarly */}
                       <button
-                        onClick={() => toggleZoneStatus(zone._id, zone.isActive)}
-                        className={`p-1 rounded ${zone.isActive
-                          ? 'text-red-600 hover:bg-red-50'
-                          : 'text-green-600 hover:bg-green-50'
-                          }`}
-                        title={zone.isActive ? 'Deactivate' : 'Activate'}
+                        onClick={() => setEditingZone(zone)}
+                        className="p-1 text-blue-600 hover:bg-blue-50 rounded"
+                        title="Edit Zone"
                       >
-                        {zone.isActive ? <X className="w-4 h-4" /> : <CircleCheck className="w-4 h-4" />}
+                        <Edit3 className="w-4 h-4" />
                       </button>
-                    )}
-                    {/* Edit and delete can be implemented similarly */}
+                      {currentUser?.role === 'super_admin' && (
+                        <button
+                          onClick={() => handleDeleteZone(zone._id)}
+                          className="p-1 text-red-600 hover:bg-red-50 rounded"
+                          title="Delete Zone"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
                     <button
-                      onClick={() => setEditingZone(zone)}
-                      className="p-1 text-blue-600 hover:bg-blue-50 rounded"
-                      title="Edit Zone"
+                      onClick={() => handleViewMap(zone)}
+                      className="text-sm text-blue-600 hover:text-blue-700 flex items-center gap-1"
                     >
-                      <Edit3 className="w-4 h-4" />
+                      <Eye className="w-4 h-4" />
+                      View Map
                     </button>
-                    {currentUser?.role === 'super_admin' && (
-                      <button
-                        onClick={() => handleDeleteZone(zone._id)}
-                        className="p-1 text-red-600 hover:bg-red-50 rounded"
-                        title="Delete Zone"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    )}
                   </div>
-                  <button
-                    onClick={() => handleViewMap(zone)}
-                    className="text-sm text-blue-600 hover:text-blue-700 flex items-center gap-1"
-                  >
-                    <Eye className="w-4 h-4" />
-                    View Map
-                  </button>
                 </div>
               </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
-      {filteredZones.length === 0 && (
+      {!loading && filteredZones.length === 0 && (
         <div className="text-center py-12">
           <MapPin className="w-12 h-12 text-gray-400 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-gray-800 mb-2">No Delivery Zones Found</h3>
@@ -1143,6 +1150,7 @@ export default function DeliveryZones() {
                 const payload = {
                   name: editForm.name,
                   description: editForm.description,
+                  isActive: editForm.isActive,
                   supportsXpress: editForm.supportsXpress,
                   supportsMerchant: editForm.supportsMerchant,
                   boundaries: {
@@ -1150,11 +1158,6 @@ export default function DeliveryZones() {
                     coordinates: editForm.boundaries?.coordinates || []
                   }
                 };
-
-                // Only include isActive if user is super_admin
-                if (currentUser?.role === 'super_admin') {
-                  payload.isActive = editForm.isActive;
-                }
 
                 try {
                   await handleUpdateZone(editForm._id, payload);
@@ -1216,7 +1219,7 @@ export default function DeliveryZones() {
                     )}
                   </div>
                 </div>
-                {currentUser?.role === 'super_admin' && (
+                {isAuthorized && (
                   <div className="flex items-center gap-4 mt-2">
                     <div className="flex items-center gap-2">
                       <input
