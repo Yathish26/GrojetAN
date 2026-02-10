@@ -31,27 +31,19 @@ export default function Profile() {
   const fetchProfile = async () => {
     try {
       setLoading(true);
-      const local = localStorage.getItem('adminUser');
-      if (local) {
-        const data = JSON.parse(local);
-        setProfile(data);
-        setEditForm({ name: data.name||'', email: data.email||'', phone: data.phone||'', department: data.department||'' });
-      } else {
-        const res = await fetch(`${import.meta.env.VITE_SERVER}/admin/auth/profile`, { credentials: 'include' });
-        if (res.status === 401) {
+      const res = await fetch(`${import.meta.env.VITE_SERVER}/admin/auth/profile`, { credentials: 'include' });
+      if (res.status === 401) {
+        navigate('/login', { replace: true });
+        return;
+      }
+      if (!res.ok) throw new Error('Failed to fetch profile');
+      const data = await res.json();
+      if (data.tokenValid === false) {
           navigate('/login', { replace: true });
           return;
-        }
-        if (!res.ok) throw new Error('Failed to fetch profile');
-        const data = await res.json();
-        if (data.tokenValid === false) {
-            navigate('/login', { replace: true });
-            return;
-        }
-        setProfile(data.admin);
-        localStorage.setItem('adminUser', JSON.stringify(data.admin));
-        setEditForm({ name: data.admin.name||'', email: data.admin.email||'', phone: data.admin.phone||'', department: data.admin.department||'' });
       }
+      setProfile(data.admin);
+      setEditForm({ name: data.admin.name||'', email: data.admin.email||'', phone: data.admin.phone||'', department: data.admin.department||'' });
     } catch(err){ toast.error('Failed to load profile'); } finally { setLoading(false); }
   };
 
@@ -69,7 +61,7 @@ export default function Profile() {
           navigate('/login', { replace: true });
           return;
       }
-      setProfile(data.admin); localStorage.setItem('adminUser', JSON.stringify(data.admin)); setEditing(false); toast.success('Profile updated');
+      setProfile(data.admin); setEditing(false); toast.success('Profile updated');
     } catch(err){ toast.error(err.message); }
   };
 

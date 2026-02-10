@@ -12,6 +12,9 @@ import toast from 'react-hot-toast';
 
 export default function DeliveryAgentSignup() {
   const navigate = useNavigate();
+  const [currentUser, setCurrentUser] = useState(null);
+  const [checkingUser, setCheckingUser] = useState(true);
+  const [redirecting, setRedirecting] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [availableZones, setAvailableZones] = useState([]);
@@ -75,6 +78,48 @@ export default function DeliveryAgentSignup() {
     agreedToPrivacy: false
   });
 
+  const allowedRoles = ['super_admin', 'admin'];
+
+  useEffect(() => {
+    const fetchCurrentUser = async () => {
+      try {
+        setCheckingUser(true);
+        const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/auth/profile`, { credentials: 'include' });
+        if (response.status === 401) {
+          setRedirecting(true);
+          navigate('/login', { replace: true });
+          return;
+        }
+        const data = await response.json();
+        if (data.tokenValid === false) {
+          setRedirecting(true);
+          navigate('/login', { replace: true });
+          return;
+        }
+        if (response.ok && data.admin) {
+          setCurrentUser(data.admin);
+        } else {
+          setRedirecting(true);
+          navigate('/login', { replace: true });
+          return;
+        }
+      } catch (err) {
+        console.error('Failed to fetch current user', err);
+        setRedirecting(true);
+        navigate('/login', { replace: true });
+      } finally {
+        setCheckingUser(false);
+      }
+    };
+    fetchCurrentUser();
+  }, [navigate]);
+
+  useEffect(() => {
+    if (currentUser) {
+      fetchDeliveryZones();
+    }
+  }, [currentUser]);
+
   const vehicleTypes = [
     'bike',
     'bicycle', 
@@ -83,12 +128,16 @@ export default function DeliveryAgentSignup() {
   ];
 
   // Fetch delivery zones on component mount
-  useEffect(() => {
-    const fetchDeliveryZones = async () => {
+  const fetchDeliveryZones = async () => {
       try {
         const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/delivery-zones`, {
           credentials: 'include'
         });
+
+        if (response.status === 401) {
+          navigate('/login');
+          return;
+        }
 
         const data = await response.json();
         if (data.tokenValid === false) {
@@ -110,9 +159,6 @@ export default function DeliveryAgentSignup() {
         setZonesLoading(false);
       }
     };
-
-    fetchDeliveryZones();
-  }, []);
 
   const handleInputChange = (section, field, value) => {
     if (section) {
@@ -243,7 +289,39 @@ export default function DeliveryAgentSignup() {
     } finally {
       setLoading(false);
     }
-  };  return (
+  };
+
+  if (checkingUser) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+      </div>
+    );
+  }
+
+  if (!currentUser) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">Unauthorized Access</h2>
+          <p className="text-gray-600">You don't have permission to access this page.</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!allowedRoles.includes(currentUser.role)) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">Access Denied</h2>
+          <p className="text-gray-600">Only Admins and Super Admins can create delivery agent accounts.</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-4xl mx-auto px-4">
         {/* Header */}

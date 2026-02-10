@@ -11,6 +11,9 @@ const MerchantInventory = () => {
   const [inventory, setInventory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [currentUser, setCurrentUser] = useState(null);
+  const [checkingUser, setCheckingUser] = useState(true);
+  const [redirecting, setRedirecting] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [editingItem, setEditingItem] = useState(null);
   const [editedPrice, setEditedPrice] = useState('');
@@ -70,7 +73,6 @@ const MerchantInventory = () => {
       });
 
       if (response.status === 401) {
-        localStorage.removeItem('adminUser');
         navigate('/login');
         return;
       }
@@ -106,11 +108,47 @@ const MerchantInventory = () => {
     }
   }, [id, navigate, page, searchTerm, statusFilter, categoryFilter, eventsFilter]);
 
+  const fetchCurrentUser = async () => {
+    try {
+      setCheckingUser(true);
+      const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/auth/profile`, { credentials: 'include' });
+      if (response.status === 401) {
+        setRedirecting(true);
+        navigate('/login', { replace: true });
+        return;
+      }
+      const data = await response.json();
+      if (data.tokenValid === false) {
+        setRedirecting(true);
+        navigate('/login', { replace: true });
+        return;
+      }
+      if (response.ok && data.admin) {
+        setCurrentUser(data.admin);
+      } else {
+        setRedirecting(true);
+        navigate('/login', { replace: true });
+        return;
+      }
+    } catch (err) {
+      console.error('Failed to fetch current user', err);
+      setRedirecting(true);
+      navigate('/login', { replace: true });
+      return;
+    } finally {
+      setCheckingUser(false);
+    }
+  };
+
   useEffect(() => {
-    if (id) {
+    fetchCurrentUser();
+  }, []);
+
+  useEffect(() => {
+    if (currentUser && id) {
       fetchMerchantInventory();
     }
-  }, [id, fetchMerchantInventory]);
+  }, [currentUser, id, fetchMerchantInventory]);
 
   // Filter inventory based on search term (removed - now handled by backend)
   // const filteredInventory = inventory.filter(item =>
@@ -170,7 +208,6 @@ const MerchantInventory = () => {
       });
 
       if (response.status === 401) {
-        localStorage.removeItem('adminUser');
         navigate('/login');
         return;
       }
@@ -241,7 +278,6 @@ const MerchantInventory = () => {
       });
 
       if (response.status === 401) {
-        localStorage.removeItem('adminUser');
         navigate('/login');
         return;
       }
@@ -308,7 +344,6 @@ const MerchantInventory = () => {
       });
 
       if (response.status === 401) {
-        localStorage.removeItem('adminUser');
         navigate('/login');
         return;
       }
@@ -369,7 +404,6 @@ const MerchantInventory = () => {
       });
 
       if (response.status === 401) {
-        localStorage.removeItem('adminUser');
         navigate('/login');
         return;
       }
@@ -417,7 +451,6 @@ const MerchantInventory = () => {
       });
 
       if (response.status === 401) {
-        localStorage.removeItem('adminUser');
         navigate('/login');
         return;
       }
@@ -464,7 +497,6 @@ const MerchantInventory = () => {
       });
 
       if (response.status === 401) {
-        localStorage.removeItem('adminUser');
         navigate('/login');
         return;
       }
@@ -494,6 +526,29 @@ const MerchantInventory = () => {
       setRemoving(null);
     }
   };
+
+  if (checkingUser) {
+    return (
+      <Layout>
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+        </div>
+      </Layout>
+    );
+  }
+
+  if (!currentUser) {
+    return (
+      <Layout>
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <div className="text-center">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">Unauthorized Access</h2>
+            <p className="text-gray-600">You don't have permission to access this page.</p>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
 
   if (loading) {
     return (

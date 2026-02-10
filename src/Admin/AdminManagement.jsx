@@ -46,6 +46,8 @@ export default function AdminManagement() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
+  const [checkingUser, setCheckingUser] = useState(true);
+  const [redirecting, setRedirecting] = useState(false);
   const [currentSearch, setCurrentSearch] = useState('');
 
   const [createForm, setCreateForm] = useState({
@@ -67,31 +69,36 @@ export default function AdminManagement() {
 
   const fetchCurrentUser = async () => {
     try {
-      const local = localStorage.getItem('adminUser');
-
-      if (local) {
-        const data = JSON.parse(local);
-        setCurrentUser(data);
+      setCheckingUser(true);
+      const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/auth/profile`, {
+        credentials: 'include'
+      });
+      if (response.status === 401) {
+        setRedirecting(true);
+        navigate('/login', { replace: true });
+        return;
+      }
+      const data = await response.json();
+      if (data.tokenValid === false) {
+        setRedirecting(true);
+        navigate('/login', { replace: true });
+        return;
+      }
+      if (response.ok && data.admin) {
+        setCurrentUser(data.admin);
       } else {
-        const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/auth/profile`, {
-          credentials: 'include'
-        });
-
-        const data = await response.json();
-        if (data.tokenValid === false) {
-          navigate('/login', { replace: true });
-          return;
-        }
-        if (response.ok) {
-          setCurrentUser(data.admin);
-          localStorage.setItem('adminUser', JSON.stringify(data.admin));
-        }
+        setRedirecting(true);
+        navigate('/login', { replace: true });
+        return;
       }
     } catch (err) {
-      console.error('Failed to fetch current user:', err);
+      console.error('Failed to fetch current user', err);
+      setRedirecting(true);
+      navigate('/login', { replace: true });
+    } finally {
+      setCheckingUser(false);
     }
   };
-
 
   const fetchAdmins = async () => {
     try {
@@ -236,6 +243,21 @@ export default function AdminManagement() {
 
   // Check if current user is super admin
   const isSuperAdmin = currentUser?.role === 'super_admin';
+
+  if (checkingUser) {
+    return (
+      <Layout title="Admin Management">
+        <div className="min-h-screen bg-gray-50">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div className="flex items-center justify-center py-12">
+              <div className="animate-spin h-12 w-12 border-4 border-green-200 border-t-green-600 rounded-full"></div>
+              <span className="ml-3 text-gray-600 font-medium">Checking authentication...</span>
+            </div>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
 
   if (!isSuperAdmin) {
     return (

@@ -1,15 +1,86 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Shield, Lock, Eye, AlertTriangle, XCircle, CheckCircle, Trash2, Clock, User, MessageSquare } from 'lucide-react';
 import Layout from '../Components/Layout.jsx';
 
 export default function Security() {
+    const navigate = useNavigate();
+    const [currentUser, setCurrentUser] = useState(null);
+    const [checkingUser, setCheckingUser] = useState(true);
+    const [redirecting, setRedirecting] = useState(false);
     const [deleteRequests, setDeleteRequests] = useState([]);
     const [stats, setStats] = useState({ pending: 0, approved: 0, rejected: 0 });
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [processing, setProcessing] = useState(null);
 
-    // Fetch delete requests
+    // 🔐 Auth check (Always fetch from server)
+    useEffect(() => {
+        const fetchCurrentUser = async () => {
+            try {
+                setCheckingUser(true);
+                const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/auth/profile`, {
+                    credentials: 'include'
+                });
+                if (response.status === 401) {
+                    setRedirecting(true);
+                    navigate('/login', { replace: true });
+                    return;
+                }
+                const data = await response.json();
+                if (data.tokenValid === false) {
+                    setRedirecting(true);
+                    navigate('/login', { replace: true });
+                    return;
+                }
+                if (response.ok && data.admin) {
+                    setCurrentUser(data.admin);
+                } else {
+                    setRedirecting(true);
+                    navigate('/login', { replace: true });
+                    return;
+                }
+            } catch (err) {
+                console.error('Failed to fetch current user', err);
+                setRedirecting(true);
+                navigate('/login', { replace: true });
+            } finally {
+                setCheckingUser(false);
+            }
+        };
+
+        fetchCurrentUser();
+    }, [navigate]);
+
+    // Show loading while checking auth
+    if (checkingUser || redirecting) {
+        return (
+            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-green-500"></div>
+            </div>
+        );
+    }
+
+    // Show unauthorized if no user
+    if (!currentUser) {
+        return (
+            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+                <div className="text-center">
+                    <Shield className="mx-auto h-12 w-12 text-gray-400" />
+                    <h3 className="mt-2 text-sm font-medium text-gray-900">Unauthorized</h3>
+                    <p className="mt-1 text-sm text-gray-500">You don't have permission to access this page.</p>
+                </div>
+            </div>
+        );
+    }
+
+    // Fetch data after authentication
+    useEffect(() => {
+        if (currentUser) {
+            fetchDeleteRequests();
+            fetchStats();
+        }
+    }, [currentUser]);
     const fetchDeleteRequests = async () => {
         try {
             setLoading(true);

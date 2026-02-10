@@ -22,28 +22,36 @@ export default function Categories() {
   const navigate = useNavigate();
   const [currentUser, setCurrentUser] = useState(null);
   const [checkingUser, setCheckingUser] = useState(true);
+  const [redirecting, setRedirecting] = useState(false);
   const allowedRoles = ['super_admin', 'admin', 'inventory_manager'];
 
   useEffect(() => {
     const fetchCurrentUser = async () => {
       try {
-        const local = localStorage.getItem('adminUser');
-        if (local) {
-          setCurrentUser(JSON.parse(local));
+        setCheckingUser(true);
+        const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/auth/profile`, { credentials: 'include' });
+        if (response.status === 401) {
+          setRedirecting(true);
+          navigate('/login', { replace: true });
+          return;
+        }
+        const data = await response.json();
+        if (data.tokenValid === false) {
+          setRedirecting(true);
+          navigate('/login', { replace: true });
+          return;
+        }
+        if (response.ok && data.admin) {
+          setCurrentUser(data.admin);
         } else {
-          const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/auth/profile`, { credentials: 'include' });
-          const data = await response.json();
-          if (data.tokenValid === false) {
-            navigate('/login', { replace: true });
-            return;
-          }
-            if (response.ok && data.admin) {
-              setCurrentUser(data.admin);
-              localStorage.setItem('adminUser', JSON.stringify(data.admin));
-            }
+          setRedirecting(true);
+          navigate('/login', { replace: true });
+          return;
         }
       } catch (err) {
         console.error('Failed to fetch current user', err);
+        setRedirecting(true);
+        navigate('/login', { replace: true });
       } finally {
         setCheckingUser(false);
       }
@@ -503,6 +511,14 @@ export default function Categories() {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+      </div>
+    );
+  }
+  if (!currentUser) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen">
+        <h2 className="text-2xl font-bold text-gray-900 mb-4">Unauthorized Access</h2>
+        <p className="text-gray-600">You don't have permission to access this page.</p>
       </div>
     );
   }

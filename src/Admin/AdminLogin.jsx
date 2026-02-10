@@ -90,7 +90,6 @@ export default function AdminLogin() {
 
         if (data.success) {
           toast.success(`Welcome back, ${data.admin?.name || 'Admin'}!`);
-          localStorage.setItem('adminUser', JSON.stringify(data.admin));
           navigate('/');
         }
       }

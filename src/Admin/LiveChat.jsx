@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Layout from '../Components/Layout';
 import { Send, MessageCircle, User, Bot } from 'lucide-react';
 import io from 'socket.io-client';
 
 const LiveChat = () => {
+  const navigate = useNavigate();
   const [messages, setMessages] = useState([
     {
       id: 1,
@@ -15,6 +17,9 @@ const LiveChat = () => {
   const [newMessage, setNewMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
+  const [checkingUser, setCheckingUser] = useState(true);
+  const [redirecting, setRedirecting] = useState(false);
   const messagesEndRef = useRef(null);
   const socketRef = useRef(null);
 
@@ -26,8 +31,44 @@ const LiveChat = () => {
     scrollToBottom();
   }, [messages]);
 
-  // Initialize WebSocket connection when component mounts
+  // Fetch current user
   useEffect(() => {
+    const fetchCurrentUser = async () => {
+      try {
+        setCheckingUser(true);
+        const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/auth/profile`, { credentials: 'include' });
+        if (response.status === 401) {
+          setRedirecting(true);
+          navigate('/login', { replace: true });
+          return;
+        }
+        const data = await response.json();
+        if (data.tokenValid === false) {
+          setRedirecting(true);
+          navigate('/login', { replace: true });
+          return;
+        }
+        if (response.ok && data.admin) {
+          setCurrentUser(data.admin);
+        } else {
+          setRedirecting(true);
+          navigate('/login', { replace: true });
+          return;
+        }
+      } catch (err) {
+        console.error('Failed to fetch current user', err);
+        setRedirecting(true);
+        navigate('/login', { replace: true });
+      } finally {
+        setCheckingUser(false);
+      }
+    };
+    fetchCurrentUser();
+  }, [navigate]);
+
+  // Initialize WebSocket connection when component mounts and currentUser is available
+  useEffect(() => {
+    if (!currentUser) return;
     console.log('💬 [LiveChat] Initializing WebSocket connection...');
 
     // Connect to WebSocket server
@@ -43,17 +84,8 @@ const LiveChat = () => {
       console.log('✅ [LiveChat] Connected to WebSocket server');
       setIsConnected(true);
 
-      // Get admin ID from localStorage adminUser data
-      const adminUser = localStorage.getItem('adminUser');
-      let adminId = 'admin-user';
-      if (adminUser) {
-        try {
-          const adminData = JSON.parse(adminUser);
-          adminId = adminData._id || adminData.id || 'admin-user';
-        } catch (e) {
-          console.error('Error parsing adminUser data:', e);
-        }
-      }
+      // Use currentUser ID for admin ID
+      const adminId = currentUser._id || currentUser.id || 'admin-user';
       console.log('💬 [LiveChat] Joining support chat with adminId:', adminId);
 
       // Join support chat room
@@ -80,16 +112,7 @@ const LiveChat = () => {
       console.log('🔔 LiveChat received support chat message:', message);
 
       // Don't add our own messages again (they're already added locally)
-      const adminUser = localStorage.getItem('adminUser');
-      let currentAdminId = 'admin-user';
-      if (adminUser) {
-        try {
-          const adminData = JSON.parse(adminUser);
-          currentAdminId = adminData._id || adminData.id || 'admin-user';
-        } catch (e) {
-          console.error('Error parsing adminUser data:', e);
-        }
-      }
+      const currentAdminId = currentUser._id || currentUser.id || 'admin-user';
       if (message.fromId === currentAdminId && message.fromType === 'admin') {
         return; // Skip our own messages
       }
@@ -127,21 +150,12 @@ const LiveChat = () => {
       }
       setIsConnected(false);
     };
-  }, []); // Empty dependency array - only run once on mount
+  }, [currentUser]); // Depend on currentUser to re-run when user data is available
 
   const handleSendMessage = () => {
-    if (newMessage.trim() && socketRef.current && isConnected) {
-      // Get admin ID from localStorage adminUser data
-      const adminUser = localStorage.getItem('adminUser');
-      let adminId = 'admin-user';
-      if (adminUser) {
-        try {
-          const adminData = JSON.parse(adminUser);
-          adminId = adminData._id || adminData.id || 'admin-user';
-        } catch (e) {
-          console.error('Error parsing adminUser data:', e);
-        }
-      }
+    if (newMessage.trim() && socketRef.current && isConnected && currentUser) {
+      // Use currentUser ID for admin ID
+      const adminId = currentUser._id || currentUser.id || 'admin-user';
 
       // Send message via WebSocket
       socketRef.current.emit('support-chat-message', {
@@ -173,6 +187,29 @@ const LiveChat = () => {
   const formatTime = (date) => {
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
+
+  if (checkingUser) {
+    return (
+      <Layout title="Live Chat (Beta)">
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+        </div>
+      </Layout>
+    );
+  }
+
+  if (!currentUser) {
+    return (
+      <Layout title="Live Chat (Beta)">
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <div className="text-center">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">Unauthorized Access</h2>
+            <p className="text-gray-600">You don't have permission to access this page.</p>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout title="Live Chat (Beta)">

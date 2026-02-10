@@ -144,15 +144,56 @@ const MarketMap = ({ zones, merchants }) => {
 
 const MarketArea = () => {
   const navigate = useNavigate();
+  const [currentUser, setCurrentUser] = useState(null);
+  const [checkingUser, setCheckingUser] = useState(true);
+  const [redirecting, setRedirecting] = useState(false);
   const [marketData, setMarketData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showMap, setShowMap] = useState(false);
   const [mapData, setMapData] = useState({ zones: [], merchants: [] });
   const [mapLoading, setMapLoading] = useState(false);
 
+  const allowedRoles = ['super_admin', 'admin'];
+
   useEffect(() => {
-    fetchMarketData();
-  }, []);
+    const fetchCurrentUser = async () => {
+      try {
+        setCheckingUser(true);
+        const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/auth/profile`, { credentials: 'include' });
+        if (response.status === 401) {
+          setRedirecting(true);
+          navigate('/login', { replace: true });
+          return;
+        }
+        const data = await response.json();
+        if (data.tokenValid === false) {
+          setRedirecting(true);
+          navigate('/login', { replace: true });
+          return;
+        }
+        if (response.ok && data.admin) {
+          setCurrentUser(data.admin);
+        } else {
+          setRedirecting(true);
+          navigate('/login', { replace: true });
+          return;
+        }
+      } catch (err) {
+        console.error('Failed to fetch current user', err);
+        setRedirecting(true);
+        navigate('/login', { replace: true });
+      } finally {
+        setCheckingUser(false);
+      }
+    };
+    fetchCurrentUser();
+  }, [navigate]);
+
+  useEffect(() => {
+    if (currentUser) {
+      fetchMarketData();
+    }
+  }, [currentUser]);
 
   const fetchMarketData = async () => {
     try {
@@ -160,6 +201,11 @@ const MarketArea = () => {
       const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/zones/market-area`, {
         credentials: 'include',
       });
+
+      if (response.status === 401) {
+        navigate('/login');
+        return;
+      }
 
       if (response.ok) {
         const data = await response.json();
@@ -194,6 +240,11 @@ const MarketArea = () => {
         credentials: 'include',
       });
 
+      if (response.status === 401) {
+        navigate('/login');
+        return;
+      }
+
       if (response.ok) {
         const data = await response.json();
         if (data.tokenValid === false) {
@@ -223,6 +274,41 @@ const MarketArea = () => {
       fetchMapData();
     }
   };
+
+  if (checkingUser) {
+    return (
+      <Layout title="Market Area">
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+        </div>
+      </Layout>
+    );
+  }
+
+  if (!currentUser) {
+    return (
+      <Layout title="Market Area">
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <div className="text-center">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">Unauthorized Access</h2>
+            <p className="text-gray-600">You don't have permission to access this page.</p>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
+  if (!allowedRoles.includes(currentUser.role)) {
+    return (
+      <Layout title="Market Area">
+        <div className="flex flex-col items-center justify-center min-h-screen">
+          <MapPin className='w-16 h-16 text-red-500 mb-4'/>
+          <h2 className="text-xl font-semibold text-gray-800 mb-2">Access Denied</h2>
+          <p className="text-gray-600">Only Admins and Super Admins can view market area.</p>
+        </div>
+      </Layout>
+    );
+  }
 
   if (loading) {
     return (

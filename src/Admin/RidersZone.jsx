@@ -23,22 +23,30 @@ const RidersZone = () => {
 
   const fetchCurrentUser = useCallback(async () => {
     try {
-      const local = localStorage.getItem('adminUser');
-      if (local) {
-        setCurrentUser(JSON.parse(local));
+      setCheckingUser(true);
+      const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/auth/profile`, { credentials: 'include' });
+      if (response.status === 401) {
+        setRedirecting(true);
+        navigate('/login', { replace: true });
+        return;
+      }
+      const data = await response.json();
+      if (data.tokenValid === false) {
+        setRedirecting(true);
+        navigate('/login', { replace: true });
+        return;
+      }
+      if (response.ok && data.admin) {
+        setCurrentUser(data.admin);
       } else {
-        const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/auth/profile`, { credentials: 'include' });
-        const data = await response.json();
-        if (data.tokenValid === false) {
-          window.location.replace('/login');
-          return;
-        }
-        setCurrentUser(data.user);
-        localStorage.setItem('adminUser', JSON.stringify(data.user));
+        setRedirecting(true);
+        navigate('/login', { replace: true });
+        return;
       }
     } catch (error) {
       console.error('Error fetching current user:', error);
-      navigate('/login');
+      setRedirecting(true);
+      navigate('/login', { replace: true });
     } finally {
       setCheckingUser(false);
     }

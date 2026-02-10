@@ -26,6 +26,7 @@ const Offers = () => {
   const [selectedOffer, setSelectedOffer] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
   const [checkingUser, setCheckingUser] = useState(true);
+  const [redirecting, setRedirecting] = useState(false);
   const allowedRoles = ['super_admin', 'admin'];
   const navigate = useNavigate();
 
@@ -92,35 +93,35 @@ const Offers = () => {
     }
   };
 
-  const checkUser = useCallback(async () => {
+  const fetchCurrentUser = useCallback(async () => {
     try {
-      const response = await fetch(
-        `${import.meta.env.VITE_SERVER}/admin/auth/profile`,
-        { credentials: 'include' }
-      );
-
-      if (response.ok) {
-        const data = await response.json();
-        setCurrentUser(data.admin);
-
-        if (!allowedRoles.includes(data.admin.role)) {
-          navigate('/unauthorized');
-          return;
-        }
-      } else {
-        navigate('/login');
+      setCheckingUser(true);
+      const res = await fetch(`${import.meta.env.VITE_SERVER}/admin/auth/profile`, { credentials: 'include' });
+      if (res.status === 401) {
+        setRedirecting(true);
+        navigate('/login', { replace: true });
+        return;
       }
-    } catch (error) {
-      console.error('Error checking user:', error);
-      navigate('/login');
+      if (!res.ok) throw new Error('Failed to fetch user profile');
+      const data = await res.json();
+      if (data.tokenValid === false) {
+        setRedirecting(true);
+        navigate('/login', { replace: true });
+        return;
+      }
+      setCurrentUser(data.admin);
+    } catch (err) {
+      console.error('Error fetching current user:', err);
+      setRedirecting(true);
+      navigate('/login', { replace: true });
     } finally {
       setCheckingUser(false);
     }
   }, [navigate]);
 
   useEffect(() => {
-    checkUser();
-  }, [checkUser]);
+    fetchCurrentUser();
+  }, [fetchCurrentUser]);
 
   useEffect(() => {
     if (currentUser && allowedRoles.includes(currentUser.role)) {
@@ -309,6 +310,7 @@ const Offers = () => {
       const response = await fetch(`${import.meta.env.VITE_SERVER}/image/upload`, {
         method: 'POST',
         body: uploadData,
+        credentials: 'include'
       });
 
       if (response.ok) {
@@ -362,18 +364,34 @@ const Offers = () => {
   if (checkingUser) {
     return (
       <Layout>
-        <div className="flex justify-center items-center h-64">
-          <div className="animate-spin h-12 w-12 border-4 border-green-200 border-t-green-600 rounded-full"></div>
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
         </div>
       </Layout>
     );
   }
 
-  if (!isAuthorized) {
+  if (!currentUser) {
     return (
       <Layout>
-        <div className="flex justify-center items-center h-64">
-          <div className="text-red-600 text-lg">Unauthorized access</div>
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <div className="text-center">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">Unauthorized Access</h2>
+            <p className="text-gray-600">You don't have permission to access this page.</p>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
+  if (!allowedRoles.includes(currentUser.role)) {
+    return (
+      <Layout>
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <div className="text-center">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">Access Denied</h2>
+            <p className="text-gray-600">You don't have the required permissions to access this page.</p>
+          </div>
         </div>
       </Layout>
     );

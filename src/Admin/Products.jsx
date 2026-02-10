@@ -77,27 +77,35 @@ export default function Products() {
   // Current user / role guard
   const [currentUser, setCurrentUser] = useState(null);
   const [checkingUser, setCheckingUser] = useState(true);
+  const [redirecting, setRedirecting] = useState(false);
   const allowedRoles = ['super_admin', 'admin', 'inventory_manager'];
 
   const fetchCurrentUser = useCallback(async () => {
     try {
-      const local = localStorage.getItem('adminUser');
-      if (local) {
-        setCurrentUser(JSON.parse(local));
+      setCheckingUser(true);
+      const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/auth/profile`, { credentials: 'include' });
+      if (response.status === 401) {
+        setRedirecting(true);
+        navigate('/login', { replace: true });
         return;
       }
-      const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/auth/profile`, { credentials: 'include' });
       const data = await response.json();
       if (data.tokenValid === false) {
+        setRedirecting(true);
         navigate('/login', { replace: true });
         return;
       }
       if (response.ok && data.admin) {
         setCurrentUser(data.admin);
-        localStorage.setItem('adminUser', JSON.stringify(data.admin));
+      } else {
+        setRedirecting(true);
+        navigate('/login', { replace: true });
+        return;
       }
     } catch (err) {
       console.error('Failed to fetch current user', err);
+      setRedirecting(true);
+      navigate('/login', { replace: true });
     } finally {
       setCheckingUser(false);
     }
@@ -156,12 +164,14 @@ export default function Products() {
         credentials: 'include',
       });
       if (response.status === 401) {
+        setRedirecting(true);
         navigate('/login');
         return;
       }
       if (!response.ok) throw new Error('Failed to fetch products');
       const data = await response.json();
       if (data.tokenValid === false) {
+        setRedirecting(true);
         navigate('/login', { replace: true });
         return;
       }
@@ -182,12 +192,14 @@ export default function Products() {
         credentials: 'include',
       });
       if (response.status === 401) {
+        setRedirecting(true);
         navigate('/login');
         return;
       }
       if (!response.ok) throw new Error('Failed to fetch categories');
       const data = await response.json();
       if (data.tokenValid === false) {
+        setRedirecting(true);
         navigate('/login', { replace: true });
         return;
       }
@@ -222,11 +234,15 @@ export default function Products() {
         credentials: 'include',
       });
       if (response.status === 401) {
+        setRedirecting(true);
+        navigate('/login');
         return;
       }
       if (!response.ok) throw new Error('Failed to fetch available count');
       const data = await response.json();
       if (data.tokenValid === false) {
+        setRedirecting(true);
+        navigate('/login', { replace: true });
         return;
       }
       setTotalAvailable(data.total || 0);
@@ -253,12 +269,14 @@ export default function Products() {
         body: JSON.stringify({ status }),
       });
       if (response.status === 401) {
+        setRedirecting(true);
         navigate('/login');
         return;
       }
       if (!response.ok) throw new Error('Failed to update request status');
       const data = await response.json();
       if (data.tokenValid === false) {
+        setRedirecting(true);
         navigate('/login', { replace: true });
         return;
       }
@@ -279,6 +297,7 @@ export default function Products() {
         credentials: 'include',
       });
       if (response.status === 401) {
+        setRedirecting(true);
         navigate('/login');
         return;
       }
@@ -309,6 +328,7 @@ export default function Products() {
         credentials: 'include',
       });
       if (response.status === 401) {
+        setRedirecting(true);
         navigate('/login');
         return;
       }
@@ -341,6 +361,7 @@ export default function Products() {
         credentials: 'include',
       });
       if (response.status === 401) {
+        setRedirecting(true);
         navigate('/login');
         return;
       }
@@ -451,7 +472,7 @@ export default function Products() {
         credentials: 'include',
       });
       if (response.status === 401) {
-        toast.error('Authentication error. Please login again.');
+        setRedirecting(true);
         navigate('/login');
         return;
       }
@@ -461,6 +482,7 @@ export default function Products() {
       }
       const data = await response.json();
       if (data.tokenValid === false) {
+        setRedirecting(true);
         navigate('/login', { replace: true });
         return;
       }
@@ -726,7 +748,7 @@ export default function Products() {
       });
 
       if (baseResponse.status === 401) {
-        toast.error('Authentication error. Please login again.');
+        setRedirecting(true);
         navigate('/login');
         return;
       }
@@ -737,6 +759,7 @@ export default function Products() {
 
       const baseData = await baseResponse.json();
       if (baseData.tokenValid === false) {
+        setRedirecting(true);
         navigate('/login', { replace: true });
         return;
       }
@@ -787,6 +810,7 @@ export default function Products() {
           } else {
             const variantData = await variantResponse.json();
             if (variantData.tokenValid === false) {
+              setRedirecting(true);
               navigate('/login', { replace: true });
               return;
             }
@@ -842,6 +866,7 @@ export default function Products() {
   };
 
   // Loading current user (guard)
+  if (redirecting) return null;
   if (checkingUser) {
     return (
       <div className="flex items-center justify-center min-h-screen">

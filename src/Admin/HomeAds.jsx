@@ -381,6 +381,17 @@ const HomeAds = () => {
     );
   }
 
+  if (!currentUser) {
+    return (
+      <Layout>
+        <div className="flex flex-col items-center justify-center min-h-screen">
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">Unauthorized Access</h2>
+          <p className="text-gray-600">You don't have permission to access this page.</p>
+        </div>
+      </Layout>
+    );
+  }
+
   if (!isAuthorized) {
     return (
       <Layout>

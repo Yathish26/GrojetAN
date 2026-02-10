@@ -18,7 +18,10 @@ import Layout from '../Components/Layout';
 export default function EmailSender() {
   const navigate = useNavigate();
   const [currentUser, setCurrentUser] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [checkingUser, setCheckingUser] = useState(true);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [redirecting, setRedirecting] = useState(false);
   const [formData, setFormData] = useState({
     to: '',
     subject: '',
@@ -42,23 +45,33 @@ export default function EmailSender() {
   React.useEffect(() => {
     const fetchCurrentUser = async () => {
       try {
-        const local = localStorage.getItem('adminUser');
-        if (local) {
-          setCurrentUser(JSON.parse(local));
+        setCheckingUser(true);
+        const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/auth/profile`, { credentials: 'include' });
+        if (response.status === 401) {
+          setRedirecting(true);
+          navigate('/login', { replace: true });
+          return;
+        }
+        const data = await response.json();
+        if (data.tokenValid === false) {
+          setRedirecting(true);
+          navigate('/login', { replace: true });
+          return;
+        }
+        if (response.ok && data.admin) {
+          setCurrentUser(data.admin);
         } else {
-          const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/auth/profile`, { credentials: 'include' });
-          const data = await response.json();
-          if (data.tokenValid === false) {
-            navigate('/login', { replace: true });
-            return;
-          }
-          if (response.ok && data.admin) {
-            setCurrentUser(data.admin);
-            localStorage.setItem('adminUser', JSON.stringify(data.admin));
-          }
+          setRedirecting(true);
+          navigate('/login', { replace: true });
+          return;
         }
       } catch (err) {
         console.error('Failed to fetch current user', err);
+        setError('Failed to authenticate. Please try again.');
+        setRedirecting(true);
+        navigate('/login', { replace: true });
+      } finally {
+        setCheckingUser(false);
       }
     };
 
@@ -208,7 +221,8 @@ export default function EmailSender() {
 
       const response = await fetch(`${import.meta.env.VITE_SERVER}/email/send-bulk`, {
         method: 'POST',
-        body: formDataToSend
+        body: formDataToSend,
+        credentials: 'include'
       });
 
       const data = await response.json();
@@ -308,7 +322,8 @@ export default function EmailSender() {
 
       const response = await fetch(`${import.meta.env.VITE_SERVER}/email/send`, {
         method: 'POST',
-        body: formDataToSend
+        body: formDataToSend,
+        credentials: 'include'
       });
 
       const data = await response.json();
@@ -350,7 +365,9 @@ export default function EmailSender() {
   const handleTestSES = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`${import.meta.env.VITE_SERVER}/email/test`);
+      const response = await fetch(`${import.meta.env.VITE_SERVER}/email/test`, {
+        credentials: 'include'
+      });
       const data = await response.json();
 
       if (response.ok && data.success) {
@@ -380,15 +397,26 @@ export default function EmailSender() {
     }
   };
 
+  // Prevent blink: show nothing if redirecting
+  if (redirecting) return null;
+
+  if (checkingUser) {
+    return (
+      <Layout title="Email Sender">
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+        </div>
+      </Layout>
+    );
+  }
+
   if (!currentUser) {
     return (
       <Layout title="Email Sender">
-        <div className="min-h-screen bg-gray-50">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <div className="flex items-center justify-center py-12">
-              <div className="animate-spin h-12 w-12 border-4 border-green-200 border-t-green-600 rounded-full"></div>
-              <span className="ml-3 text-gray-600 font-medium">Loading...</span>
-            </div>
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <div className="text-center">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">Unauthorized Access</h2>
+            <p className="text-gray-600">You don't have permission to access this page.</p>
           </div>
         </div>
       </Layout>

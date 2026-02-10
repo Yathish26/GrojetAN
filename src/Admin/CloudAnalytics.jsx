@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { BarChart3, Cloud, TrendingUp, Users, Activity, Database, Zap, Shield, RefreshCw } from 'lucide-react';
 import Layout from '../Components/Layout';
 import toast from 'react-hot-toast';
@@ -32,15 +33,82 @@ ChartJS.register(
 );
 
 const CloudAnalytics = () => {
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [analyticsData, setAnalyticsData] = useState(null);
   const [chartData, setChartData] = useState(null);
   const [error, setError] = useState(null);
+  const [currentUser, setCurrentUser] = useState(null);
+  const [checkingUser, setCheckingUser] = useState(true);
+  const [redirecting, setRedirecting] = useState(false);
+  const allowedRoles = ['super_admin', 'admin'];
 
   useEffect(() => {
-    fetchCloudWatchData();
-  }, []);
+    const fetchCurrentUser = async () => {
+      try {
+        setCheckingUser(true);
+        const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/auth/profile`, { credentials: 'include' });
+        if (response.status === 401) {
+          setRedirecting(true);
+          navigate('/login', { replace: true });
+          return;
+        }
+        const data = await response.json();
+        if (data.tokenValid === false) {
+          setRedirecting(true);
+          navigate('/login', { replace: true });
+          return;
+        }
+        if (response.ok && data.admin) {
+          setCurrentUser(data.admin);
+        } else {
+          setRedirecting(true);
+          navigate('/login', { replace: true });
+          return;
+        }
+      } catch (err) {
+        console.error('Failed to fetch current user', err);
+        setRedirecting(true);
+        navigate('/login', { replace: true });
+      } finally {
+        setCheckingUser(false);
+      }
+    };
+
+    fetchCurrentUser();
+  }, [navigate]);
+
+  useEffect(() => {
+    if (currentUser && allowedRoles.includes(currentUser.role)) {
+      fetchCloudWatchData();
+    }
+  }, [currentUser]);
+
+  // Prevent blink: show nothing if redirecting
+  if (redirecting) return null;
+
+  if (checkingUser) {
+    return (
+      <Layout title="Cloud Analytics">
+        <div className="flex items-center justify-center py-12">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+        </div>
+      </Layout>
+    );
+  }
+
+  if (!currentUser || !allowedRoles.includes(currentUser.role)) {
+    return (
+      <Layout title="Cloud Analytics">
+        <div className="flex flex-col items-center justify-center py-12">
+          <Shield className='w-16 h-16 text-red-500 mb-2' />
+          <h2 className="text-xl font-semibold text-gray-800 mb-2">Access Denied</h2>
+          <p className="text-gray-600">Only Admins and Super Admins can view cloud analytics.</p>
+        </div>
+      </Layout>
+    );
+  }
 
   const fetchCloudWatchData = async () => {
     try {
@@ -57,7 +125,9 @@ const CloudAnalytics = () => {
 
       const dashboardData = await dashboardResponse.json();
 
-      if (dashboardData.tokenValid === false) {
+      if (dashboardResponse.status === 401 || dashboardData.tokenValid === false) {
+        setRedirecting(true);
+        navigate('/login', { replace: true });
         return;
       }
 

@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Layout from '../Components/Layout';
 import { MessageSquare, User, Store, Clock, Eye, CheckCircle, XCircle, RefreshCw, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const Support = () => {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('customer');
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [merchantRequests, setMerchantRequests] = useState([]);
@@ -11,6 +13,8 @@ const Support = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
+  const [checkingUser, setCheckingUser] = useState(true);
+  const [redirecting, setRedirecting] = useState(false);
 
   useEffect(() => {
     // Fetch both customer and merchant requests on initial load
@@ -40,7 +44,7 @@ const Support = () => {
 
       if (response.status === 401) {
         // Redirect to login if unauthorized
-        window.location.href = '/login';
+        navigate('/login');
         return;
       }
 
@@ -87,7 +91,7 @@ const Support = () => {
 
       if (response.status === 401) {
         // Redirect to login if unauthorized
-        window.location.href = '/login';
+        navigate('/login');
         return;
       }
 
@@ -108,19 +112,33 @@ const Support = () => {
 
   const fetchCurrentUser = async () => {
     try {
-      const local = localStorage.getItem('adminUser');
-      if (local) {
-        setCurrentUser(JSON.parse(local));
+      setCheckingUser(true);
+      const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/auth/profile`, { credentials: 'include' });
+      if (response.status === 401) {
+        setRedirecting(true);
+        navigate('/login', { replace: true });
+        return;
+      }
+      const data = await response.json();
+      if (data.tokenValid === false) {
+        setRedirecting(true);
+        navigate('/login', { replace: true });
+        return;
+      }
+      if (response.ok && data.admin) {
+        setCurrentUser(data.admin);
       } else {
-        const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/auth/profile`, { credentials: 'include' });
-        const data = await response.json();
-        if (response.ok && data.admin) {
-          setCurrentUser(data.admin);
-          localStorage.setItem('adminUser', JSON.stringify(data.admin));
-        }
+        setRedirecting(true);
+        navigate('/login', { replace: true });
+        return;
       }
     } catch (err) {
       console.error('Failed to fetch current user', err);
+      setRedirecting(true);
+      navigate('/login', { replace: true });
+      return;
+    } finally {
+      setCheckingUser(false);
     }
   };
 
@@ -272,6 +290,29 @@ const Support = () => {
       minute: '2-digit'
     });
   };
+
+  if (checkingUser) {
+    return (
+      <Layout title="Support Requests">
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+        </div>
+      </Layout>
+    );
+  }
+
+  if (!currentUser) {
+    return (
+      <Layout title="Support Requests">
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <div className="text-center">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">Unauthorized Access</h2>
+            <p className="text-gray-600">You don't have permission to access this page.</p>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout title="Support Requests">

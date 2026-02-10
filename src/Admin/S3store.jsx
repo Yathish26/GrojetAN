@@ -8,6 +8,8 @@ const S3store = () => {
   const navigate = useNavigate();
   const [currentUser, setCurrentUser] = useState(null);
   const [checkingUser, setCheckingUser] = useState(true);
+  const [error, setError] = useState(null);
+  const [redirecting, setRedirecting] = useState(false);
   const allowedRoles = ['super_admin'];
 
   // All state declarations must be at the top, before any early returns
@@ -128,23 +130,31 @@ const S3store = () => {
   useEffect(() => {
     const fetchCurrentUser = async () => {
       try {
-        const local = localStorage.getItem('adminUser');
-        if (local) {
-          setCurrentUser(JSON.parse(local));
+        setCheckingUser(true);
+        const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/auth/profile`, { credentials: 'include' });
+        if (response.status === 401) {
+          setRedirecting(true);
+          navigate('/login', { replace: true });
+          return;
+        }
+        const data = await response.json();
+        if (data.tokenValid === false) {
+          setRedirecting(true);
+          navigate('/login', { replace: true });
+          return;
+        }
+        if (response.ok && data.admin) {
+          setCurrentUser(data.admin);
         } else {
-          const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/auth/profile`, { credentials: 'include' });
-          const data = await response.json();
-          if (data.tokenValid === false) {
-            navigate('/login', { replace: true });
-            return;
-          }
-          if (response.ok && data.admin) {
-            setCurrentUser(data.admin);
-            localStorage.setItem('adminUser', JSON.stringify(data.admin));
-          }
+          setRedirecting(true);
+          navigate('/login', { replace: true });
+          return;
         }
       } catch (err) {
         console.error('Failed to fetch current user', err);
+        setError('Failed to authenticate. Please try again.');
+        setRedirecting(true);
+        navigate('/login', { replace: true });
       } finally {
         setCheckingUser(false);
       }
@@ -152,6 +162,9 @@ const S3store = () => {
 
     fetchCurrentUser();
   }, [navigate]);
+
+  // Prevent blink: show nothing if redirecting
+  if (redirecting) return null;
 
   // Check if user has permission
   useEffect(() => {

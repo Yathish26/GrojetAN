@@ -10,7 +10,8 @@ import {
   IndianRupeeIcon, Zap, MessageSquare, Mail,
   Castle,
   Cloud,
-  Star
+  Star,
+  ChefHat
 } from 'lucide-react';
 import { MdAdminPanelSettings } from 'react-icons/md';
 import toast from 'react-hot-toast';
@@ -29,32 +30,29 @@ const Layout = ({ children, title }) => {
   const location = useLocation();
 
   useEffect(() => {
-    const storedAdmin = localStorage.getItem('adminUser');
-
-    if (storedAdmin) {
+    const fetchAdminProfile = async () => {
       try {
-        setCurrentAdmin(JSON.parse(storedAdmin));
-      } catch (e) {
-        console.error('Failed to parse adminUser:', e);
-      }
-    } else {
-      const fetchAdminProfile = async () => {
-        try {
-          const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/auth/profile`, {
-            credentials: 'include',
-          });
-          if (response.ok) {
-            const data = await response.json();
-            setCurrentAdmin(data.admin);
-            localStorage.setItem('adminUser', JSON.stringify(data.admin)); // optional cache
-          }
-        } catch (error) {
-          console.error('Failed to fetch admin profile:', error);
+        const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/auth/profile`, {
+          credentials: 'include',
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setCurrentAdmin(data.admin);
+          localStorage.setItem('adminUser', JSON.stringify(data.admin)); // optional cache only
+        } else {
+          // Clear invalid cached data
+          localStorage.removeItem('adminUser');
+          setCurrentAdmin(null);
         }
-      };
+      } catch (error) {
+        console.error('Failed to fetch admin profile:', error);
+        // Clear invalid cached data on error
+        localStorage.removeItem('adminUser');
+        setCurrentAdmin(null);
+      }
+    };
 
-      fetchAdminProfile();
-    }
+    fetchAdminProfile();
   }, []);
 
   // Fetch update notes for notifications
@@ -160,6 +158,7 @@ const Layout = ({ children, title }) => {
     { name: 'User Analytics', icon: BarChart3, path: '/user-analytics', roles: ['super_admin'] },
     { name: 'Merchant Enquiries', icon: Store, path: '/merchant-enquiries', roles: ['super_admin', 'admin'] },
     { name: 'Merchants', icon: Store, path: '/merchants', roles: ['super_admin', 'admin'] },
+    { name: 'Eateries', icon: ChefHat, path: '/eateries', roles: ['super_admin', 'admin'] },
     { name: 'Support', icon: Headphones, path: '/support', roles: ['super_admin', 'admin'] },
     { name: 'Delivery Agents', icon: Truck, path: '/delivery-agents', roles: ['super_admin', 'admin'] },
     { name: 'Delivery Ratings', icon: Star, path: '/delivery-ratings', roles: ['super_admin', 'admin'] },

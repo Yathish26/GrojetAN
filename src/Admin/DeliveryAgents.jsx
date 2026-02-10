@@ -220,27 +220,34 @@ const DeliveryAgents = () => {
 
   const fetchCurrentUser = useCallback(async () => {
     try {
-      const local = localStorage.getItem('adminUser');
-      if (local) {
-        setCurrentUser(JSON.parse(local));
+      setCheckingUser(true);
+      const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/auth/profile`, { credentials: 'include' });
+      if (response.status === 401) {
+        setRedirecting(true);
+        navigate('/login', { replace: true });
+        return;
+      }
+      const data = await response.json();
+      if (data.tokenValid === false) {
+        setRedirecting(true);
+        navigate('/login', { replace: true });
+        return;
+      }
+      if (response.ok && data.admin) {
+        setCurrentUser(data.admin);
       } else {
-        const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/auth/profile`, { credentials: 'include' });
-        const data = await response.json();
-        if (data.tokenValid === false) {
-          window.location.replace('/login');
-          return;
-        }
-        if (response.ok && data.admin) {
-          setCurrentUser(data.admin);
-          localStorage.setItem('adminUser', JSON.stringify(data.admin));
-        }
+        setRedirecting(true);
+        navigate('/login', { replace: true });
+        return;
       }
     } catch (err) {
       console.error('Failed to fetch current user', err);
+      setRedirecting(true);
+      navigate('/login', { replace: true });
     } finally {
       setCheckingUser(false);
     }
-  }, []);
+  }, [navigate]);
 
   useEffect(() => { fetchCurrentUser(); }, [fetchCurrentUser]);
   const isAuthorized = allowedRoles.includes(currentUser?.role);

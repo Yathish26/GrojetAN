@@ -27,6 +27,7 @@ import Error404 from './Error404.jsx'
 import { Toaster } from 'react-hot-toast'
 import MerchantEnq from './Admin/MerchantEnq.jsx'
 import Merchants from './Admin/Merchants.jsx'
+import Eateries from './Admin/Eateries.jsx'
 import AddMerchant from './Admin/AddMerchant.jsx'
 import MerchantDetails from './Admin/MerchantDetails.jsx'
 import EditMerchant from './Admin/EditMerchant.jsx'
@@ -113,6 +114,7 @@ function App() {
           <Route path="/merchants/:id" element={<MerchantDetails />} />
           <Route path="/merchants/:id/edit" element={<EditMerchant />} />
           <Route path="/merchants/:id/inventory" element={<MerchantInventory />} />
+          <Route path="/eateries" element={<Eateries />} />
           
           {/* Support Management */}
           <Route path="/support" element={<Support />} />

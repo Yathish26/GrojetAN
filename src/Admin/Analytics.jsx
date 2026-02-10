@@ -66,33 +66,46 @@ export default function Analytics() {
   const [refreshing, setRefreshing] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
   const [checkingUser, setCheckingUser] = useState(true);
+  const [redirecting, setRedirecting] = useState(false);
   const allowedRoles = ['super_admin', 'admin'];
 
   const fetchCurrentUser = useCallback(async () => {
     try {
-      const local = localStorage.getItem('adminUser');
-      if (local) {
-        setCurrentUser(JSON.parse(local));
+      setCheckingUser(true);
+      const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/auth/profile`, { credentials: 'include' });
+      if (response.status === 401) {
+        setRedirecting(true);
+        navigate('/login', { replace: true });
+        return;
+      }
+      const data = await response.json();
+      if (data.tokenValid === false) {
+        setRedirecting(true);
+        navigate('/login', { replace: true });
+        return;
+      }
+      if (response.ok && data.admin) {
+        setCurrentUser(data.admin);
       } else {
-        const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/auth/profile`, { credentials: 'include' });
-        const data = await response.json();
-        if (data.tokenValid === false) {
-          navigate('/login', { replace: true });
-          return;
-        }
-        if (response.ok && data.admin) {
-          setCurrentUser(data.admin);
-          localStorage.setItem('adminUser', JSON.stringify(data.admin));
-        }
+        setRedirecting(true);
+        navigate('/login', { replace: true });
+        return;
       }
     } catch (err) {
       console.error('Failed to fetch current user', err);
+      setError('Failed to authenticate. Please try again.');
+      setRedirecting(true);
+      navigate('/login', { replace: true });
     } finally {
       setCheckingUser(false);
     }
-  }, []);
+  }, [navigate]);
 
   useEffect(() => { fetchCurrentUser(); }, [fetchCurrentUser]);
+
+  // Prevent blink: show nothing if redirecting
+  if (redirecting) return null;
+
   const isAuthorized = allowedRoles.includes(currentUser?.role);
 
   // Derived metrics

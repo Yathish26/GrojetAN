@@ -43,23 +43,10 @@ export default function AdminRegister() {
   // Check authorization status on component mount
   useEffect(() => {
     const checkAuthorization = async () => {
-      const authToken = localStorage.getItem('adminRegAuthToken');
-      
-      if (!authToken) {
-        setIsAuthorized(false);
-        setCheckingAuth(false);
-        return;
-      }
-
       try {
-        // Verify token with backend
+        // Verify authorization with backend (token should be in cookies)
         const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/auth/verify-reg-token`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          credentials: 'include',
-          body: JSON.stringify({ token: authToken })
+          credentials: 'include'
         });
 
         const data = await response.json();
@@ -67,8 +54,6 @@ export default function AdminRegister() {
         if (response.ok && data.valid) {
           setIsAuthorized(true);
         } else {
-          // Token is invalid or expired, remove it
-          localStorage.removeItem('adminRegAuthToken');
           setIsAuthorized(false);
           
           if (data.expired) {
@@ -79,10 +64,8 @@ export default function AdminRegister() {
         }
       } catch (error) {
         console.error('Token verification error:', error);
-        // If backend verification fails, fall back to localStorage check
-        // This ensures the app still works even if backend is temporarily down
-        setIsAuthorized(true);
-        toast.error('Could not verify authorization with server. Using cached token.');
+        setIsAuthorized(false);
+        toast.error('Could not verify authorization with server.');
       } finally {
         setCheckingAuth(false);
       }
@@ -90,31 +73,22 @@ export default function AdminRegister() {
 
     checkAuthorization();
 
-    // Set up periodic token verification every 5 minutes
-    const tokenCheckInterval = setInterval(async () => {
-      const authToken = localStorage.getItem('adminRegAuthToken');
-      if (!authToken) return;
-
+    // Set up periodic authorization verification every 5 minutes
+    const authCheckInterval = setInterval(async () => {
       try {
         const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/auth/verify-reg-token`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          credentials: 'include',
-          body: JSON.stringify({ token: authToken })
+          credentials: 'include'
         });
 
         const data = await response.json();
 
         if (!response.ok || !data.valid) {
-          localStorage.removeItem('adminRegAuthToken');
           setIsAuthorized(false);
           
           if (data.expired) {
-            toast.error('Authorization token has expired. Please verify PIN and OTP again.');
+            toast.error('Authorization has expired. Please verify PIN and OTP again.');
           } else {
-            toast.error('Authorization token is no longer valid. Please verify PIN and OTP again.');
+            toast.error('Authorization is no longer valid. Please verify PIN and OTP again.');
           }
         }
       } catch (error) {
@@ -124,7 +98,7 @@ export default function AdminRegister() {
     }, 5 * 60 * 1000); // Check every 5 minutes
 
     // Cleanup interval on component unmount
-    return () => clearInterval(tokenCheckInterval);
+    return () => clearInterval(authCheckInterval);
   }, []);
 
   const handleAuthSuccess = () => {
@@ -189,40 +163,32 @@ export default function AdminRegister() {
     if (!validateForm()) return;
 
     // Check if still authorized
-    const authToken = localStorage.getItem('adminRegAuthToken');
-    if (!authToken) {
+    if (!isAuthorized) {
       toast.error('Authorization expired. Please verify PIN and OTP again.');
-      setIsAuthorized(false);
       return;
     }
 
-    // Final token verification before submission
+    // Final authorization verification before submission
     try {
       const verifyResponse = await fetch(`${import.meta.env.VITE_SERVER}/admin/auth/verify-reg-token`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        credentials: 'include',
-        body: JSON.stringify({ token: authToken })
+        credentials: 'include'
       });
 
       const verifyData = await verifyResponse.json();
 
       if (!verifyResponse.ok || !verifyData.valid) {
-        localStorage.removeItem('adminRegAuthToken');
         setIsAuthorized(false);
         
         if (verifyData.expired) {
-          toast.error('Authorization token has expired. Please verify PIN and OTP again.');
+          toast.error('Authorization has expired. Please verify PIN and OTP again.');
         } else {
-          toast.error('Authorization token is invalid. Please verify PIN and OTP again.');
+          toast.error('Authorization is invalid. Please verify PIN and OTP again.');
         }
         return;
       }
     } catch (error) {
-      console.error('Final token verification error:', error);
-      // Continue with submission if verification fails but token exists
+      console.error('Final authorization verification error:', error);
+      // Continue with submission if verification fails
       // This ensures registration can still proceed if backend is temporarily down
     }
 
@@ -258,9 +224,6 @@ export default function AdminRegister() {
 
       toast.success('Admin registered successfully!');
 
-      // Clear auth token after successful registration
-      localStorage.removeItem('adminRegAuthToken');
-
       // Reset form
       setFormData({
         name: '',
@@ -281,7 +244,6 @@ export default function AdminRegister() {
       console.error('Registration error:', err);
       if (err.message.includes('Authorization expired')) {
         setIsAuthorized(false);
-        localStorage.removeItem('adminRegAuthToken');
       }
       toast.error(err.message || 'Failed to register admin');
     } finally {
@@ -319,7 +281,6 @@ export default function AdminRegister() {
           </div>
           <button
             onClick={() => {
-              localStorage.removeItem('adminRegAuthToken');
               navigate('/admin-management');
             }}
             className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"

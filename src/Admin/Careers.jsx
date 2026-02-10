@@ -14,6 +14,7 @@ export default function Careers() {
   const navigate = useNavigate();
   const [currentUser, setCurrentUser] = useState(null);
   const [checkingUser, setCheckingUser] = useState(true);
+  const [redirecting, setRedirecting] = useState(false);
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -36,23 +37,30 @@ export default function Careers() {
   useEffect(() => {
     const fetchCurrentUser = async () => {
       try {
-        const local = localStorage.getItem('adminUser');
-        if (local) {
-          setCurrentUser(JSON.parse(local));
+        setCheckingUser(true);
+        const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/auth/profile`, { credentials: 'include' });
+        if (response.status === 401) {
+          setRedirecting(true);
+          navigate('/login', { replace: true });
+          return;
+        }
+        const data = await response.json();
+        if (data.tokenValid === false) {
+          setRedirecting(true);
+          navigate('/login', { replace: true });
+          return;
+        }
+        if (response.ok && data.admin) {
+          setCurrentUser(data.admin);
         } else {
-          const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/auth/profile`, { credentials: 'include' });
-          const data = await response.json();
-          if (data.tokenValid === false) {
-            navigate('/login', { replace: true });
-            return;
-          }
-          if (response.ok && data.admin) {
-            setCurrentUser(data.admin);
-            localStorage.setItem('adminUser', JSON.stringify(data.admin));
-          }
+          setRedirecting(true);
+          navigate('/login', { replace: true });
+          return;
         }
       } catch (err) {
         console.error('Failed to fetch current user', err);
+        setRedirecting(true);
+        navigate('/login', { replace: true });
       } finally {
         setCheckingUser(false);
       }
@@ -75,6 +83,12 @@ export default function Careers() {
       const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/jobs`, {
         credentials: 'include'
       });
+
+      if (response.status === 401) {
+        navigate('/login');
+        return;
+      }
+
       const data = await response.json();
       if (data.tokenValid === false) {
         navigate('/login', { replace: true });
@@ -111,6 +125,17 @@ export default function Careers() {
         credentials: 'include',
         body: JSON.stringify(formData)
       });
+
+      if (response.status === 401) {
+        navigate('/login');
+        return;
+      }
+
+      const data = await response.json();
+      if (data.tokenValid === false) {
+        navigate('/login', { replace: true });
+        return;
+      }
 
       if (response.ok) {
         toast.success(editingId ? 'Job updated successfully' : 'Job added successfully');
@@ -189,6 +214,11 @@ export default function Careers() {
         credentials: 'include'
       });
 
+      if (response.status === 401) {
+        navigate('/login');
+        return;
+      }
+
       const data = await response.json();
       if (data.tokenValid === false) {
         navigate('/login', { replace: true });
@@ -224,15 +254,36 @@ export default function Careers() {
   if (checkingUser) {
     return (
       <Layout title="Careers">
-        <div className="flex items-center justify-center h-64">
-          <Loader2 className="w-8 h-8 animate-spin" />
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
         </div>
       </Layout>
     );
   }
 
-  if (!currentUser || !allowedRoles.includes(currentUser.role)) {
-    return null;
+  if (!currentUser) {
+    return (
+      <Layout title="Careers">
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <div className="text-center">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">Unauthorized Access</h2>
+            <p className="text-gray-600">You don't have permission to access this page.</p>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
+  if (!allowedRoles.includes(currentUser.role)) {
+    return (
+      <Layout title="Careers">
+        <div className="flex flex-col items-center justify-center min-h-screen">
+          <Briefcase className='w-16 h-16 text-red-500 mb-4'/>
+          <h2 className="text-xl font-semibold text-gray-800 mb-2">Access Denied</h2>
+          <p className="text-gray-600">Only Admins and Super Admins can manage careers.</p>
+        </div>
+      </Layout>
+    );
   }
 
   return (

@@ -104,6 +104,7 @@ export default function OrderDetails() {
   // User authentication states
   const [currentUser, setCurrentUser] = useState(null);
   const [checkingUser, setCheckingUser] = useState(true);
+  const [redirecting, setRedirecting] = useState(false);
 
   // Delivery agent assignment states
   const [deliveryAgents, setDeliveryAgents] = useState([]);
@@ -116,24 +117,30 @@ export default function OrderDetails() {
 
   const checkUser = async () => {
     try {
-      const local = localStorage.getItem('adminUser');
-      if (local) {
-        setCurrentUser(JSON.parse(local));
+      setCheckingUser(true);
+      const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/auth/profile`, { credentials: 'include' });
+      if (response.status === 401) {
+        setRedirecting(true);
+        navigate('/login', { replace: true });
+        return;
+      }
+      const data = await response.json();
+      if (data.tokenValid === false) {
+        setRedirecting(true);
+        navigate('/login', { replace: true });
+        return;
+      }
+      if (response.ok && data.admin) {
+        setCurrentUser(data.admin);
       } else {
-        const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/auth/profile`, { credentials: 'include' });
-        const data = await response.json();
-        if (data.tokenValid === false) {
-          navigate('/login', { replace: true });
-          return;
-        }
-        if (response.ok && data.admin) {
-          setCurrentUser(data.admin);
-          localStorage.setItem('adminUser', JSON.stringify(data.admin));
-        }
+        setRedirecting(true);
+        navigate('/login', { replace: true });
+        return;
       }
     } catch (error) {
       console.error('Error checking user:', error);
-      navigate('/login');
+      setRedirecting(true);
+      navigate('/login', { replace: true });
     } finally {
       setCheckingUser(false);
     }
@@ -740,6 +747,24 @@ export default function OrderDetails() {
       console.log('OrderDetails - Has live location:', !!agentLocations[assignedAgentInfo.agentId]);
     }
   }, [agentLocations, assignedAgentInfo.agentId]);
+
+  // Authentication checks
+  if (checkingUser) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+      </div>
+    );
+  }
+
+  if (!currentUser) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen">
+        <h2 className="text-2xl font-bold text-gray-900 mb-4">Unauthorized Access</h2>
+        <p className="text-gray-600">You don't have permission to access this page.</p>
+      </div>
+    );
+  }
 
   if (loading) {
     return (

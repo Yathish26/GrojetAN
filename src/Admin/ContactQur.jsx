@@ -39,32 +39,37 @@ export default function ContactQur() {
     return { dateStr, timeStr, fullStr: `${dateStr} ${timeStr}` };
   };
 
-  // 🔐 Auth check (UNCHANGED)
+  // 🔐 Auth check (UPDATED: Always fetch from server)
   useEffect(() => {
     const fetchCurrentUser = async () => {
       try {
-        const local = localStorage.getItem("adminUser");
-        if (local) {
-          setCurrentUser(JSON.parse(local));
+        setCheckingUser(true);
+        const response = await fetch(
+          `${import.meta.env.VITE_SERVER}/admin/auth/profile`,
+          { credentials: "include" }
+        );
+        if (response.status === 401) {
+          setRedirecting(true);
+          navigate("/login", { replace: true });
+          return;
+        }
+        const data = await response.json();
+        if (data.tokenValid === false) {
+          setRedirecting(true);
+          navigate("/login", { replace: true });
+          return;
+        }
+        if (response.ok && data.admin) {
+          setCurrentUser(data.admin);
         } else {
-          const response = await fetch(
-            `${import.meta.env.VITE_SERVER}/admin/auth/profile`,
-            { credentials: "include" }
-          );
-          const data = await response.json();
-
-          if (data.tokenValid === false) {
-            navigate("/login", { replace: true });
-            return;
-          }
-
-          if (response.ok && data.admin) {
-            setCurrentUser(data.admin);
-            localStorage.setItem("adminUser", JSON.stringify(data.admin));
-          }
+          setRedirecting(true);
+          navigate("/login", { replace: true });
+          return;
         }
       } catch (err) {
         console.error("Failed to fetch current user", err);
+        setRedirecting(true);
+        navigate("/login", { replace: true });
       } finally {
         setCheckingUser(false);
       }
@@ -162,8 +167,19 @@ export default function ContactQur() {
     );
   }
 
+  if (!currentUser) {
+    return (
+      <Layout title="Contact Us">
+        <div className="flex flex-col items-center justify-center min-h-screen">
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">Unauthorized Access</h2>
+          <p className="text-gray-600">You don't have permission to access this page.</p>
+        </div>
+      </Layout>
+    );
+  }
+
   // 🚫 Access denied
-  if (!currentUser || !allowedRoles.includes(currentUser.role)) {
+  if (!allowedRoles.includes(currentUser.role)) {
     return (
       <Layout title="Contact Us">
         <div className="flex items-center justify-center h-64">

@@ -18,7 +18,41 @@ function RequestedProducts() {
   const [deleteStep, setDeleteStep] = useState(1); // 1 for first confirmation, 2 for second
   const [deleteConfirmationText, setDeleteConfirmationText] = useState('');
   const [currentAdmin, setCurrentAdmin] = useState(null);
+  const [checkingUser, setCheckingUser] = useState(true);
+  const [redirecting, setRedirecting] = useState(false);
   const navigate = useNavigate();
+
+  // Fetch current user
+  const fetchCurrentUser = async () => {
+    try {
+      setCheckingUser(true);
+      const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/auth/profile`, { credentials: 'include' });
+      if (response.status === 401) {
+        setRedirecting(true);
+        navigate('/login', { replace: true });
+        return;
+      }
+      const data = await response.json();
+      if (data.tokenValid === false) {
+        setRedirecting(true);
+        navigate('/login', { replace: true });
+        return;
+      }
+      if (response.ok && data.admin) {
+        setCurrentAdmin(data.admin);
+      } else {
+        setRedirecting(true);
+        navigate('/login', { replace: true });
+        return;
+      }
+    } catch (err) {
+      console.error('Failed to fetch current user', err);
+      setRedirecting(true);
+      navigate('/login', { replace: true });
+    } finally {
+      setCheckingUser(false);
+    }
+  };
 
   // Fetch requested products
   const fetchRequestedProducts = async (pageNum = 1) => {
@@ -199,21 +233,37 @@ function RequestedProducts() {
   };
 
   useEffect(() => {
-    fetchRequestedProducts(1);
+    fetchCurrentUser();
   }, []);
 
-  // Load current admin
   useEffect(() => {
-    const storedAdmin = localStorage.getItem('adminUser');
-    if (storedAdmin) {
-      try {
-        const admin = JSON.parse(storedAdmin);
-        setCurrentAdmin(admin);
-      } catch (e) {
-        console.error('Failed to parse adminUser:', e);
-      }
+    if (currentAdmin) {
+      fetchRequestedProducts(1);
     }
-  }, []);
+  }, [currentAdmin]);
+
+  if (checkingUser) {
+    return (
+      <Layout title="Requested Products">
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+        </div>
+      </Layout>
+    );
+  }
+
+  if (!currentAdmin) {
+    return (
+      <Layout title="Requested Products">
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <div className="text-center">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">Unauthorized Access</h2>
+            <p className="text-gray-600">You don't have permission to access this page.</p>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout title="Requested Products">

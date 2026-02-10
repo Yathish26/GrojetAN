@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   FiPlus,
@@ -19,6 +19,9 @@ import Layout from '../Components/Layout.jsx';
 
 export default function UpdateNotesAdmin() {
   const navigate = useNavigate();
+  const [currentUser, setCurrentUser] = useState(null);
+  const [checkingUser, setCheckingUser] = useState(true);
+  const [redirecting, setRedirecting] = useState(false);
   const [updateNotes, setUpdateNotes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -46,9 +49,37 @@ export default function UpdateNotesAdmin() {
     isActive: true
   });
 
+  const allowedRoles = ['super_admin'];
+
+  const fetchCurrentUser = useCallback(async () => {
+    try {
+      setCheckingUser(true);
+      const res = await fetch(`${import.meta.env.VITE_SERVER}/admin/auth/profile`, { credentials: 'include' });
+      if (res.status === 401) {
+        setRedirecting(true);
+        navigate('/login', { replace: true });
+        return;
+      }
+      if (!res.ok) throw new Error('Failed to fetch user profile');
+      const data = await res.json();
+      if (data.tokenValid === false) {
+        setRedirecting(true);
+        navigate('/login', { replace: true });
+        return;
+      }
+      setCurrentUser(data.admin);
+    } catch (err) {
+      console.error('Error fetching current user:', err);
+      setRedirecting(true);
+      navigate('/login', { replace: true });
+    } finally {
+      setCheckingUser(false);
+    }
+  }, [navigate]);
+
   useEffect(() => {
-    fetchUpdateNotes();
-  }, []);
+    fetchCurrentUser();
+  }, [fetchCurrentUser]);
 
   const fetchUpdateNotes = async () => {
     try {
@@ -278,6 +309,29 @@ export default function UpdateNotesAdmin() {
   const filteredNotes = filterApp === 'all'
     ? updateNotes
     : updateNotes.filter(note => note.app === filterApp);
+
+  if (checkingUser) {
+    return (
+      <Layout title="Update Notes">
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+        </div>
+      </Layout>
+    );
+  }
+
+  if (!currentUser) {
+    return (
+      <Layout title="Update Notes">
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <div className="text-center">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">Unauthorized Access</h2>
+            <p className="text-gray-600">You don't have permission to access this page.</p>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
 
   if (loading) {
     return (
