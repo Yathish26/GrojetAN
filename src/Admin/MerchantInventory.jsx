@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Package, Search, AlertTriangle, CheckCircle, XCircle, Edit, Save, X, ChevronLeft, ChevronRight, Filter, SlidersHorizontal, TreePine, Trash2 } from 'lucide-react';
+import { ArrowLeft, Package, Search, AlertTriangle, CheckCircle, XCircle, Edit, Save, X, ChevronLeft, ChevronRight, Filter, SlidersHorizontal, TreePine, Trash2, Plus, Check } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Layout from '../Components/Layout';
 
@@ -33,6 +33,18 @@ const MerchantInventory = () => {
   const [editedWeightUnit, setEditedWeightUnit] = useState('');
   const [editingMarkupPrice, setEditingMarkupPrice] = useState(null);
   const [editedMarkupPrice, setEditedMarkupPrice] = useState('');
+
+  // Add Product Modal States
+  const [showAddProductModal, setShowAddProductModal] = useState(false);
+  const [productSearchQuery, setProductSearchQuery] = useState('');
+  const [availableProducts, setAvailableProducts] = useState([]);
+  const [productLoading, setProductLoading] = useState(false);
+  const [productPage, setProductPage] = useState(1);
+  const [productHasMore, setProductHasMore] = useState(true);
+  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [productCategories, setProductCategories] = useState([]);
+  const [addingProduct, setAddingProduct] = useState(null);
+  const [productCart, setProductCart] = useState([]);
 
   // Fetch merchant details with inventory
   const fetchMerchantInventory = useCallback(async (params = {}) => {
@@ -527,6 +539,185 @@ const MerchantInventory = () => {
     }
   };
 
+  // Fetch available products for adding to inventory
+  const fetchAvailableProducts = useCallback(async (pageNum = 1, search = '', category = '', isLoadMore = false) => {
+    try {
+      if (!isLoadMore) {
+        setProductLoading(true);
+      }
+
+      const query = new URLSearchParams();
+      query.append('page', pageNum.toString());
+      query.append('limit', '20');
+      if (search) query.append('search', search);
+      if (category && category !== 'all') query.append('category', category);
+
+      const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/products?${query}`, {
+        method: 'GET',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.status === 401) {
+        navigate('/login');
+        return;
+      }
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.tokenValid === false) {
+          navigate('/login', { replace: true });
+          return;
+        }
+        if (data.success) {
+          const products = data.products.map(product => ({
+            _id: product._id,
+            name: product.name,
+            category: product.category?.name || 'Unknown',
+            price: product.pricing?.mrp || 0,
+            image: product.thumbnail,
+            weightDimension: product.weightDimension,
+            hsnCode: product.hsnCode,
+            brand: product.brand,
+            description: product.description,
+          }));
+
+          if (isLoadMore) {
+            setAvailableProducts(prev => [...prev, ...products]);
+          } else {
+            setAvailableProducts(products);
+          }
+
+          setProductHasMore(data.products.length === 20); // Assuming limit is 20
+          setProductPage(pageNum);
+        } else {
+          throw new Error(data.message || 'Failed to fetch products');
+        }
+      } else {
+        throw new Error('Failed to fetch products');
+      }
+    } catch (error) {
+      console.error('Error fetching products:', error);
+      toast.error(error.message || 'Failed to load products');
+    } finally {
+      setProductLoading(false);
+    }
+  }, [navigate]);
+
+  // Fetch product categories
+  const fetchProductCategories = useCallback(async () => {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/categories`, {
+        method: 'GET',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          setProductCategories(data.categories || []);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+    }
+  }, [navigate]);
+
+  // Add product to cart
+  const handleAddToCart = (product) => {
+    if (productCart.find(item => item._id === product._id)) {
+      toast.info(`${product.name} is already in cart`);
+      return;
+    }
+    setProductCart(prev => [...prev, product]);
+    toast.success(`${product.name} added to cart`);
+  };
+
+  // Remove product from cart
+  const handleRemoveFromCart = (productId) => {
+    setProductCart(prev => prev.filter(item => item._id !== productId));
+  };
+
+  // Add all products in cart to merchant inventory
+  const handleAddCartToInventory = async () => {
+    if (productCart.length === 0) {
+      toast.error('No products in cart');
+      return;
+    }
+
+    setAddingProduct('cart');
+    try {
+      const promises = productCart.map(product =>
+        fetch(`${import.meta.env.VITE_SERVER}/admin/merchant-stores/${id}/inventory/add-product`, {
+          method: 'POST',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            productId: product._id,
+            quantity: 5, // Default quantity
+          }),
+        })
+      );
+
+      const responses = await Promise.all(promises);
+      const results = await Promise.all(responses.map(r => r.json()));
+
+      const successful = results.filter(result => result.success).length;
+      const failed = results.length - successful;
+
+      if (successful > 0) {
+        toast.success(`Successfully added ${successful} product${successful > 1 ? 's' : ''} to inventory`);
+        setShowAddProductModal(false);
+        setProductCart([]);
+        // Refetch inventory to show the new items
+        fetchMerchantInventory({ page: 1, search: '' });
+      }
+
+      if (failed > 0) {
+        toast.error(`Failed to add ${failed} product${failed > 1 ? 's' : ''}`);
+      }
+    } catch (error) {
+      console.error('Error adding products to inventory:', error);
+      toast.error('Failed to add products to inventory');
+    } finally {
+      setAddingProduct(null);
+    }
+  };
+
+  // Handle opening add product modal
+  const openAddProductModal = () => {
+    setShowAddProductModal(true);
+    setProductSearchQuery('');
+    setSelectedCategory('all');
+    setProductPage(1);
+    setProductHasMore(true);
+    setProductCart([]); // Reset cart
+    fetchProductCategories();
+    fetchAvailableProducts(1, '', 'all');
+  };
+
+  // Handle product search
+  const handleProductSearch = () => {
+    setProductPage(1);
+    setProductHasMore(true);
+    fetchAvailableProducts(1, productSearchQuery, selectedCategory);
+  };
+
+  // Handle category filter change
+  const handleCategoryChange = (category) => {
+    setSelectedCategory(category);
+    setProductPage(1);
+    setProductHasMore(true);
+    fetchAvailableProducts(1, productSearchQuery, category);
+  };
+
   if (checkingUser) {
     return (
       <Layout>
@@ -726,23 +917,32 @@ const MerchantInventory = () => {
 
           {/* Restock Button */}
           <div className="mb-8">
-            <button
-              onClick={handleRestock}
-              disabled={updating}
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {updating ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  Restocking...
-                </>
-              ) : (
-                <>
-                  <Package className="h-4 w-4 mr-2" />
-                  Restock Out of Stock
-                </>
-              )}
-            </button>
+            <div className="flex gap-4">
+              <button
+                onClick={handleRestock}
+                disabled={updating}
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {updating ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Restocking...
+                  </>
+                ) : (
+                  <>
+                    <Package className="h-4 w-4 mr-2" />
+                    Restock Out of Stock
+                  </>
+                )}
+              </button>
+              <button
+                onClick={openAddProductModal}
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add Product
+              </button>
+            </div>
             <p className="text-xs text-gray-500 mt-1">
               Adds 1 unit to all out of stock items
             </p>
@@ -1149,6 +1349,219 @@ const MerchantInventory = () => {
         )}
         </div>
       </div>
+
+      {/* Add Product Modal */}
+      {showAddProductModal && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-11/12 max-w-6xl shadow-lg rounded-md bg-white max-h-[90vh] overflow-hidden flex flex-col">
+            <div className="mt-3 flex-shrink-0">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-medium text-gray-900">Add Products to Inventory</h3>
+                <button
+                  onClick={() => setShowAddProductModal(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <X size={24} />
+                </button>
+              </div>
+            </div>
+
+            <div className="flex flex-1 min-h-0">
+              {/* Left side - Product search and list */}
+              <div className="flex-1 pr-4 border-r border-gray-200">
+                {/* Search and Filter */}
+                <div className="mb-6">
+                  <div className="flex gap-4 mb-4">
+                    <div className="flex-1">
+                      <div className="relative">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                          <Search className="h-5 w-5 text-gray-400" />
+                        </div>
+                        <input
+                          type="text"
+                          placeholder="Search products..."
+                          value={productSearchQuery}
+                          onChange={(e) => setProductSearchQuery(e.target.value)}
+                          onKeyPress={(e) => e.key === 'Enter' && handleProductSearch()}
+                          className="block w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
+                        />
+                      </div>
+                    </div>
+                    <button
+                      onClick={handleProductSearch}
+                      className="inline-flex items-center px-6 py-3 border border-transparent text-sm font-medium rounded-lg text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
+                    >
+                      Search
+                    </button>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-gray-600">Category:</span>
+                    <select
+                      value={selectedCategory}
+                      onChange={(e) => handleCategoryChange(e.target.value)}
+                      className="px-3 py-2 text-sm border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    >
+                      <option value="all">All Categories</option>
+                      {productCategories.map(category => (
+                        <option key={category._id} value={category._id}>{category.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {/* Products List */}
+                <div className="max-h-96 overflow-y-auto">
+                  {productLoading ? (
+                    <div className="flex items-center justify-center py-8">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
+                      <span className="ml-2 text-gray-600">Loading products...</span>
+                    </div>
+                  ) : availableProducts.length === 0 ? (
+                    <div className="text-center py-8">
+                      <Package className="mx-auto h-12 w-12 text-gray-400" />
+                      <h3 className="mt-4 text-sm font-medium text-gray-900">No products found</h3>
+                      <p className="mt-2 text-sm text-gray-500">
+                        Try adjusting your search terms or category filter.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {availableProducts.map((product) => {
+                        const isInCart = productCart.find(item => item._id === product._id);
+                        return (
+                          <div key={product._id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50">
+                            <div className="flex items-center space-x-4">
+                              {product.image && (
+                                <img
+                                  className="h-16 w-16 rounded-lg object-cover border border-gray-200"
+                                  src={product.image}
+                                  alt={product.name}
+                                />
+                              )}
+                              <div>
+                                <h4 className="text-sm font-medium text-gray-900">{product.name}</h4>
+                                <p className="text-sm text-gray-500">{product.category}</p>
+                                <p className="text-sm text-gray-600">₹{product.price}</p>
+                                {product.weightDimension && (
+                                  <p className="text-xs text-gray-500">
+                                    {product.weightDimension.value} {product.weightDimension.unit}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                            <button
+                              onClick={() => handleAddToCart(product)}
+                              disabled={isInCart}
+                              className={`inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed ${
+                                isInCart
+                                  ? 'bg-gray-400 cursor-not-allowed'
+                                  : 'bg-green-600 hover:bg-green-700'
+                              }`}
+                            >
+                              {isInCart ? (
+                                <>
+                                  <Check className="h-4 w-4 mr-2" />
+                                  In Cart
+                                </>
+                              ) : (
+                                <>
+                                  <Plus className="h-4 w-4 mr-2" />
+                                  Add to Cart
+                                </>
+                              )}
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                {/* Load More */}
+                {productHasMore && !productLoading && availableProducts.length > 0 && (
+                  <div className="mt-6 text-center">
+                    <button
+                      onClick={() => fetchAvailableProducts(productPage + 1, productSearchQuery, selectedCategory, true)}
+                      className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                    >
+                      Load More Products
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Right side - Cart */}
+              <div className="flex-1 pl-4 flex flex-col">
+                <div className="mb-4">
+                  <h4 className="text-lg font-medium text-gray-900">Cart ({productCart.length})</h4>
+                </div>
+
+                <div className="flex-1 overflow-y-auto">
+                  {productCart.length === 0 ? (
+                    <div className="text-center py-8">
+                      <Package className="mx-auto h-12 w-12 text-gray-400" />
+                      <h3 className="mt-4 text-sm font-medium text-gray-900">Cart is empty</h3>
+                      <p className="mt-2 text-sm text-gray-500">
+                        Add products from the left panel to get started.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {productCart.map((product) => (
+                        <div key={product._id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg bg-green-50">
+                          <div className="flex items-center space-x-4">
+                            {product.image && (
+                              <img
+                                className="h-12 w-12 rounded-lg object-cover border border-gray-200"
+                                src={product.image}
+                                alt={product.name}
+                              />
+                            )}
+                            <div>
+                              <h4 className="text-sm font-medium text-gray-900">{product.name}</h4>
+                              <p className="text-sm text-gray-500">{product.category}</p>
+                              <p className="text-sm text-gray-600">₹{product.price}</p>
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => handleRemoveFromCart(product._id)}
+                            className="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-md text-red-700 bg-red-100 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                          >
+                            <X className="h-4 w-4" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {productCart.length > 0 && (
+                  <div className="mt-6 pt-4 border-t border-gray-200">
+                    <button
+                      onClick={handleAddCartToInventory}
+                      disabled={addingProduct === 'cart'}
+                      className="w-full inline-flex items-center justify-center px-6 py-3 border border-transparent text-sm font-medium rounded-lg text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {addingProduct === 'cart' ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                          Adding Products...
+                        </>
+                      ) : (
+                        <>
+                          <Plus className="h-4 w-4 mr-2" />
+                          Add {productCart.length} Product{productCart.length > 1 ? 's' : ''} to Inventory
+                        </>
+                      )}
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </Layout>
   );
 };
