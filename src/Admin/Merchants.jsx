@@ -83,95 +83,6 @@ const Merchants = () => {
         fetchCurrentUser();
     }, [navigate]);
 
-    // Show loading while checking auth
-    if (checkingUser || redirecting) {
-        return (
-            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-green-500"></div>
-            </div>
-        );
-    }
-
-    // Show unauthorized if no user
-    if (!currentUser) {
-        return (
-            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-                <div className="text-center">
-                    <Store className="mx-auto h-12 w-12 text-gray-400" />
-                    <h3 className="mt-2 text-sm font-medium text-gray-900">Unauthorized</h3>
-                    <p className="mt-1 text-sm text-gray-500">You don't have permission to access this page.</p>
-                </div>
-            </div>
-        );
-    }
-
-    // Calculate map center and zoom based on merchant locations
-    const getMapCenterAndZoom = () => {
-        // Use all merchants for map view, filtered merchants for other calculations
-        const merchantsToUse = showMapModal ? allMerchantsForMap : filteredMerchants;
-        const merchantsWithCoords = merchantsToUse.filter(merchant =>
-            merchant.operationalInfo?.storeAddress?.coordinates?.latitude &&
-            merchant.operationalInfo?.storeAddress?.coordinates?.longitude
-        );
-
-        if (merchantsWithCoords.length === 0) {
-            // No merchants with coordinates, use Bangalore center
-            return {
-                center: { lat: 12.9716, lng: 77.5946 },
-                zoom: 10
-            };
-        }
-
-        if (merchantsWithCoords.length === 1) {
-            // Single merchant, center on it with closer zoom
-            const merchant = merchantsWithCoords[0];
-            return {
-                center: {
-                    lat: parseFloat(merchant.operationalInfo.storeAddress.coordinates.latitude),
-                    lng: parseFloat(merchant.operationalInfo.storeAddress.coordinates.longitude)
-                },
-                zoom: 15
-            };
-        }
-
-        // Multiple merchants, calculate bounds and center
-        let minLat = Infinity, maxLat = -Infinity;
-        let minLng = Infinity, maxLng = -Infinity;
-
-        merchantsWithCoords.forEach(merchant => {
-            const lat = parseFloat(merchant.operationalInfo.storeAddress.coordinates.latitude);
-            const lng = parseFloat(merchant.operationalInfo.storeAddress.coordinates.longitude);
-
-            minLat = Math.min(minLat, lat);
-            maxLat = Math.max(maxLat, lat);
-            minLng = Math.min(minLng, lng);
-            maxLng = Math.max(maxLng, lng);
-        });
-
-        // Calculate center
-        const centerLat = (minLat + maxLat) / 2;
-        const centerLng = (minLng + maxLng) / 2;
-
-        // Calculate zoom based on bounds
-        const latDiff = maxLat - minLat;
-        const lngDiff = maxLng - minLng;
-
-        // Simple zoom calculation based on the larger dimension
-        const maxDiff = Math.max(latDiff, lngDiff);
-        let zoom = 10; // default
-
-        if (maxDiff < 0.01) zoom = 16; // Very close together
-        else if (maxDiff < 0.05) zoom = 14; // Close together
-        else if (maxDiff < 0.1) zoom = 12; // Medium spread
-        else if (maxDiff < 0.5) zoom = 10; // Large spread
-        else zoom = 8; // Very spread out
-
-        return {
-            center: { lat: centerLat, lng: centerLng },
-            zoom: zoom
-        };
-    };
-
     // Fetch merchants from API with search and filters
     const fetchMerchants = async (page = 1, search = '', status = 'all', storeStatus = 'all', storeType = 'all') => {
         try {
@@ -270,6 +181,101 @@ const Merchants = () => {
         }
     };
 
+    useEffect(() => {
+        if (currentUser) {
+            fetchMerchants(1, '', 'all', 'all', 'all');
+        }
+    }, [currentUser]);
+
+    // Show loading while checking auth
+    if (checkingUser || redirecting) {
+        return (
+            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-green-500"></div>
+            </div>
+        );
+    }
+
+    // Show unauthorized if no user
+    if (!currentUser) {
+        return (
+            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+                <div className="text-center">
+                    <Store className="mx-auto h-12 w-12 text-gray-400" />
+                    <h3 className="mt-2 text-sm font-medium text-gray-900">Unauthorized</h3>
+                    <p className="mt-1 text-sm text-gray-500">You don't have permission to access this page.</p>
+                </div>
+            </div>
+        );
+    }
+
+    // Calculate map center and zoom based on merchant locations
+    const getMapCenterAndZoom = () => {
+        // Use all merchants for map view, filtered merchants for other calculations
+        const merchantsToUse = showMapModal ? allMerchantsForMap : filteredMerchants;
+        const merchantsWithCoords = merchantsToUse.filter(merchant =>
+            merchant.operationalInfo?.storeAddress?.coordinates?.latitude &&
+            merchant.operationalInfo?.storeAddress?.coordinates?.longitude
+        );
+
+        if (merchantsWithCoords.length === 0) {
+            // No merchants with coordinates, use Bangalore center
+            return {
+                center: { lat: 12.9716, lng: 77.5946 },
+                zoom: 10
+            };
+        }
+
+        if (merchantsWithCoords.length === 1) {
+            // Single merchant, center on it with closer zoom
+            const merchant = merchantsWithCoords[0];
+            return {
+                center: {
+                    lat: parseFloat(merchant.operationalInfo.storeAddress.coordinates.latitude),
+                    lng: parseFloat(merchant.operationalInfo.storeAddress.coordinates.longitude)
+                },
+                zoom: 15
+            };
+        }
+
+        // Multiple merchants, calculate bounds and center
+        let minLat = Infinity, maxLat = -Infinity;
+        let minLng = Infinity, maxLng = -Infinity;
+
+        merchantsWithCoords.forEach(merchant => {
+            const lat = parseFloat(merchant.operationalInfo.storeAddress.coordinates.latitude);
+            const lng = parseFloat(merchant.operationalInfo.storeAddress.coordinates.longitude);
+
+            minLat = Math.min(minLat, lat);
+            maxLat = Math.max(maxLat, lat);
+            minLng = Math.min(minLng, lng);
+            maxLng = Math.max(maxLng, lng);
+        });
+
+        // Calculate center
+        const centerLat = (minLat + maxLat) / 2;
+        const centerLng = (minLng + maxLng) / 2;
+
+        // Calculate zoom based on bounds
+        const latDiff = maxLat - minLat;
+        const lngDiff = maxLng - minLng;
+
+        // Simple zoom calculation based on the larger dimension
+        const maxDiff = Math.max(latDiff, lngDiff);
+        let zoom = 10; // default
+
+        if (maxDiff < 0.01) zoom = 16; // Very close together
+        else if (maxDiff < 0.05) zoom = 14; // Close together
+        else if (maxDiff < 0.1) zoom = 12; // Medium spread
+        else if (maxDiff < 0.5) zoom = 10; // Large spread
+        else zoom = 8; // Very spread out
+
+        return {
+            center: { lat: centerLat, lng: centerLng },
+            zoom: zoom
+        };
+    };
+
     // Fetch all merchants for map view
     const fetchAllMerchantsForMap = async () => {
         try {
@@ -363,12 +369,6 @@ const Merchants = () => {
     const handlePageChange = (page) => {
         fetchMerchants(page, currentSearch, statusFilter, storeStatusFilter, storeTypeFilter);
     };
-
-    useEffect(() => {
-        if (currentUser) {
-            fetchMerchants(1, '', 'all', 'all', 'all');
-        }
-    }, [currentUser]);
 
     const getStatusColor = (status) => {
         switch (status) {

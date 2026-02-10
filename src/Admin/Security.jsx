@@ -52,28 +52,6 @@ export default function Security() {
         fetchCurrentUser();
     }, [navigate]);
 
-    // Show loading while checking auth
-    if (checkingUser || redirecting) {
-        return (
-            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-green-500"></div>
-            </div>
-        );
-    }
-
-    // Show unauthorized if no user
-    if (!currentUser) {
-        return (
-            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-                <div className="text-center">
-                    <Shield className="mx-auto h-12 w-12 text-gray-400" />
-                    <h3 className="mt-2 text-sm font-medium text-gray-900">Unauthorized</h3>
-                    <p className="mt-1 text-sm text-gray-500">You don't have permission to access this page.</p>
-                </div>
-            </div>
-        );
-    }
-
     // Fetch data after authentication
     useEffect(() => {
         if (currentUser) {
@@ -132,6 +110,33 @@ export default function Security() {
             console.error('Failed to fetch stats');
         }
     };
+
+    useEffect(() => {
+        fetchDeleteRequests();
+        fetchStats();
+    }, []);
+
+    // Show loading while checking auth
+    if (checkingUser || redirecting) {
+        return (
+            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-green-500"></div>
+            </div>
+        );
+    }
+
+    // Show unauthorized if no user
+    if (!currentUser) {
+        return (
+            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+                <div className="text-center">
+                    <Shield className="mx-auto h-12 w-12 text-gray-400" />
+                    <h3 className="mt-2 text-sm font-medium text-gray-900">Unauthorized</h3>
+                    <p className="mt-1 text-sm text-gray-500">You don't have permission to access this page.</p>
+                </div>
+            </div>
+        );
+    }
 
     // Approve delete request
     const handleApprove = async (userId) => {
@@ -201,11 +206,6 @@ export default function Security() {
             setProcessing(null);
         }
     };
-
-    useEffect(() => {
-        fetchDeleteRequests();
-        fetchStats();
-    }, []);
 
     const formatDate = (dateString) => {
         return new Date(dateString).toLocaleDateString('en-US', {
