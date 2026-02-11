@@ -373,9 +373,10 @@ const EditMerchant = () => {
       setUploadingFiles(prev => ({ ...prev, [fieldPath]: true }));
 
       const formDataUpload = new FormData();
-      formDataUpload.append('image', file);
+      formDataUpload.append('file', file);
+      formDataUpload.append('folder', 'merchantlogo');
 
-      const response = await fetch(`${import.meta.env.VITE_SERVER}/image/upload`, {
+      const response = await fetch(`${import.meta.env.VITE_SERVER}/image/upload/s3`, {
         method: 'POST',
         credentials: 'include',
         body: formDataUpload,

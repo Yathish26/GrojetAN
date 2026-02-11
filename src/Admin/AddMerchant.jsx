@@ -225,28 +225,29 @@ const AddMerchant = () => {
     setUploading(true);
     try {
       const formDataUpload = new FormData();
-      formDataUpload.append('image', file);
+      formDataUpload.append('file', file);
+      formDataUpload.append('folder', 'merchantlogo');
 
-      const response = await fetch(`${import.meta.env.VITE_SERVER}/image/upload`, {
+      const response = await fetch(`${import.meta.env.VITE_SERVER}/image/upload/s3`, {
         method: 'POST',
+        credentials: 'include',
         body: formDataUpload,
-        credentials: 'include'
       });
 
       if (response.ok) {
         const data = await response.json();
-        if (data.tokenValid === false) {
-          navigate('/login', { replace: true });
-          return;
+        if (data.success) {
+          setFormData(prev => ({
+            ...prev,
+            brandingInfo: {
+              ...prev.brandingInfo,
+              [fieldName]: data.url
+            }
+          }));
+          toast.success(`${type === 'logo' ? 'Logo' : 'Banner'} uploaded successfully!`);
+        } else {
+          throw new Error(data.message || 'Upload failed');
         }
-        setFormData(prev => ({
-          ...prev,
-          brandingInfo: {
-            ...prev.brandingInfo,
-            [fieldName]: data.url
-          }
-        }));
-        toast.success(`${type === 'logo' ? 'Logo' : 'Banner'} uploaded successfully!`);
       } else {
         throw new Error('Upload failed');
       }
@@ -965,28 +966,41 @@ const AddMerchant = () => {
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                           Store Logo
                         </label>
-                        <div className="space-y-2">
+                        <div className="flex items-center gap-3">
                           <input
                             type="file"
                             accept="image/*"
                             onChange={(e) => handleImageUpload(e.target.files[0], 'logo')}
+                            className="hidden"
+                            id="store-logo"
                             disabled={uploadingLogo}
-                            className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent file:mr-4 file:py-2 file:px-4 file:rounded-l-lg file:border-0 file:text-sm file:font-medium file:bg-green-50 file:text-green-700 hover:file:bg-green-100"
                           />
-                          {uploadingLogo && (
-                            <div className="flex items-center text-sm text-gray-600">
-                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-600 mr-2"></div>
-                              Uploading logo...
-                            </div>
-                          )}
+                          <label
+                            htmlFor="store-logo"
+                            className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 hover:bg-blue-100 cursor-pointer disabled:opacity-50"
+                          >
+                            {uploadingLogo ? (
+                              <div className="animate-spin h-4 w-4 border-4 border-blue-200 border-t-blue-600 rounded-full"></div>
+                            ) : (
+                              <Upload size={16} />
+                            )}
+                            Upload Logo
+                          </label>
                           {formData.brandingInfo?.logoUrl && (
-                            <div className="flex items-center space-x-2">
+                            <div className="flex items-center gap-2">
                               <img
                                 src={formData.brandingInfo.logoUrl}
-                                alt="Logo preview"
-                                className="w-16 h-16 object-cover border"
+                                alt="Store Logo"
+                                className="w-10 h-10 object-cover rounded"
                               />
-                              <span className="text-sm text-gray-600">Logo uploaded</span>
+                              <button
+                                type="button"
+                                onClick={() => window.open(formData.brandingInfo.logoUrl, '_blank')}
+                                className="flex items-center gap-1 px-3 py-1 text-sm bg-green-50 text-green-600 rounded hover:bg-green-100"
+                              >
+                                <Eye size={14} />
+                                View
+                              </button>
                             </div>
                           )}
                         </div>
@@ -995,28 +1009,41 @@ const AddMerchant = () => {
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                           Store Banner
                         </label>
-                        <div className="space-y-2">
+                        <div className="flex items-center gap-3">
                           <input
                             type="file"
                             accept="image/*"
                             onChange={(e) => handleImageUpload(e.target.files[0], 'banner')}
+                            className="hidden"
+                            id="store-banner"
                             disabled={uploadingBanner}
-                            className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent file:mr-4 file:py-2 file:px-4 file:rounded-l-lg file:border-0 file:text-sm file:font-medium file:bg-green-50 file:text-green-700 hover:file:bg-green-100"
                           />
-                          {uploadingBanner && (
-                            <div className="flex items-center text-sm text-gray-600">
-                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-600 mr-2"></div>
-                              Uploading banner...
-                            </div>
-                          )}
+                          <label
+                            htmlFor="store-banner"
+                            className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 hover:bg-blue-100 cursor-pointer disabled:opacity-50"
+                          >
+                            {uploadingBanner ? (
+                              <div className="animate-spin h-4 w-4 border-4 border-blue-200 border-t-blue-600 rounded-full"></div>
+                            ) : (
+                              <Upload size={16} />
+                            )}
+                            Upload Banner
+                          </label>
                           {formData.brandingInfo?.bannerUrl && (
-                            <div className="flex items-center space-x-2">
+                            <div className="flex items-center gap-2">
                               <img
                                 src={formData.brandingInfo.bannerUrl}
-                                alt="Banner preview"
-                                className="w-24 h-16 object-cover border"
+                                alt="Store Banner"
+                                className="w-16 h-10 object-cover rounded"
                               />
-                              <span className="text-sm text-gray-600">Banner uploaded</span>
+                              <button
+                                type="button"
+                                onClick={() => window.open(formData.brandingInfo.bannerUrl, '_blank')}
+                                className="flex items-center gap-1 px-3 py-1 text-sm bg-green-50 text-green-600 rounded hover:bg-green-100"
+                              >
+                                <Eye size={14} />
+                                View
+                              </button>
                             </div>
                           )}
                         </div>
