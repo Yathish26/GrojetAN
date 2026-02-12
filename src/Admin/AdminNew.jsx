@@ -44,7 +44,7 @@ export default function Admin() {
                     agentsRes.json()
                 ]);
 
-                // Check for token validation in responses
+
                 if (inventoryData.tokenValid === false || ordersData.tokenValid === false || xpressOrdersData.tokenValid === false || agentsData.tokenValid === false) {
                     setRedirecting(true);
                     navigate('/login', { replace: true });
