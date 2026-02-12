@@ -669,7 +669,6 @@ export default function AppControls() {
         headers: {
           'Content-Type': 'application/json',
         },
-        credentials: 'include',
         body: JSON.stringify({
           title: customerBulkNotificationTitle,
           message: customerBulkNotificationText,
