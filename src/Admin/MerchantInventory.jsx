@@ -248,6 +248,51 @@ const MerchantInventory = () => {
     }
   };
 
+  // Make all items out of stock
+  const handleMakeOutOfStock = async () => {
+    if (!window.confirm('Are you sure you want to make all items out of stock? This will set the quantity of all in-stock items to 0.')) {
+      return;
+    }
+
+    try {
+      setUpdating(true);
+      const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/merchant-stores/${id}/inventory/make-out-of-stock`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.status === 401) {
+        navigate('/login');
+        return;
+      }
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.tokenValid === false) {
+          navigate('/login', { replace: true });
+          return;
+        }
+        if (data.success) {
+          toast.success(`Successfully made ${data.data.updatedCount} items out of stock`);
+          // Refetch inventory to show updated stock
+          fetchMerchantInventory({ page, search: searchTerm });
+        } else {
+          throw new Error(data.message || 'Failed to make items out of stock');
+        }
+      } else {
+        throw new Error('Failed to make items out of stock');
+      }
+    } catch (error) {
+      console.error('Error making items out of stock:', error);
+      toast.error(error.message || 'Failed to make items out of stock');
+    } finally {
+      setUpdating(false);
+    }
+  };
+
   // Pagination handlers
   const handlePageChange = (newPage) => {
     if (newPage >= 1 && newPage <= totalPages) {
@@ -936,6 +981,23 @@ const MerchantInventory = () => {
                 )}
               </button>
               <button
+                onClick={handleMakeOutOfStock}
+                disabled={updating}
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {updating ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Updating...
+                  </>
+                ) : (
+                  <>
+                    <XCircle className="h-4 w-4 mr-2" />
+                    Make All Out of Stock
+                  </>
+                )}
+              </button>
+              <button
                 onClick={openAddProductModal}
                 className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
               >
@@ -944,7 +1006,7 @@ const MerchantInventory = () => {
               </button>
             </div>
             <p className="text-xs text-gray-500 mt-1">
-              Adds 1 unit to all out of stock items
+              Restock adds 1 unit to out of stock items • Make out of stock sets all in-stock items to 0
             </p>
           </div>
 
