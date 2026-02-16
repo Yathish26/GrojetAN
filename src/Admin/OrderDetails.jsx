@@ -794,8 +794,8 @@ export default function OrderDetails() {
     <div className="min-h-screen bg-gray-50">
       {/* Modern Header with Key Metrics */}
       <div className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
             <div className="flex items-center space-x-4">
               <button
                 onClick={() => navigate('/orders')}
@@ -804,21 +804,39 @@ export default function OrderDetails() {
                 <ArrowLeft className="w-5 h-5" />
               </button>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">Order #{order.orderNumber}</h1>
+                <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Order #{order.orderNumber}</h1>
                 <p className="text-sm text-gray-500 mt-1">
                   {new Date(order.createdAt).toLocaleDateString('en-IN')} • {new Date(order.createdAt).toLocaleTimeString('en-IN')}
                 </p>
               </div>
             </div>
 
-            <div className={`flex items-center gap-2 px-4 py-2 rounded-full border ${getStatusColor(order.status)}`}>
-              {getStatusIcon(order.status)}
-              <span className="font-medium text-sm capitalize">{getStatusValue(order.status).replace('_', ' ')}</span>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+              <div className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-full border text-sm ${getStatusColor(order.status)}`}>
+                {getStatusIcon(order.status)}
+                <span className="font-medium capitalize">{getStatusValue(order.status).replace('_', ' ')}</span>
+              </div>
+
+              {['super_admin', 'admin'].includes(currentUser?.role) && (
+                <select
+                  value={getStatusValue(order.status)}
+                  onChange={(e) => updateOrderStatus(e.target.value)}
+                  disabled={updating}
+                  className="px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 text-sm w-full sm:w-auto"
+                >
+                  <option value="pending">Pending</option>
+                  <option value="confirmed">Confirmed</option>
+                  <option value="packing">Packing</option>
+                  <option value="out_for_delivery">Out for Delivery</option>
+                  <option value="delivered">Delivered</option>
+                  <option value="cancelled">Cancelled</option>
+                </select>
+              )}
             </div>
           </div>
 
           {/* Key Metrics Bar */}
-          <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <div className="bg-gray-700 rounded-lg p-4 text-white">
               <div className="flex items-center justify-between">
                 <div>
@@ -848,22 +866,12 @@ export default function OrderDetails() {
                 <MapPin className="w-8 h-8 text-white" />
               </div>
             </div>
-
-            <div className="bg-gray-700 rounded-lg p-4 text-white">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-white text-sm font-medium">Est. Time</p>
-                  <p className="text-2xl font-bold">{order.deliveryInfo?.estimatedTime || 'N/A'} min</p>
-                </div>
-                <Timer className="w-8 h-8 text-white" />
-              </div>
-            </div>
           </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 py-6">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
           {/* Main Content Area */}
           <div className="lg:col-span-2 space-y-6">
             {/* Order Items */}
@@ -1646,26 +1654,14 @@ export default function OrderDetails() {
                 </h2>
               </div>
               <div className="p-6 space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="p-3 bg-blue-50 rounded-none">
-                    <div className="flex items-center gap-2 mb-1">
-                      <Timer className="w-4 h-4 text-blue-600" />
-                      <span className="text-sm font-medium text-blue-800">Estimated Time</span>
-                    </div>
-                    <p className="text-lg font-semibold text-blue-900">
-                      {order.deliveryInfo?.estimatedTime || 'N/A'} min
-                    </p>
+                <div className="p-3 bg-green-50 rounded-none">
+                  <div className="flex items-center gap-2 mb-1">
+                    <MapPin className="w-4 h-4 text-green-600" />
+                    <span className="text-sm font-medium text-green-800">Distance</span>
                   </div>
-
-                  <div className="p-3 bg-green-50 rounded-none">
-                    <div className="flex items-center gap-2 mb-1">
-                      <MapPin className="w-4 h-4 text-green-600" />
-                      <span className="text-sm font-medium text-green-800">Distance</span>
-                    </div>
-                    <p className="text-lg font-semibold text-green-900">
-                      {order.deliveryInfo?.distance || 'N/A'} km
-                    </p>
-                  </div>
+                  <p className="text-lg font-semibold text-green-900">
+                    {order.deliveryInfo?.distance || 'N/A'} km
+                  </p>
                 </div>
 
                 <div className="p-3 bg-purple-50 rounded-none">
@@ -2108,6 +2104,21 @@ export default function OrderDetails() {
                     </div>
                   )}
 
+                  {order.tracking.pickupOTP && (
+                    <div className="p-3 bg-orange-50 rounded-none">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Package className="w-4 h-4 text-orange-600" />
+                        <span className="text-sm font-medium text-orange-800">Merchant Pickup OTP</span>
+                      </div>
+                      <p className="text-lg font-mono font-bold text-orange-900">
+                        {order.tracking.pickupOTP}
+                      </p>
+                      <p className="text-xs text-orange-600 mt-1">
+                        Share this OTP with the delivery agent for pickup verification
+                      </p>
+                    </div>
+                  )}
+
                   {order.tracking.deliveryOTP && (
                     <div className="p-3 bg-purple-50 rounded-none">
                       <div className="flex items-center gap-2 mb-2">
@@ -2146,7 +2157,7 @@ export default function OrderDetails() {
                     </p>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="p-3 bg-gray-50 rounded-none">
                       <div className="flex items-center gap-2 mb-1">
                         <User className="w-4 h-4 text-gray-600" />
@@ -2168,7 +2179,7 @@ export default function OrderDetails() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="p-3 bg-yellow-50 rounded-none">
                       <div className="flex items-center gap-2 mb-1">
                         <IndianRupee className="w-4 h-4 text-yellow-600" />
@@ -2238,7 +2249,7 @@ export default function OrderDetails() {
                   </h2>
                 </div>
                 <div className="p-6 space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {order.feedback.deliveryRating && (
                       <div className="p-3 bg-blue-50 rounded-none">
                         <div className="flex items-center gap-2 mb-2">
@@ -2916,7 +2927,7 @@ export default function OrderDetails() {
           </div>
 
           {/* Customer & Delivery Details */}
-          <div className="grid grid-cols-2 gap-6 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-6">
             <div>
               <h3 className="text-lg font-semibold text-gray-800 mb-2">Bill To:</h3>
               <div className="text-sm space-y-1">
@@ -2949,31 +2960,33 @@ export default function OrderDetails() {
           {/* Order Items */}
           <div className="mb-6">
             <h3 className="text-lg font-semibold text-gray-800 mb-3">Order Items</h3>
-            <table className="w-full border-collapse border border-gray-400">
-              <thead>
-                <tr className="bg-gray-100">
-                  <th className="border border-gray-400 px-3 py-2 text-left text-sm font-semibold">Item</th>
-                  <th className="border border-gray-400 px-3 py-2 text-center text-sm font-semibold">Qty</th>
-                  <th className="border border-gray-400 px-3 py-2 text-right text-sm font-semibold">Price</th>
-                  <th className="border border-gray-400 px-3 py-2 text-right text-sm font-semibold">Total</th>
-                </tr>
-              </thead>
-              <tbody>
-                {order?.items?.map((item, index) => (
-                  <tr key={index} className="border-b border-gray-200">
-                    <td className="border border-gray-400 px-3 py-2 text-sm">
-                      <div>
-                        <p className="font-medium">{item.productId?.name || item.name || 'N/A'}</p>
-                        {item.variant && <p className="text-xs text-gray-600">{item.variant}</p>}
-                      </div>
-                    </td>
-                    <td className="border border-gray-400 px-3 py-2 text-center text-sm">{item.quantity}</td>
-                    <td className="border border-gray-400 px-3 py-2 text-right text-sm">₹{item.price?.toFixed(2) || '0.00'}</td>
-                    <td className="border border-gray-400 px-3 py-2 text-right text-sm">₹{((item.price || 0) * (item.quantity || 0)).toFixed(2)}</td>
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse border border-gray-400 min-w-[600px]">
+                <thead>
+                  <tr className="bg-gray-100">
+                    <th className="border border-gray-400 px-3 py-2 text-left text-sm font-semibold">Item</th>
+                    <th className="border border-gray-400 px-3 py-2 text-center text-sm font-semibold">Qty</th>
+                    <th className="border border-gray-400 px-3 py-2 text-right text-sm font-semibold">Price</th>
+                    <th className="border border-gray-400 px-3 py-2 text-right text-sm font-semibold">Total</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {order?.items?.map((item, index) => (
+                    <tr key={index} className="border-b border-gray-200">
+                      <td className="border border-gray-400 px-3 py-2 text-sm">
+                        <div>
+                          <p className="font-medium">{item.productId?.name || item.name || 'N/A'}</p>
+                          {item.variant && <p className="text-xs text-gray-600">{item.variant}</p>}
+                        </div>
+                      </td>
+                      <td className="border border-gray-400 px-3 py-2 text-center text-sm">{item.quantity}</td>
+                      <td className="border border-gray-400 px-3 py-2 text-right text-sm">₹{item.price?.toFixed(2) || '0.00'}</td>
+                      <td className="border border-gray-400 px-3 py-2 text-right text-sm">₹{((item.price || 0) * (item.quantity || 0)).toFixed(2)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
 
           {/* Order Summary */}

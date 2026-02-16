@@ -156,6 +156,15 @@ export default function Settings() {
     fetchCurrentUser();
   }, [navigate]);
 
+  useEffect(() => {
+    if (currentUser) {
+      fetchTerms();
+      fetchPrivacy();
+      fetchSupport();
+      fetchFaq();
+    }
+  }, [currentUser]);
+
   // Show loading while checking auth
   if (checkingUser || redirecting) {
     return (
@@ -177,15 +186,6 @@ export default function Settings() {
       </div>
     );
   }
-
-  useEffect(() => {
-    if (currentUser) {
-      fetchTerms();
-      fetchPrivacy();
-      fetchSupport();
-      fetchFaq();
-    }
-  }, [currentUser]);
 
   const fetchTerms = async () => {
     try {

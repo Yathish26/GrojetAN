@@ -2,17 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../Components/Layout';
 import {
-    Package, Truck, Clock, CircleCheck
+    Package,
+    Zap
 } from 'lucide-react';
 import LoaderSpinner from '../Components/Loader';
 
 
 export default function Admin() {
     const [dashboardStats, setDashboardStats] = useState({
-        inventoryCount: null,
         orders: {},
-        xpressOrders: {},
-        agents: {}
+        xpressOrders: {}
     });
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -24,38 +23,31 @@ export default function Admin() {
             try {
                 setLoading(true);
 
-                const [inventoryRes, ordersRes, xpressOrdersRes, agentsRes] = await Promise.all([
-                    fetch(`${import.meta.env.VITE_SERVER}/admin/products/count`, { credentials: 'include' }),
+                const [ordersRes, xpressOrdersRes] = await Promise.all([
                     fetch(`${import.meta.env.VITE_SERVER}/admin/orders/stats/overview`, { credentials: 'include' }),
-                    fetch(`${import.meta.env.VITE_SERVER}/admin/xpress/stats/overview`, { credentials: 'include' }),
-                    fetch(`${import.meta.env.VITE_SERVER}/admin/delivery-agents/stats/overview`, { credentials: 'include' })
+                    fetch(`${import.meta.env.VITE_SERVER}/admin/xpress/stats/overview`, { credentials: 'include' })
                 ]);
 
-                if (inventoryRes.status === 401 || ordersRes.status === 401 || xpressOrdersRes.status === 401 || agentsRes.status === 401) {
+                if (ordersRes.status === 401 || xpressOrdersRes.status === 401) {
                     setRedirecting(true);
                     navigate('/login', { replace: true });
                     return;
                 }
 
-                const [inventoryData, ordersData, xpressOrdersData, agentsData] = await Promise.all([
-                    inventoryRes.json(),
+                const [ordersData, xpressOrdersData] = await Promise.all([
                     ordersRes.json(),
-                    xpressOrdersRes.json(),
-                    agentsRes.json()
+                    xpressOrdersRes.json()
                 ]);
 
-
-                if (inventoryData.tokenValid === false || ordersData.tokenValid === false || xpressOrdersData.tokenValid === false || agentsData.tokenValid === false) {
+                if (ordersData.tokenValid === false || xpressOrdersData.tokenValid === false) {
                     setRedirecting(true);
                     navigate('/login', { replace: true });
                     return;
                 }
 
                 setDashboardStats({
-                    inventoryCount: inventoryData.success ? inventoryData.count : 0,
                     orders: ordersData.success ? ordersData.stats : {},
-                    xpressOrders: xpressOrdersData.success ? xpressOrdersData.stats : {},
-                    agents: agentsData.success ? agentsData.stats : {}
+                    xpressOrders: xpressOrdersData.success ? xpressOrdersData.stats : {}
                 });
             } catch (e) {
                 console.error('Dashboard fetch error:', e);
@@ -78,49 +70,6 @@ export default function Admin() {
             </div>
         );
     }
-
-    // Boxy, green-themed, minimal color, industry-standard card
-    const StatCard = ({ title, value, icon: Icon, trend = null, onClick = null }) => (
-        <div
-            className={`bg-white border border-gray-200 ${onClick ? 'cursor-pointer hover:shadow-md' : ''} p-5 transition-shadow`}
-            style={{ borderRadius: '0.25rem', boxShadow: 'none' }}
-            onClick={onClick}
-        >
-            <div className="flex items-center justify-between">
-                <div>
-                    <p className="text-xs font-medium text-gray-500 mb-1">{title}</p>
-                    <p className="text-2xl font-bold text-green-700">
-                        {loading ? (
-                            <span className="inline-block animate-pulse bg-gray-200 h-6 w-16" style={{ borderRadius: 2 }}></span>
-                        ) : (
-                            typeof value === 'number' ? value.toLocaleString() : value
-                        )}
-                    </p>
-                    {trend && (
-                        <p className="text-xs text-gray-400 mt-1">{trend}</p>
-                    )}
-                </div>
-                <Icon className="h-8 w-8 text-green-600" />
-            </div>
-        </div>
-    );
-
-    // Boxy, green theme, minimal color
-    const QuickAction = ({ title, description, icon: Icon, onClick }) => (
-        <button
-            onClick={onClick}
-            className="bg-green-600 text-white p-5 cursor-pointer transition-opacity hover:opacity-95 text-left w-full"
-            style={{ borderRadius: '0.25rem', boxShadow: 'none' }}
-        >
-            <div className="flex items-start justify-between">
-                <div>
-                    <h3 className="font-semibold text-base mb-1">{title}</h3>
-                    <p className="text-xs opacity-90">{description}</p>
-                </div>
-                <Icon size={22} />
-            </div>
-        </button>
-    );
 
     if (error) {
         return (
@@ -145,66 +94,61 @@ export default function Admin() {
             <div className="p-6 bg-gray-50 min-h-screen">
                 {/* Welcome Section */}
                 <div className="mb-8">
-                    <h2 className="text-xl font-bold text-green-800 mb-1 tracking-tight">Grojet Merchant orders</h2>
-                    <p className="text-gray-600">Delivery Managing Platform</p>
+                    <h2 className="text-xl font-bold text-green-800 mb-1 tracking-tight">Grojet Dashboard</h2>
+                    <p className="text-gray-600">Today's Order Summary</p>
                 </div>
 
-                {/* Stats Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-                    <StatCard
-                        title="Total Products"
-                        value={dashboardStats.inventoryCount}
-                        icon={Package}
-                        onClick={() => navigate('/products')}
-                    />
-                    <StatCard
-                        title="Total Agents"
-                        value={dashboardStats.agents.active || 0}
-                        icon={Truck}
-                        trend={`${dashboardStats.agents.online || 0} online`}
-                        onClick={() => navigate('/delivery-agents')}
-                    />
-                </div>
-
-                {/* Revenue & Performance */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-                    <StatCard
-                        title="Pending Orders"
-                        value={dashboardStats.orders.pendingOrders || 0}
-                        icon={Clock}
-                        onClick={() => navigate('/orders?status=pending')}
-                    />
-                    <StatCard
-                        title="Completed Today"
-                        value={dashboardStats.orders.completedOrders || 0}
-                        icon={CircleCheck}
-                    />
-                </div>
-
-                {/* Xpress Orders Section */}
+                {/* Total Orders Display */}
                 <div className="mb-8">
-                    <h3 className="text-xl font-bold text-green-800 mb-4">Grojet Xpress Orders</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                        <StatCard
-                            title="Total Xpress Orders"
-                            value={dashboardStats.xpressOrders.totalOrders || 0}
-                            icon={Package}
-                        />
-                        <StatCard
-                            title="Pending Xpress Orders"
-                            value={dashboardStats.xpressOrders.pendingOrders || 0}
-                            icon={Clock}
-                        />
-                        <StatCard
-                            title="In Transit"
-                            value={dashboardStats.xpressOrders.inTransitOrders || 0}
-                            icon={Truck}
-                        />
-                        <StatCard
-                            title="Delivered Today"
-                            value={dashboardStats.xpressOrders.deliveredOrders || 0}
-                            icon={CircleCheck}
-                        />
+                    <div className="bg-white border border-gray-200 p-8 text-center" style={{ borderRadius: '0.25rem' }}>
+                        <div className="text-sm font-medium text-gray-500 mb-2">Total Today's Orders</div>
+                        <div className="text-5xl font-bold text-green-700 mb-2">
+                            {(dashboardStats.orders.completedOrders || 0) + (dashboardStats.xpressOrders.deliveredOrders || 0)}
+                        </div>
+                        <div className="text-2xl text-gray-600">
+                            <span className="text-green-600 font-bold">{dashboardStats.orders.completedOrders || 0}</span> + <span className="text-red-600 font-bold">{dashboardStats.xpressOrders.deliveredOrders || 0}</span>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Today's Orders Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div 
+                        className="bg-white border border-gray-200 p-6 cursor-pointer hover:shadow-md transition-shadow" 
+                        style={{ borderRadius: '0.25rem' }}
+                        onClick={() => navigate('/orders')}
+                    >
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <p className="text-sm font-medium text-gray-500 mb-1">Today's Merchant Orders</p>
+                                <p className="text-3xl font-bold text-green-700">
+                                    {dashboardStats.orders.completedOrders || 0}
+                                </p>
+                                <p className="text-xs text-red-600 mt-1">
+                                    {dashboardStats.orders.cancelledOrders || 0} cancelled
+                                </p>
+                            </div>
+                            <Package className="h-10 w-10 text-green-600" />
+                        </div>
+                    </div>
+
+                    <div 
+                        className="bg-white border border-gray-200 p-6 cursor-pointer hover:shadow-md transition-shadow" 
+                        style={{ borderRadius: '0.25rem' }}
+                        onClick={() => navigate('/xpress')}
+                    >
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <p className="text-sm font-medium text-gray-500 mb-1">Today's Xpress Orders</p>
+                                <p className="text-3xl font-bold text-green-700">
+                                    {dashboardStats.xpressOrders.deliveredOrders || 0}
+                                </p>
+                                <p className="text-xs text-red-600 mt-1">
+                                    {dashboardStats.xpressOrders.cancelledOrders || 0} cancelled
+                                </p>
+                            </div>
+                        <Zap className="h-10 w-10 text-green-600" />
+                        </div>
                     </div>
                 </div>
             </div>
