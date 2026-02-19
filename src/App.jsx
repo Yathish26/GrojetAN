@@ -32,6 +32,7 @@ import AddMerchant from './Admin/AddMerchant.jsx'
 import MerchantDetails from './Admin/MerchantDetails.jsx'
 import EditMerchant from './Admin/EditMerchant.jsx'
 import MerchantInventory from './Admin/MerchantInventory.jsx'
+import AddMerchantInventory from './Admin/AddMerchantInventory.jsx'
 import AppControls from './Admin/AppControls.jsx'
 import Careers from './Admin/Careers.jsx'
 import RequestedProducts from './Admin/RequestedProducts.jsx'
@@ -51,6 +52,7 @@ import EmailSender from './Admin/EmailSender.jsx'
 import S3store from './Admin/S3store.jsx'
 import PublicStore from './Admin/PublicStore.jsx'
 import PublicStoreDetails from './Admin/PublicStoreDetails.jsx'
+import Darkstore from './Darkstore.jsx'
 
 function App() {
   return (
@@ -114,7 +116,9 @@ function App() {
           <Route path="/merchants/:id" element={<MerchantDetails />} />
           <Route path="/merchants/:id/edit" element={<EditMerchant />} />
           <Route path="/merchants/:id/inventory" element={<MerchantInventory />} />
+          <Route path="/merchants/:id/inventory/add" element={<AddMerchantInventory />} />
           <Route path="/eateries" element={<Eateries />} />
+          <Route path="/darkstore" element={<Darkstore />} />
           
           {/* Support Management */}
           <Route path="/support" element={<Support />} />

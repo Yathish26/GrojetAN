@@ -143,6 +143,7 @@ const EditMerchant = () => {
     },
     homeStore: false,
     headStore: false,
+    darkStore: false,
     productCategories: [],
     storeType: '',    // Documents (Text inputs)
     documents: {
@@ -188,7 +189,7 @@ const EditMerchant = () => {
       setLoading(true);
       setError(null);
 
-      const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/merchant-stores/${id}`, {
+      const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/merchant-stores/${id}?mode=edit`, {
         method: 'GET',
         credentials: 'include',
         headers: {
@@ -247,6 +248,7 @@ const EditMerchant = () => {
             },
             homeStore: merchant.operationalInfo?.homeStore || false,
             headStore: merchant.operationalInfo?.headStore || false,
+            darkStore: merchant.darkStore || false,
             storeType: merchant.operationalInfo?.storeType || '',
             productCategories: merchant.operationalInfo?.productCategories || [],
 
@@ -584,7 +586,8 @@ const EditMerchant = () => {
             ipAddress: formData.complianceInfo.digitalSignature.ipAddress
           }
         },
-        status: formData.status
+        status: formData.status,
+        darkStore: formData.darkStore
       };
 
       const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/merchant-stores/${id}`, {
@@ -1225,6 +1228,17 @@ const EditMerchant = () => {
                   />
                   <label className="text-sm font-medium text-gray-700">
                     Head Store
+                  </label>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <input
+                    type="checkbox"
+                    checked={formData.darkStore}
+                    onChange={(e) => setFormData(prev => ({ ...prev, darkStore: e.target.checked }))}
+                    className="w-4 h-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                  />
+                  <label className="text-sm font-medium text-gray-700">
+                    Dark Store
                   </label>
                 </div>
               </div>

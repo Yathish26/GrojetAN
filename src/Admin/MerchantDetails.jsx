@@ -6,7 +6,7 @@ import {
   XCircle, Clock, AlertTriangle, FileText, CreditCard,
   Building, Globe, Users, Award, TrendingUp, Timer,
   Truck, Settings, X, Eye, Download, Image as ImageIcon,
-  BarChart3
+  BarChart3, Loader
 } from 'lucide-react';
 import Layout from '../Components/Layout';
 import { GoogleMap, Marker } from '../Components/GoogleMapComponents';
@@ -21,6 +21,7 @@ const MerchantDetails = () => {
   const [currentUser, setCurrentUser] = useState(null);
   const [checkingUser, setCheckingUser] = useState(true);
   const [redirecting, setRedirecting] = useState(false);
+  const [storeActionLoading, setStoreActionLoading] = useState(false);
 
   // Fetch merchant details
   const fetchMerchantDetails = async () => {
@@ -28,7 +29,7 @@ const MerchantDetails = () => {
       setLoading(true);
       setError(null);
 
-      const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/merchant-stores/${id}`, {
+      const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/merchant-stores/${id}?mode=edit`, {
         method: 'GET',
         credentials: 'include',
         headers: {
@@ -220,9 +221,10 @@ const MerchantDetails = () => {
   };
 
   const handleCloseShop = async () => {
+    setStoreActionLoading(true);
     try {
-      const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/merchant-stores/${id}`, {
-        method: 'PUT',
+      const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/merchant-stores/${id}/store-status`, {
+        method: 'PATCH',
         credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
@@ -241,7 +243,7 @@ const MerchantDetails = () => {
       if (response.ok) {
         if (data.success) {
           toast.success('Shop closed successfully');
-          fetchMerchantDetails(); // Refresh to show updated status
+          setMerchant(prev => ({ ...prev, storeStatus: 'closed' })); // Update local state instantly
         } else {
           throw new Error(data.message || 'Failed to close shop');
         }
@@ -251,6 +253,46 @@ const MerchantDetails = () => {
     } catch (error) {
       console.error('Error closing shop:', error);
       toast.error(error.message || 'Failed to close shop');
+    } finally {
+      setStoreActionLoading(false);
+    }
+  };
+
+  const handleOpenShop = async () => {
+    setStoreActionLoading(true);
+    try {
+      const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/merchant-stores/${id}/store-status`, {
+        method: 'PATCH',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          storeStatus: 'open'
+        })
+      });
+
+      const data = await response.json();
+      if (data.tokenValid === false) {
+        navigate('/login', { replace: true });
+        return;
+      }
+
+      if (response.ok) {
+        if (data.success) {
+          toast.success('Shop opened successfully');
+          setMerchant(prev => ({ ...prev, storeStatus: 'open' })); // Update local state instantly
+        } else {
+          throw new Error(data.message || 'Failed to open shop');
+        }
+      } else {
+        throw new Error('Failed to open shop');
+      }
+    } catch (error) {
+      console.error('Error opening shop:', error);
+      toast.error(error.message || 'Failed to open shop');
+    } finally {
+      setStoreActionLoading(false);
     }
   };
 
@@ -487,15 +529,34 @@ const MerchantDetails = () => {
                   <Settings size={16} className="mr-2" />
                   Clear Device Login
                 </button>
-                {merchant?.storeStatus !== 'closed' && (
-                  <button
-                    onClick={handleCloseShop}
-                    className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-colors"
-                  >
-                    <X size={16} className="mr-2" />
-                    Close Shop
-                  </button>
-                )}
+                <button
+                  onClick={merchant?.storeStatus === 'closed' ? handleOpenShop : handleCloseShop}
+                  disabled={storeActionLoading}
+                  className={`inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors ${
+                    storeActionLoading
+                      ? 'opacity-50 cursor-not-allowed bg-gray-500'
+                      : merchant?.storeStatus === 'closed'
+                      ? 'bg-green-600 hover:bg-green-700 focus:ring-green-500'
+                      : 'bg-orange-600 hover:bg-orange-700 focus:ring-orange-500'
+                  }`}
+                >
+                  {storeActionLoading ? (
+                    <>
+                      <Loader size={16} className="mr-2 animate-spin" />
+                      Processing...
+                    </>
+                  ) : merchant?.storeStatus === 'closed' ? (
+                    <>
+                      <CheckCircle size={16} className="mr-2" />
+                      Open Store
+                    </>
+                  ) : (
+                    <>
+                      <X size={16} className="mr-2" />
+                      Close Store
+                    </>
+                  )}
+                </button>
                 <button
                   onClick={() => navigate(`/merchants/${id}/inventory`)}
                   className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
