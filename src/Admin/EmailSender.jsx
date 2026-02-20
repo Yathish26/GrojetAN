@@ -19,7 +19,7 @@ export default function EmailSender() {
   const navigate = useNavigate();
   const [currentUser, setCurrentUser] = useState(null);
   const [checkingUser, setCheckingUser] = useState(true);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [redirecting, setRedirecting] = useState(false);
   const [formData, setFormData] = useState({
@@ -39,6 +39,7 @@ export default function EmailSender() {
   const [sendResult, setSendResult] = useState(null);
   const [bulkSendResult, setBulkSendResult] = useState(null);
   const [emailMode, setEmailMode] = useState('single'); // 'single' or 'bulk'
+  const [isHtml, setIsHtml] = useState(false); // Toggle for HTML vs plain text
 
   const allowedRoles = ['super_admin', 'admin'];
 
@@ -213,6 +214,7 @@ export default function EmailSender() {
       formDataToSend.append('subject', bulkFormData.subject.trim());
       formDataToSend.append('body', bulkFormData.body.trim());
       formDataToSend.append('from', bulkFormData.from);
+      formDataToSend.append('isHtml', isHtml.toString());
 
       // Add attachments
       bulkAttachments.forEach((file, index) => {
@@ -314,6 +316,7 @@ export default function EmailSender() {
       formDataToSend.append('subject', formData.subject.trim());
       formDataToSend.append('body', formData.body.trim());
       formDataToSend.append('from', formData.from);
+      formDataToSend.append('isHtml', isHtml.toString());
 
       // Add attachments
       attachments.forEach((file, index) => {
@@ -475,6 +478,31 @@ export default function EmailSender() {
                     Bulk Email
                   </button>
                 </div>
+                <div className="flex items-center space-x-2">
+                  <span className="text-sm text-gray-600">Format:</span>
+                  <div className="flex bg-gray-100 rounded-lg p-1">
+                    <button
+                      onClick={() => setIsHtml(false)}
+                      className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                        !isHtml
+                          ? 'bg-white text-gray-900 shadow-sm'
+                          : 'text-gray-500 hover:text-gray-700'
+                      }`}
+                    >
+                      Plain Text
+                    </button>
+                    <button
+                      onClick={() => setIsHtml(true)}
+                      className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                        isHtml
+                          ? 'bg-white text-gray-900 shadow-sm'
+                          : 'text-gray-500 hover:text-gray-700'
+                      }`}
+                    >
+                      HTML
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -593,18 +621,28 @@ export default function EmailSender() {
 
                   <div>
                     <label htmlFor="body" className="block text-sm font-medium text-gray-700 mb-2">
-                      Message Body *
+                      Message Body * {isHtml && <span className="text-xs text-blue-600">(HTML)</span>}
                     </label>
                     <textarea
                       id="body"
                       name="body"
                       value={emailMode === 'single' ? formData.body : bulkFormData.body}
                       onChange={emailMode === 'single' ? handleInputChange : handleBulkInputChange}
-                      placeholder="Type your message here..."
-                      rows={8}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-vertical transition-colors"
+                      placeholder={isHtml ? 
+                        "Type your HTML message here...\n\nExample:\n<h1>Hello!</h1>\n<p>This is an <strong>HTML</strong> email.</p>" : 
+                        "Type your message here..."
+                      }
+                      rows={isHtml ? 12 : 8}
+                      className={`w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-vertical transition-colors ${
+                        isHtml ? 'font-mono text-sm' : ''
+                      }`}
                       required
                     />
+                    {isHtml && (
+                      <p className="text-xs text-gray-500 mt-1">
+                        Use HTML tags for formatting. Make sure your HTML is valid.
+                      </p>
+                    )}
                   </div>
 
                   <div>
@@ -778,6 +816,9 @@ export default function EmailSender() {
                     </p>
                     <p className="text-blue-700">
                       <strong className="text-blue-800">Service:</strong> AWS SES (ap-south-1)
+                    </p>
+                    <p className="text-blue-700">
+                      <strong className="text-blue-800">Format:</strong> Plain Text & HTML
                     </p>
                     <p className="text-blue-700">
                       <strong className="text-blue-800">Attachments:</strong> Up to 5 files, 10MB each

@@ -33,6 +33,10 @@ const MerchantInventory = () => {
   const [editingMarkupPrice, setEditingMarkupPrice] = useState(null);
   const [editedMarkupPrice, setEditedMarkupPrice] = useState('');
 
+  // Product modal states
+  const [showProductModal, setShowProductModal] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+
   // Fetch merchant details with inventory
   const fetchMerchantInventory = useCallback(async (params = {}) => {
     try {
@@ -579,6 +583,12 @@ const MerchantInventory = () => {
     }
   };
 
+  // Handle opening product details modal
+  const openProductModal = (product) => {
+    setSelectedProduct(product);
+    setShowProductModal(true);
+  };
+
   if (checkingUser) {
     return (
       <Layout>
@@ -943,9 +953,10 @@ const MerchantInventory = () => {
                             <div className="flex items-center">
                               {item.image && (
                                 <img
-                                  className="h-12 w-12 rounded-lg object-cover mr-4 border border-gray-200"
+                                  className="h-12 w-12 rounded-lg object-cover mr-4 border border-gray-200 cursor-pointer hover:opacity-80 transition-opacity"
                                   src={item.image}
                                   alt={item.name}
+                                  onClick={() => openProductModal(item)}
                                 />
                               )}
                               <div>
@@ -1203,6 +1214,130 @@ const MerchantInventory = () => {
         )}
         </div>
       </div>
+
+      {/* Product Details Modal */}
+      {showProductModal && selectedProduct && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div className="fixed inset-0 z-40 transition-opacity" aria-hidden="true">
+              <div className="absolute inset-0 bg-black opacity-50" onClick={() => setShowProductModal(false)}></div>
+            </div>
+
+            <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full relative z-60">
+              <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center space-x-4">
+                    {selectedProduct.image && (
+                      <img
+                        className="h-20 w-20 rounded-lg object-cover border border-gray-200"
+                        src={selectedProduct.image}
+                        alt={selectedProduct.name}
+                      />
+                    )}
+                    <div>
+                      <h3 className="text-2xl font-bold text-gray-900">{selectedProduct.name}</h3>
+                      <p className="text-sm text-gray-500">Category: {selectedProduct.category}</p>
+                      {selectedProduct.brand && (
+                        <p className="text-sm text-gray-500">Brand: {selectedProduct.brand}</p>
+                      )}
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setShowProductModal(false)}
+                    className="text-gray-400 hover:text-gray-600 p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                  >
+                    <X size={24} />
+                  </button>
+                </div>
+
+                <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Pricing Information */}
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <h4 className="text-lg font-semibold text-gray-900 mb-3">Pricing</h4>
+                    <div className="space-y-2">
+                      <div className="flex justify-between">
+                        <span className="text-sm text-gray-600">MRP:</span>
+                        <span className="text-sm font-medium">₹{selectedProduct.price}</span>
+                      </div>
+                      {selectedProduct.markupPrice && (
+                        <div className="flex justify-between">
+                          <span className="text-sm text-gray-600">Markup Price:</span>
+                          <span className="text-sm font-medium">₹{selectedProduct.markupPrice}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Product Details */}
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <h4 className="text-lg font-semibold text-gray-900 mb-3">Details</h4>
+                    <div className="space-y-2">
+                      {selectedProduct.weightDimension && (
+                        <div className="flex justify-between">
+                          <span className="text-sm text-gray-600">Weight:</span>
+                          <span className="text-sm font-medium">
+                            {selectedProduct.weightDimension.value} {selectedProduct.weightDimension.unit}
+                          </span>
+                        </div>
+                      )}
+                      {selectedProduct.hsnCode && (
+                        <div className="flex justify-between">
+                          <span className="text-sm text-gray-600">HSN Code:</span>
+                          <span className="text-sm font-medium">{selectedProduct.hsnCode}</span>
+                        </div>
+                      )}
+                      <div className="flex justify-between">
+                        <span className="text-sm text-gray-600">Stock:</span>
+                        <span className="text-sm font-medium">{selectedProduct.quantity}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-sm text-gray-600">Min Stock:</span>
+                        <span className="text-sm font-medium">{selectedProduct.minStock}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Description */}
+                {selectedProduct.description && (
+                  <div className="mt-6">
+                    <h4 className="text-lg font-semibold text-gray-900 mb-3">Description</h4>
+                    <div className="bg-gray-50 rounded-lg p-4">
+                      <p className="text-sm text-gray-700 whitespace-pre-wrap">{selectedProduct.description}</p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Tags */}
+                {selectedProduct.tags && selectedProduct.tags.length > 0 && (
+                  <div className="mt-6">
+                    <h4 className="text-lg font-semibold text-gray-900 mb-3">Tags</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {selectedProduct.tags.map((tag, index) => (
+                        <span
+                          key={index}
+                          className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
+                        >
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                <button
+                  onClick={() => setShowProductModal(false)}
+                  className="w-full inline-flex justify-center items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 sm:ml-3 sm:w-auto"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
     </Layout>
   );
