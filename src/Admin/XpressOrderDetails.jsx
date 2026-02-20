@@ -6,7 +6,7 @@ import {
   ArrowLeft, MapPin, Phone, Package, Clock,
   User, Calendar, Truck, CheckCircle, XCircle,
   AlertCircle, Navigation, IndianRupee, RefreshCw, Trash2,X,
-  Download
+  Download, FileText
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import io from 'socket.io-client';
@@ -697,6 +697,172 @@ const XpressOrderDetails = () => {
     };
   }, [editingLocation]);
 
+  const handleDownloadInvoice = async () => {
+    try {
+      const { jsPDF } = await import('jspdf');
+      const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+
+      const primary = [16, 185, 129];
+      const dark = [31, 41, 55];
+      const muted = [107, 114, 128];
+      const light = [243, 244, 246];
+
+      const fetchLogoAsDataUrl = async (url) => {
+        const res = await fetch(url);
+        const blob = await res.blob();
+        return await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result);
+          reader.onerror = reject;
+          reader.readAsDataURL(blob);
+        });
+      };
+
+      // Header band
+      doc.setFillColor(...primary);
+      doc.rect(0, 0, 210, 42, 'F');
+
+      // Logo (best-effort) — preserve aspect ratio to avoid squeezing
+      try {
+        const logoDataUrl = await fetchLogoAsDataUrl('/grojet.png');
+        // Load image to get intrinsic dimensions so we can scale preserving aspect
+        const imgEl = await new Promise((resolve, reject) => {
+          const img = new Image();
+          img.onload = () => resolve(img);
+          img.onerror = reject;
+          img.src = logoDataUrl;
+        });
+
+        const natW = imgEl.naturalWidth || imgEl.width || 1;
+        const natH = imgEl.naturalHeight || imgEl.height || 1;
+
+        // Max box in mm (keeps roughly same space as before)
+        const maxW = 26;
+        const maxH = 26;
+
+        let drawW = maxW;
+        let drawH = maxH;
+        const ratio = natW / natH;
+        if (ratio > 1) {
+          // wide image
+          drawW = maxW;
+          drawH = maxW / ratio;
+        } else {
+          // tall or square image
+          drawH = maxH;
+          drawW = maxH * ratio;
+        }
+
+        // Center vertically in the header area used previously (y start 8, box height maxH)
+        const drawX = 14;
+        const drawY = 8 + (maxH - drawH) / 2;
+
+        doc.addImage(logoDataUrl, 'PNG', drawX, drawY, drawW, drawH);
+      } catch (e) {
+        // Fallback text when logo is unavailable
+        doc.setTextColor(255, 255, 255);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(18);
+        doc.text('GROJET', 16, 23);
+      }
+
+      doc.setTextColor(255, 255, 255);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(18);
+      doc.text('XPRESS ORDER INVOICE', 50, 18);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(10);
+      doc.text('Fast • Reliable • On-time Delivery', 50, 26);
+
+      doc.setFontSize(9);
+      doc.text(`Invoice Date: ${formatDate(new Date())}`, 145, 16);
+      doc.text(`Invoice #: INV-${order.orderNumber}`, 145, 22);
+      doc.text(`Order #: ${order.orderNumber}`, 145, 28);
+
+      // Utility to draw section
+      const drawSection = (title, y, h = 26) => {
+        doc.setFillColor(...light);
+        doc.roundedRect(12, y, 186, h, 2, 2, 'F');
+        doc.setDrawColor(229, 231, 235);
+        doc.roundedRect(12, y, 186, h, 2, 2);
+        doc.setTextColor(...dark);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(11);
+        doc.text(title, 16, y + 7);
+      };
+
+      let y = 50;
+
+      drawSection('Customer Information', y, 24);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(10);
+      doc.setTextColor(...dark);
+      doc.text(`Name: ${order.userId?.personalInfo?.name || 'N/A'}`, 16, y + 15);
+      doc.text(`Phone: ${order.userId?.personalInfo?.phone || 'N/A'}`, 110, y + 15);
+      y += 30;
+
+      drawSection('Pickup & Drop Details', y, 44);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10);
+      doc.text('Pickup', 16, y + 15);
+      doc.text('Drop', 110, y + 15);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+
+      const pickupAddress = doc.splitTextToSize(order.pickup?.address || 'N/A', 84);
+      const dropAddress = doc.splitTextToSize(order.drop?.address || 'N/A', 84);
+
+      doc.text(order.pickup?.name || 'N/A', 16, y + 21);
+      doc.text(pickupAddress, 16, y + 26);
+      doc.text(`Phone: ${order.pickup?.phone || 'N/A'}`, 16, y + 40);
+
+      doc.text(order.drop?.name || 'N/A', 110, y + 21);
+      doc.text(dropAddress, 110, y + 26);
+      doc.text(`Phone: ${order.drop?.phone || 'N/A'}`, 110, y + 40);
+      y += 50;
+
+      drawSection('Package & Pricing', y, 34);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(10);
+      doc.text(`Category: ${order.packageDetails?.category || 'N/A'}`, 16, y + 15);
+      doc.text(`Size: ${order.packageDetails?.size || 'N/A'}`, 16, y + 22);
+      doc.text(`Distance: ${order.pricing?.distance?.toFixed(1) || 0} km`, 16, y + 29);
+
+      doc.text(`Estimated: ₹${order.pricing?.estimatedCost || 0}`, 110, y + 15);
+      doc.setFont('helvetica', 'bold');
+      doc.text(`Final: ₹${order.pricing?.finalCost || 0}`, 110, y + 22);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Payment: ${order.pricing?.paymentMethod || 'N/A'}`, 110, y + 29);
+      y += 40;
+
+      drawSection('Order Timeline', y, 24);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(10);
+      doc.text(`Placed: ${formatDateTime(order.createdAt)}`, 16, y + 15);
+      if (order.status === 'delivered') {
+        const deliveryTime = order.deliveredAt || order.dropOtp?.verifiedAt;
+        doc.text(`Delivered: ${deliveryTime ? formatDateTime(deliveryTime) : 'N/A'}`, 110, y + 15);
+      } else {
+        doc.text(`Current Status: ${order.status.replace('_', ' ').toUpperCase()}`, 110, y + 15);
+      }
+
+      // Footer band
+      doc.setFillColor(...dark);
+      doc.rect(0, 282, 210, 15, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+      doc.text('Thank you for choosing Grojet.', 105, 288, { align: 'center' });
+      doc.text('support@grojetdelivery.com', 105, 293, { align: 'center' });
+
+      doc.save(`grojet-invoice-${order.orderNumber}.pdf`);
+      toast.success('Invoice downloaded successfully');
+    } catch (error) {
+      console.error('Error generating invoice:', error);
+      toast.error('Failed to generate invoice');
+    }
+  };
+
   const getStatusColor = (status) => {
     switch (status) {
       case 'pending':
@@ -851,6 +1017,13 @@ const XpressOrderDetails = () => {
               >
                 <Download size={16} className="mr-2" />
                 Export to Excel
+              </button>
+              <button
+                onClick={handleDownloadInvoice}
+                className="flex items-center px-3 py-2 text-sm bg-red-100 text-red-700 rounded-lg hover:bg-red-200"
+              >
+                <FileText size={16} className="mr-2" />
+                Download Invoice
               </button>
             </div>
           </div>
