@@ -44,9 +44,19 @@ export default function AdminRegister() {
   useEffect(() => {
     const checkAuthorization = async () => {
       try {
-        // Verify authorization with backend (token should be in cookies)
+        const token = localStorage.getItem('adminRegToken');
+        if (!token) {
+          setIsAuthorized(false);
+          return;
+        }
+        // Verify authorization with backend
         const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/auth/verify-reg-token`, {
-          credentials: 'include'
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          credentials: 'include',
+          body: JSON.stringify({ token })
         });
 
         const data = await response.json();
@@ -76,8 +86,18 @@ export default function AdminRegister() {
     // Set up periodic authorization verification every 5 minutes
     const authCheckInterval = setInterval(async () => {
       try {
+        const token = localStorage.getItem('adminRegToken');
+        if (!token) {
+          setIsAuthorized(false);
+          return;
+        }
         const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/auth/verify-reg-token`, {
-          credentials: 'include'
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          credentials: 'include',
+          body: JSON.stringify({ token })
         });
 
         const data = await response.json();
@@ -168,10 +188,22 @@ export default function AdminRegister() {
       return;
     }
 
+    const authToken = localStorage.getItem('adminRegToken');
+    if (!authToken) {
+      toast.error('Authorization token not found. Please verify PIN and OTP again.');
+      setIsAuthorized(false);
+      return;
+    }
+
     // Final authorization verification before submission
     try {
       const verifyResponse = await fetch(`${import.meta.env.VITE_SERVER}/admin/auth/verify-reg-token`, {
-        credentials: 'include'
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include',
+        body: JSON.stringify({ token: authToken })
       });
 
       const verifyData = await verifyResponse.json();
@@ -198,7 +230,7 @@ export default function AdminRegister() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${authToken}` // Include auth token
+          'Authorization': `Bearer ${authToken}`
         },
         credentials: 'include',
         body: JSON.stringify({
@@ -224,6 +256,9 @@ export default function AdminRegister() {
 
       toast.success('Admin registered successfully!');
 
+      // Clear the auth token
+      localStorage.removeItem('adminRegToken');
+
       // Reset form
       setFormData({
         name: '',
@@ -231,7 +266,7 @@ export default function AdminRegister() {
         phone: '',
         password: '',
         confirmPassword: '',
-        role: 'admin',
+        role: '', // admin, super_admin, delivery_manager, inventory_manager
         department: '',
       });
 

@@ -73,7 +73,8 @@ export default function AdminRegistrationAuth({ onAuthSuccess, onGoBack }) {
       
       toast.success(data.message);
       
-      // Auth token is handled by cookies on backend
+      // Store auth token for registration
+      localStorage.setItem('adminRegToken', data.authToken);
       
       // Call the success callback to show the registration form
       onAuthSuccess();
