@@ -14,9 +14,9 @@ import {
   RefreshCw,
   ArrowUp,
   ShoppingCart,
-  Target,
   MapPin,
-  Ban
+  Ban,
+  Mail
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Layout from '../Components/Layout';
@@ -64,6 +64,7 @@ export default function Analytics() {
   const [error, setError] = useState(null);
   const [timeRange, setTimeRange] = useState('7d');
   const [refreshing, setRefreshing] = useState(false);
+  const [sendingReport, setSendingReport] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
   const [checkingUser, setCheckingUser] = useState(true);
   const [redirecting, setRedirecting] = useState(false);
@@ -125,8 +126,6 @@ export default function Analytics() {
     averageAgentRating: 0,
     activeCustomers: 0,
     customerGrowth: 0,
-    deliverySuccessRate: 0,
-    successRateChange: 0,
     newCustomers: 0,
     returningCustomers: 0,
     todaysMerchantOrders: 0,
@@ -279,8 +278,6 @@ export default function Analytics() {
       averageAgentRating: 0,
       activeCustomers: 0,
       customerGrowth: 0,
-      deliverySuccessRate: 0,
-      successRateChange: 0,
       newCustomers: 0,
       returningCustomers: 0,
       todaysMerchantOrders: 0,
@@ -321,6 +318,46 @@ export default function Analytics() {
     a.click();
     window.URL.revokeObjectURL(url);
     toast.success('Analytics exported successfully');
+  };
+
+  const sendDailyReport = async () => {
+    if (!isAuthorized) return;
+    
+    // Prompt for email address
+    const email = prompt('Enter email address to send the daily sales report:');
+    if (!email) return;
+
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      toast.error('Please enter a valid email address');
+      return;
+    }
+
+    setSendingReport(true);
+    try {
+      const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/analytics/send-daily-report`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        toast.success('Daily sales report sent successfully!');
+      } else {
+        toast.error(data.message || 'Failed to send report');
+      }
+    } catch (error) {
+      console.error('Send report error:', error);
+      toast.error('Failed to send daily report');
+    } finally {
+      setSendingReport(false);
+    }
   };
 
   // Guard states
@@ -526,6 +563,17 @@ export default function Analytics() {
               <Download className="w-4 h-4" />
               Export
             </button>
+            {currentUser?.role === 'super_admin' && (
+              <button
+                onClick={sendDailyReport}
+                disabled={sendingReport}
+                type="button"
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+              >
+                <Mail className="w-4 h-4" />
+                {sendingReport ? 'Sending...' : 'Send Report'}
+              </button>
+            )}
           </div>
         </div>
 
@@ -581,21 +629,6 @@ export default function Analytics() {
               </div>
               <div className="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center">
                 <Package className="w-6 h-6 text-indigo-600" />
-              </div>
-            </div>
-          </div>
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-bold text-gray-600 uppercase">DELIVERY SUCCESS RATE</p>
-                <p className="text-2xl font-bold text-gray-800">{metrics.deliverySuccessRate}%</p>
-                <div className="flex items-center gap-1 mt-1">
-                  <ArrowUp className="w-4 h-4 text-green-500" />
-                  <span className="text-sm text-green-600">+{metrics.successRateChange}%</span>
-                </div>
-              </div>
-              <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
-                <Target className="w-6 h-6 text-orange-600" />
               </div>
             </div>
           </div>

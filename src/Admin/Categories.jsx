@@ -110,9 +110,8 @@ export default function Categories() {
         navigate('/login', { replace: true });
         return;
       }
-      // Sort categories by order for consistent display
-      const sortedCategories = data.categories.sort((a, b) => (a.order || 0) - (b.order || 0));
-      setCategories(sortedCategories || []);
+      // Categories are already sorted by order from backend
+      setCategories(data.categories || []);
     } catch (err) {
       console.error('Error fetching categories:', err);
       toast.error(err.message);
@@ -423,6 +422,7 @@ export default function Categories() {
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Image</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Show on Home</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Products</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Order</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
             </tr>
@@ -477,6 +477,9 @@ export default function Categories() {
                   ) : (
                     <XCircle className="text-red-500 mx-auto" size={18} />
                   )}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  {category.productCount || 0}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                   {category.order}

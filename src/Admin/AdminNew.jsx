@@ -94,7 +94,6 @@ export default function Admin() {
             <div className="p-6 bg-gray-50 min-h-screen">
                 {/* Welcome Section */}
                 <div className="mb-8">
-                    <h2 className="text-xl font-bold text-green-800 mb-1 tracking-tight">Grojet Dashboard</h2>
                     <p className="text-gray-600">Today's Order Summary</p>
                 </div>
 
