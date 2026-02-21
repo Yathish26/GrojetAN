@@ -169,7 +169,6 @@ const Layout = ({ children, title }) => {
     { name: 'Offers', icon: Gift, path: '/offers', roles: ['super_admin', 'admin'] },
     { name: 'Home Ads', icon: Smartphone, path: '/home-ads', roles: ['super_admin', 'admin'] },
     { name: 'Analytics', icon: BarChart3, path: '/analytics', roles: ['super_admin', 'admin'] },
-    { name: 'Cloud Analytics', icon: Cloud, path: '/cloud-analytics', roles: ['super_admin']},
     { name: 'Finance', icon: IndianRupeeIcon, path: '/finance', roles: ['super_admin', 'admin'] },
     { name: 'App Controls', icon: TabletSmartphone, path: '/app-controls', roles: ['super_admin', 'admin'] },
     { name: 'Bug Reports', icon: Bug, path: '/bug-reports', roles: ['super_admin'] },

@@ -12,7 +12,6 @@ import {
   PieChart,
   Download,
   RefreshCw,
-  ArrowUp,
   ShoppingCart,
   MapPin,
   Ban,
@@ -114,8 +113,6 @@ export default function Analytics() {
     totalOrders: 0,
     totalRevenue: 0,
     averageOrderValue: 0,
-    orderGrowth: 0,
-    revenueGrowth: 0,
     completedOrders: 0,
     pendingOrders: 0,
     productRevenue: 0,
@@ -135,8 +132,6 @@ export default function Analytics() {
     // Xpress Orders
     totalXpressOrders: 0,
     totalXpressRevenue: 0,
-    xpressOrderGrowth: 0,
-    xpressRevenueGrowth: 0,
     completedXpressOrders: 0,
     pendingXpressOrders: 0
   });
@@ -210,51 +205,18 @@ export default function Analytics() {
       totalXpressOrders = 0,
       totalXpressRevenue = 0,
       totalXpressOrderValue = 0;
-    let prevOrders = 0,
-      prevRevenue = 0,
-      prevXpressOrders = 0,
-      prevXpressRevenue = 0;
     const len = analyticsData.length;
 
-    analyticsData.forEach((point, idx) => {
+    analyticsData.forEach((point) => {
       totalOrders += point.orderCount || 0;
       totalRevenue += point.revenue || 0;
       totalOrderValue += point.avgOrderValue || 0;
       totalXpressOrders += point.xpressOrderCount || 0;
       totalXpressRevenue += point.xpressRevenue || 0;
       totalXpressOrderValue += point.xpressAvgOrderValue || 0;
-      // For growth: previous period is all except last day
-      if (idx < len - 1) {
-        prevOrders += point.orderCount || 0;
-        prevRevenue += point.revenue || 0;
-        prevXpressOrders += point.xpressOrderCount || 0;
-        prevXpressRevenue += point.xpressRevenue || 0;
-      }
     });
     const averageOrderValue = len > 0 ? Math.round(totalOrderValue / len) : 0;
     const xpressAverageOrderValue = len > 0 ? Math.round(totalXpressOrderValue / len) : 0;
-
-    // Calculate growth
-    let orderGrowth = 0,
-      revenueGrowth = 0,
-      xpressOrderGrowth = 0,
-      xpressRevenueGrowth = 0;
-    if (len > 1) {
-      const last = analyticsData[len - 1];
-      const prev = analyticsData[len - 2];
-      orderGrowth = prev.orderCount
-        ? Math.round(((last.orderCount - prev.orderCount) / prev.orderCount) * 100)
-        : 0;
-      revenueGrowth = prev.revenue
-        ? Math.round(((last.revenue - prev.revenue) / prev.revenue) * 100)
-        : 0;
-      xpressOrderGrowth = prev.xpressOrderCount
-        ? Math.round(((last.xpressOrderCount - prev.xpressOrderCount) / prev.xpressOrderCount) * 100)
-        : 0;
-      xpressRevenueGrowth = prev.xpressRevenue
-        ? Math.round(((last.xpressRevenue - prev.xpressRevenue) / prev.xpressRevenue) * 100)
-        : 0;
-    }
 
     // Set basic metrics with zeros for unavailable data
     setMetrics(prev => ({
@@ -262,12 +224,8 @@ export default function Analytics() {
       totalOrders,
       totalRevenue,
       averageOrderValue,
-      orderGrowth,
-      revenueGrowth,
       totalXpressOrders,
       totalXpressRevenue,
-      xpressOrderGrowth,
-      xpressRevenueGrowth,
       completedOrders: 0,
       pendingOrders: 0,
       productRevenue: 0,
@@ -584,10 +542,7 @@ export default function Analytics() {
               <div>
                 <p className="text-sm font-bold text-gray-600 uppercase">Merchant Orders</p>
                 <p className="text-2xl font-bold text-gray-800">{metrics.totalOrders}</p>
-                <div className="flex items-center gap-1 mt-1">
-                  <ArrowUp className="w-4 h-4 text-green-500" />
-                  <span className="text-sm text-green-600">+{metrics.orderGrowth}%</span>
-                </div>
+      
               </div>
               <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
                 <ShoppingCart className="w-6 h-6 text-blue-600" />
@@ -600,8 +555,7 @@ export default function Analytics() {
                 <p className="text-sm font-bold text-gray-600 uppercase">Xpress Orders</p>
                 <p className="text-2xl font-bold text-gray-800">{metrics.totalXpressOrders}</p>
                 <div className="flex items-center gap-1 mt-1">
-                  <ArrowUp className="w-4 h-4 text-red-500" />
-                  <span className="text-sm text-red-600">+{metrics.xpressOrderGrowth}%</span>
+
                 </div>
               </div>
               <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
