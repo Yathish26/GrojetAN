@@ -664,7 +664,6 @@ const MerchantInventory = () => {
           toast.success(data.message || 'Items removed successfully');
           setSelectedItems([]);
           setSelectAll(false);
-          // Refetch to ensure data consistency
           fetchMerchantInventory({ page, search: searchTerm });
         } else {
           throw new Error(data.message || 'Failed to remove items');
