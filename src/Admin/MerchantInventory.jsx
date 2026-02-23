@@ -37,6 +37,10 @@ const MerchantInventory = () => {
   const [showProductModal, setShowProductModal] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
 
+  // Bulk selection states
+  const [selectedItems, setSelectedItems] = useState([]);
+  const [selectAll, setSelectAll] = useState(false);
+
   // Fetch merchant details with inventory
   const fetchMerchantInventory = useCallback(async (params = {}) => {
     try {
@@ -178,6 +182,16 @@ const MerchantInventory = () => {
     }
   }, [currentUser, id, fetchAllCategories, fetchMerchantInventory]);
 
+  // Update selectAll when inventory changes
+  useEffect(() => {
+    if (inventory.length > 0) {
+      const allSelected = inventory.every(item => selectedItems.includes(item._id));
+      setSelectAll(allSelected);
+    } else {
+      setSelectAll(false);
+    }
+  }, [inventory, selectedItems]);
+
   // Filter inventory based on search term (removed - now handled by backend)
   // const filteredInventory = inventory.filter(item =>
   //   item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -192,17 +206,23 @@ const MerchantInventory = () => {
   const handleSearch = () => {
     setSearchTerm(pendingSearch);
     setPage(1); // Reset to first page when searching
+    setSelectedItems([]);
+    setSelectAll(false);
   };
 
   // Filter handlers
   const handleStatusFilter = (status) => {
     setStatusFilter(status);
     setPage(1); // Reset to first page when filtering
+    setSelectedItems([]);
+    setSelectAll(false);
   };
 
   const handleCategoryFilter = (category) => {
     setCategoryFilter(category);
     setPage(1); // Reset to first page when filtering
+    setSelectedItems([]);
+    setSelectAll(false);
   };
 
   const clearFilters = () => {
@@ -211,6 +231,8 @@ const MerchantInventory = () => {
     setSearchTerm('');
     setPendingSearch('');
     setPage(1);
+    setSelectedItems([]);
+    setSelectAll(false);
   };
 
   // Export to Excel
@@ -343,6 +365,8 @@ const MerchantInventory = () => {
   const handlePageChange = (newPage) => {
     if (newPage >= 1 && newPage <= totalPages) {
       setPage(newPage);
+      setSelectedItems([]);
+      setSelectAll(false);
     }
   };
 
@@ -583,6 +607,79 @@ const MerchantInventory = () => {
     }
   };
 
+  // Bulk selection handlers
+  const handleSelectItem = (itemId) => {
+    setSelectedItems(prev => {
+      const newSelected = prev.includes(itemId)
+        ? prev.filter(id => id !== itemId)
+        : [...prev, itemId];
+      setSelectAll(newSelected.length === inventory.length && inventory.length > 0);
+      return newSelected;
+    });
+  };
+
+  const handleSelectAll = () => {
+    if (selectAll) {
+      setSelectedItems([]);
+      setSelectAll(false);
+    } else {
+      setSelectedItems(inventory.map(item => item._id));
+      setSelectAll(true);
+    }
+  };
+
+  const handleBulkRemove = async () => {
+    if (selectedItems.length === 0) {
+      toast.error('Please select items to remove');
+      return;
+    }
+
+    if (!window.confirm(`Are you sure you want to remove ${selectedItems.length} item(s) from this merchant's inventory? This action cannot be undone.`)) {
+      return;
+    }
+
+    setUpdating(true);
+    try {
+      const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/merchant-stores/${id}/inventory`, {
+        method: 'DELETE',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ itemIds: selectedItems }),
+      });
+
+      if (response.status === 401) {
+        navigate('/login');
+        return;
+      }
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.tokenValid === false) {
+          navigate('/login', { replace: true });
+          return;
+        }
+        if (data.success) {
+          toast.success(data.message || 'Items removed successfully');
+          setSelectedItems([]);
+          setSelectAll(false);
+          // Refetch to ensure data consistency
+          fetchMerchantInventory({ page, search: searchTerm });
+        } else {
+          throw new Error(data.message || 'Failed to remove items');
+        }
+      } else {
+        throw new Error('Failed to remove items');
+      }
+    } catch (error) {
+      console.error('Error removing items:', error);
+      toast.error(error.message || 'Failed to remove items');
+    } finally {
+      setUpdating(false);
+    }
+  };
+
   // Handle opening product details modal
   const openProductModal = (product) => {
     setSelectedProduct(product);
@@ -807,6 +904,23 @@ const MerchantInventory = () => {
                 Add Product
               </button>
               <button
+                onClick={handleBulkRemove}
+                disabled={updating || selectedItems.length === 0}
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {updating ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Removing...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Remove Selected ({selectedItems.length})
+                  </>
+                )}
+              </button>
+              <button
                 onClick={handleExportExcel}
                 className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
               >
@@ -917,6 +1031,14 @@ const MerchantInventory = () => {
                   <thead className="bg-gray-50">
                     <tr>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <input
+                          type="checkbox"
+                          checked={selectAll}
+                          onChange={handleSelectAll}
+                          className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                        />
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Product
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -949,6 +1071,14 @@ const MerchantInventory = () => {
 
                       return (
                         <tr key={index} className="hover:bg-gray-50 transition-colors">
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <input
+                              type="checkbox"
+                              checked={selectedItems.includes(item._id)}
+                              onChange={() => handleSelectItem(item._id)}
+                              className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                            />
+                          </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="flex items-center">
                               {item.image && (
