@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../Components/Layout';
 import {
@@ -12,6 +12,7 @@ const HomeAds = () => {
   const [ads, setAds] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [activeSearchTerm, setActiveSearchTerm] = useState('');
   const [filters, setFilters] = useState({
     isActive: '',
     linkType: ''
@@ -32,6 +33,11 @@ const HomeAds = () => {
   const allowedRoles = ['super_admin', 'admin'];
   const navigate = useNavigate();
 
+  // Refs to prevent double fetches in Strict Mode
+  const userFetchRef = useRef(false);
+  const zonesFetchRef = useRef(false);
+  const fetchingRef = useRef(false);
+
   // Image upload states
   const [uploadingImage, setUploadingImage] = useState(false);
   const [imagePreview, setImagePreview] = useState(null);
@@ -51,13 +57,16 @@ const HomeAds = () => {
     zoneIds: []
   });
 
-  const fetchAds = async () => {
+  const fetchAds = async (searchOverride) => {
+    if (fetchingRef.current) return;
+
+    fetchingRef.current = true;
     try {
       setLoading(true);
       const queryParams = new URLSearchParams({
         page: pagination.page,
         limit: pagination.limit,
-        search: searchTerm,
+        search: searchOverride !== undefined ? searchOverride : activeSearchTerm,
         ...Object.fromEntries(
           Object.entries(filters).filter(([key, value]) => value !== '')
         )
@@ -91,10 +100,14 @@ const HomeAds = () => {
       toast.error('Failed to fetch ads');
     } finally {
       setLoading(false);
+      fetchingRef.current = false;
     }
   };
 
   const checkUser = useCallback(async () => {
+    if (userFetchRef.current) return;
+    userFetchRef.current = true;
+
     try {
       const response = await fetch(
         `${import.meta.env.VITE_SERVER}/admin/auth/profile`,
@@ -121,6 +134,9 @@ const HomeAds = () => {
   }, [navigate]);
 
   const fetchZones = useCallback(async () => {
+    if (zonesFetchRef.current) return;
+    zonesFetchRef.current = true;
+
     try {
       setLoadingZones(true);
       const response = await fetch(
@@ -148,13 +164,14 @@ const HomeAds = () => {
     if (currentUser && allowedRoles.includes(currentUser.role)) {
       fetchAds();
     }
-  }, [currentUser, pagination.page, searchTerm, filters]);
+  }, [currentUser, pagination.page, filters]);
 
   const handleSearch = (e) => {
     if (!isAuthorized) return;
     e.preventDefault();
+    setActiveSearchTerm(searchTerm);
     setPagination(prev => ({ ...prev, page: 1 }));
-    fetchAds();
+    fetchAds(searchTerm);
   };
 
   const handleFilterChange = (key, value) => {
@@ -371,11 +388,13 @@ const HomeAds = () => {
     }
   };
 
-  if (checkingUser) {
+  const isLoading = checkingUser || loading;
+
+  if (isLoading) {
     return (
       <Layout>
-        <div className="flex justify-center items-center h-64">
-          <div className="animate-spin h-8 w-8 sm:h-12 sm:w-12 border-4 border-green-200 border-t-green-600 rounded-full"></div>
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
         </div>
       </Layout>
     );
@@ -436,17 +455,31 @@ const HomeAds = () => {
         {/* Search and Filters */}
         <div className="bg-white shadow-sm border border-gray-200 p-4 mb-6">
           <div className="flex flex-col sm:flex-row gap-4">
-            <form onSubmit={handleSearch} className="flex-1">
-              <div className="relative">
-                <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                <input
-                  type="text"
-                  maxLength={100}
-                  placeholder="Search ads by title..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                />
+            <form className="flex-1">
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                  <input
+                    type="text"
+                    maxLength={100}
+                    placeholder="Search ads by title..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={handleSearch}
+                  disabled={searchTerm.trim() === ''}
+                  className={`px-4 py-2 transition-colors ${
+                    searchTerm.trim() === ''
+                      ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                      : 'bg-green-600 text-white hover:bg-green-700 focus:ring-2 focus:ring-green-500 focus:ring-offset-2'
+                  }`}
+                >
+                  Search
+                </button>
               </div>
             </form>
             <div className="flex gap-2">
@@ -867,4 +900,4 @@ const HomeAds = () => {
   );
 };
 
-export default HomeAds;
+export default React.memo(HomeAds);

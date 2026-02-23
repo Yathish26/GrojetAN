@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Package, Search, AlertTriangle, CheckCircle, XCircle, Edit, Save, X, ChevronLeft, ChevronRight, Filter, SlidersHorizontal, Trash2, Plus, Check, FileSpreadsheet } from 'lucide-react';
+import { ArrowLeft, Package, Search, AlertTriangle, CheckCircle, XCircle, Edit, Save, X, ChevronLeft, ChevronRight, Filter, SlidersHorizontal, Trash2, Plus, Check, FileSpreadsheet, ArrowUp, ArrowDown, ArrowUpDown } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Layout from '../Components/Layout';
 
@@ -32,6 +32,10 @@ const MerchantInventory = () => {
   const [editedWeightUnit, setEditedWeightUnit] = useState('');
   const [editingMarkupPrice, setEditingMarkupPrice] = useState(null);
   const [editedMarkupPrice, setEditedMarkupPrice] = useState('');
+
+  // Sorting states
+  const [sortBy, setSortBy] = useState('name');
+  const [sortOrder, setSortOrder] = useState('asc');
 
   // Product modal states
   const [showProductModal, setShowProductModal] = useState(false);
@@ -65,6 +69,8 @@ const MerchantInventory = () => {
       } else if (categoryFilter !== 'all') {
         query.append('category', categoryFilter);
       }
+      query.append('sortBy', params.sortBy || sortBy);
+      query.append('sortOrder', params.sortOrder || sortOrder);
 
       const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/merchant-stores/${id}?${query}`, {
         method: 'GET',
@@ -106,7 +112,7 @@ const MerchantInventory = () => {
     } finally {
       setLoading(false);
     }
-  }, [id, navigate, page, searchTerm, statusFilter, categoryFilter]);
+  }, [id, navigate, page, searchTerm, statusFilter, categoryFilter, sortBy, sortOrder]);
 
   const fetchCurrentUser = async () => {
     try {
@@ -210,6 +216,15 @@ const MerchantInventory = () => {
     setSelectAll(false);
   };
 
+  // Sort handler
+  const handleSortPrice = () => {
+    setSortBy('price');
+    setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    setPage(1); // Reset to first page when sorting
+    setSelectedItems([]);
+    setSelectAll(false);
+  };
+
   // Filter handlers
   const handleStatusFilter = (status) => {
     setStatusFilter(status);
@@ -230,6 +245,19 @@ const MerchantInventory = () => {
     setCategoryFilter('all');
     setSearchTerm('');
     setPendingSearch('');
+    setPage(1);
+    setSelectedItems([]);
+    setSelectAll(false);
+  };
+
+  // Sort handler
+  const handleSort = (field) => {
+    if (sortBy === field) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(field);
+      setSortOrder('asc');
+    }
     setPage(1);
     setSelectedItems([]);
     setSelectAll(false);
@@ -794,6 +822,13 @@ const MerchantInventory = () => {
               >
                 Search
               </button>
+              <button
+                onClick={handleSortPrice}
+                className="inline-flex items-center px-6 py-3 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
+              >
+                <ArrowUpDown className="h-4 w-4 mr-2" />
+                Sort by Price {sortOrder === 'asc' ? '↑' : '↓'}
+              </button>
             </div>
           </div>
 
@@ -1049,8 +1084,13 @@ const MerchantInventory = () => {
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Stock
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Price
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors" onClick={() => handleSort('price')}>
+                        <div className="flex items-center gap-1">
+                          Price
+                          {sortBy === 'price' && (
+                            sortOrder === 'asc' ? <ArrowUp size={14} /> : <ArrowDown size={14} />
+                          )}
+                        </div>
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Markup Price

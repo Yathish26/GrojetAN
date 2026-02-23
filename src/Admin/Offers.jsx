@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../Components/Layout';
 import {
@@ -11,6 +11,7 @@ const Offers = () => {
   const [offers, setOffers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [filters, setFilters] = useState({
     isActive: '',
     discountType: ''
@@ -29,6 +30,12 @@ const Offers = () => {
   const [redirecting, setRedirecting] = useState(false);
   const allowedRoles = ['super_admin', 'admin'];
   const navigate = useNavigate();
+
+  // Ref to prevent multiple concurrent fetches
+  const fetchingRef = useRef(false);
+
+  // Ref to prevent double fetch in Strict Mode
+  const userFetchRef = useRef(false);
 
   // Image upload states
   const [uploadingImage, setUploadingImage] = useState(false);
@@ -50,13 +57,16 @@ const Offers = () => {
     validTo: ''
   });
 
-  const fetchOffers = async () => {
+  const fetchOffers = async (searchOverride) => {
+    if (fetchingRef.current) return;
+
+    fetchingRef.current = true;
     try {
       setLoading(true);
       const queryParams = new URLSearchParams({
         page: pagination.page,
         limit: pagination.limit,
-        search: searchTerm,
+        search: searchOverride !== undefined ? searchOverride : debouncedSearchTerm,
         ...Object.fromEntries(
           Object.entries(filters).filter(([key, value]) => value !== '')
         )
@@ -90,10 +100,14 @@ const Offers = () => {
       toast.error('Failed to fetch offers');
     } finally {
       setLoading(false);
+      fetchingRef.current = false;
     }
   };
 
   const fetchCurrentUser = useCallback(async () => {
+    if (userFetchRef.current) return;
+    userFetchRef.current = true;
+
     try {
       setCheckingUser(true);
       const res = await fetch(`${import.meta.env.VITE_SERVER}/admin/auth/profile`, { credentials: 'include' });
@@ -124,16 +138,21 @@ const Offers = () => {
   }, [fetchCurrentUser]);
 
   useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearchTerm(searchTerm), 500);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  useEffect(() => {
     if (currentUser && allowedRoles.includes(currentUser.role)) {
       fetchOffers();
     }
-  }, [currentUser, pagination.page, searchTerm, filters]);
+  }, [currentUser, pagination.page, debouncedSearchTerm, filters]);
 
   const handleSearch = (e) => {
     if (!isAuthorized) return;
     e.preventDefault();
+    setDebouncedSearchTerm(searchTerm);
     setPagination(prev => ({ ...prev, page: 1 }));
-    fetchOffers();
   };
 
   const handleFilterChange = (key, value) => {
@@ -361,7 +380,9 @@ const Offers = () => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  if (checkingUser) {
+  const isLoading = checkingUser || loading;
+
+  if (isLoading) {
     return (
       <Layout>
         <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -477,142 +498,144 @@ const Offers = () => {
             </div>
           ) : (
             <>
-              {/* Desktop Table View */}
-              <div className="hidden md:block overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Offer</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Code</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {offers.map((offer) => (
-                      <tr key={offer._id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center">
-                            <div className="flex-shrink-0 h-10 w-10">
-                              <img className="h-10 w-10 object-cover" src={offer.image} alt="" />
-                            </div>
-                            <div className="ml-4">
-                              <div className="text-sm font-medium text-gray-900">{offer.title}</div>
-                              <div className="text-sm text-gray-500 truncate max-w-xs">{offer.description}</div>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-800">
-                            {offer.code}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {offer.discountType === 'free_delivery' ? 'Free Delivery' :
-                           offer.discountType === 'percentage' ? 'Percentage' : 'Fixed Amount'}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`px-2 py-1 text-xs font-medium ${
-                            offer.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                          }`}>
-                            {offer.isActive ? 'Active' : 'Inactive'}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                          <div className="flex items-center space-x-2">
-                            <button
-                              onClick={() => openEditModal(offer)}
-                              className="text-blue-600 hover:text-blue-900"
-                            >
-                              <Edit size={16} />
-                            </button>
-                            <button
-                              onClick={() => toggleStatus(offer)}
-                              className={offer.isActive ? 'text-yellow-600 hover:text-yellow-900' : 'text-green-600 hover:text-green-900'}
-                            >
-                              {offer.isActive ? <ToggleRight size={16} /> : <ToggleLeft size={16} />}
-                            </button>
-                            <button
-                              onClick={() => handleDelete(offer._id)}
-                              className="text-red-600 hover:text-red-900"
-                            >
-                              <Trash2 size={16} />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Mobile Card View */}
-              <div className="md:hidden">
-                {offers.length === 0 ? (
-                  <div className="px-4 py-12 text-center text-gray-500">
-                    No offers found matching your criteria.
-                  </div>
-                ) : (
-                  <div className="divide-y divide-gray-200">
-                    {offers.map((offer) => (
-                      <div key={offer._id} className="p-4 hover:bg-gray-50">
-                        <div className="flex items-start gap-3">
-                          <div className="flex-shrink-0 w-16 h-16">
-                            <img className="w-full h-full object-cover rounded-lg" src={offer.image} alt="" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-start justify-between mb-2">
-                              <div className="flex-1 min-w-0">
-                                <h3 className="text-sm font-medium text-gray-900 truncate">{offer.title}</h3>
-                                <p className="text-xs text-gray-500 mt-1 line-clamp-2">{offer.description}</p>
+              {offers.length === 0 ? (
+                <div className="px-4 py-12 text-center text-gray-500">
+                  No offers available.
+                </div>
+              ) : (
+                <>
+                  {/* Desktop Table View */}
+                  <div className="hidden md:block overflow-x-auto">
+                    <table className="w-full">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Offer</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Code</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {offers.map((offer) => (
+                          <tr key={offer._id} className="hover:bg-gray-50">
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="flex items-center">
+                                <div className="flex-shrink-0 h-10 w-10">
+                                  <img className="h-10 w-10 object-cover" src={offer.image} alt="" />
+                                </div>
+                                <div className="ml-4">
+                                  <div className="text-sm font-medium text-gray-900">{offer.title}</div>
+                                  <div className="text-sm text-gray-500 truncate max-w-xs">{offer.description}</div>
+                                </div>
                               </div>
-                              <span className={`inline-flex px-2 py-1 text-xs font-medium ml-2 flex-shrink-0 ${
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <span className="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-800">
+                                {offer.code}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                              {offer.discountType === 'free_delivery' ? 'Free Delivery' :
+                               offer.discountType === 'percentage' ? 'Percentage' : 'Fixed Amount'}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <span className={`px-2 py-1 text-xs font-medium ${
                                 offer.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
                               }`}>
                                 {offer.isActive ? 'Active' : 'Inactive'}
                               </span>
-                            </div>
-
-                            <div className="flex items-center justify-between mb-3">
-                              <span className="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-800">
-                                {offer.code}
-                              </span>
-                              <span className="text-xs text-gray-600">
-                                {offer.discountType === 'free_delivery' ? 'Free Delivery' :
-                                 offer.discountType === 'percentage' ? 'Percentage' : 'Fixed Amount'}
-                              </span>
-                            </div>
-
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center space-x-3">
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                              <div className="flex items-center space-x-2">
                                 <button
                                   onClick={() => openEditModal(offer)}
-                                  className="text-blue-600 hover:text-blue-900 p-1"
+                                  className="text-blue-600 hover:text-blue-900"
                                 >
                                   <Edit size={16} />
                                 </button>
                                 <button
                                   onClick={() => toggleStatus(offer)}
-                                  className={`p-1 ${offer.isActive ? 'text-yellow-600 hover:text-yellow-900' : 'text-green-600 hover:text-green-900'}`}
+                                  className={offer.isActive ? 'text-yellow-600 hover:text-yellow-900' : 'text-green-600 hover:text-green-900'}
                                 >
                                   {offer.isActive ? <ToggleRight size={16} /> : <ToggleLeft size={16} />}
                                 </button>
                                 <button
                                   onClick={() => handleDelete(offer._id)}
-                                  className="text-red-600 hover:text-red-900 p-1"
+                                  className="text-red-600 hover:text-red-900"
                                 >
                                   <Trash2 size={16} />
                                 </button>
                               </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Mobile Card View */}
+                  <div className="md:hidden">
+                    <div className="divide-y divide-gray-200">
+                      {offers.map((offer) => (
+                        <div key={offer._id} className="p-4 hover:bg-gray-50">
+                          <div className="flex items-start gap-3">
+                            <div className="flex-shrink-0 w-16 h-16">
+                              <img className="w-full h-full object-cover rounded-lg" src={offer.image} alt="" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-start justify-between mb-2">
+                                <div className="flex-1 min-w-0">
+                                  <h3 className="text-sm font-medium text-gray-900 truncate">{offer.title}</h3>
+                                  <p className="text-xs text-gray-500 mt-1 line-clamp-2">{offer.description}</p>
+                                </div>
+                                <span className={`inline-flex px-2 py-1 text-xs font-medium ml-2 flex-shrink-0 ${
+                                  offer.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                                }`}>
+                                  {offer.isActive ? 'Active' : 'Inactive'}
+                                </span>
+                              </div>
+
+                              <div className="flex items-center justify-between mb-3">
+                                <span className="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-800">
+                                  {offer.code}
+                                </span>
+                                <span className="text-xs text-gray-600">
+                                  {offer.discountType === 'free_delivery' ? 'Free Delivery' :
+                                   offer.discountType === 'percentage' ? 'Percentage' : 'Fixed Amount'}
+                                </span>
+                              </div>
+
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center space-x-3">
+                                  <button
+                                    onClick={() => openEditModal(offer)}
+                                    className="text-blue-600 hover:text-blue-900 p-1"
+                                  >
+                                    <Edit size={16} />
+                                  </button>
+                                  <button
+                                    onClick={() => toggleStatus(offer)}
+                                    className={`p-1 ${offer.isActive ? 'text-yellow-600 hover:text-yellow-900' : 'text-green-600 hover:text-green-900'}`}
+                                  >
+                                    {offer.isActive ? <ToggleRight size={16} /> : <ToggleLeft size={16} />}
+                                  </button>
+                                  <button
+                                    onClick={() => handleDelete(offer._id)}
+                                    className="text-red-600 hover:text-red-900 p-1"
+                                  >
+                                    <Trash2 size={16} />
+                                  </button>
+                                </div>
+                              </div>
                             </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
-                )}
-              </div>
+                </>
+              )}
             </>
           )}
 
@@ -896,4 +919,4 @@ const Offers = () => {
   );
 };
 
-export default Offers;
+export default React.memo(Offers);

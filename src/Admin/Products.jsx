@@ -2245,18 +2245,26 @@ export default function Products() {
                       <div>
                         <label className="block text-sm font-medium text-gray-600">Created At</label>
                         <p className="text-sm text-gray-900 mt-1">
-                          {viewProduct.createdAt ? new Date(viewProduct.createdAt).toLocaleString() : '—'}
+                          {viewProduct.createdAt ? (() => {
+                            const date = new Date(viewProduct.createdAt);
+                            const day = String(date.getDate()).padStart(2, '0');
+                            const month = String(date.getMonth() + 1).padStart(2, '0');
+                            const year = String(date.getFullYear()).slice(-2);
+                            return `${day}/${month}/${year}`;
+                          })() : '—'}
                         </p>
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-600">Updated At</label>
                         <p className="text-sm text-gray-900 mt-1">
-                          {viewProduct.updatedAt ? new Date(viewProduct.updatedAt).toLocaleString() : '—'}
+                          {viewProduct.updatedAt ? (() => {
+                            const date = new Date(viewProduct.updatedAt);
+                            const day = String(date.getDate()).padStart(2, '0');
+                            const month = String(date.getMonth() + 1).padStart(2, '0');
+                            const year = String(date.getFullYear()).slice(-2);
+                            return `${day}/${month}/${year}`;
+                          })() : '—'}
                         </p>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-600">Product ID</label>
-                        <p className="text-sm text-gray-900 mt-1 font-mono">{viewProduct._id}</p>
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-600">Stock Status</label>
