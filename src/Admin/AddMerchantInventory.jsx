@@ -376,7 +376,6 @@ const AddMerchantInventory = () => {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Left side - Product search and list */}
             <div className="lg:col-span-2">
               {/* Search and Filter */}
               <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
