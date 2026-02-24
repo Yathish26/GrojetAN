@@ -66,22 +66,35 @@ const S3store = () => {
           toast.error('Failed to fetch content');
         }
       } else {
-        // If we're in a folder, fetch files from that folder
-        params.append('folder', currentPath[currentPath.length - 1]);
+        // If we're in a folder, build the full path and fetch subfolders and files
+        const currentFolderPath = currentPath.join('/');
 
-        const response = await fetch(`${import.meta.env.VITE_SERVER}/image/s3/images?${params}`, {
+        // First, fetch subfolders of the current path
+        const folderParams = new URLSearchParams({
+          listFolders: 'true',
+          folder: currentFolderPath
+        });
+        const folderResponse = await fetch(`${import.meta.env.VITE_SERVER}/image/s3/images?${folderParams}`, {
+          credentials: 'include'
+        });
+        const folderData = await folderResponse.json();
+
+        // Then, fetch files in the current folder
+        params.append('folder', currentFolderPath);
+
+        const fileResponse = await fetch(`${import.meta.env.VITE_SERVER}/image/s3/images?${params}`, {
           credentials: 'include'
         });
 
-        const data = await response.json();
+        const fileData = await fileResponse.json();
 
-        if (data.success) {
-          setImages(data.images);
-          setFolders([]);
-          setViewMode('files');
-          setPagination(data.pagination);
+        if (folderData.success && fileData.success) {
+          setFolders(folderData.folders);
+          setImages(fileData.images);
+          setPagination(fileData.pagination);
+          setViewMode('folder');
         } else {
-          toast.error('Failed to fetch images');
+          toast.error('Failed to fetch folder content');
         }
       }
     } catch (error) {
@@ -214,8 +227,19 @@ const S3store = () => {
     try {
       const formData = new FormData();
       formData.append('file', selectedFile);
-      if (folder.trim()) {
-        formData.append('folder', folder.trim());
+
+      // Use current path as folder, or manual folder input if at root
+      let uploadFolder = '';
+      if (currentPath.length > 0) {
+        // If we're inside folders, upload to the current path
+        uploadFolder = currentPath.join('/');
+      } else if (folder.trim()) {
+        // If at root and manual folder specified, use it
+        uploadFolder = folder.trim();
+      }
+
+      if (uploadFolder) {
+        formData.append('folder', uploadFolder);
       }
 
       const response = await fetch(`${import.meta.env.VITE_SERVER}/image/upload/s3`, {
@@ -402,18 +426,46 @@ const S3store = () => {
                 </div>
               </div>
 
+              {currentPath.length === 0 && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-3">
+                    Folder (Optional)
+                  </label>
+                  <input
+                    type="text"
+                    value={folder}
+                    onChange={(e) => setFolder(e.target.value)}
+                    placeholder="e.g., products, banners, logos"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                    disabled={uploading}
+                  />
+                </div>
+              )}
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-3">
-                  Folder (Optional)
+                  Upload Details
                 </label>
-                <input
-                  type="text"
-                  value={folder}
-                  onChange={(e) => setFolder(e.target.value)}
-                  placeholder="e.g., products, banners, logos"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
-                  disabled={uploading}
-                />
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <div className="flex items-center">
+                    <svg className="w-5 h-5 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <div>
+                      {currentPath.length > 0 ? (
+                        <>
+                          <p className="text-sm font-medium text-blue-900">Upload to Current Folder</p>
+                          <p className="text-xs text-blue-700">Files will be uploaded to: <strong>{currentPath.join('/')}/</strong></p>
+                        </>
+                      ) : (
+                        <>
+                          <p className="text-sm font-medium text-blue-900">Upload Details</p>
+                          <p className="text-xs text-blue-700">Specify a folder name or leave empty for root level</p>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
               </div>
 
               <button
@@ -607,13 +659,13 @@ const S3store = () => {
               <h3 className="text-lg font-medium text-gray-900 mb-2">No files found</h3>
               <p className="text-gray-600">This folder is empty</p>
             </div>
-          ) : viewMode === 'root' && folders.length === 0 && images.length === 0 ? (
+          ) : viewMode === 'folder' && folders.length === 0 && images.length === 0 ? (
             <div className="text-center py-16">
               <svg className="mx-auto h-24 w-24 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
               </svg>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No content found</h3>
-              <p className="text-gray-600">Upload your first file to get started</p>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Folder is empty</h3>
+              <p className="text-gray-600">No subfolders or files found in this folder</p>
             </div>
           ) : (
             <>

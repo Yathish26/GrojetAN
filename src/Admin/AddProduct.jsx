@@ -262,20 +262,22 @@ export default function AddProduct() {
     }
   };
 
-  // Upload image to Cloudinary
-  const uploadImage = async (file = 'products') => {
+  // Upload image to S3
+  const uploadImage = async (file, folder) => {
     const formDataUpload = new FormData();
-    formDataUpload.append('image', file);
+    formDataUpload.append('file', file);
+    formDataUpload.append('folder', folder);
 
-    const response = await fetch(`${import.meta.env.VITE_SERVER}/image/upload/cloudinary`, {
+    const response = await fetch(`${import.meta.env.VITE_SERVER}/image/upload/s3`, {
       method: 'POST',
+      credentials: 'include',
       body: formDataUpload,
     });
 
     const data = await response.json();
 
     if (response.ok) {
-      return data.imageUrl;
+      return data.url;
     } else {
       throw new Error(data.error || 'Upload failed');
     }
@@ -287,23 +289,6 @@ export default function AddProduct() {
     setUploadingImages(true);
 
     try {
-      let finalThumbnail = formData.thumbnail;
-      let finalImages = [...formData.images];
-
-      // Upload thumbnail if file selected
-      if (selectedThumbnailFile) {
-        const uploadedUrl = await uploadImage(selectedThumbnailFile, 'products');
-        finalThumbnail = uploadedUrl;
-      }
-
-      // Upload additional images if files selected
-      if (selectedImageFiles && selectedImageFiles.length > 0) {
-        const uploadedUrls = await Promise.all(
-          selectedImageFiles.map(file => uploadImage(file, 'products'))
-        );
-        finalImages = uploadedUrls;
-      }
-
       // Filter valid variants
       const validVariants = formData.variants.filter(variant => 
         variant.name.trim() && 
@@ -320,16 +305,16 @@ export default function AddProduct() {
         }
       })).filter(variant => variant.weightDimension); // Only include variants with weightDimension
 
-      // Prepare base product data
+      // Prepare base product data without images
       const baseProductData = {
         ...formData,
-        thumbnail: finalThumbnail,
+        thumbnail: '',
         pricing: {
           ...formData.pricing,
           mrp: parseFloat(formData.pricing.mrp),
         },
         tags: formData.tags,
-        images: finalImages.filter(img => img.trim() !== ''),
+        images: [],
         customFields: formData.customFields.filter(field => field.key.trim() && field.value.trim()),
         variants: [] // Remove variants from base product
       };
@@ -344,18 +329,21 @@ export default function AddProduct() {
 
       let successMessage = '';
       let createdCount = 0;
+      let finalThumbnail = '';
+      let finalImages = [];
 
-      // If there are variants, create separate products for each
+      // If there are variants, create base product first, upload images, update
       if (validVariants.length > 0) {
-        // Create base product first (if it has valid data)
+        // Create base product without images
         if (formData.name.trim() && formData.pricing?.mrp > 0) {
+          const baseWithoutImages = { ...baseProductData };
           const baseResponse = await fetch(`${import.meta.env.VITE_SERVER}/admin/products`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
             },
             credentials: 'include',
-            body: JSON.stringify(baseProductData)
+            body: JSON.stringify(baseWithoutImages)
           });
 
           if (baseResponse.status === 401) {
@@ -365,14 +353,40 @@ export default function AddProduct() {
           }
 
           if (baseResponse.ok) {
-            createdCount++;
+            const baseData = await baseResponse.json();
+            const baseProduct = baseData.product;
+
+            // Upload images to 'products/' + baseProduct._id
+            if (selectedThumbnailFile) {
+              finalThumbnail = await uploadImage(selectedThumbnailFile, 'products/' + baseProduct._id);
+            }
+
+            if (selectedImageFiles && selectedImageFiles.length > 0) {
+              finalImages = await Promise.all(
+                selectedImageFiles.map(file => uploadImage(file, 'products/' + baseProduct._id))
+              );
+            }
+
+            // Update base product with images
+            const updateResponse = await fetch(`${import.meta.env.VITE_SERVER}/admin/products/${baseProduct._id}`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              credentials: 'include',
+              body: JSON.stringify({ thumbnail: finalThumbnail, images: finalImages })
+            });
+
+            if (updateResponse.ok) {
+              createdCount++;
+            } else {
+              throw new Error('Failed to update base product with images');
+            }
           } else {
             const errorData = await baseResponse.json();
             throw new Error(`Failed to create base product: ${errorData.message}`);
           }
         }
 
-        // Create separate products for each variant
+        // Create variants with the same images
         for (const variant of validVariants) {
           const variantProductData = {
             name: variant.name, // Use only the variant name
@@ -381,7 +395,7 @@ export default function AddProduct() {
             category: formData.category,
             hsnCode: formData.hsnCode,
             thumbnail: finalThumbnail,
-            images: finalImages.filter(img => img.trim() !== ''),
+            images: finalImages,
             tags: formData.tags,
             customFields: formData.customFields.filter(field => field.key.trim() && field.value.trim()),
             weightDimension: variant.weightDimension,
@@ -416,14 +430,15 @@ export default function AddProduct() {
 
         successMessage = `${createdCount} product${createdCount > 1 ? 's' : ''} created successfully!`;
       } else {
-        // No variants - create single product as usual
+        // No variants - create single product
+        const productWithoutImages = { ...baseProductData };
         const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/products`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
           credentials: 'include',
-          body: JSON.stringify(baseProductData)
+          body: JSON.stringify(productWithoutImages)
         });
 
         if (response.status === 401) {
@@ -432,16 +447,37 @@ export default function AddProduct() {
           return;
         }
 
-        const data = await response.json();
-        if (data.tokenValid === false) {
-          navigate('/login', { replace: true });
-          return;
-        }
-
         if (response.ok) {
-          successMessage = `"${formData.name}" added successfully!`;
-          createdCount = 1;
+          const data = await response.json();
+          const product = data.product;
+
+          // Upload images to 'products/' + product._id
+          if (selectedThumbnailFile) {
+            finalThumbnail = await uploadImage(selectedThumbnailFile, 'products/' + product._id);
+          }
+
+          if (selectedImageFiles && selectedImageFiles.length > 0) {
+            finalImages = await Promise.all(
+              selectedImageFiles.map(file => uploadImage(file, 'products/' + product._id))
+            );
+          }
+
+          // Update product with images
+          const updateResponse = await fetch(`${import.meta.env.VITE_SERVER}/admin/products/${product._id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ thumbnail: finalThumbnail, images: finalImages })
+          });
+
+          if (updateResponse.ok) {
+            successMessage = `"${formData.name}" added successfully!`;
+            createdCount = 1;
+          } else {
+            throw new Error('Failed to update product with images');
+          }
         } else {
+          const errorData = await response.json();
           throw new Error(data.message || 'Failed to add product');
         }
       }
@@ -462,7 +498,7 @@ export default function AddProduct() {
             unit: ''
           },
           pricing: {
-            mrp: 0,
+            mrp: "",
           },
           variants: [],
           isActive: true,

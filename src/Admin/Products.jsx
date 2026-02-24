@@ -65,7 +65,7 @@ export default function Products() {
   const [selectedImageFiles, setSelectedImageFiles] = useState([]);
   const [originalThumbnailUrl, setOriginalThumbnailUrl] = useState(null);
   const [originalImageUrls, setOriginalImageUrls] = useState([]);
-  const [initialOriginalImageUrls, setInitialOriginalImageUrls] = useState([]); // For Cloudinary deletion tracking
+  const [initialOriginalImageUrls, setInitialOriginalImageUrls] = useState([]); // For S3 deletion tracking
   const [uploadingImages, setUploadingImages] = useState(false);
 
   // Preview states for edit modal
@@ -437,7 +437,7 @@ export default function Products() {
 
     setIsDeleting(true);
     try {
-      // Delete images from Cloudinary if they exist
+      // Delete images from S3 if they exist
       const imagesToDelete = [];
 
       // Add thumbnail image
@@ -450,18 +450,19 @@ export default function Products() {
         imagesToDelete.push(...productToDelete.images);
       }
 
-      // Delete all images from Cloudinary
+      // Delete all images from S3
       for (const imageUrl of imagesToDelete) {
         try {
-          await fetch(`${import.meta.env.VITE_SERVER}/image/delete/cloudinary`, {
+          await fetch(`${import.meta.env.VITE_SERVER}/image/delete/s3`, {
             method: 'DELETE',
             headers: {
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({ imageUrl }),
+            credentials: 'include',
           });
         } catch (deleteError) {
-          console.warn(`Failed to delete image from Cloudinary: ${imageUrl}`, deleteError);
+          console.warn(`Failed to delete image from S3: ${imageUrl}`, deleteError);
           // Continue with other deletions even if one fails
         }
       }
@@ -646,20 +647,22 @@ export default function Products() {
     setOriginalImageUrls(prev => prev.filter((_, i) => i !== index));
   };
 
-  // Upload image to Cloudinary
+  // Upload image to S3
   const uploadImage = async (file, folder = 'products') => {
     const formDataUpload = new FormData();
-    formDataUpload.append('image', file);
+    formDataUpload.append('file', file);
+    formDataUpload.append('folder', folder);
 
-    const response = await fetch(`${import.meta.env.VITE_SERVER}/image/upload/cloudinary`, {
+    const response = await fetch(`${import.meta.env.VITE_SERVER}/image/upload/s3`, {
       method: 'POST',
       body: formDataUpload,
+      credentials: 'include',
     });
 
     const data = await response.json();
 
     if (response.ok) {
-      return data.imageUrl;
+      return data.url;
     } else {
       throw new Error(data.error || 'Upload failed');
     }
@@ -677,14 +680,14 @@ export default function Products() {
 
       // Upload thumbnail if file selected
       if (selectedThumbnailFile) {
-        const uploadedUrl = await uploadImage(selectedThumbnailFile, 'products');
+        const uploadedUrl = await uploadImage(selectedThumbnailFile, 'products/' + editProduct._id);
         finalThumbnail = uploadedUrl;
       }
 
       // Upload additional images if files selected
       if (selectedImageFiles && selectedImageFiles.length > 0) {
         const uploadedUrls = await Promise.all(
-          selectedImageFiles.map(file => uploadImage(file, 'products'))
+          selectedImageFiles.map(file => uploadImage(file, 'products/' + editProduct._id))
         );
         finalImages = [...finalImages, ...uploadedUrls];
       }
@@ -706,18 +709,19 @@ export default function Products() {
         }
       }
 
-      // Delete images from Cloudinary
+      // Delete images from S3
       for (const imageUrl of imagesToDelete) {
         try {
-          await fetch(`${import.meta.env.VITE_SERVER}/image/delete/cloudinary`, {
+          await fetch(`${import.meta.env.VITE_SERVER}/image/delete/s3`, {
             method: 'DELETE',
             headers: {
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({ imageUrl }),
+            credentials: 'include',
           });
         } catch (deleteError) {
-          console.warn('Failed to delete image from Cloudinary:', deleteError);
+          console.warn('Failed to delete image from S3:', deleteError);
         }
       }
 

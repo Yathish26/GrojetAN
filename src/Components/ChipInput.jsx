@@ -14,6 +14,31 @@ const ChipInput = ({ label, values, setValues, disabled, placeholder, maxTags })
     setInput(val);
   };
 
+  const handleInputPaste = (e) => {
+    e.preventDefault();
+    const pastedText = e.clipboardData.getData('text');
+    
+    if (pastedText.includes(',')) {
+      // Split by comma and process each tag
+      const tags = pastedText.split(',')
+        .map(tag => tag.trim())
+        .filter(tag => tag.length > 0 && !values.includes(tag));
+      
+      // Add tags up to the max limit
+      const availableSlots = maxTags ? maxTags - values.length : tags.length;
+      const tagsToAdd = tags.slice(0, availableSlots);
+      
+      if (tagsToAdd.length > 0) {
+        setValues([...values, ...tagsToAdd]);
+      }
+      
+      setInput('');
+    } else {
+      // Single tag paste - just set the input
+      setInput(pastedText.trim());
+    }
+  };
+
   const handleInputKeyDown = (e) => {
     if (
       (e.key === 'Enter' || e.key === ',') &&
@@ -65,6 +90,7 @@ const ChipInput = ({ label, values, setValues, disabled, placeholder, maxTags })
           value={input}
           onChange={handleInputChange}
           onKeyDown={handleInputKeyDown}
+          onPaste={handleInputPaste}
           className="flex-grow min-w-[100px] px-1 py-1 focus:outline-none"
           disabled={disabled || (maxTags && values.length >= maxTags)}
           placeholder={maxTags && values.length >= maxTags ? `Max ${maxTags} reached` : placeholder}
