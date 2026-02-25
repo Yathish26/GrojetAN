@@ -671,23 +671,99 @@ const S3store = () => {
             <>
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
                 {/* Render folders first */}
-                {folders.map((folderName) => (
+                {folders.map((folder) => (
                   <div
-                    key={`folder-${folderName}`}
-                    onClick={() => handleFolderClick(folderName)}
+                    key={`folder-${folder.name}`}
+                    onClick={() => handleFolderClick(folder.name)}
                     className="bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 cursor-pointer"
                   >
-                    <div className="relative overflow-hidden bg-blue-50 flex items-center justify-center" style={{ paddingBottom: '100%' }}>
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <FolderInput className='w-12 h-12 text-blue-500'/>
+                    <div className="relative overflow-hidden bg-gray-100" style={{ paddingBottom: '100%' }}>
+                      <div className="absolute inset-0">
+                        {folder.previewImages && folder.previewImages.length > 0 ? (
+                          <div className="relative w-full h-full">
+                            {folder.totalImages === 1 ? (
+                              // Single image - full cover
+                              <img
+                                src={folder.previewImages[0].url}
+                                alt={folder.previewImages[0].originalName}
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  e.target.style.display = 'none';
+                                  e.target.nextSibling.style.display = 'flex';
+                                }}
+                              />
+                            ) : folder.totalImages === 2 ? (
+                              // Two images - show first image with +1 overlay
+                              <>
+                                <img
+                                  src={folder.previewImages[0].url}
+                                  alt={folder.previewImages[0].originalName}
+                                  className="w-full h-full object-cover"
+                                  onError={(e) => {
+                                    e.target.style.display = 'none';
+                                    e.target.nextSibling.style.display = 'flex';
+                                  }}
+                                />
+                                <div className="absolute bottom-2 right-2 bg-black bg-opacity-75 text-white text-xs px-2 py-1 rounded-md font-semibold">
+                                  +1
+                                </div>
+                              </>
+                            ) : folder.totalImages === 3 ? (
+                              // Three images - show first image with +2 overlay
+                              <>
+                                <img
+                                  src={folder.previewImages[0].url}
+                                  alt={folder.previewImages[0].originalName}
+                                  className="w-full h-full object-cover"
+                                  onError={(e) => {
+                                    e.target.style.display = 'none';
+                                    e.target.nextSibling.style.display = 'flex';
+                                  }}
+                                />
+                                <div className="absolute bottom-2 right-2 bg-black bg-opacity-75 text-white text-xs px-2 py-1 rounded-md font-semibold">
+                                  +2
+                                </div>
+                              </>
+                            ) : (
+                              // Four or more images - show 2x2 grid with +X overlay
+                              <>
+                                <div className="grid grid-cols-2 grid-rows-2 w-full h-full">
+                                  {folder.previewImages.slice(0, 4).map((image, index) => (
+                                    <div key={index} className="relative overflow-hidden">
+                                      <img
+                                        src={image.url}
+                                        alt={image.originalName}
+                                        className="w-full h-full object-cover"
+                                        onError={(e) => {
+                                          e.target.style.display = 'none';
+                                          e.target.nextSibling.style.display = 'flex';
+                                        }}
+                                      />
+                                    </div>
+                                  ))}
+                                </div>
+                                {/* Show +X indicator if there are more images */}
+                                {folder.additionalCount > 0 && (
+                                  <div className="absolute bottom-2 right-2 bg-black bg-opacity-75 text-white text-xs px-2 py-1 rounded-md font-semibold">
+                                    +{folder.additionalCount}
+                                  </div>
+                                )}
+                              </>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="flex items-center justify-center w-full h-full">
+                            <FolderInput className='w-12 h-12 text-blue-500'/>
+                          </div>
+                        )}
                       </div>
                     </div>
                     <div className="p-4">
-                      <h3 className="text-sm font-semibold text-gray-900 truncate mb-2" title={folderName}>
-                        {folderName}
+                      <h3 className="text-sm font-semibold text-gray-900 truncate mb-2" title={folder.name}>
+                        {folder.name}
                       </h3>
                       <div className="text-xs text-gray-600 mb-3">
-                        Folder
+                        {folder.totalImages} {folder.totalImages === 1 ? 'image' : 'images'}
                       </div>
                       <button className="w-full px-3 py-2 bg-blue-600 text-white text-xs rounded-lg hover:bg-blue-700 transition-colors">
                         Open Folder

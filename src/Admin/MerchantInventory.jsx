@@ -1,8 +1,272 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Package, Search, AlertTriangle, CheckCircle, XCircle, Edit, Save, X, ChevronLeft, ChevronRight, Filter, SlidersHorizontal, Trash2, Plus, Check, FileSpreadsheet, ArrowUp, ArrowDown, ArrowUpDown } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Layout from '../Components/Layout';
+
+// Memoized inventory item component to prevent unnecessary re-renders
+const InventoryItem = React.memo(({
+  item,
+  index,
+  selectedItems,
+  handleSelectItem,
+  editingItem,
+  editedPrice,
+  setEditedPrice,
+  updating,
+  handleSavePrice,
+  handleCancelEdit,
+  editingWeight,
+  editedWeightValue,
+  setEditedWeightValue,
+  editedWeightUnit,
+  setEditedWeightUnit,
+  handleSaveWeight,
+  editingMarkupPrice,
+  editedMarkupPrice,
+  setEditedMarkupPrice,
+  handleSaveMarkupPrice,
+  handleEditWeight,
+  handleEditMarkupPrice,
+  handleEditPrice,
+  openProductModal,
+  getStockStatus,
+  handleCancelEditWeight,
+  handleCancelEditMarkupPrice,
+  handleRemoveItem,
+  removing
+}) => {
+  const stockStatus = getStockStatus(item.quantity, item.minStock);
+  const StatusIcon = stockStatus.icon;
+
+  return (
+    <tr className="hover:bg-gray-50 transition-colors">
+      <td className="px-6 py-4 whitespace-nowrap">
+        <input
+          type="checkbox"
+          checked={selectedItems.includes(item._id)}
+          onChange={() => handleSelectItem(item._id)}
+          className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+        />
+      </td>
+      <td className="px-6 py-4 whitespace-nowrap">
+        <div className="flex items-center">
+          {item.image && (
+            <img
+              className="h-12 w-12 rounded-lg object-cover mr-4 border border-gray-200 cursor-pointer hover:opacity-80 transition-opacity"
+              src={item.image}
+              alt={item.name}
+              onClick={() => openProductModal(item)}
+            />
+          )}
+          <div>
+            <div className="flex items-center space-x-2">
+              <div className="text-sm font-medium text-gray-900">{item.name}</div>
+            </div>
+          </div>
+        </div>
+      </td>
+      <td className="px-6 py-4 whitespace-nowrap">
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+          {item.category}
+        </span>
+      </td>
+      <td className="px-6 py-4 whitespace-nowrap">
+        {editingWeight === item._id ? (
+          <div className="flex items-center space-x-2">
+            <input
+              type="number"
+              value={editedWeightValue}
+              onChange={(e) => setEditedWeightValue(e.target.value)}
+              className="w-16 px-2 py-1 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm"
+              min="0"
+              step="0.01"
+              placeholder="Value"
+              disabled={updating}
+            />
+            <select
+              value={editedWeightUnit}
+              onChange={(e) => setEditedWeightUnit(e.target.value)}
+              className="w-20 px-2 py-1 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm"
+              disabled={updating}
+            >
+              <option value="">Select Unit</option>
+              <option value="g">g</option>
+              <option value="kg">kg</option>
+              <option value="ml">ml</option>
+              <option value="l">l</option>
+              <option value="pack">pack</option>
+              <option value="piece">piece</option>
+              <option value="unit">unit</option>
+              <option value="dozen">dozen</option>
+              <option value="cm">cm</option>
+              <option value="mm">mm</option>
+              <option value="inch">inch</option>
+              <option value="feet">feet</option>
+              <option value="meter">meter</option>
+              <option value="other">other</option>
+            </select>
+          </div>
+        ) : (
+          <div className="text-sm text-gray-900">
+            {item.weightDimension ? `${item.weightDimension.value} ${item.weightDimension.unit}` : 'N/A'}
+          </div>
+        )}
+      </td>
+      <td className="px-6 py-4 whitespace-nowrap">
+        <div className="text-sm text-gray-900 font-medium">
+          {item.quantity} / {item.maxStock}
+        </div>
+        <div className="text-xs text-gray-500">
+          Min: {item.minStock}
+        </div>
+      </td>
+      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+        {editingItem === item._id ? (
+          <div className="flex items-center space-x-2">
+            <span className="text-gray-500">₹</span>
+            <input
+              type="number"
+              value={editedPrice}
+              onChange={(e) => setEditedPrice(e.target.value)}
+              className="w-24 px-3 py-1 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm"
+              min="0"
+              step="0.01"
+              disabled={updating}
+            />
+          </div>
+        ) : (
+          <span className="text-lg">₹{item.price}</span>
+        )}
+      </td>
+      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+        {editingMarkupPrice === item._id ? (
+          <div className="flex items-center space-x-2">
+            <span className="text-gray-500">₹</span>
+            <input
+              type="number"
+              value={editedMarkupPrice}
+              onChange={(e) => setEditedMarkupPrice(e.target.value)}
+              className="w-24 px-3 py-1 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm"
+              min="0"
+              step="0.01"
+              disabled={updating}
+            />
+          </div>
+        ) : (
+          <span className="text-lg">₹{item.markupPrice || 0}</span>
+        )}
+      </td>
+      <td className="px-6 py-4 whitespace-nowrap">
+        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-full ${stockStatus.color}`}>
+          <StatusIcon size={14} />
+          {stockStatus.status}
+        </span>
+      </td>
+      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+        {editingItem === item._id ? (
+          <div className="flex items-center space-x-2">
+            <button
+              className="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 transition-colors"
+              onClick={() => handleSavePrice(item)}
+              disabled={updating}
+            >
+              <Save size={14} className="mr-1" />
+              Save
+            </button>
+            <button
+              className="inline-flex items-center px-2.5 py-1.5 border border-gray-300 text-xs font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 transition-colors"
+              onClick={handleCancelEdit}
+              disabled={updating}
+            >
+              <X size={14} className="mr-1" />
+              Cancel
+            </button>
+          </div>
+        ) : editingWeight === item._id ? (
+          <div className="flex items-center space-x-2">
+            <button
+              className="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 transition-colors"
+              onClick={() => handleSaveWeight(item)}
+              disabled={updating}
+            >
+              <Save size={14} className="mr-1" />
+              Save
+            </button>
+            <button
+              className="inline-flex items-center px-2.5 py-1.5 border border-gray-300 text-xs font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 transition-colors"
+              onClick={() => setEditingWeight(null)}
+              disabled={updating}
+            >
+              <X size={14} className="mr-1" />
+              Cancel
+            </button>
+          </div>
+        ) : editingMarkupPrice === item._id ? (
+          <div className="flex items-center space-x-2">
+            <button
+              className="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 transition-colors"
+              onClick={() => handleSaveMarkupPrice(item)}
+              disabled={updating}
+            >
+              <Save size={14} className="mr-1" />
+              Save
+            </button>
+            <button
+              className="inline-flex items-center px-2.5 py-1.5 border border-gray-300 text-xs font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 transition-colors"
+              onClick={() => setEditingMarkupPrice(null)}
+              disabled={updating}
+            >
+              <X size={14} className="mr-1" />
+              Cancel
+            </button>
+          </div>
+        ) : (
+          <div className="flex space-x-2">
+            <button
+              className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-green-700 bg-green-100 hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
+              onClick={() => handleEditPrice(item)}
+            >
+              <Edit size={14} className="mr-1.5" />
+              Edit Price
+            </button>
+            <button
+              className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-blue-700 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+              onClick={() => handleEditWeight(item)}
+            >
+              <Edit size={14} className="mr-1.5" />
+              Edit Weight
+            </button>
+            <button
+              className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-purple-700 bg-purple-100 hover:bg-purple-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-colors"
+              onClick={() => handleEditMarkupPrice(item)}
+            >
+              <Edit size={14} className="mr-1.5" />
+              Edit Markup Price
+            </button>
+            <button
+              className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-red-700 bg-red-100 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors disabled:opacity-50"
+              onClick={() => handleRemoveItem(item)}
+              disabled={removing === item._id}
+            >
+              {removing === item._id ? (
+                <>
+                  <div className="animate-spin rounded-full h-3 w-3 border-b border-red-700 mr-1.5"></div>
+                  Removing...
+                </>
+              ) : (
+                <>
+                  <Trash2 size={14} className="mr-1.5" />
+                  Remove
+                </>
+              )}
+            </button>
+          </div>
+        )}
+      </td>
+    </tr>
+  );
+});
 
 const MerchantInventory = () => {
   const { id } = useParams();
@@ -44,6 +308,9 @@ const MerchantInventory = () => {
   // Bulk selection states
   const [selectedItems, setSelectedItems] = useState([]);
   const [selectAll, setSelectAll] = useState(false);
+
+  // Debounce ref for search
+  const searchTimeoutRef = useRef(null);
 
   // Fetch merchant details with inventory
   const fetchMerchantInventory = useCallback(async (params = {}) => {
@@ -112,7 +379,7 @@ const MerchantInventory = () => {
     } finally {
       setLoading(false);
     }
-  }, [id, navigate, page, searchTerm, statusFilter, categoryFilter, sortBy, sortOrder]);
+  }, [id, navigate]); // Removed page, searchTerm, statusFilter, categoryFilter, sortBy, sortOrder from dependencies
 
   const fetchCurrentUser = async () => {
     try {
@@ -186,7 +453,35 @@ const MerchantInventory = () => {
       fetchAllCategories();
       fetchMerchantInventory();
     }
-  }, [currentUser, id, fetchAllCategories, fetchMerchantInventory]);
+  }, [currentUser, id]); // Removed fetchAllCategories, fetchMerchantInventory from dependencies
+
+  // Separate effect for pagination changes
+  useEffect(() => {
+    if (currentUser && id && page > 1) {
+      fetchMerchantInventory({ page });
+    }
+  }, [page, currentUser, id]);
+
+  // Separate effect for filter changes
+  useEffect(() => {
+    if (currentUser && id) {
+      fetchMerchantInventory({ status: statusFilter, category: categoryFilter });
+    }
+  }, [statusFilter, categoryFilter, currentUser, id]);
+
+  // Separate effect for search changes
+  useEffect(() => {
+    if (currentUser && id) {
+      fetchMerchantInventory({ search: searchTerm });
+    }
+  }, [searchTerm, currentUser, id]);
+
+  // Separate effect for sorting changes
+  useEffect(() => {
+    if (currentUser && id) {
+      fetchMerchantInventory({ sortBy, sortOrder });
+    }
+  }, [sortBy, sortOrder, currentUser, id]);
 
   // Update selectAll when inventory changes
   useEffect(() => {
@@ -1104,238 +1399,40 @@ const MerchantInventory = () => {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {filteredInventory.map((item, index) => {
-                      const stockStatus = getStockStatus(item.quantity, item.minStock);
-                      const StatusIcon = stockStatus.icon;
-
-                      return (
-                        <tr key={index} className="hover:bg-gray-50 transition-colors">
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <input
-                              type="checkbox"
-                              checked={selectedItems.includes(item._id)}
-                              onChange={() => handleSelectItem(item._id)}
-                              className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
-                            />
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="flex items-center">
-                              {item.image && (
-                                <img
-                                  className="h-12 w-12 rounded-lg object-cover mr-4 border border-gray-200 cursor-pointer hover:opacity-80 transition-opacity"
-                                  src={item.image}
-                                  alt={item.name}
-                                  onClick={() => openProductModal(item)}
-                                />
-                              )}
-                              <div>
-                                <div className="flex items-center space-x-2">
-                                  <div className="text-sm font-medium text-gray-900">{item.name}</div>
-                                </div>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                              {item.category}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            {editingWeight === item._id ? (
-                              <div className="flex items-center space-x-2">
-                                <input
-                                  type="number"
-                                  value={editedWeightValue}
-                                  onChange={(e) => setEditedWeightValue(e.target.value)}
-                                  className="w-16 px-2 py-1 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm"
-                                  min="0"
-                                  step="0.01"
-                                  placeholder="Value"
-                                  disabled={updating}
-                                />
-                                <select
-                                  value={editedWeightUnit}
-                                  onChange={(e) => setEditedWeightUnit(e.target.value)}
-                                  className="w-20 px-2 py-1 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm"
-                                  disabled={updating}
-                                >
-                                  <option value="">Select Unit</option>
-                                  <option value="g">g</option>
-                                  <option value="kg">kg</option>
-                                  <option value="ml">ml</option>
-                                  <option value="l">l</option>
-                                  <option value="pack">pack</option>
-                                  <option value="piece">piece</option>
-                                  <option value="unit">unit</option>
-                                  <option value="dozen">dozen</option>
-                                  <option value="cm">cm</option>
-                                  <option value="mm">mm</option>
-                                  <option value="inch">inch</option>
-                                  <option value="feet">feet</option>
-                                  <option value="meter">meter</option>
-                                  <option value="other">other</option>
-                                </select>
-                              </div>
-                            ) : (
-                              <div className="text-sm text-gray-900">
-                                {item.weightDimension ? `${item.weightDimension.value} ${item.weightDimension.unit}` : 'N/A'}
-                              </div>
-                            )}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm text-gray-900 font-medium">
-                              {item.quantity} / {item.maxStock}
-                            </div>
-                            <div className="text-xs text-gray-500">
-                              Min: {item.minStock}
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                            {editingItem === item._id ? (
-                              <div className="flex items-center space-x-2">
-                                <span className="text-gray-500">₹</span>
-                                <input
-                                  type="number"
-                                  value={editedPrice}
-                                  onChange={(e) => setEditedPrice(e.target.value)}
-                                  className="w-24 px-3 py-1 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm"
-                                  min="0"
-                                  step="0.01"
-                                  disabled={updating}
-                                />
-                              </div>
-                            ) : (
-                              <span className="text-lg">₹{item.price}</span>
-                            )}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                            {editingMarkupPrice === item._id ? (
-                              <div className="flex items-center space-x-2">
-                                <span className="text-gray-500">₹</span>
-                                <input
-                                  type="number"
-                                  value={editedMarkupPrice}
-                                  onChange={(e) => setEditedMarkupPrice(e.target.value)}
-                                  className="w-24 px-3 py-1 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm"
-                                  min="0"
-                                  step="0.01"
-                                  disabled={updating}
-                                />
-                              </div>
-                            ) : (
-                              <span className="text-lg">₹{item.markupPrice || 0}</span>
-                            )}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-full ${stockStatus.color}`}>
-                              <StatusIcon size={14} />
-                              {stockStatus.status}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                            {editingItem === item._id ? (
-                              <div className="flex items-center space-x-2">
-                                <button
-                                  className="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 transition-colors"
-                                  onClick={() => handleSavePrice(item)}
-                                  disabled={updating}
-                                >
-                                  <Save size={14} className="mr-1" />
-                                  Save
-                                </button>
-                                <button
-                                  className="inline-flex items-center px-2.5 py-1.5 border border-gray-300 text-xs font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 transition-colors"
-                                  onClick={handleCancelEdit}
-                                  disabled={updating}
-                                >
-                                  <X size={14} className="mr-1" />
-                                  Cancel
-                                </button>
-                              </div>
-                            ) : editingWeight === item._id ? (
-                              <div className="flex items-center space-x-2">
-                                <button
-                                  className="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 transition-colors"
-                                  onClick={() => handleSaveWeight(item)}
-                                  disabled={updating}
-                                >
-                                  <Save size={14} className="mr-1" />
-                                  Save
-                                </button>
-                                <button
-                                  className="inline-flex items-center px-2.5 py-1.5 border border-gray-300 text-xs font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 transition-colors"
-                                  onClick={handleCancelEditWeight}
-                                  disabled={updating}
-                                >
-                                  <X size={14} className="mr-1" />
-                                  Cancel
-                                </button>
-                              </div>
-                            ) : editingMarkupPrice === item._id ? (
-                              <div className="flex items-center space-x-2">
-                                <button
-                                  className="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 transition-colors"
-                                  onClick={() => handleSaveMarkupPrice(item)}
-                                  disabled={updating}
-                                >
-                                  <Save size={14} className="mr-1" />
-                                  Save
-                                </button>
-                                <button
-                                  className="inline-flex items-center px-2.5 py-1.5 border border-gray-300 text-xs font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 transition-colors"
-                                  onClick={handleCancelEditMarkupPrice}
-                                  disabled={updating}
-                                >
-                                  <X size={14} className="mr-1" />
-                                  Cancel
-                                </button>
-                              </div>
-                            ) : (
-                              <div className="flex space-x-2">
-                                <button
-                                  className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-green-700 bg-green-100 hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
-                                  onClick={() => handleEditPrice(item)}
-                                >
-                                  <Edit size={14} className="mr-1.5" />
-                                  Edit Price
-                                </button>
-                                <button
-                                  className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-blue-700 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
-                                  onClick={() => handleEditWeight(item)}
-                                >
-                                  <Edit size={14} className="mr-1.5" />
-                                  Edit Weight
-                                </button>
-                                <button
-                                  className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-purple-700 bg-purple-100 hover:bg-purple-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-colors"
-                                  onClick={() => handleEditMarkupPrice(item)}
-                                >
-                                  <Edit size={14} className="mr-1.5" />
-                                  Edit Markup Price
-                                </button>
-                                <button
-                                  className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-red-700 bg-red-100 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors disabled:opacity-50"
-                                  onClick={() => handleRemoveItem(item)}
-                                  disabled={removing === item._id}
-                                >
-                                  {removing === item._id ? (
-                                    <>
-                                      <div className="animate-spin rounded-full h-3 w-3 border-b border-red-700 mr-1.5"></div>
-                                      Removing...
-                                    </>
-                                  ) : (
-                                    <>
-                                      <Trash2 size={14} className="mr-1.5" />
-                                      Remove
-                                    </>
-                                  )}
-                                </button>
-                              </div>
-                            )}
-                          </td>
-                        </tr>
-                      );
-                    })}
+                    {filteredInventory.map((item, index) => (
+                      <InventoryItem
+                        key={item._id || index}
+                        item={item}
+                        index={index}
+                        selectedItems={selectedItems}
+                        handleSelectItem={handleSelectItem}
+                        editingItem={editingItem}
+                        editedPrice={editedPrice}
+                        setEditedPrice={setEditedPrice}
+                        updating={updating}
+                        handleSavePrice={handleSavePrice}
+                        handleCancelEdit={handleCancelEdit}
+                        editingWeight={editingWeight}
+                        editedWeightValue={editedWeightValue}
+                        setEditedWeightValue={setEditedWeightValue}
+                        editedWeightUnit={editedWeightUnit}
+                        setEditedWeightUnit={setEditedWeightUnit}
+                        handleSaveWeight={handleSaveWeight}
+                        editingMarkupPrice={editingMarkupPrice}
+                        editedMarkupPrice={editedMarkupPrice}
+                        setEditedMarkupPrice={setEditedMarkupPrice}
+                        handleSaveMarkupPrice={handleSaveMarkupPrice}
+                        handleEditWeight={handleEditWeight}
+                        handleEditMarkupPrice={handleEditMarkupPrice}
+                        handleEditPrice={handleEditPrice}
+                        openProductModal={openProductModal}
+                        getStockStatus={getStockStatus}
+                        handleCancelEditWeight={() => setEditingWeight(null)}
+                        handleCancelEditMarkupPrice={() => setEditingMarkupPrice(null)}
+                        handleRemoveItem={handleRemoveItem}
+                        removing={removing}
+                      />
+                    ))}
                   </tbody>
                 </table>
               </div>
