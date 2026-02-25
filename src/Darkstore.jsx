@@ -13,7 +13,7 @@ const Darkstore = () => {
               </svg>
             </div>
             <h1 className="text-3xl font-bold text-neutral-900 mb-2">Darkstore</h1>
-            <p className="text-lg text-neutral-600 mb-8">Coming Soon...</p>
+            <p className="text-lg text-neutral-600 mb-8">Coming Soon</p>
             <p className="text-neutral-500 max-w-md mx-auto">
               Dark Stores coming soon. Stay tuned for updates!
             </p>
