@@ -331,7 +331,7 @@ const MerchantInventory = () => {
       } else if (statusFilter !== 'all') {
         query.append('status', statusFilter);
       }
-      if (params.category !== undefined) {
+      if (params.category !== undefined && params.category !== 'all') {
         query.append('category', params.category);
       } else if (categoryFilter !== 'all') {
         query.append('category', categoryFilter);
@@ -365,7 +365,10 @@ const MerchantInventory = () => {
           setTotalItems(data.pagination?.totalItems || 0);
           setStockCounts(data.stockCounts || { inStock: 0, lowStock: 0, outOfStock: 0 });
 
-          // Categories are fetched separately
+          // Set categories from response
+          if (data.categories) {
+            setAllCategories(data.categories);
+          }
         } else {
           throw new Error(data.message || 'Failed to fetch merchant inventory');
         }
@@ -413,44 +416,12 @@ const MerchantInventory = () => {
     }
   };
 
-  const fetchAllCategories = useCallback(async () => {
-    try {
-      const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/merchant-stores/${id}?limit=1000`, {
-        method: 'GET',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (response.status === 401) {
-        navigate('/login');
-        return;
-      }
-
-      if (response.ok) {
-        const data = await response.json();
-        if (data.tokenValid === false) {
-          navigate('/login', { replace: true });
-          return;
-        }
-        if (data.success) {
-          const categories = [...new Set(data.merchant.inventory?.map(item => item.category) || [])];
-          setAllCategories(categories.sort());
-        }
-      }
-    } catch (error) {
-      console.error('Error fetching all categories:', error);
-    }
-  }, [id, navigate]);
-
   useEffect(() => {
     fetchCurrentUser();
   }, []);
 
   useEffect(() => {
     if (currentUser && id) {
-      fetchAllCategories();
       fetchMerchantInventory();
     }
   }, [currentUser, id]); // Removed fetchAllCategories, fetchMerchantInventory from dependencies
@@ -458,28 +429,28 @@ const MerchantInventory = () => {
   // Separate effect for pagination changes
   useEffect(() => {
     if (currentUser && id && page > 1) {
-      fetchMerchantInventory({ page });
+      fetchMerchantInventory({ page, status: statusFilter, category: categoryFilter, search: searchTerm, sortBy, sortOrder });
     }
   }, [page, currentUser, id]);
 
   // Separate effect for filter changes
   useEffect(() => {
     if (currentUser && id) {
-      fetchMerchantInventory({ status: statusFilter, category: categoryFilter });
+      fetchMerchantInventory({ status: statusFilter, category: categoryFilter, search: searchTerm, sortBy, sortOrder, page });
     }
   }, [statusFilter, categoryFilter, currentUser, id]);
 
   // Separate effect for search changes
   useEffect(() => {
     if (currentUser && id) {
-      fetchMerchantInventory({ search: searchTerm });
+      fetchMerchantInventory({ search: searchTerm, status: statusFilter, category: categoryFilter, sortBy, sortOrder, page });
     }
   }, [searchTerm, currentUser, id]);
 
   // Separate effect for sorting changes
   useEffect(() => {
     if (currentUser && id) {
-      fetchMerchantInventory({ sortBy, sortOrder });
+      fetchMerchantInventory({ sortBy, sortOrder, status: statusFilter, category: categoryFilter, search: searchTerm, page });
     }
   }, [sortBy, sortOrder, currentUser, id]);
 
@@ -520,9 +491,10 @@ const MerchantInventory = () => {
     setSelectAll(false);
   };
 
-  // Filter handlers
   const handleStatusFilter = (status) => {
     setStatusFilter(status);
+    setSearchTerm('');
+    setPendingSearch('');
     setPage(1); // Reset to first page when filtering
     setSelectedItems([]);
     setSelectAll(false);
@@ -530,6 +502,8 @@ const MerchantInventory = () => {
 
   const handleCategoryFilter = (category) => {
     setCategoryFilter(category);
+    setSearchTerm('');
+    setPendingSearch('');
     setPage(1); // Reset to first page when filtering
     setSelectedItems([]);
     setSelectAll(false);
