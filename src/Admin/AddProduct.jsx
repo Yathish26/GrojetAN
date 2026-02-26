@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Package, Plus, ArrowLeft, Loader2, XCircle, CircleCheck, Image, Tag, Scale, Box, Star, Shield } from 'lucide-react';
+import { Package, Plus, ArrowLeft, Loader2, XCircle, CircleCheck, Image, Tag, Scale, Box, Star, Shield, GripVertical, ChevronUp, ChevronDown } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import toast, { Toaster } from 'react-hot-toast';
 import ChipInput from '../Components/ChipInput';
@@ -77,6 +77,8 @@ export default function AddProduct() {
   const [uploadingImages, setUploadingImages] = useState(false);
   const [selectedThumbnailPreview, setSelectedThumbnailPreview] = useState(null);
   const [selectedImagePreviews, setSelectedImagePreviews] = useState([]);
+  const [draggedImageIndex, setDraggedImageIndex] = useState(null);
+  const [dragOverDropIndex, setDragOverDropIndex] = useState(null);
 
   const unitOptions = [
     // Weight units
@@ -216,17 +218,153 @@ export default function AddProduct() {
   };
 
   const handleImageFileSelect = (files) => {
-    setSelectedImageFiles(files);
     if (files && files.length > 0) {
       try {
         const previews = files.map(f => URL.createObjectURL(f));
-        setSelectedImagePreviews(previews);
+        setSelectedImageFiles(prev => [...(prev || []), ...files]);
+        setSelectedImagePreviews(prev => [...(prev || []), ...previews]);
       } catch (err) {
-        setSelectedImagePreviews([]);
+        // keep existing selections if preview generation fails for new files
       }
-    } else {
-      setSelectedImagePreviews([]);
     }
+  };
+
+  const moveSelectedImageByIndex = (fromIndex, toIndex) => {
+    setSelectedImageFiles(prev => {
+      if (
+        fromIndex < 0 ||
+        toIndex < 0 ||
+        fromIndex >= prev.length ||
+        toIndex > prev.length
+      ) {
+        return prev;
+      }
+
+      const reordered = [...prev];
+      const [moved] = reordered.splice(fromIndex, 1);
+      const insertAt = fromIndex < toIndex ? toIndex - 1 : toIndex;
+      reordered.splice(insertAt, 0, moved);
+      return reordered;
+    });
+
+    setSelectedImagePreviews(prev => {
+      if (
+        fromIndex < 0 ||
+        toIndex < 0 ||
+        fromIndex >= prev.length ||
+        toIndex > prev.length
+      ) {
+        return prev;
+      }
+
+      const reordered = [...prev];
+      const [moved] = reordered.splice(fromIndex, 1);
+      const insertAt = fromIndex < toIndex ? toIndex - 1 : toIndex;
+      reordered.splice(insertAt, 0, moved);
+      return reordered;
+    });
+  };
+
+  const moveSelectedImageToPosition = (fromIndex, targetIndex) => {
+    setSelectedImageFiles(prev => {
+      if (
+        fromIndex < 0 ||
+        targetIndex < 0 ||
+        fromIndex >= prev.length ||
+        targetIndex >= prev.length ||
+        fromIndex === targetIndex
+      ) {
+        return prev;
+      }
+
+      const reordered = [...prev];
+      const [moved] = reordered.splice(fromIndex, 1);
+      reordered.splice(targetIndex, 0, moved);
+      return reordered;
+    });
+
+    setSelectedImagePreviews(prev => {
+      if (
+        fromIndex < 0 ||
+        targetIndex < 0 ||
+        fromIndex >= prev.length ||
+        targetIndex >= prev.length ||
+        fromIndex === targetIndex
+      ) {
+        return prev;
+      }
+
+      const reordered = [...prev];
+      const [moved] = reordered.splice(fromIndex, 1);
+      reordered.splice(targetIndex, 0, moved);
+      return reordered;
+    });
+  };
+
+  const handleSelectedImageDragStart = (e, index) => {
+    if (uploadingImages) return;
+    setDraggedImageIndex(index);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', String(index));
+  };
+
+  const handleSelectedImageDropZoneDragOver = (e, index) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (uploadingImages) return;
+    setDragOverDropIndex(index);
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const getDropIndexFromRow = (event, rowIndex) => {
+    const rowRect = event.currentTarget.getBoundingClientRect();
+    const pointerY = event.clientY - rowRect.top;
+    const isBottomHalf = pointerY > rowRect.height / 2;
+    return isBottomHalf ? rowIndex + 1 : rowIndex;
+  };
+
+  const handleSelectedImageItemDragOver = (e, rowIndex) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (uploadingImages) return;
+
+    const sourceIndexRaw = draggedImageIndex ?? e.dataTransfer.getData('text/plain');
+    if (sourceIndexRaw === null || sourceIndexRaw === undefined || sourceIndexRaw === '') return;
+
+    const calculatedIndex = getDropIndexFromRow(e, rowIndex);
+    setDragOverDropIndex(calculatedIndex);
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleSelectedImageDropByIndex = (e, dropIndex) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (uploadingImages) return;
+
+    const sourceIndexRaw = draggedImageIndex ?? e.dataTransfer.getData('text/plain');
+    if (sourceIndexRaw === null || sourceIndexRaw === undefined || sourceIndexRaw === '') {
+      setDraggedImageIndex(null);
+      setDragOverDropIndex(null);
+      return;
+    }
+
+    const sourceIndex = Number(sourceIndexRaw);
+    if (!Number.isNaN(sourceIndex)) {
+      moveSelectedImageByIndex(sourceIndex, dropIndex);
+    }
+
+    setDraggedImageIndex(null);
+    setDragOverDropIndex(null);
+  };
+
+  const handleSelectedImageItemDrop = (e, rowIndex) => {
+    const dropIndex = getDropIndexFromRow(e, rowIndex);
+    handleSelectedImageDropByIndex(e, dropIndex);
+  };
+
+  const handleSelectedImageDragEnd = () => {
+    setDraggedImageIndex(null);
+    setDragOverDropIndex(null);
   };
 
   // Drag and drop handlers
@@ -749,53 +887,94 @@ export default function AddProduct() {
 
                   {selectedImageFiles && selectedImageFiles.length > 0 && (
                     <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm font-medium text-gray-700">All Images (drag to reorder):</p>
+                      </div>
+                      <div
+                        className={`h-2 rounded transition-colors ${dragOverDropIndex === 0 ? 'bg-green-300' : 'bg-transparent'}`}
+                        onDragOver={(e) => handleSelectedImageDropZoneDragOver(e, 0)}
+                        onDrop={(e) => handleSelectedImageDropByIndex(e, 0)}
+                      />
                       {selectedImageFiles.map((file, index) => (
-                        <div key={index} className="flex items-center justify-between bg-gray-50 p-3 rounded-lg">
-                          <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 bg-green-100 rounded flex items-center justify-center">
-                              <CircleCheck className="w-4 h-4 text-green-600" />
+                        <React.Fragment key={index}>
+                          <div
+                            className={`flex items-center justify-between border p-3 rounded-lg transition-colors ${
+                              draggedImageIndex === index ? 'bg-green-100 border-green-300' : 'bg-gray-50 border-transparent'
+                            } ${uploadingImages ? 'cursor-not-allowed' : 'cursor-move'}`}
+                            draggable={!uploadingImages}
+                            onDragStart={(e) => handleSelectedImageDragStart(e, index)}
+                            onDragOver={(e) => handleSelectedImageItemDragOver(e, index)}
+                            onDrop={(e) => handleSelectedImageItemDrop(e, index)}
+                            onDragEnd={handleSelectedImageDragEnd}
+                          >
+                            <div className="flex items-center gap-2">
+                              <GripVertical className="w-4 h-4 text-gray-500" />
+                              <div className="w-12 h-12 rounded overflow-hidden border border-gray-200 bg-white flex items-center justify-center">
+                                {selectedImagePreviews[index] ? (
+                                  <img
+                                    src={selectedImagePreviews[index]}
+                                    alt={`Preview ${index + 1}`}
+                                    className="w-full h-full object-cover"
+                                  />
+                                ) : (
+                                  <Image className="w-5 h-5 text-gray-400" />
+                                )}
+                              </div>
+                              <div>
+                                <p className="text-sm font-medium text-gray-900">{file.name}</p>
+                                <p className="text-xs text-gray-500">
+                                  #{index + 1} • {(file.size / 1024 / 1024).toFixed(2)} MB • Ready to upload
+                                </p>
+                              </div>
                             </div>
-                            <div>
-                              <p className="text-sm font-medium text-gray-900">{file.name}</p>
-                              <p className="text-xs text-gray-500">
-                                {(file.size / 1024 / 1024).toFixed(2)} MB • Ready to upload
-                              </p>
+                            <div className="flex items-center gap-1">
+                              <button
+                                type="button"
+                                onClick={() => moveSelectedImageToPosition(index, index - 1)}
+                                disabled={uploadingImages || index === 0}
+                                className="p-1 rounded border border-green-200 text-green-700 hover:bg-green-100 disabled:opacity-40 disabled:cursor-not-allowed"
+                                title="Move up"
+                              >
+                                <ChevronUp className="w-4 h-4" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => moveSelectedImageToPosition(index, index + 1)}
+                                disabled={uploadingImages || index === selectedImageFiles.length - 1}
+                                className="p-1 rounded border border-green-200 text-green-700 hover:bg-green-100 disabled:opacity-40 disabled:cursor-not-allowed"
+                                title="Move down"
+                              >
+                                <ChevronDown className="w-4 h-4" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const newFiles = selectedImageFiles.filter((_, i) => i !== index);
+                                  const newPreviews = selectedImagePreviews.filter((_, i) => i !== index);
+                                  setSelectedImageFiles(newFiles);
+                                  setSelectedImagePreviews(newPreviews);
+                                  if (newFiles.length === 0) {
+                                    setFormData(prev => ({ ...prev, images: [] }));
+                                  }
+                                }}
+                                className="text-red-500 hover:text-red-700 p-1"
+                                disabled={uploadingImages}
+                              >
+                                <XCircle className="w-4 h-4" />
+                              </button>
                             </div>
                           </div>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const newFiles = selectedImageFiles.filter((_, i) => i !== index);
-                              const newPreviews = selectedImagePreviews.filter((_, i) => i !== index);
-                              setSelectedImageFiles(newFiles);
-                              setSelectedImagePreviews(newPreviews);
-                              if (newFiles.length === 0) {
-                                // Clear URL inputs if no files left
-                                setFormData(prev => ({ ...prev, images: [] }));
-                              }
-                            }}
-                            className="text-red-500 hover:text-red-700 p-1"
-                            disabled={uploadingImages}
-                          >
-                            <XCircle className="w-4 h-4" />
-                          </button>
-                        </div>
+                          <div
+                            className={`h-2 rounded transition-colors ${dragOverDropIndex === index + 1 ? 'bg-green-300' : 'bg-transparent'}`}
+                            onDragOver={(e) => handleSelectedImageDropZoneDragOver(e, index + 1)}
+                            onDrop={(e) => handleSelectedImageDropByIndex(e, index + 1)}
+                          />
+                        </React.Fragment>
                       ))}
                     </div>
                   )}
 
                 </div>
-
-                {/* Previews for selected image files */}
-                {selectedImagePreviews && selectedImagePreviews.length > 0 && (
-                  <div className="mt-3 flex flex-wrap gap-3">
-                    {selectedImagePreviews.map((p, i) => (
-                      <div key={i} className="w-20 h-20 rounded overflow-hidden border">
-                        <img src={p} alt={`preview-${i}`} className="w-full h-full object-cover" />
-                      </div>
-                    ))}
-                  </div>
-                )}
               </div>
 
               <div className="space-y-2">

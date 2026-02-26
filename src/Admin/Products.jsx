@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Plus, Edit, Edit3, Trash2, X, Loader2, ChevronLeft, ChevronRight, Shield, Download, Package, Image, CircleCheck, XCircle, ChevronDown, Eye, Filter, RotateCcw } from 'lucide-react';
+import { Search, Plus, Edit, Edit3, Trash2, X, Loader2, ChevronLeft, ChevronRight, Shield, Download, Package, Image, CircleCheck, XCircle, ChevronDown, ChevronUp, Eye, Filter, RotateCcw, GripVertical } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
 import Modal from 'react-modal';
 import ChipInput from '../Components/ChipInput';
@@ -44,7 +44,6 @@ export default function Products() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
-  const [exportDropdownOpen, setExportDropdownOpen] = useState(false);
   const [productIdToDelete, setProductIdToDelete] = useState(null);
   const [imageViewerVisible, setImageViewerVisible] = useState(false);
   const [selectedImageUrl, setSelectedImageUrl] = useState(null);
@@ -71,6 +70,9 @@ export default function Products() {
   // Preview states for edit modal
   const [selectedThumbnailPreview, setSelectedThumbnailPreview] = useState(null);
   const [selectedImagePreviews, setSelectedImagePreviews] = useState([]);
+  const [orderedEditImages, setOrderedEditImages] = useState([]);
+  const [draggedImageId, setDraggedImageId] = useState(null);
+  const [dragOverDropIndex, setDragOverDropIndex] = useState(null);
 
   const navigate = useNavigate();
 
@@ -290,18 +292,22 @@ export default function Products() {
 
   // Handle export to Excel
   const handleExportExcel = async () => {
+    console.log('Export to Excel button clicked');
     setIsExporting(true);
-    setExportDropdownOpen(false);
     try {
+      console.log('Fetching Excel export from backend...');
       const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/products/export`, {
         credentials: 'include',
       });
+      console.log('Response received:', response.status, response.statusText);
       if (response.status === 401) {
+        console.log('Unauthorized, redirecting to login');
         setRedirecting(true);
         navigate('/login');
         return;
       }
       if (!response.ok) throw new Error('Failed to export products');
+      console.log('Creating blob for download...');
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -311,73 +317,10 @@ export default function Products() {
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
+      console.log('Excel download initiated');
       toast.success('Products exported to Excel successfully');
     } catch (error) {
-      toast.error(error.message);
-    } finally {
-      setIsExporting(false);
-    }
-  };
-
-  // Handle export to JSON
-  const handleExportJSON = async () => {
-    setIsExporting(true);
-    setExportDropdownOpen(false);
-    try {
-      const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/products/export/json`, {
-        credentials: 'include',
-      });
-      if (response.status === 401) {
-        setRedirecting(true);
-        navigate('/login');
-        return;
-      }
-      if (!response.ok) throw new Error('Failed to export products to JSON');
-      const data = await response.json();
-      const jsonString = JSON.stringify(data, null, 2);
-      const blob = new Blob([jsonString], { type: 'application/json' });
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'products.json';
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-      toast.success('Products exported to JSON successfully');
-    } catch (error) {
-      toast.error(error.message);
-    } finally {
-      setIsExporting(false);
-    }
-  };
-
-  // Handle export to CSV
-  const handleExportCSV = async () => {
-    setIsExporting(true);
-    setExportDropdownOpen(false);
-    try {
-      const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/products/export/csv`, {
-        credentials: 'include',
-      });
-      if (response.status === 401) {
-        setRedirecting(true);
-        navigate('/login');
-        return;
-      }
-      if (!response.ok) throw new Error('Failed to export products to CSV');
-      const csvText = await response.text();
-      const blob = new Blob([csvText], { type: 'text/csv' });
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'products.csv';
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-      toast.success('Products exported to CSV successfully');
-    } catch (error) {
+      console.error('Error exporting to Excel:', error);
       toast.error(error.message);
     } finally {
       setIsExporting(false);
@@ -401,20 +344,6 @@ export default function Products() {
     }
     // eslint-disable-next-line
   }, [page, searchTerm, filters.category, filters.status, filters.sort, filters.startsWith, isAuthorized]);
-
-  // Close export dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (exportDropdownOpen && !event.target.closest('.export-dropdown')) {
-        setExportDropdownOpen(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [exportDropdownOpen]);
 
   // Memoized categories for filter dropdown
   const categories = useMemo(() => {
@@ -514,10 +443,17 @@ export default function Products() {
     setOriginalThumbnailUrl(product.thumbnail || null);
     setOriginalImageUrls([...(product.images || [])]);
     setInitialOriginalImageUrls([...(product.images || [])]); // Store initial state for deletion tracking
+    setOrderedEditImages((product.images || []).map((url, index) => ({
+      id: `original-${index}-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+      source: 'original',
+      url,
+    })));
     setSelectedThumbnailFile(null);
     setSelectedImageFiles([]);
     setSelectedThumbnailPreview(null);
     setSelectedImagePreviews([]);
+    setDraggedImageId(null);
+    setDragOverDropIndex(null);
     setEditModalIsOpen(true);
   };
   const closeEditModal = () => {
@@ -530,6 +466,9 @@ export default function Products() {
     setInitialOriginalImageUrls([]);
     setSelectedThumbnailPreview(null);
     setSelectedImagePreviews([]);
+    setOrderedEditImages([]);
+    setDraggedImageId(null);
+    setDragOverDropIndex(null);
     setUploadingImages(false);
   };
 
@@ -596,13 +535,21 @@ export default function Products() {
   };
 
   const handleImageFileSelect = (files) => {
-    setSelectedImageFiles(files);
-    if (files && files.length > 0) {
-      const newPreviews = files.map(file => URL.createObjectURL(file));
-      setSelectedImagePreviews(newPreviews);
-    } else {
-      setSelectedImagePreviews([]);
-    }
+    if (!files || files.length === 0) return;
+
+    const newItems = files.map((file, index) => {
+      const preview = URL.createObjectURL(file);
+      return {
+        id: `new-${Date.now()}-${index}-${Math.random().toString(36).slice(2, 9)}`,
+        source: 'new',
+        file,
+        preview,
+      };
+    });
+
+    setSelectedImageFiles(prev => [...(prev || []), ...files]);
+    setSelectedImagePreviews(prev => [...(prev || []), ...newItems.map(item => item.preview)]);
+    setOrderedEditImages(prev => [...prev, ...newItems]);
   };
 
   // Drag and drop handlers for edit modal
@@ -630,11 +577,7 @@ export default function Products() {
     const files = Array.from(e.dataTransfer.files);
     const imageFiles = files.filter(file => file.type.startsWith('image/'));
     if (imageFiles.length > 0) {
-      const currentFiles = selectedImageFiles || [];
-      const currentPreviews = selectedImagePreviews || [];
-      setSelectedImageFiles([...currentFiles, ...imageFiles]);
-      const newPreviews = imageFiles.map(file => URL.createObjectURL(file));
-      setSelectedImagePreviews([...currentPreviews, ...newPreviews]);
+      handleImageFileSelect(imageFiles);
     }
   };
 
@@ -643,8 +586,120 @@ export default function Products() {
     setSelectedThumbnailPreview(null);
   };
 
-  const removeOriginalImage = (index) => {
-    setOriginalImageUrls(prev => prev.filter((_, i) => i !== index));
+  const removeOrderedImage = (id) => {
+    setOrderedEditImages(prev => prev.filter((item) => item.id !== id));
+  };
+
+  const moveOrderedImageByIndex = (fromIndex, toIndex) => {
+    setOrderedEditImages(prev => {
+      if (
+        fromIndex < 0 ||
+        toIndex < 0 ||
+        fromIndex >= prev.length ||
+        toIndex > prev.length
+      ) {
+        return prev;
+      }
+
+      const reordered = [...prev];
+      const [moved] = reordered.splice(fromIndex, 1);
+      const insertAt = fromIndex < toIndex ? toIndex - 1 : toIndex;
+      reordered.splice(insertAt, 0, moved);
+      return reordered;
+    });
+  };
+
+  const moveOrderedImageToPosition = (fromIndex, targetIndex) => {
+    setOrderedEditImages(prev => {
+      if (
+        fromIndex < 0 ||
+        targetIndex < 0 ||
+        fromIndex >= prev.length ||
+        targetIndex >= prev.length ||
+        fromIndex === targetIndex
+      ) {
+        return prev;
+      }
+
+      const reordered = [...prev];
+      const [moved] = reordered.splice(fromIndex, 1);
+      reordered.splice(targetIndex, 0, moved);
+      return reordered;
+    });
+  };
+
+  const handleImageItemDragStart = (e, id) => {
+    if (isSaving || uploadingImages) return;
+    setDraggedImageId(id);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', id);
+  };
+
+  const handleImageDropZoneDragOver = (e, index) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (isSaving || uploadingImages) return;
+    setDragOverDropIndex(index);
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const getDropIndexFromRow = (event, rowIndex) => {
+    const rowRect = event.currentTarget.getBoundingClientRect();
+    const pointerY = event.clientY - rowRect.top;
+    const isBottomHalf = pointerY > rowRect.height / 2;
+    return isBottomHalf ? rowIndex + 1 : rowIndex;
+  };
+
+  const handleImageItemDragOver = (e, rowIndex) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (isSaving || uploadingImages) return;
+    const sourceId = draggedImageId || e.dataTransfer.getData('text/plain');
+    if (!sourceId) return;
+
+    const calculatedIndex = getDropIndexFromRow(e, rowIndex);
+    setDragOverDropIndex(calculatedIndex);
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleImageItemDrop = (e, rowIndex) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (isSaving || uploadingImages) return;
+
+    const sourceId = draggedImageId || e.dataTransfer.getData('text/plain');
+    const sourceIndex = orderedEditImages.findIndex(item => item.id === sourceId);
+    if (sourceIndex === -1) {
+      setDraggedImageId(null);
+      setDragOverDropIndex(null);
+      return;
+    }
+
+    const calculatedIndex = getDropIndexFromRow(e, rowIndex);
+    moveOrderedImageByIndex(sourceIndex, calculatedIndex);
+
+    setDraggedImageId(null);
+    setDragOverDropIndex(null);
+  };
+
+  const handleImageDropZoneDrop = (e, dropIndex) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (isSaving || uploadingImages) return;
+
+    const sourceId = draggedImageId || e.dataTransfer.getData('text/plain');
+    const sourceIndex = orderedEditImages.findIndex(item => item.id === sourceId);
+    if (sourceIndex !== -1) {
+      moveOrderedImageByIndex(sourceIndex, dropIndex);
+    }
+
+    setDraggedImageId(null);
+    setDragOverDropIndex(null);
+  };
+
+  const handleImageItemDragEnd = () => {
+    setDraggedImageId(null);
+    setDragOverDropIndex(null);
   };
 
   // Upload image to S3
@@ -676,7 +731,7 @@ export default function Products() {
 
     try {
       let finalThumbnail = originalThumbnailUrl;
-      let finalImages = [...(originalImageUrls || [])];
+      let finalImages = [];
 
       // Upload thumbnail if file selected
       if (selectedThumbnailFile) {
@@ -684,12 +739,19 @@ export default function Products() {
         finalThumbnail = uploadedUrl;
       }
 
-      // Upload additional images if files selected
-      if (selectedImageFiles && selectedImageFiles.length > 0) {
-        const uploadedUrls = await Promise.all(
-          selectedImageFiles.map(file => uploadImage(file, 'products/' + editProduct._id))
-        );
-        finalImages = [...finalImages, ...uploadedUrls];
+      // Persist additional images in arranged order (existing + newly selected)
+      if (orderedEditImages && orderedEditImages.length > 0) {
+        for (const imageItem of orderedEditImages) {
+          if (imageItem.source === 'original' && imageItem.url) {
+            finalImages.push(imageItem.url);
+            continue;
+          }
+
+          if (imageItem.source === 'new' && imageItem.file) {
+            const uploadedUrl = await uploadImage(imageItem.file, 'products/' + editProduct._id);
+            finalImages.push(uploadedUrl);
+          }
+        }
       }
 
       // Delete images that are no longer needed
@@ -956,48 +1018,21 @@ export default function Products() {
                   <Shield size={16} className="mr-2" />
                   Requested Products
                 </button>
-                <div className="relative">
-                  <button
-                    onClick={() => setExportDropdownOpen(!exportDropdownOpen)}
-                    disabled={isExporting}
-                    className={`inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-lg text-white ${isExporting
-                      ? 'bg-purple-400 cursor-not-allowed'
-                      : 'bg-purple-600 hover:bg-purple-700'
-                      } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-colors`}
-                  >
-                    {isExporting ? (
-                      <Loader2 className="animate-spin mr-2" size={16} />
-                    ) : (
-                      <Download size={16} className="mr-2" />
-                    )}
-                    {isExporting ? 'Exporting...' : 'Export'}
-                    {!isExporting && <ChevronDown size={16} className="ml-2" />}
-                  </button>
-                  {exportDropdownOpen && !isExporting && (
-                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10 border border-gray-200">
-                      <div className="py-1">
-                        <button
-                          onClick={handleExportExcel}
-                          className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-                        >
-                          📊 Export to Excel
-                        </button>
-                        <button
-                          onClick={handleExportJSON}
-                          className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-                        >
-                          📄 Export to JSON
-                        </button>
-                        <button
-                          onClick={handleExportCSV}
-                          className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-                        >
-                          📋 Export to CSV
-                        </button>
-                      </div>
-                    </div>
+                <button
+                  onClick={handleExportExcel}
+                  disabled={isExporting}
+                  className={`inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-lg text-white ${isExporting
+                    ? 'bg-purple-400 cursor-not-allowed'
+                    : 'bg-purple-600 hover:bg-purple-700'
+                    } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-colors`}
+                >
+                  {isExporting ? (
+                    <Loader2 className="animate-spin mr-2" size={16} />
+                  ) : (
+                    <Download size={16} className="mr-2" />
                   )}
-                </div>
+                  {isExporting ? 'Exporting...' : 'Export to Excel'}
+                </button>
                 <button
                   onClick={() => navigate('/products/add')}
                   className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
@@ -1870,80 +1905,86 @@ export default function Products() {
                             disabled={isSaving || uploadingImages}
                           />
 
-                          {/* Selected Files Display */}
-                          {selectedImageFiles && selectedImageFiles.length > 0 && (
+                          {/* Unified Images Display */}
+                          {orderedEditImages && orderedEditImages.length > 0 && (
                             <div className="space-y-2">
-                              <p className="text-sm font-medium text-gray-700">Selected Files:</p>
-                              {selectedImageFiles.map((file, index) => (
-                                <div key={index} className="flex items-center space-x-3 p-2 bg-green-50 border border-green-200 rounded-lg">
-                                  <CircleCheck className="h-4 w-4 text-green-600 flex-shrink-0" />
-                                  <div className="flex-1 min-w-0">
-                                    <p className="text-sm font-medium text-green-800 truncate">{file.name}</p>
-                                    <p className="text-xs text-green-600">
-                                      {(file.size / 1024 / 1024).toFixed(2)} MB
-                                    </p>
-                                  </div>
-                                  {selectedImagePreviews[index] && (
-                                    <img
-                                      src={selectedImagePreviews[index]}
-                                      alt={`Preview ${index}`}
-                                      className="h-8 w-8 object-cover border rounded flex-shrink-0"
-                                    />
-                                  )}
-                                  <button
-                                    type="button"
-                                    onClick={() => removeImage(index)}
-                                    className="flex-shrink-0 p-1 hover:bg-green-100 rounded-full transition-colors"
-                                  >
-                                    <XCircle className="h-4 w-4 text-green-600" />
-                                  </button>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-
-                          <input
-                            id="images-file-input-edit"
-                            type="file"
-                            accept="image/*"
-                            multiple
-                            onChange={(e) => handleImageFileSelect(Array.from(e.target.files))}
-                            className="hidden"
-                            disabled={isSaving || uploadingImages}
-                          />
-
-                          {/* Current Images Display */}
-                          {originalImageUrls && originalImageUrls.length > 0 && !selectedImageFiles?.length && (
-                            <div className="mt-2">
-                              <div className="flex items-center gap-2 mb-2">
-                                <p className="text-xs text-gray-500">Current images:</p>
+                              <div className="flex items-center justify-between">
+                                <p className="text-sm font-medium text-gray-700">All Images (drag to reorder):</p>
                                 <button
                                   type="button"
-                                  onClick={() => setOriginalImageUrls([])}
+                                  onClick={() => setOrderedEditImages([])}
                                   className="text-xs text-red-600 hover:text-red-800 underline"
                                 >
                                   Remove all
                                 </button>
                               </div>
-                              <div className="flex flex-wrap gap-2">
-                                {originalImageUrls.map((img, index) => (
-                                  <div key={index} className="relative">
+                              <div
+                                className={`h-2 rounded transition-colors ${dragOverDropIndex === 0 ? 'bg-green-300' : 'bg-transparent'}`}
+                                onDragOver={(e) => handleImageDropZoneDragOver(e, 0)}
+                                onDrop={(e) => handleImageDropZoneDrop(e, 0)}
+                              />
+                              {orderedEditImages.map((imageItem, index) => (
+                                <React.Fragment key={imageItem.id}>
+                                  <div
+                                    className={`flex items-center space-x-3 p-2 border rounded-lg transition-colors ${
+                                      draggedImageId === imageItem.id ? 'bg-green-100 border-green-300' : 'bg-green-50 border-green-200'
+                                    } ${isSaving || uploadingImages ? 'cursor-not-allowed' : 'cursor-move'}`}
+                                    draggable={!(isSaving || uploadingImages)}
+                                    onDragStart={(e) => handleImageItemDragStart(e, imageItem.id)}
+                                    onDragOver={(e) => handleImageItemDragOver(e, index)}
+                                    onDrop={(e) => handleImageItemDrop(e, index)}
+                                    onDragEnd={handleImageItemDragEnd}
+                                  >
+                                    <GripVertical className="h-4 w-4 text-green-600 flex-shrink-0" />
                                     <img
-                                      src={img}
-                                      alt={`Current ${index}`}
-                                      className="h-12 w-12 object-cover border rounded"
+                                      src={imageItem.source === 'original' ? imageItem.url : imageItem.preview}
+                                      alt={`Edit preview ${index + 1}`}
+                                      className="w-12 h-12 object-cover border rounded flex-shrink-0"
                                       onError={(e) => { e.target.src = 'https://via.placeholder.com/50?text=Image+not+found'; }}
                                     />
+                                    <div className="flex-1 min-w-0">
+                                      <p className="text-sm font-medium text-green-800 truncate">
+                                        {imageItem.source === 'original' ? `Current Image #${index + 1}` : (imageItem.file?.name || `New Image #${index + 1}`)}
+                                      </p>
+                                      <p className="text-xs text-green-600">
+                                        #{index + 1} • {imageItem.source === 'original' ? 'Already uploaded' : `${((imageItem.file?.size || 0) / 1024 / 1024).toFixed(2)} MB`}
+                                      </p>
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                      <button
+                                        type="button"
+                                        onClick={() => moveOrderedImageToPosition(index, index - 1)}
+                                        disabled={isSaving || uploadingImages || index === 0}
+                                        className="p-1 rounded border border-green-200 text-green-700 hover:bg-green-100 disabled:opacity-40 disabled:cursor-not-allowed"
+                                        title="Move up"
+                                      >
+                                        <ChevronUp className="h-4 w-4" />
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => moveOrderedImageToPosition(index, index + 1)}
+                                        disabled={isSaving || uploadingImages || index === orderedEditImages.length - 1}
+                                        className="p-1 rounded border border-green-200 text-green-700 hover:bg-green-100 disabled:opacity-40 disabled:cursor-not-allowed"
+                                        title="Move down"
+                                      >
+                                        <ChevronDown className="h-4 w-4" />
+                                      </button>
+                                    </div>
                                     <button
                                       type="button"
-                                      onClick={() => removeOriginalImage(index)}
-                                      className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-0.5 hover:bg-red-600 transition-colors"
+                                      onClick={() => removeOrderedImage(imageItem.id)}
+                                      className="flex-shrink-0 p-1 hover:bg-green-100 rounded-full transition-colors"
                                     >
-                                      <X className="h-2 w-2" />
+                                      <XCircle className="h-4 w-4 text-green-600" />
                                     </button>
                                   </div>
-                                ))}
-                              </div>
+                                  <div
+                                    className={`h-2 rounded transition-colors ${dragOverDropIndex === index + 1 ? 'bg-green-300' : 'bg-transparent'}`}
+                                    onDragOver={(e) => handleImageDropZoneDragOver(e, index + 1)}
+                                    onDrop={(e) => handleImageDropZoneDrop(e, index + 1)}
+                                  />
+                                </React.Fragment>
+                              ))}
                             </div>
                           )}
                         </div>

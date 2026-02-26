@@ -14,9 +14,11 @@ import {
   Search,
   Filter,
   RotateCcw,
+  FileSpreadsheet,
 } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
 import Layout from '../Components/Layout';
+import * as XLSX from 'xlsx';
 
 export default function Categories() {
   const navigate = useNavigate();
@@ -393,6 +395,24 @@ export default function Categories() {
     setFilterShowOnHome('all');
   };
 
+  // Handle export to Excel
+  const handleExportToExcel = () => {
+    const data = filteredCategories.map(category => ({
+      Name: category.name,
+      MainCategory: category.mainCategory,
+      IsActive: category.isActive ? 'Yes' : 'No',
+      ShowOnHome: category.showOnHome ? 'Yes' : 'No',
+      Order: category.order,
+      ProductCount: category.productCount || 0,
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Categories');
+    XLSX.writeFile(wb, 'categories.xlsx');
+    toast.success('Categories exported to Excel successfully!');
+  };
+
   // Render categories list
   const renderCategories = () => {
     if (loading && categories.length === 0) {
@@ -548,6 +568,13 @@ export default function Categories() {
                 </div>
               </div>
               <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={handleExportToExcel}
+                  className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+                >
+                  <FileSpreadsheet size={16} className="mr-2" />
+                  Export to Excel
+                </button>
                 <button
                   onClick={() => {
                     setEditingCategory(null);
