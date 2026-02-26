@@ -19,7 +19,7 @@ export default function Error404() {
                     <h1 className="text-8xl font-bold text-white mb-4 drop-shadow-xl animate-fade-in-down">404</h1>
                     <h2 className="text-2xl md:text-3xl font-semibold text-yellow-400 mb-2 animate-fade-in-up">Oops! Page Not Found</h2>
                     <p className="text-lg md:text-xl text-gray-200 mb-8 max-w-md animate-fade-in-up">
-                        The page you are looking for might have been removed, had its name changed, or is temporarily unavailable.
+                        The page you are looking for might have been removed, had its name changed, or is temporarily unavailable
                     </p>
                     <Link
                         to="/"
