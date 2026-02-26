@@ -1978,7 +1978,6 @@ export default function Products() {
                         values={editProduct.tags || []}
                         setValues={vals => setEditProduct({ ...editProduct, tags: vals })}
                         disabled={isSaving || currentUser?.role === 'inventory_manager'}
-                        maxTags={10}
                         placeholder="Add tag and press Enter or comma"
                       />
 

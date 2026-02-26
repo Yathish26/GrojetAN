@@ -1124,7 +1124,6 @@ export default function AddProduct() {
                 setValues={vals => setFormData(prev => ({ ...prev, tags: vals }))}
                 disabled={loading}
                 placeholder="Add tag and press Enter or comma"
-                maxTags={10}
               />
             </div>
 
