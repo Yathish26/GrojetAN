@@ -51,7 +51,7 @@ import EmailSender from './Admin/EmailSender.jsx'
 import S3store from './Admin/S3store.jsx'
 import PublicStore from './Admin/PublicStore.jsx'
 import PublicStoreDetails from './Admin/PublicStoreDetails.jsx'
-import Darkstore from './Darkstore.jsx'
+import Darkstore from './Admin/Darkstore.jsx'
 
 function App() {
   return (
