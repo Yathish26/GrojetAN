@@ -1,7 +1,10 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import Layout from '../Components/Layout';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Eye, Plus, Minus } from 'lucide-react';
 import toast from 'react-hot-toast';
+import Modal from 'react-modal';
+
+Modal.setAppElement('#root');
 
 const PAGE_SIZE = 20;
 
@@ -18,15 +21,55 @@ const Darkstore = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [totalProducts, setTotalProducts] = useState(0);
 
+  // Darkstore pagination states
+  const [darkstorePage, setDarkstorePage] = useState(1);
+  const [darkstoreTotalPages, setDarkstoreTotalPages] = useState(1);
+  const [darkstoreTotalProducts, setDarkstoreTotalProducts] = useState(0);
+
+  // Darkstore search state
+  const [darkstoreSearchTerm, setDarkstoreSearchTerm] = useState('');
+
   // Cart state
   const [cart, setCart] = useState([]);
   const [seller, setSeller] = useState('');
 
-  const fetchDarkstoreProducts = useCallback(async () => {
+  // Filters state
+  const [categories, setCategories] = useState([]);
+  const [filters, setFilters] = useState({ category: '', sort: 'name_asc' });
+  const [darkstoreFilters, setDarkstoreFilters] = useState({ category: '', sort: 'name_asc' });
+
+  // View modal states
+  const [viewProduct, setViewProduct] = useState(null);
+  const [viewModalIsOpen, setViewModalIsOpen] = useState(false);
+
+  // Image viewer states
+  const [imageViewerVisible, setImageViewerVisible] = useState(false);
+  const [selectedImageUrl, setSelectedImageUrl] = useState(null);
+
+  const fetchDarkstoreProducts = useCallback(async (pageNum = 1, search = '') => {
     setLoading(true);
     setError('');
     try {
-      const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/darkstore`, {
+      const query = new URLSearchParams();
+      query.append('page', pageNum);
+      query.append('limit', PAGE_SIZE);
+
+      // Add search if present
+      if (search.trim()) {
+        query.append('search', search.trim());
+      }
+
+      // Add category filter
+      if (darkstoreFilters.category) {
+        query.append('category', darkstoreFilters.category);
+      }
+
+      // Add sort filter
+      if (darkstoreFilters.sort) {
+        query.append('sort', darkstoreFilters.sort);
+      }
+
+      const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/darkstore?${query}`, {
         credentials: 'include',
       });
 
@@ -41,16 +84,54 @@ const Darkstore = () => {
       }
 
       setDarkstoreProducts(data.products || []);
+      setDarkstoreTotalPages(data.totalPages || 1);
+      setDarkstoreTotalProducts(data.total || 0);
+      setDarkstorePage(pageNum);
     } catch (err) {
       setError(err.message || 'Unable to load darkstore products');
     } finally {
       setLoading(false);
+    }
+  }, [darkstoreFilters]);
+
+  // Fetch categories
+  const fetchCategories = useCallback(async () => {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/categories`, {
+        credentials: 'include',
+      });
+      if (!response.ok) throw new Error('Failed to fetch categories');
+      const data = await response.json();
+      if (data.tokenValid === false) {
+        throw new Error('Session expired. Please log in again.');
+      }
+      setCategories(data.categories || []);
+    } catch (error) {
+      console.error('Failed to load categories:', error);
     }
   }, []);
 
   useEffect(() => {
     fetchDarkstoreProducts();
   }, [fetchDarkstoreProducts]);
+
+  useEffect(() => {
+    fetchCategories();
+  }, [fetchCategories]);
+
+  // Refetch products when filters change
+  useEffect(() => {
+    if (isAddMode) {
+      fetchProducts(1);
+    }
+  }, [filters, isAddMode]);
+
+  // Refetch darkstore products when darkstore filters change
+  useEffect(() => {
+    if (!isAddMode) {
+      fetchDarkstoreProducts(1, darkstoreSearchTerm);
+    }
+  }, [darkstoreFilters, isAddMode]);
 
 
   const fetchProducts = useCallback(async (pageNum = page) => {
@@ -64,6 +145,16 @@ const Darkstore = () => {
       // Add search if present
       if (searchTerm.trim()) {
         query.append('search', searchTerm.trim());
+      }
+
+      // Add category filter
+      if (filters.category) {
+        query.append('category', filters.category);
+      }
+
+      // Add sort filter
+      if (filters.sort) {
+        query.append('sort', filters.sort);
       }
 
       const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/products?${query}`, {
@@ -89,7 +180,7 @@ const Darkstore = () => {
     } finally {
       setLoading(false);
     }
-  }, [page, searchTerm]);
+  }, [page, searchTerm, filters]);
 
   const handleEnterAddMode = () => {
     setIsAddMode(true);
@@ -100,6 +191,9 @@ const Darkstore = () => {
   const handleExitAddMode = () => {
     setIsAddMode(false);
     setCart([]); // Clear cart when exiting
+    setDarkstorePage(1); // Reset to first page when returning to darkstore
+    setDarkstoreSearchTerm(''); // Clear search when returning to darkstore
+    fetchDarkstoreProducts(1);
   };
 
   const handlePageChange = (newPage) => {
@@ -108,8 +202,114 @@ const Darkstore = () => {
     }
   };
 
+  const handleDarkstorePageChange = (newPage) => {
+    if (newPage >= 1 && newPage <= darkstoreTotalPages) {
+      fetchDarkstoreProducts(newPage, darkstoreSearchTerm);
+    }
+  };
+
+  const handleDarkstoreSearch = () => {
+    fetchDarkstoreProducts(1, darkstoreSearchTerm); // Reset to first page when searching
+  };
+
   const handleSearch = () => {
     fetchProducts(1); // Reset to first page when searching
+  };
+
+  // Filter handlers
+  const handleCategoryFilter = (e) => {
+    setFilters(prev => ({ ...prev, category: e.target.value }));
+  };
+
+  const handleSortFilter = (e) => {
+    setFilters(prev => ({ ...prev, sort: e.target.value }));
+  };
+
+  const handleDarkstoreCategoryFilter = (e) => {
+    setDarkstoreFilters(prev => ({ ...prev, category: e.target.value }));
+  };
+
+  const handleDarkstoreSortFilter = (e) => {
+    setDarkstoreFilters(prev => ({ ...prev, sort: e.target.value }));
+  };
+
+  // View modal handlers
+  const openViewModal = (product) => {
+    setViewProduct(product);
+    setViewModalIsOpen(true);
+  };
+  const closeViewModal = () => {
+    setViewModalIsOpen(false);
+    setViewProduct(null);
+  };
+
+  // Image viewer handlers
+  const openImageViewer = (imageUrl) => {
+    setSelectedImageUrl(imageUrl);
+    setImageViewerVisible(true);
+  };
+  const closeImageViewer = () => {
+    setImageViewerVisible(false);
+    setSelectedImageUrl(null);
+  };
+
+  // Remove product from darkstore
+  const removeFromDarkstore = async (productId, productName) => {
+    if (!window.confirm(`Are you sure you want to remove "${productName}" from the darkstore?`)) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/darkstore/${productId}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to remove product from darkstore');
+      }
+
+      const data = await response.json();
+      toast.success(data.message || 'Product removed from darkstore successfully');
+      
+      // Refresh the darkstore products list
+      fetchDarkstoreProducts(darkstorePage);
+    } catch (err) {
+      console.error('Remove from darkstore error:', err);
+      toast.error(err.message || 'Failed to remove product from darkstore');
+    }
+  };
+
+  // Update product quantity in darkstore
+  const updateQuantity = async (productId, newQuantity) => {
+    if (newQuantity < 0) {
+      toast.error('Quantity cannot be negative');
+      return;
+    }
+
+    try {
+      const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/darkstore/${productId}/quantity`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({ quantity: newQuantity }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update quantity');
+      }
+
+      const data = await response.json();
+      toast.success('Quantity updated successfully');
+      
+      // Refresh the darkstore products list
+      fetchDarkstoreProducts(darkstorePage);
+    } catch (err) {
+      console.error('Update quantity error:', err);
+      toast.error(err.message || 'Failed to update quantity');
+    }
   };
 
   const addToCart = (product) => {
@@ -136,24 +336,26 @@ const Darkstore = () => {
   return (
     <Layout title="Darkstore">
       <div className={`max-w-7xl mx-auto ${cart.length > 0 ? 'mr-80' : ''} transition-all duration-300`}>
-        {!isAddMode && (
-          <button onClick={handleEnterAddMode} className="bg-blue-500 text-white px-4 py-2 rounded flex items-center mb-4">
-            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-            Add Products
-          </button>
-        )}
-        {isAddMode && (
-          <button onClick={handleExitAddMode} className="bg-gray-500 text-white px-4 py-2 rounded flex items-center mb-4">
-            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-            Back to Darkstore
-          </button>
-        )}
+        <div className="flex items-center w-full">
+          {!isAddMode && (
+            <button onClick={handleEnterAddMode} className="bg-blue-500 text-white px-4 py-2 rounded flex items-center ml-auto mb-4">
+              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              Add Products
+            </button>
+          )}
+          {isAddMode && (
+            <button onClick={handleExitAddMode} className="bg-gray-500 text-white px-4 py-2 rounded flex items-center  mb-4">
+              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+              Back to Darkstore
+            </button>
+          )}
+        </div>
         <div className="bg-white rounded-lg shadow-sm border border-neutral-200 p-6">
-          <div className="p-4 border-b border-neutral-200 bg-green-500 mb-6 flex justify-center">
+          <div className="p-4 border-b border-neutral-200 bg-black mb-6 flex justify-center">
             <div className="flex items-center gap-2">
               <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
@@ -196,8 +398,37 @@ const Darkstore = () => {
                     Refresh
                   </button>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-neutral-600">{totalProducts} products</span>
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-neutral-600">Category:</span>
+                    <select
+                      value={filters.category}
+                      onChange={handleCategoryFilter}
+                      className="px-3 py-2 text-sm border border-neutral-300 rounded bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      <option value="">All Categories</option>
+                      {categories.map(category => (
+                        <option key={category._id} value={category._id}>
+                          {category.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-neutral-600">Sort by:</span>
+                    <select
+                      value={filters.sort}
+                      onChange={handleSortFilter}
+                      className="px-3 py-2 text-sm border border-neutral-300 rounded bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      <option value="name_asc">A - Z</option>
+                      <option value="name_desc">Z - A</option>
+                      <option value="price_asc">Price: Low to High</option>
+                      <option value="price_desc">Price: High to Low</option>
+                      <option value="created_desc">Newest First</option>
+                      <option value="created_asc">Oldest First</option>
+                    </select>
+                  </div>
                 </div>
               </div>
 
@@ -235,24 +466,33 @@ const Darkstore = () => {
                       <div className="text-sm text-neutral-600 whitespace-nowrap">
                         {product.pricing?.mrp ? `₹${product.pricing.mrp}` : 'No price'}
                       </div>
-                      {cart.some(item => item._id === product._id) ? (
-                        <div className="flex items-center justify-center px-3 py-1 bg-green-100 text-green-800 rounded text-sm font-medium border border-green-200">
-                          <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                          </svg>
-                          Added
-                        </div>
-                      ) : (
-                        <button 
-                          onClick={() => addToCart(product)}
-                          className="flex items-center justify-center px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600 transition-colors text-sm font-medium"
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => openViewModal(product)}
+                          className="text-blue-600 hover:text-blue-900 p-1"
+                          title="View Details"
                         >
-                          <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                          </svg>
-                          Add
+                          <Eye size={16} />
                         </button>
-                      )}
+                        {cart.some(item => item._id === product._id) ? (
+                          <div className="flex items-center justify-center px-3 py-1 bg-green-100 text-green-800 rounded text-sm font-medium border border-green-200">
+                            <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                            </svg>
+                            Added
+                          </div>
+                        ) : (
+                          <button 
+                            onClick={() => addToCart(product)}
+                            className="flex items-center justify-center px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600 transition-colors text-sm font-medium"
+                          >
+                            <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                            </svg>
+                            Add
+                          </button>
+                        )}
+                      </div>
                     </div>
                   ))
                 )}
@@ -289,6 +529,74 @@ const Darkstore = () => {
           ) : (
             // Darkstore Products Mode
             <div className="mt-6">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    placeholder="Search by name, brand, or category"
+                    className="w-full sm:w-80 border border-neutral-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    value={darkstoreSearchTerm}
+                    onChange={e => setDarkstoreSearchTerm(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && handleDarkstoreSearch()}
+                  />
+                  <button
+                    onClick={handleDarkstoreSearch}
+                    className="hidden sm:inline-flex items-center gap-2 bg-green-100 text-neutral-800 px-3 py-2 rounded border border-neutral-300 hover:bg-neutral-200"
+                    disabled={loading}
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                    Search
+                  </button>
+                  <button
+                    onClick={() => {
+                      setDarkstoreSearchTerm('');
+                      fetchDarkstoreProducts(1);
+                    }}
+                    className="hidden sm:inline-flex items-center gap-2 bg-green-100 text-neutral-800 px-3 py-2 rounded border border-neutral-300 hover:bg-neutral-200"
+                    disabled={loading}
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                    Clear
+                  </button>
+                </div>
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-neutral-600">Category:</span>
+                    <select
+                      value={darkstoreFilters.category}
+                      onChange={handleDarkstoreCategoryFilter}
+                      className="px-3 py-2 text-sm border border-neutral-300 rounded bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      <option value="">All Categories</option>
+                      {categories.map(category => (
+                        <option key={category._id} value={category._id}>
+                          {category.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-neutral-600">Sort by:</span>
+                    <select
+                      value={darkstoreFilters.sort}
+                      onChange={handleDarkstoreSortFilter}
+                      className="px-3 py-2 text-sm border border-neutral-300 rounded bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      <option value="name_asc">A - Z</option>
+                      <option value="name_desc">Z - A</option>
+                      <option value="price_asc">Price: Low to High</option>
+                      <option value="price_desc">Price: High to Low</option>
+                      <option value="created_desc">Newest First</option>
+                      <option value="created_asc">Oldest First</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
               {error && (
                 <div className="mt-3 rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
                   {error}
@@ -310,6 +618,7 @@ const Darkstore = () => {
                               className="h-10 w-10 rounded cursor-pointer hover:opacity-80 transition-opacity"
                               src={product.thumbnail}
                               alt={product.name}
+                              onClick={() => openImageViewer(product.thumbnail)}
                             />
                           </div>
                         )}
@@ -320,16 +629,84 @@ const Darkstore = () => {
                           </div>
                         </div>
                       </div>
-                      <div className="text-sm text-neutral-600 whitespace-nowrap">
-                        Qty: {product.quantity}
+                      <div className="flex items-center justify-center gap-2 min-w-[100px]">
+                        <span className="text-xs text-neutral-500 font-medium">Qty:</span>
+                        <div className="flex items-center border border-blue-200 rounded-md overflow-hidden">
+                          <button
+                            onClick={() => updateQuantity(product._id, product.quantity - 1)}
+                            className="w-7 h-7 flex items-center justify-center text-blue-600 hover:text-blue-900 hover:bg-blue-50 border-r border-blue-200"
+                            title="Decrease quantity"
+                          >
+                            <Minus size={12} />
+                          </button>
+                          <span className="px-2 py-1 text-sm text-neutral-700 font-medium min-w-[30px] text-center bg-white">
+                            {product.quantity}
+                          </span>
+                          <button
+                            onClick={() => updateQuantity(product._id, product.quantity + 1)}
+                            className="w-7 h-7 flex items-center justify-center text-blue-600 hover:text-blue-900 hover:bg-blue-50 border-l border-blue-200"
+                            title="Increase quantity"
+                          >
+                            <Plus size={12} />
+                          </button>
+                        </div>
                       </div>
-                      <div className="text-sm text-neutral-600 whitespace-nowrap">
+                      <div className="text-sm text-neutral-600 whitespace-nowrap text-center min-w-[80px]">
+                        {product.weightDimension?.value && product.weightDimension?.unit
+                          ? `${product.weightDimension.value}${product.weightDimension.unit}`
+                          : 'N/A'}
+                      </div>
+                      <div className="text-sm text-neutral-600 whitespace-nowrap text-right min-w-[70px]">
                         ₹{product.price}
+                      </div>
+                      <div className="flex items-center justify-center gap-2 min-w-[120px]">
+                        <button
+                          onClick={() => openViewModal(product)}
+                          className="text-blue-600 hover:text-blue-900 p-1"
+                          title="View Details"
+                        >
+                          <Eye size={16} />
+                        </button>
+                        <button
+                          onClick={() => removeFromDarkstore(product._id, product.name)}
+                          className="text-red-500 hover:text-red-700 px-2 py-1 text-xs font-medium border border-red-300 rounded hover:bg-red-50"
+                          title="Remove from Darkstore"
+                        >
+                          Remove
+                        </button>
                       </div>
                     </div>
                   ))
                 )}
               </div>
+
+              {/* Darkstore Pagination */}
+              {darkstoreTotalPages > 1 && (
+                <div className="mt-4 flex items-center justify-between">
+                  <div className="text-sm text-neutral-600">
+                    Showing page {darkstorePage} of {darkstoreTotalPages} ({darkstoreTotalProducts} products)
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      disabled={darkstorePage === 1}
+                      onClick={() => handleDarkstorePageChange(darkstorePage - 1)}
+                      className="px-3 py-1 bg-neutral-100 hover:bg-neutral-200 text-neutral-800 rounded disabled:opacity-50 disabled:cursor-not-allowed flex items-center text-sm"
+                    >
+                      <ChevronLeft size={16} />
+                      Previous
+                    </button>
+                    <span className="px-2 text-sm">{darkstorePage} / {darkstoreTotalPages}</span>
+                    <button
+                      disabled={darkstorePage === darkstoreTotalPages}
+                      onClick={() => handleDarkstorePageChange(darkstorePage + 1)}
+                      className="px-3 py-1 bg-neutral-100 hover:bg-neutral-200 text-neutral-800 rounded disabled:opacity-50 disabled:cursor-not-allowed flex items-center text-sm"
+                    >
+                      Next
+                      <ChevronRight size={16} />
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -471,6 +848,122 @@ const Darkstore = () => {
           </div>
         )}
       </div>
+
+      {/* View Product Modal */}
+      <Modal
+        isOpen={viewModalIsOpen}
+        onRequestClose={closeViewModal}
+        className="p-4 z-[60]"
+        overlayClassName="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[55]"
+        contentLabel="Product Details Viewer"
+      >
+        <div className="bg-white shadow-2xl max-w-full md:max-w-4xl h-[90vh] rounded-lg overflow-hidden flex flex-col">
+          <div className="bg-black px-6 py-4 flex-shrink-0">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-semibold text-white flex items-center gap-3">
+                <Eye size={20} />
+                Product Details
+              </h2>
+              <button
+                onClick={closeViewModal}
+                className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
+              >
+                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <div className="p-6 flex-1 overflow-y-auto">
+            {viewProduct && (
+              <div className="space-y-6">
+                {/* Basic Information */}
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h3 className="text-lg font-semibold text-gray-800 mb-4">Basic Information</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-600">Product Name</label>
+                      <p className="text-sm text-gray-900 mt-1">{viewProduct.name}</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-600">Brand</label>
+                      <p className="text-sm text-gray-900 mt-1">{viewProduct.brand || '—'}</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-600">Category</label>
+                      <p className="text-sm text-gray-900 mt-1">{viewProduct.category_string || viewProduct.category?.name || 'Uncategorized'}</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-600">Price</label>
+                      <p className="text-sm text-gray-900 mt-1">₹{viewProduct.pricing?.mrp || viewProduct.price || 'N/A'}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Description */}
+                {viewProduct.description && (
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h3 className="text-lg font-semibold text-gray-800 mb-4">Description</h3>
+                    <div className="text-sm text-gray-900 whitespace-pre-wrap">{viewProduct.description}</div>
+                  </div>
+                )}
+
+                {/* Images */}
+                {viewProduct.thumbnail && (
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h3 className="text-lg font-semibold text-gray-800 mb-4">Image</h3>
+                    <div className="flex justify-center">
+                      <img
+                        src={viewProduct.thumbnail}
+                        alt={viewProduct.name}
+                        className="max-w-full h-auto max-h-96 rounded-lg shadow-md"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Additional Information */}
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h3 className="text-lg font-semibold text-gray-800 mb-4">Additional Information</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-600">Quantity in Darkstore</label>
+                      <p className="text-sm text-gray-900 mt-1">{viewProduct.quantity || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-600">Darkstore Price</label>
+                      <p className="text-sm text-gray-900 mt-1">₹{viewProduct.price || 'N/A'}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </Modal>
+
+      {/* Image Viewer Modal */}
+      {imageViewerVisible && (
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-[60]" onClick={closeImageViewer}>
+          <div className="relative max-w-4xl max-h-[90vh] p-4">
+            <button
+              onClick={closeImageViewer}
+              className="absolute top-2 right-2 bg-black bg-opacity-50 text-white rounded-full p-2 hover:bg-opacity-75 transition-all z-10"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+            <img
+              src={selectedImageUrl}
+              alt="Product Image"
+              className="max-w-full max-h-full object-contain rounded-lg"
+              onClick={(e) => e.stopPropagation()}
+            />
+          </div>
+        </div>
+      )}
     </Layout>
   );
 };
