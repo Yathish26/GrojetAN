@@ -157,6 +157,19 @@ const MerchantDetails = () => {
     });
   };
 
+  const formatDateTime = (dateString) => {
+    if (!dateString) return 'N/A';
+    return new Date(dateString).toLocaleString('en-IN', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      timeZone: 'Asia/Kolkata'
+    });
+  };
+
   const formatTime = (timeString) => {
     if (!timeString) return 'N/A';
     return timeString;
@@ -281,7 +294,8 @@ const MerchantDetails = () => {
       if (response.ok) {
         if (data.success) {
           toast.success('Shop opened successfully');
-          setMerchant(prev => ({ ...prev, storeStatus: 'open' })); // Update local state instantly
+          // Refetch merchant details to get updated lastOpenedAt
+          await fetchMerchantDetails();
         } else {
           throw new Error(data.message || 'Failed to open shop');
         }
@@ -672,8 +686,8 @@ const MerchantDetails = () => {
                   <p className="mt-2 text-gray-900 text-base font-medium">{formatDate(merchant.updatedAt)}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Device ID</label>
-                  <p className="mt-2 text-gray-900 text-base font-mono font-medium break-all">{merchant.deviceId || 'Not logged in'}</p>
+                  <label className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Last Opened At</label>
+                  <p className="mt-2 text-gray-900 text-base font-medium">{formatDateTime(merchant.lastOpenedAt)}</p>
                 </div>
                 <div>
                   <label className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Device Platform</label>

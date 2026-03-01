@@ -426,11 +426,8 @@ const PublicStoreDetails = () => {
         const data = await response.json();
         if (data.success) {
           toast.success(`Store ${newStatus === 'open' ? 'opened' : 'closed'} successfully`);
-          // Update local state
-          setStore(prev => ({
-            ...prev,
-            storeStatus: newStatus
-          }));
+          // Refetch store details to get updated lastOpenedAt
+          await fetchStoreDetails(currentPage, searchTerm, statusFilter, categoryFilter);
         } else {
           throw new Error(data.message || 'Failed to update store status');
         }
@@ -552,11 +549,28 @@ const PublicStoreDetails = () => {
           {/* Store Info Cards */}
           {store && (
             <div className="mb-8">
-              <div className="inline-flex items-center gap-2 px-3 py-1 bg-blue-50 border border-blue-200 rounded-full">
-                <MapPin className="w-4 h-4 text-blue-600" />
-                <span className="text-sm font-medium text-blue-900">
-                  {store.operationalInfo?.storeAddress?.city}, {store.operationalInfo?.storeAddress?.state}
-                </span>
+              <div className="flex flex-wrap gap-4">
+                <div className="inline-flex items-center gap-2 px-3 py-1 bg-blue-50 border border-blue-200 rounded-full">
+                  <MapPin className="w-4 h-4 text-blue-600" />
+                  <span className="text-sm font-medium text-blue-900">
+                    {store.operationalInfo?.storeAddress?.city}, {store.operationalInfo?.storeAddress?.state}
+                  </span>
+                </div>
+                {store.lastOpenedAt && (
+                  <div className="inline-flex items-center gap-2 px-3 py-1 bg-green-50 border border-green-200 rounded-full">
+                    <Calendar className="w-4 h-4 text-green-600" />
+                    <span className="text-sm font-medium text-green-900">
+                      Last Opened: {new Date(store.lastOpenedAt).toLocaleString('en-IN', {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        timeZone: 'Asia/Kolkata'
+                      })}
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
           )}
