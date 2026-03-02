@@ -315,7 +315,10 @@ const MerchantInventory = () => {
   // Fetch merchant details with inventory
   const fetchMerchantInventory = useCallback(async (params = {}) => {
     try {
-      setLoading(true);
+      const isSilentRefresh = params.silent === true;
+      if (!isSilentRefresh) {
+        setLoading(true);
+      }
       setError(null);
 
       const query = new URLSearchParams();
@@ -380,7 +383,9 @@ const MerchantInventory = () => {
       setError(error.message);
       toast.error(error.message || 'Failed to load merchant inventory');
     } finally {
-      setLoading(false);
+      if (params.silent !== true) {
+        setLoading(false);
+      }
     }
   }, [id, navigate]); // Removed page, searchTerm, statusFilter, categoryFilter, sortBy, sortOrder from dependencies
 
@@ -598,7 +603,7 @@ const MerchantInventory = () => {
         if (data.success) {
           toast.success(`Successfully restocked ${data.restockedCount} items`);
           // Refetch inventory to show updated stock
-          fetchMerchantInventory({ page, search: searchTerm });
+          fetchMerchantInventory({ page, search: searchTerm, status: statusFilter, category: categoryFilter, sortBy, sortOrder, silent: true });
         } else {
           throw new Error(data.message || 'Failed to restock items');
         }
@@ -643,7 +648,7 @@ const MerchantInventory = () => {
         if (data.success) {
           toast.success(`Successfully made ${data.data.updatedCount} items out of stock`);
           // Refetch inventory to show updated stock
-          fetchMerchantInventory({ page, search: searchTerm });
+          fetchMerchantInventory({ page, search: searchTerm, status: statusFilter, category: categoryFilter, sortBy, sortOrder, silent: true });
         } else {
           throw new Error(data.message || 'Failed to make items out of stock');
         }
@@ -717,7 +722,7 @@ const MerchantInventory = () => {
           setEditingItem(null);
           setEditedPrice('');
           // Refetch the current page to ensure data consistency
-          fetchMerchantInventory({ page, search: searchTerm });
+          fetchMerchantInventory({ page, search: searchTerm, status: statusFilter, category: categoryFilter, sortBy, sortOrder, silent: true });
         } else {
           throw new Error(data.message || 'Failed to update price');
         }
@@ -784,7 +789,7 @@ const MerchantInventory = () => {
           setEditedWeightValue('');
           setEditedWeightUnit('');
           // Refetch the current page to ensure data consistency
-          fetchMerchantInventory({ page, search: searchTerm });
+          fetchMerchantInventory({ page, search: searchTerm, status: statusFilter, category: categoryFilter, sortBy, sortOrder, silent: true });
         } else {
           throw new Error(data.message || 'Failed to update weight dimension');
         }
@@ -843,7 +848,7 @@ const MerchantInventory = () => {
           setEditingMarkupPrice(null);
           setEditedMarkupPrice('');
           // Refetch the current page to ensure data consistency
-          fetchMerchantInventory({ page, search: searchTerm });
+          fetchMerchantInventory({ page, search: searchTerm, status: statusFilter, category: categoryFilter, sortBy, sortOrder, silent: true });
         } else {
           throw new Error(data.message || 'Failed to update markup price');
         }
@@ -889,7 +894,7 @@ const MerchantInventory = () => {
           // Remove from local state
           setInventory(prev => prev.filter(inv => inv._id !== item._id));
           // Refetch to ensure data consistency
-          fetchMerchantInventory({ page, search: searchTerm });
+          fetchMerchantInventory({ page, search: searchTerm, status: statusFilter, category: categoryFilter, sortBy, sortOrder, silent: true });
         } else {
           throw new Error(data.message || 'Failed to remove item');
         }
@@ -961,7 +966,7 @@ const MerchantInventory = () => {
           toast.success(data.message || 'Items removed successfully');
           setSelectedItems([]);
           setSelectAll(false);
-          fetchMerchantInventory({ page, search: searchTerm });
+          fetchMerchantInventory({ page, search: searchTerm, status: statusFilter, category: categoryFilter, sortBy, sortOrder, silent: true });
         } else {
           throw new Error(data.message || 'Failed to remove items');
         }
