@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import Layout from '../Components/Layout';
 import { ChevronLeft, ChevronRight, Eye, Plus, Minus } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -9,7 +10,8 @@ Modal.setAppElement('#root');
 const PAGE_SIZE = 20;
 
 const Darkstore = () => {
-  const [isAddMode, setIsAddMode] = useState(false);
+  const location = useLocation();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [products, setProducts] = useState([]);
   const [darkstoreProducts, setDarkstoreProducts] = useState([]);
@@ -46,9 +48,46 @@ const Darkstore = () => {
   const [imageViewerVisible, setImageViewerVisible] = useState(false);
   const [selectedImageUrl, setSelectedImageUrl] = useState(null);
 
+  // Bulk selection states
+  const [selectedProducts, setSelectedProducts] = useState([]);
+
+  // Quantity changes state
+  const [quantityChanges, setQuantityChanges] = useState({});
+
+  const isAddMode = location.pathname.endsWith('/add');
+
+  const darkstoreLookup = useMemo(() => {
+    const idSet = new Set();
+    const nameSet = new Set();
+
+    darkstoreProducts.forEach(product => {
+      if (product.productId) {
+        idSet.add(product.productId.toString());
+      }
+      if (product.name) {
+        nameSet.add(product.name.toLowerCase());
+      }
+    });
+
+    return { idSet, nameSet };
+  }, [darkstoreProducts]);
+
+  const isProductAlreadyInDarkstore = useCallback((product) => {
+    if (!product) return false;
+
+    const productId = product._id?.toString();
+    if (productId && darkstoreLookup.idSet.has(productId)) {
+      return true;
+    }
+
+    const productName = product.name?.toLowerCase();
+    return productName ? darkstoreLookup.nameSet.has(productName) : false;
+  }, [darkstoreLookup]);
+
   const fetchDarkstoreProducts = useCallback(async (pageNum = 1, search = '') => {
     setLoading(true);
     setError('');
+    setSelectedProducts([]);
     try {
       const query = new URLSearchParams();
       query.append('page', pageNum);
@@ -84,6 +123,11 @@ const Darkstore = () => {
       }
 
       setDarkstoreProducts(data.products || []);
+      const changes = {};
+      (data.products || []).forEach(product => {
+        changes[product._id] = product.quantity;
+      });
+      setQuantityChanges(changes);
       setDarkstoreTotalPages(data.totalPages || 1);
       setDarkstoreTotalProducts(data.total || 0);
       setDarkstorePage(pageNum);
@@ -183,17 +227,18 @@ const Darkstore = () => {
   }, [page, searchTerm, filters]);
 
   const handleEnterAddMode = () => {
-    setIsAddMode(true);
     setPage(1); // Reset to first page when opening
     fetchProducts(1);
+    navigate('/darkstore/add');
   };
 
   const handleExitAddMode = () => {
-    setIsAddMode(false);
     setCart([]); // Clear cart when exiting
     setDarkstorePage(1); // Reset to first page when returning to darkstore
     setDarkstoreSearchTerm(''); // Clear search when returning to darkstore
+    setSelectedProducts([]); // Clear selected products
     fetchDarkstoreProducts(1);
+    navigate('/darkstore');
   };
 
   const handlePageChange = (newPage) => {
@@ -253,6 +298,47 @@ const Darkstore = () => {
     setSelectedImageUrl(null);
   };
 
+  // Bulk selection handlers
+  const handleSelectProduct = (productId) => {
+    setSelectedProducts(prev => 
+      prev.includes(productId) ? prev.filter(id => id !== productId) : [...prev, productId]
+    );
+  };
+
+  const handleSelectAll = () => {
+    if (selectedProducts.length === darkstoreProducts.length) {
+      setSelectedProducts([]);
+    } else {
+      setSelectedProducts(darkstoreProducts.map(p => p._id));
+    }
+  };
+
+  const handleBulkRemove = async () => {
+    if (selectedProducts.length === 0) return;
+    const productNames = darkstoreProducts.filter(p => selectedProducts.includes(p._id)).map(p => p.name).join(', ');
+    if (!window.confirm(`Are you sure you want to remove the following products: ${productNames}?`)) {
+      return;
+    }
+
+    try {
+      for (const productId of selectedProducts) {
+        const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/darkstore/${productId}`, {
+          method: 'DELETE',
+          credentials: 'include',
+        });
+        if (!response.ok) {
+          throw new Error(`Failed to remove product ${productId}`);
+        }
+      }
+      toast.success('Selected products removed from darkstore successfully');
+      setSelectedProducts([]);
+      fetchDarkstoreProducts(darkstorePage);
+    } catch (err) {
+      console.error('Bulk remove error:', err);
+      toast.error(err.message || 'Failed to remove selected products');
+    }
+  };
+
   // Remove product from darkstore
   const removeFromDarkstore = async (productId, productName) => {
     if (!window.confirm(`Are you sure you want to remove "${productName}" from the darkstore?`)) {
@@ -283,8 +369,7 @@ const Darkstore = () => {
   // Update product quantity in darkstore
   const updateQuantity = async (productId, newQuantity) => {
     if (newQuantity < 0) {
-      toast.error('Quantity cannot be negative');
-      return;
+      throw new Error('Quantity cannot be negative');
     }
 
     try {
@@ -302,17 +387,17 @@ const Darkstore = () => {
       }
 
       const data = await response.json();
-      toast.success('Quantity updated successfully');
-      
-      // Refresh the darkstore products list
-      fetchDarkstoreProducts(darkstorePage);
     } catch (err) {
       console.error('Update quantity error:', err);
-      toast.error(err.message || 'Failed to update quantity');
+      throw err;
     }
   };
 
   const addToCart = (product) => {
+    if (isProductAlreadyInDarkstore(product)) {
+      toast.error('Product has already been added to darkstore');
+      return;
+    }
     const existingProduct = cart.find(item => item._id === product._id);
     if (existingProduct) {
       toast.error('Product already added to cart');
@@ -388,14 +473,18 @@ const Darkstore = () => {
                     Search
                   </button>
                   <button
-                    onClick={() => fetchProducts(1)}
+                    onClick={() => {
+                      setSearchTerm('');
+                      setFilters({ category: '', sort: 'name_asc' });
+                      fetchProducts(1);
+                    }}
                     className="hidden sm:inline-flex items-center gap-2 bg-green-100 text-neutral-800 px-3 py-2 rounded border border-neutral-300 hover:bg-neutral-200"
                     disabled={loading}
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9M20 20v-5h-.581m-15.357-2a8.003 8.003 0 0015.357 2" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                     </svg>
-                    Refresh
+                    Clear
                   </button>
                 </div>
                 <div className="flex items-center gap-4">
@@ -439,62 +528,79 @@ const Darkstore = () => {
               )}
 
               <div className="mt-4 border border-neutral-200 rounded-lg divide-y divide-neutral-200 max-h-[550px] overflow-y-auto">
+                {!loading && filteredProducts.length > 0 && (
+                  <div className="flex items-center gap-4 px-4 py-3 bg-gray-50 border-b border-neutral-200 font-medium text-sm">
+                    <span className="flex-1">Product</span>
+                    <span className="min-w-[100px] text-right">Price</span>
+                    <span className="min-w-[120px] text-center">Actions</span>
+                  </div>
+                )}
                 {loading ? (
                   <div className="flex items-center justify-center py-10 text-neutral-500">Loading products…</div>
                 ) : filteredProducts.length === 0 ? (
                   <div className="py-10 text-center text-neutral-500">No products found.</div>
                 ) : (
-                  filteredProducts.map(product => (
-                    <div key={product._id} className="flex items-center gap-4 px-4 py-3">
-                      <div className="flex items-center flex-1 min-w-0">
-                        {product.thumbnail && (
-                          <div className="flex-shrink-0 h-10 w-10 mr-3">
-                            <img
-                              className="h-10 w-10 rounded cursor-pointer hover:opacity-80 transition-opacity"
-                              src={product.thumbnail}
-                              alt={product.name}
-                            />
-                          </div>
-                        )}
-                        <div className="min-w-0 flex-1">
-                          <div className="font-semibold text-neutral-900 truncate">{product.name}</div>
-                          <div className="text-sm text-neutral-600 truncate">
-                            {product.brand ? `${product.brand} • ` : ''}{product.category?.name || 'Uncategorized'}
+                  filteredProducts.map(product => {
+                    const alreadyInDarkstore = isProductAlreadyInDarkstore(product);
+                    return (
+                      <div key={product._id} className="flex items-center gap-4 px-4 py-3">
+                        <div className="flex items-center flex-1 min-w-0">
+                          {product.thumbnail && (
+                            <div className="flex-shrink-0 h-10 w-10 mr-3">
+                              <img
+                                className="h-10 w-10 rounded cursor-pointer hover:opacity-80 transition-opacity"
+                                src={product.thumbnail}
+                                alt={product.name}
+                              />
+                            </div>
+                          )}
+                          <div className="min-w-0 flex-1">
+                            <div className="font-semibold text-neutral-900 truncate">{product.name}</div>
+                            <div className="text-sm text-neutral-600 truncate">
+                              {product.brand ? `${product.brand} • ` : ''}{product.category?.name || 'Uncategorized'}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                      <div className="text-sm text-neutral-600 whitespace-nowrap">
-                        {product.pricing?.mrp ? `₹${product.pricing.mrp}` : 'No price'}
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => openViewModal(product)}
-                          className="text-blue-600 hover:text-blue-900 p-1"
-                          title="View Details"
-                        >
-                          <Eye size={16} />
-                        </button>
-                        {cart.some(item => item._id === product._id) ? (
-                          <div className="flex items-center justify-center px-3 py-1 bg-green-100 text-green-800 rounded text-sm font-medium border border-green-200">
-                            <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                            </svg>
-                            Added
-                          </div>
-                        ) : (
-                          <button 
-                            onClick={() => addToCart(product)}
-                            className="flex items-center justify-center px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600 transition-colors text-sm font-medium"
+                        <div className="text-sm text-neutral-600 whitespace-nowrap text-right min-w-[100px]">
+                          {product.pricing?.mrp ? `₹${product.pricing.mrp}` : 'No price'}
+                        </div>
+                        <div className="flex items-center justify-center gap-2 min-w-[120px]">
+                          <button
+                            onClick={() => openViewModal(product)}
+                            className="text-blue-600 hover:text-blue-900 p-1"
+                            title="View Details"
                           >
-                            <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                            </svg>
-                            Add
+                            <Eye size={16} />
                           </button>
-                        )}
+                          {alreadyInDarkstore ? (
+                            <div className="flex items-center justify-center px-3 py-1 bg-amber-100 text-amber-800 rounded text-sm font-medium border border-amber-200">
+                              <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                              </svg>
+                              In Darkstore
+                            </div>
+                          ) : cart.some(item => item._id === product._id) ? (
+                            <div className="flex items-center justify-center px-3 py-1 bg-green-100 text-green-800 rounded text-sm font-medium border border-green-200">
+                              <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                              </svg>
+                              Added
+                            </div>
+                          ) : (
+                            <button 
+                              onClick={() => addToCart(product)}
+                              className="flex items-center justify-center px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600 transition-colors text-sm font-medium"
+                            >
+                              <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                              </svg>
+                              Add
+                            </button>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  ))
+                    );
+                  })
                 )}
               </div>
 
@@ -552,6 +658,7 @@ const Darkstore = () => {
                   <button
                     onClick={() => {
                       setDarkstoreSearchTerm('');
+                      setDarkstoreFilters({ category: '', sort: 'name_asc' });
                       fetchDarkstoreProducts(1);
                     }}
                     className="hidden sm:inline-flex items-center gap-2 bg-green-100 text-neutral-800 px-3 py-2 rounded border border-neutral-300 hover:bg-neutral-200"
@@ -597,6 +704,20 @@ const Darkstore = () => {
                 </div>
               </div>
 
+              {selectedProducts.length > 0 && (
+                <div className="flex items-center gap-4 mt-4">
+                  <button
+                    onClick={handleBulkRemove}
+                    className="bg-red-500 text-white px-4 py-2 rounded flex items-center"
+                  >
+                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                    Remove Selected ({selectedProducts.length})
+                  </button>
+                </div>
+              )}
+
               {error && (
                 <div className="mt-3 rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
                   {error}
@@ -604,6 +725,24 @@ const Darkstore = () => {
               )}
 
               <div className="mt-4 border border-neutral-200 rounded-lg divide-y divide-neutral-200 max-h-[550px] overflow-y-auto">
+                {!loading && darkstoreProducts.length > 0 && (
+                  <div className="flex items-center gap-4 px-4 py-3 bg-gray-50 border-b border-neutral-200 font-medium text-sm">
+                    <input
+                      type="checkbox"
+                      checked={selectedProducts.length === darkstoreProducts.length && darkstoreProducts.length > 0}
+                      onChange={handleSelectAll}
+                      className="w-4 h-4"
+                    />
+                    <span>Select All</span>
+                    <span className="flex-1">Product</span>
+                    <div className="min-w-[140px] flex items-center gap-2">
+                      <span>Quantity</span>
+                    </div>
+                    <span className="min-w-[70px] text-right">Price</span>
+                    <span className="min-w-[80px] text-center">Weight</span>
+                    <span className="min-w-[120px] text-center">Actions</span>
+                  </div>
+                )}
                 {loading ? (
                   <div className="flex items-center justify-center py-10 text-neutral-500">Loading darkstore products…</div>
                 ) : darkstoreProducts.length === 0 ? (
@@ -611,6 +750,12 @@ const Darkstore = () => {
                 ) : (
                   darkstoreProducts.map(product => (
                     <div key={product._id} className="flex items-center gap-4 px-4 py-3">
+                      <input
+                        type="checkbox"
+                        checked={selectedProducts.includes(product._id)}
+                        onChange={() => handleSelectProduct(product._id)}
+                        className="w-4 h-4"
+                      />
                       <div className="flex items-center flex-1 min-w-0">
                         {product.thumbnail && (
                           <div className="flex-shrink-0 h-10 w-10 mr-3">
@@ -629,35 +774,61 @@ const Darkstore = () => {
                           </div>
                         </div>
                       </div>
-                      <div className="flex items-center justify-center gap-2 min-w-[100px]">
+                      <div className="flex items-center justify-center gap-2 min-w-[140px]">
                         <span className="text-xs text-neutral-500 font-medium">Qty:</span>
                         <div className="flex items-center border border-blue-200 rounded-md overflow-hidden">
                           <button
-                            onClick={() => updateQuantity(product._id, product.quantity - 1)}
+                            onClick={() => setQuantityChanges(prev => ({ ...prev, [product._id]: Math.max(0, (prev[product._id] !== undefined ? prev[product._id] : product.quantity) - 1) }))}
                             className="w-7 h-7 flex items-center justify-center text-blue-600 hover:text-blue-900 hover:bg-blue-50 border-r border-blue-200"
                             title="Decrease quantity"
                           >
                             <Minus size={12} />
                           </button>
                           <span className="px-2 py-1 text-sm text-neutral-700 font-medium min-w-[30px] text-center bg-white">
-                            {product.quantity}
+                            {quantityChanges[product._id] !== undefined ? quantityChanges[product._id] : product.quantity}
                           </span>
                           <button
-                            onClick={() => updateQuantity(product._id, product.quantity + 1)}
+                            onClick={() => setQuantityChanges(prev => ({ ...prev, [product._id]: (prev[product._id] !== undefined ? prev[product._id] : product.quantity) + 1 }))}
                             className="w-7 h-7 flex items-center justify-center text-blue-600 hover:text-blue-900 hover:bg-blue-50 border-l border-blue-200"
                             title="Increase quantity"
                           >
                             <Plus size={12} />
                           </button>
                         </div>
+                        {quantityChanges[product._id] !== product.quantity && (
+                          <button
+                            onClick={async () => {
+                              const newQty = quantityChanges[product._id] !== undefined ? quantityChanges[product._id] : product.quantity;
+                              if (newQty === product.quantity) {
+                                toast.info('No changes to update');
+                                return;
+                              }
+                              try {
+                                await updateQuantity(product._id, newQty);
+                                toast.success('Quantity updated successfully');
+                                // Update the local state
+                                setQuantityChanges(prev => ({ ...prev, [product._id]: newQty }));
+                                fetchDarkstoreProducts(darkstorePage);
+                              } catch (err) {
+                                toast.error('Failed to update quantity');
+                              }
+                            }}
+                            className="bg-green-500 text-white px-2 py-1 rounded text-xs flex items-center hover:bg-green-600 ml-1"
+                            title="Update Quantity"
+                          >
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                            </svg>
+                          </button>
+                        )}
+                      </div>
+                      <div className="text-sm text-neutral-600 whitespace-nowrap text-right min-w-[70px]">
+                        ₹{product.price}
                       </div>
                       <div className="text-sm text-neutral-600 whitespace-nowrap text-center min-w-[80px]">
                         {product.weightDimension?.value && product.weightDimension?.unit
                           ? `${product.weightDimension.value}${product.weightDimension.unit}`
                           : 'N/A'}
-                      </div>
-                      <div className="text-sm text-neutral-600 whitespace-nowrap text-right min-w-[70px]">
-                        ₹{product.price}
                       </div>
                       <div className="flex items-center justify-center gap-2 min-w-[120px]">
                         <button
@@ -830,12 +1001,15 @@ const Darkstore = () => {
                       headers: { 'Content-Type': 'application/json' },
                       body: JSON.stringify({ seller: seller.trim(), products })
                     });
-                    if (!response.ok) throw new Error('Failed to add to darkstore');
-                    toast.success('Products added to darkstore successfully!');
+                    const data = await response.json().catch(() => ({}));
+                    if (!response.ok) {
+                      throw new Error(data.message || 'Failed to add to darkstore');
+                    }
+                    toast.success(data.message || 'Products added to darkstore successfully!');
                     setCart([]);
                     setSeller('');
-                    setIsAddMode(false);
-                    fetchDarkstoreProducts(); // Refresh darkstore products
+                    await fetchDarkstoreProducts(); // Refresh darkstore products
+                    navigate('/darkstore');
                   } catch (err) {
                     toast.error(err.message || 'Error adding to darkstore');
                   }
@@ -934,6 +1108,10 @@ const Darkstore = () => {
                     <div>
                       <label className="block text-sm font-medium text-gray-600">Darkstore Price</label>
                       <p className="text-sm text-gray-900 mt-1">₹{viewProduct.price || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-600">Seller</label>
+                      <p className="text-sm text-gray-900 mt-1">{viewProduct.seller || 'N/A'}</p>
                     </div>
                   </div>
                 </div>

@@ -118,6 +118,7 @@ function App() {
           <Route path="/merchants/:id/inventory/add" element={<AddMerchantInventory />} />
           <Route path="/eateries" element={<Eateries />} />
           <Route path="/darkstore" element={<Darkstore />} />
+          <Route path="/darkstore/add" element={<Darkstore />} />
           
           {/* Support Management */}
           <Route path="/support" element={<Support />} />

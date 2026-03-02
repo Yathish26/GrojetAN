@@ -2,6 +2,7 @@ import { useRef, useState, useEffect } from 'react';
 
 const ChipInput = ({ label, values, setValues, disabled, placeholder, maxTags }) => {
   const [input, setInput] = useState('');
+  const [draggedIdx, setDraggedIdx] = useState(null);
   const inputRef = useRef(null);
 
   useEffect(() => {
@@ -64,6 +65,28 @@ const ChipInput = ({ label, values, setValues, disabled, placeholder, maxTags })
     setValues(values.filter((_, i) => i !== idx));
   };
 
+  const handleDragStart = (e, idx) => {
+    setDraggedIdx(idx);
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+  };
+
+  const handleDrop = (e, dropIdx) => {
+    e.preventDefault();
+    if (draggedIdx === null || draggedIdx === dropIdx) return;
+    const newValues = [...values];
+    const [draggedItem] = newValues.splice(draggedIdx, 1);
+    newValues.splice(dropIdx, 0, draggedItem);
+    setValues(newValues);
+    setDraggedIdx(null);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedIdx(null);
+  };
+
   return (
     <div className="mb-4">
       <label className="block text-gray-700 text-sm font-medium mb-1">{label}</label>
@@ -71,7 +94,12 @@ const ChipInput = ({ label, values, setValues, disabled, placeholder, maxTags })
         {values.map((val, idx) => (
           <span
             key={idx}
-            className="bg-green-100 text-green-800 px-2 py-1 rounded-md flex items-center"
+            draggable={!disabled}
+            onDragStart={(e) => handleDragStart(e, idx)}
+            onDragOver={handleDragOver}
+            onDrop={(e) => handleDrop(e, idx)}
+            onDragEnd={handleDragEnd}
+            className={`bg-green-100 text-green-800 px-2 py-1 rounded-md flex items-center cursor-move ${draggedIdx === idx ? 'opacity-50' : ''}`}
           >
             {val}
             <button
