@@ -68,6 +68,7 @@ export default function Analytics() {
   const [checkingUser, setCheckingUser] = useState(true);
   const [redirecting, setRedirecting] = useState(false);
   const allowedRoles = ['super_admin', 'admin'];
+  const [productsAddedData, setProductsAddedData] = useState([]);
 
   const fetchCurrentUser = useCallback(async () => {
     try {
@@ -178,11 +179,29 @@ export default function Analytics() {
         return;
       }
 
-      if (dashboardData.success && dashboardData.data) {
+      if (dashboardData.success && dashboardData.data && typeof dashboardData.data === 'object') {
         setMetrics(dashboardData.data);
       } else {
         // Fallback to calculated metrics if dashboard endpoint fails
         calculateFallbackMetrics(analyticsData);
+      }
+
+      // Fetch products added data
+      const productsResponse = await fetch(
+        `${import.meta.env.VITE_SERVER}/admin/analytics/products-added?period=${timeRange}`,
+        { credentials: 'include' }
+      );
+
+      if (productsResponse.ok) {
+        const productsData = await productsResponse.json();
+        if (productsData.tokenValid === false) {
+          navigate('/login', { replace: true });
+          return;
+        }
+        setProductsAddedData(productsData.productsAdded || []);
+      } else {
+        console.warn('Failed to fetch products added data');
+        setProductsAddedData([]);
       }
 
     } catch (error) {
@@ -456,6 +475,35 @@ export default function Analytics() {
     }
   };
 
+  // Bar chart for products added per day
+  const productsAddedLabels = productsAddedData.map((point) =>
+    formatDate(point._id.year, point._id.month, point._id.day)
+  );
+  const productsAddedCounts = productsAddedData.map((point) => point.count || 0);
+
+  const productsAddedBarData = {
+    labels: productsAddedLabels,
+    datasets: [
+      {
+        label: 'Products Added',
+        data: productsAddedCounts,
+        backgroundColor: 'rgba(34,197,94,0.6)',
+        borderColor: 'rgba(34,197,94,1)',
+        borderWidth: 1
+      }
+    ]
+  };
+
+  const productsAddedBarOptions = {
+    responsive: true,
+    plugins: {
+      legend: { display: false }
+    },
+    scales: {
+      y: { beginAtZero: true, title: { display: true, text: 'Products Added' } }
+    }
+  };
+
   if (loading) {
     return (
       <Layout title="Analytics">
@@ -486,18 +534,18 @@ export default function Analytics() {
 
   return (
     <Layout title="Analytics">
-      <div className="max-w-7xl mx-auto p-6 space-y-6">
+      <div className="max-w-7xl mx-auto px-3 py-4 sm:p-6 space-y-4 sm:space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-gray-800">Analytics Dashboard</h1>
             <p className="text-gray-600">Comprehensive insights into your grocery delivery business</p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 w-full sm:w-auto">
             <select
               value={timeRange}
               onChange={(e) => setTimeRange(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 w-full sm:w-auto"
             >
               <option value="today">Today</option>
               <option value="7d">Last 7 Days</option>
@@ -505,65 +553,63 @@ export default function Analytics() {
               <option value="90d">Last 3 Months</option>
               <option value="1y">Last Year</option>
             </select>
-            <button
-              onClick={refreshAnalytics}
-              disabled={refreshing}
-              type="button"
-              className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
-            >
-              <RefreshCw className={`w-5 h-5 ${refreshing ? 'animate-spin' : ''}`} />
-            </button>
-            <button
-              onClick={exportAnalytics}
-              type="button"
-              className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-            >
-              <Download className="w-4 h-4" />
-              Export
-            </button>
-            {currentUser?.role === 'super_admin' && (
+            <div className="grid grid-cols-3 sm:flex gap-2 sm:gap-3 w-full sm:w-auto">
               <button
-                onClick={sendDailyReport}
-                disabled={sendingReport}
+                onClick={refreshAnalytics}
+                disabled={refreshing}
                 type="button"
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+                className="inline-flex items-center justify-center p-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
               >
-                <Mail className="w-4 h-4" />
-                {sendingReport ? 'Sending...' : 'Send Report'}
+                <RefreshCw className={`w-5 h-5 ${refreshing ? 'animate-spin' : ''}`} />
               </button>
-            )}
+              <button
+                onClick={exportAnalytics}
+                type="button"
+                className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+              >
+                <Download className="w-4 h-4" />
+                Export
+              </button>
+              {currentUser?.role === 'super_admin' && (
+                <button
+                  onClick={sendDailyReport}
+                  disabled={sendingReport}
+                  type="button"
+                  className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+                >
+                  <Mail className="w-4 h-4" />
+                  {sendingReport ? 'Sending...' : 'Send Report'}
+                </button>
+              )}
+            </div>
           </div>
         </div>
 
-        {/* Key Metrics */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-bold text-gray-600 uppercase">Merchant Orders</p>
                 <p className="text-2xl font-bold text-gray-800">{metrics.totalOrders}</p>
-      
+
               </div>
               <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
                 <ShoppingCart className="w-6 h-6 text-blue-600" />
               </div>
             </div>
           </div>
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-bold text-gray-600 uppercase">Xpress Orders</p>
                 <p className="text-2xl font-bold text-gray-800">{metrics.totalXpressOrders}</p>
-                <div className="flex items-center gap-1 mt-1">
-
-                </div>
               </div>
               <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
                 <Package className="w-6 h-6 text-red-600" />
               </div>
             </div>
           </div>
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6 sm:col-span-2 lg:col-span-1">
             <div className="flex items-center justify-between">
               <div className="flex-1">
                 <p className="text-sm font-bold text-gray-600 uppercase">TODAY'S ORDERS</p>
@@ -592,14 +638,14 @@ export default function Analytics() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Order Trends with Chart */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-            <div className="p-6 border-b border-gray-200">
+            <div className="p-4 sm:p-6 border-b border-gray-200">
               <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
                 <TrendingUp className="w-5 h-5" />
                 Order Trends
               </h2>
               <p className="text-sm text-gray-600 mt-1">Merchant Orders (Green), Xpress Orders (Red)</p>
             </div>
-            <div className="p-6">
+            <div className="p-4 sm:p-6">
               {analytics.length > 0 ? (
                 <Line data={ordersLineData} options={ordersLineOptions} height={230} />
               ) : (
@@ -618,6 +664,26 @@ export default function Analytics() {
                   <p className="text-sm text-gray-600">Pending</p>
                 </div>
               </div>
+            </div>
+          </div>
+
+          {/* Products Added Over Time */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+            <div className="p-4 sm:p-6 border-b border-gray-200">
+              <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                <Package className="w-5 h-5" />
+                Products Added Over Time
+              </h2>
+              <p className="text-sm text-gray-600 mt-1">Daily count of new products added</p>
+            </div>
+            <div className="p-4 sm:p-6">
+              {productsAddedData.length > 0 ? (
+                <Bar data={productsAddedBarData} options={productsAddedBarOptions} height={230} />
+              ) : (
+                <div className="h-52 flex items-center justify-center text-gray-400">
+                  No data available.
+                </div>
+              )}
             </div>
           </div>
         </div>

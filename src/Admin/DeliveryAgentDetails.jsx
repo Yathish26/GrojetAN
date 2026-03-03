@@ -62,7 +62,7 @@ export default function DeliveryAgentDetails() {
   const [currentUser, setCurrentUser] = useState(null);
   const [mapCenter, setMapCenter] = useState(null);
   const [checkingUser, setCheckingUser] = useState(true);
-  const allowedRoles = ['super_admin', 'admin'];
+  const allowedRoles = ['super_admin', 'admin','delivery_manager'];
   const [availableZones, setAvailableZones] = useState([]);
   const [zonesLoading, setZonesLoading] = useState(true);
   const [zoneNames, setZoneNames] = useState({});

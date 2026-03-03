@@ -78,7 +78,7 @@ export default function DeliveryAgentSignup() {
     agreedToPrivacy: false
   });
 
-  const allowedRoles = ['super_admin', 'admin'];
+  const allowedRoles = ['super_admin', 'admin','delivery_manager'];
 
   useEffect(() => {
     const fetchCurrentUser = async () => {

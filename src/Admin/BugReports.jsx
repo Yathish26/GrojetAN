@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { FiSearch, FiChevronLeft, FiChevronRight, FiEye, FiEdit, FiTrash2 } from 'react-icons/fi';
+import { FiChevronLeft, FiChevronRight, FiTrash2 } from 'react-icons/fi';
 import { Bug, AlertTriangle, CheckCircle, Clock, XCircle, Search, Filter, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
@@ -264,13 +264,13 @@ export default function BugReports() {
   return (
     <Layout>
       <div className="min-h-screen bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-6 sm:py-8">
           {/* Header */}
           <div className="mb-8">
             <div className="flex items-center justify-between">
-              <div className="hidden md:flex items-center space-x-4">
+              <div className="flex items-center space-x-4">
                 <div>
-                  <h1 className="text-3xl font-bold text-gray-900">Bug Reports</h1>
+                  <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Bug Reports</h1>
                   <p className="mt-1 text-sm text-gray-500">Manage and monitor bug reports from users</p>
                 </div>
               </div>
@@ -279,9 +279,9 @@ export default function BugReports() {
 
         {/* Stats Cards */}
         {stats && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
             <div className="bg-white shadow-lg rounded-lg overflow-hidden">
-              <div className="bg-gray-600 px-6 py-4">
+              <div className="bg-gray-600 px-4 sm:px-6 py-4">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-blue-100 uppercase tracking-wide">Total Reports</p>
@@ -292,7 +292,7 @@ export default function BugReports() {
               </div>
             </div>
             <div className="bg-white shadow-lg rounded-lg overflow-hidden">
-              <div className="bg-gray-600 px-6 py-4">
+              <div className="bg-gray-600 px-4 sm:px-6 py-4">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-blue-100 uppercase tracking-wide">Pending</p>
@@ -303,7 +303,7 @@ export default function BugReports() {
               </div>
             </div>
             <div className="bg-white shadow-lg rounded-lg overflow-hidden">
-              <div className="bg-gray-600 px-6 py-4">
+              <div className="bg-gray-600 px-4 sm:px-6 py-4">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-blue-100 uppercase tracking-wide">Resolved</p>
@@ -314,7 +314,7 @@ export default function BugReports() {
               </div>
             </div>
             <div className="bg-white shadow-lg rounded-lg overflow-hidden">
-              <div className="bg-gray-600 px-6 py-4">
+              <div className="bg-gray-600 px-4 sm:px-6 py-4">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-blue-100 uppercase tracking-wide">Recent (7 days)</p>
@@ -338,8 +338,8 @@ export default function BugReports() {
           <div className="p-6">
             {/* Search Bar */}
             <div className="mb-6">
-              <div className="flex gap-4">
-                <div className="flex-1 max-w-lg">
+              <div className="flex flex-col sm:flex-row gap-4">
+                <div className="flex-1 sm:max-w-lg">
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                       <Search className="h-5 w-5 text-gray-400" />
@@ -356,7 +356,7 @@ export default function BugReports() {
                 </div>
                 <button
                   onClick={fetchBugReports}
-                  className="inline-flex items-center px-6 py-3 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+                  className="inline-flex justify-center items-center px-6 py-3 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors w-full sm:w-auto"
                 >
                   <Search className="w-4 h-4 mr-2" />
                   Search
@@ -365,16 +365,16 @@ export default function BugReports() {
             </div>
 
             {/* Filters */}
-            <div className="flex flex-wrap items-center gap-4">
+            <div className="flex flex-col sm:flex-row sm:flex-wrap items-start sm:items-center gap-4">
               <div className="flex items-center gap-2">
                 <Filter className="h-5 w-5 text-gray-500" />
                 <span className="text-sm font-medium text-gray-700">Filters:</span>
               </div>
 
               {/* Status Filter */}
-              <div className="flex items-center gap-2">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full sm:w-auto">
                 <span className="text-sm text-gray-600">Status:</span>
-                <div className="flex rounded-lg border border-gray-300 overflow-hidden">
+                <div className="flex rounded-lg border border-gray-300 overflow-hidden w-full sm:w-auto">
                   {[
                     { key: 'all', label: 'All Status', color: 'bg-gray-100 text-gray-700 hover:bg-gray-200' },
                     { key: 'pending', label: 'Pending', color: 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200' },
@@ -397,9 +397,9 @@ export default function BugReports() {
               </div>
 
               {/* Priority Filter */}
-              <div className="flex items-center gap-2">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full sm:w-auto">
                 <span className="text-sm text-gray-600">Priority:</span>
-                <div className="flex rounded-lg border border-gray-300 overflow-hidden">
+                <div className="flex rounded-lg border border-gray-300 overflow-hidden w-full sm:w-auto">
                   {[
                     { key: 'all', label: 'All Priority', color: 'bg-gray-100 text-gray-700 hover:bg-gray-200' },
                     { key: 'low', label: 'Low', color: 'bg-green-100 text-green-700 hover:bg-green-200' },
@@ -430,7 +430,7 @@ export default function BugReports() {
                     setSearchTerm('');
                     fetchBugReports();
                   }}
-                  className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                  className="inline-flex items-center justify-center px-3 py-1.5 text-sm font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors w-full sm:w-auto"
                 >
                   <X className="w-4 h-4 mr-1" />
                   Clear Filters
@@ -461,7 +461,7 @@ export default function BugReports() {
             </div>
           ) : (
             <>
-              <div className="overflow-x-auto">
+              <div className="hidden md:block overflow-x-auto">
                 <table className="w-full">
                   <thead className="bg-gray-50">
                     <tr>
@@ -581,7 +581,7 @@ export default function BugReports() {
               </div>
 
               {/* Mobile Card View */}
-              <div className="md:hidden p-6">
+              <div className="md:hidden p-3 sm:p-4">
                 {bugReports.length === 0 ? (
                   <div className="text-center py-12">
                     <Bug className="w-16 h-16 text-gray-300 mx-auto mb-4" />
@@ -592,19 +592,19 @@ export default function BugReports() {
                   <div className="space-y-4">
                     {bugReports.map((report) => (
                       <div key={report._id} className="bg-gray-50 rounded-lg p-4 hover:bg-gray-100 transition-colors border border-gray-200">
-                        <div className="flex items-start gap-4">
-                          <div className="w-14 h-14 bg-red-100 flex items-center justify-center overflow-hidden flex-shrink-0 rounded-lg">
+                        <div className="flex items-start gap-3">
+                          <div className="w-12 h-12 bg-red-100 flex items-center justify-center overflow-hidden flex-shrink-0 rounded-lg">
                             <Bug className="w-7 h-7 text-red-600" />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-start justify-between mb-2">
+                            <div className="mb-2">
                               <div className="flex-1 min-w-0">
                                 <h3 className="text-base font-semibold text-gray-900 truncate">
                                   {report.title}
                                 </h3>
                                 <p className="text-sm text-gray-500">{report.user?.personalInfo?.name || 'Unknown User'}</p>
                               </div>
-                              <div className="flex gap-2 flex-shrink-0">
+                              <div className="flex flex-wrap gap-2 mt-2">
                                 <span className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${getStatusColor(report.status)}`}>
                                   {getStatusIcon(report.status)} {report.status.replace('_', ' ')}
                                 </span>
@@ -623,13 +623,13 @@ export default function BugReports() {
                               </div>
                             </div>
 
-                            <div className="flex items-center justify-between pt-2 border-t border-gray-200">
-                              <div className="text-sm text-gray-600">
+                            <div className="pt-2 border-t border-gray-200">
+                              <div className="text-sm text-gray-600 mb-3">
                                 {report.description.length > 100 ? `${report.description.substring(0, 100)}...` : report.description}
                               </div>
-                              <div className="flex items-center gap-2">
+                              <div className="flex flex-col gap-2">
                                 <select
-                                  className="text-xs border border-gray-300 rounded px-2 py-1"
+                                  className="text-xs border border-gray-300 rounded px-2 py-2 w-full"
                                   value={report.status}
                                   onChange={(e) => {
                                     e.stopPropagation();
@@ -642,7 +642,7 @@ export default function BugReports() {
                                   <option value="dismissed">Dismissed</option>
                                 </select>
                                 <select
-                                  className="text-xs border border-gray-300 rounded px-2 py-1"
+                                  className="text-xs border border-gray-300 rounded px-2 py-2 w-full"
                                   value={report.priority}
                                   onChange={(e) => {
                                     e.stopPropagation();
@@ -659,7 +659,7 @@ export default function BugReports() {
                                     e.stopPropagation();
                                     deleteBugReport(report._id);
                                   }}
-                                  className="text-red-600 hover:text-red-900 p-1"
+                                  className="inline-flex items-center justify-center text-red-600 hover:text-red-900 border border-red-200 rounded px-2 py-2"
                                 >
                                   <FiTrash2 size={16} />
                                 </button>

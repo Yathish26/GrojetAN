@@ -301,7 +301,7 @@ export default function DeliveryZones() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
   const [checkingUser, setCheckingUser] = useState(true);
-  const allowedRoles = ['super_admin', 'admin'];
+  const allowedRoles = ['super_admin', 'admin', 'delivery_manager'];
   const [editForm, setEditForm] = useState(null);
   const [editCoordinates, setEditCoordinates] = useState([]);
   const [editZoneStats, setEditZoneStats] = useState(null);
@@ -664,7 +664,7 @@ export default function DeliveryZones() {
       <div className="flex flex-col items-center justify-center min-h-screen">
         <Ban className='w-16 h-16 text-red-500 mb-2'/>
         <h2 className="text-xl font-semibold text-gray-800 mb-2">Access Denied</h2>
-        <p className="text-gray-600">Only Admins and Super Admins can view delivery zones.</p>
+        <p className="text-gray-600">Only Delivery Managers, Admins, and Super Admins can view delivery zones.</p>
       </div>
     );
   }

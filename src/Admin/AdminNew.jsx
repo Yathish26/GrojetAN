@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../Components/Layout';
 import {
@@ -16,7 +16,70 @@ export default function Admin() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [redirecting, setRedirecting] = useState(false);
+    const [currentUser, setCurrentUser] = useState(null);
+    const [checkingUser, setCheckingUser] = useState(true);
     const navigate = useNavigate();
+
+    const getCachedAdmin = () => {
+        try {
+            const stored = localStorage.getItem('adminUser');
+            return stored ? JSON.parse(stored) : null;
+        } catch (err) {
+            console.warn('Failed to read cached admin', err);
+            return null;
+        }
+    };
+
+    const cachedAdmin = getCachedAdmin();
+    const [userState, setUserState] = useState(() => cachedAdmin);
+    const [userChecking, setUserChecking] = useState(() => !cachedAdmin);
+
+    const fetchCurrentUser = useCallback(async () => {
+        try {
+            if (!userState) {
+                setUserChecking(true);
+            }
+            const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/auth/profile`, { credentials: 'include' });
+            if (response.status === 401) {
+                setRedirecting(true);
+                navigate('/login', { replace: true });
+                return;
+            }
+            const data = await response.json();
+            if (data.tokenValid === false) {
+                setRedirecting(true);
+                navigate('/login', { replace: true });
+                return;
+            }
+            if (response.ok && data.admin) {
+                setCurrentUser(data.admin);
+                setUserState(data.admin);
+                try {
+                    localStorage.setItem('adminUser', JSON.stringify(data.admin));
+                } catch (err) {
+                    console.warn('Failed to persist admin cache', err);
+                }
+            } else {
+                setRedirecting(true);
+                navigate('/login', { replace: true });
+                return;
+            }
+        } catch (err) {
+            console.error('Failed to fetch current user', err);
+            setRedirecting(true);
+            navigate('/login', { replace: true });
+        } finally {
+            setUserChecking(false);
+        }
+    }, [navigate, userState]);
+
+    useEffect(() => { fetchCurrentUser(); }, [fetchCurrentUser]);
+
+    // Role check: delivery_manager should not access dashboard
+    if (!userChecking && currentUser?.role === 'delivery_manager') {
+        navigate('/delivery-agents', { replace: true });
+        return null;
+    }
 
     useEffect(() => {
         const fetchDashboardData = async () => {
@@ -62,7 +125,7 @@ export default function Admin() {
 
     // Prevent blink: show spinner while loading, render nothing if redirecting
     if (redirecting) return null;
-    if (loading) {
+    if (loading || userChecking) {
         return (
             <div className="flex flex-col items-center gap-4 justify-center h-screen">
                 <LoaderSpinner />

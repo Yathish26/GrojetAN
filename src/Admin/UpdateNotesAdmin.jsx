@@ -81,6 +81,18 @@ export default function UpdateNotesAdmin() {
     fetchCurrentUser();
   }, [fetchCurrentUser]);
 
+  const isAuthorized = allowedRoles.includes(currentUser?.role);
+
+  useEffect(() => {
+    if (!currentUser) return;
+
+    if (isAuthorized) {
+      fetchUpdateNotes();
+    } else {
+      setLoading(false);
+    }
+  }, [currentUser, isAuthorized]);
+
   const fetchUpdateNotes = async () => {
     try {
       setLoading(true);
@@ -310,6 +322,8 @@ export default function UpdateNotesAdmin() {
     ? updateNotes
     : updateNotes.filter(note => note.app === filterApp);
 
+  if (redirecting) return null;
+
   if (checkingUser) {
     return (
       <Layout title="Update Notes">
@@ -327,6 +341,19 @@ export default function UpdateNotesAdmin() {
           <div className="text-center">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Unauthorized Access</h2>
             <p className="text-gray-600">You don't have permission to access this page.</p>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
+  if (!isAuthorized) {
+    return (
+      <Layout title="Update Notes">
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <div className="text-center">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">Access Denied</h2>
+            <p className="text-gray-600">Only Super Admins can manage update notes.</p>
           </div>
         </div>
       </Layout>

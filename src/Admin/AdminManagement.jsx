@@ -10,6 +10,7 @@ import {
   Search,
   Crown,
   UserPlus,
+  Truck,
   Settings,
   Filter,
   X
@@ -24,7 +25,8 @@ const ACTIONS = ['read', 'create', 'update', 'delete'];
 
 const roleHierarchy = {
   super_admin: 'Super Admin',
-  admin: 'Admin'
+  admin: 'Admin',
+  delivery_manager: 'Delivery Manager'
 };
 
 // Helper function to format date as DD/MM/YYYY
@@ -228,6 +230,8 @@ export default function AdminManagement() {
         return <Crown className="w-5 h-5 text-yellow-600" />;
       case 'admin':
         return <Shield className="w-5 h-5 text-blue-600" />;
+      case 'delivery_manager':
+        return <Truck className="w-5 h-5 text-orange-600" />;
       default:
         return <User className="w-5 h-5 text-gray-600" />;
     }
@@ -293,20 +297,20 @@ export default function AdminManagement() {
   return (
     <Layout title="Admin Management">
       <div className="min-h-screen bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-6 sm:py-8">
           {/* Header */}
           <div className="mb-8">
-            <div className="flex items-center justify-between">
-              <div className="hidden md:flex items-center space-x-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div className="flex items-center space-x-4">
                 <div>
-                  <h1 className="text-3xl font-bold text-gray-900">Admin Management</h1>
+                  <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Admin Management</h1>
                   <p className="mt-1 text-sm text-gray-500">Manage and monitor all admin accounts</p>
                 </div>
               </div>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-2 w-full sm:w-auto">
                 <button
                   onClick={() => navigate('/admin-register')}
-                  className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
+                  className="inline-flex justify-center items-center px-3 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors w-full sm:w-auto"
                 >
                   <UserPlus className="w-4 h-4 mr-2" />
                   Register New Admin
@@ -326,8 +330,8 @@ export default function AdminManagement() {
           <div className="p-6">
             {/* Search Bar */}
             <div className="mb-6">
-              <div className="flex gap-4">
-                <div className="flex-1 max-w-lg">
+              <div className="flex flex-col sm:flex-row gap-4">
+                <div className="flex-1 sm:max-w-lg">
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                       <Search className="h-5 w-5 text-gray-400" />
@@ -344,7 +348,7 @@ export default function AdminManagement() {
                 </div>
                 <button
                   onClick={() => setCurrentSearch(searchTerm)}
-                  className="inline-flex items-center px-6 py-3 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+                  className="inline-flex justify-center items-center px-6 py-3 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors w-full sm:w-auto"
                 >
                   <Search className="w-4 h-4 mr-2" />
                   Search
@@ -353,16 +357,16 @@ export default function AdminManagement() {
             </div>
 
             {/* Filters */}
-            <div className="flex flex-wrap items-center gap-4">
+            <div className="flex flex-col sm:flex-row sm:flex-wrap items-start sm:items-center gap-4">
               <div className="flex items-center gap-2">
                 <Filter className="h-5 w-5 text-gray-500" />
                 <span className="text-sm font-medium text-gray-700">Filters:</span>
               </div>
 
               {/* Role Filter */}
-              <div className="flex items-center gap-2">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full sm:w-auto">
                 <span className="text-sm text-gray-600">Role:</span>
-                <div className="flex rounded-lg border border-gray-300 overflow-hidden">
+                <div className="flex rounded-lg border border-gray-300 overflow-hidden w-full sm:w-auto">
                   {[
                     { key: 'all', label: 'All Roles', color: 'bg-gray-100 text-gray-700 hover:bg-gray-200' },
                     ...Object.entries(roleHierarchy).map(([key, value]) => ({
@@ -386,9 +390,9 @@ export default function AdminManagement() {
               </div>
 
               {/* Status Filter */}
-              <div className="flex items-center gap-2">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full sm:w-auto">
                 <span className="text-sm text-gray-600">Status:</span>
-                <div className="flex rounded-lg border border-gray-300 overflow-hidden">
+                <div className="flex rounded-lg border border-gray-300 overflow-hidden w-full sm:w-auto">
                   {[
                     { key: 'all', label: 'All Status', color: 'bg-gray-100 text-gray-700 hover:bg-gray-200' },
                     { key: 'active', label: 'Active', color: 'bg-green-100 text-green-700 hover:bg-green-200' },
@@ -417,7 +421,7 @@ export default function AdminManagement() {
                     setSearchTerm('');
                     setCurrentSearch('');
                   }}
-                  className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                  className="inline-flex items-center justify-center px-3 py-1.5 text-sm font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors w-full sm:w-auto"
                 >
                   <X className="w-4 h-4 mr-1" />
                   Clear Filters
@@ -428,9 +432,9 @@ export default function AdminManagement() {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
           <div className="bg-white shadow-lg rounded-lg overflow-hidden">
-            <div className="bg-green-600 px-6 py-4">
+            <div className="bg-green-600 px-4 sm:px-6 py-4">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-blue-100 uppercase tracking-wide">Total Admins</p>
@@ -441,7 +445,7 @@ export default function AdminManagement() {
             </div>
           </div>
           <div className="bg-white shadow-lg rounded-lg overflow-hidden">
-            <div className="bg-green-600 px-6 py-4">
+            <div className="bg-green-600 px-4 sm:px-6 py-4">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-blue-100 uppercase tracking-wide">Active Admins</p>
@@ -454,7 +458,7 @@ export default function AdminManagement() {
             </div>
           </div>
           <div className="bg-white shadow-lg rounded-lg overflow-hidden">
-            <div className="bg-green-600 px-6 py-4">
+            <div className="bg-green-600 px-4 sm:px-6 py-4">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-blue-100 uppercase tracking-wide">Suspended</p>
@@ -467,7 +471,7 @@ export default function AdminManagement() {
             </div>
           </div>
           <div className="bg-white shadow-lg rounded-lg overflow-hidden">
-            <div className="bg-green-600 px-6 py-4">
+            <div className="bg-green-600 px-4 sm:px-6 py-4">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-blue-100 uppercase tracking-wide">Super Admins</p>
@@ -487,7 +491,7 @@ export default function AdminManagement() {
               System Administrators ({filteredAdmins.length})
             </h2>
           </div>
-          <div className="overflow-x-auto">
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full">
               <thead className="bg-gray-50">
                 <tr>
@@ -598,7 +602,7 @@ export default function AdminManagement() {
           </div>
 
           {/* Mobile Card View */}
-          <div className="md:hidden p-6">
+          <div className="md:hidden p-3 sm:p-4">
             {filteredAdmins.length === 0 ? (
               <div className="text-center py-12">
                 <User className="w-16 h-16 text-gray-300 mx-auto mb-4" />
@@ -609,19 +613,19 @@ export default function AdminManagement() {
               <div className="space-y-4">
                 {filteredAdmins.map((admin) => (
                   <div key={admin._id} className="bg-gray-50 rounded-lg p-4 hover:bg-gray-100 transition-colors border border-gray-200">
-                    <div className="flex items-start gap-4">
-                      <div className="w-14 h-14 bg-gray-100 flex items-center justify-center overflow-hidden flex-shrink-0 rounded-lg">
+                    <div className="flex items-start gap-3">
+                      <div className="w-12 h-12 bg-gray-100 flex items-center justify-center overflow-hidden flex-shrink-0 rounded-lg">
                         <User className="w-7 h-7 text-gray-600" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between mb-2">
+                        <div className="mb-2">
                           <div className="flex-1 min-w-0">
                             <h3 className="text-base font-semibold text-gray-900 truncate">
                               {admin.name}
                             </h3>
                             <p className="text-sm text-gray-500 font-mono">ID: {admin._id.slice(-8)}</p>
                           </div>
-                          <span className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ml-2 flex-shrink-0 ${getStatusColor(admin.isActive ? 'active' : 'suspended')}`}>
+                          <span className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full mt-2 ${getStatusColor(admin.isActive ? 'active' : 'suspended')}`}>
                             {admin.isActive ? 'Active' : 'Suspended'}
                           </span>
                         </div>
@@ -641,23 +645,23 @@ export default function AdminManagement() {
                           )}
                         </div>
 
-                        <div className="flex items-center justify-between pt-2 border-t border-gray-200">
+                        <div className="pt-2 border-t border-gray-200">
                           <div className="text-sm text-gray-600">
                             Last login: {admin.lastLogin ? admin.lastLogin.split(',')[0] : 'Never'}
                           </div>
-                          <div className="flex items-center gap-2">
+                          <div className="flex flex-col gap-2 mt-2">
                             {admin._id !== currentUser?._id && (
                               <>
                                 <button
                                   onClick={() => openEditModal(admin)}
-                                  className="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-md text-blue-700 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+                                  className="inline-flex items-center justify-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-blue-700 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors w-full"
                                 >
                                   <Edit3 size={14} className="mr-1.5" />
                                   Edit
                                 </button>
                                 <button
                                   onClick={() => handleDeleteAdmin(admin._id)}
-                                  className="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-md text-red-700 bg-red-100 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors"
+                                  className="inline-flex items-center justify-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-red-700 bg-red-100 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors w-full"
                                 >
                                   <Trash2 size={14} className="mr-1.5" />
                                   Delete
@@ -764,17 +768,17 @@ export default function AdminManagement() {
                     />
                   </div>
                 </div>
-                <div className="flex justify-end gap-3 pt-4">
+                <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 pt-4">
                   <button
                     type="button"
                     onClick={() => setShowCreateModal(false)}
-                    className="px-4 py-2 text-gray-700 border border-gray-300  hover:bg-gray-50 transition-colors"
+                    className="px-4 py-2 text-gray-700 border border-gray-300 hover:bg-gray-50 transition-colors w-full sm:w-auto"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    className="px-4 py-2 bg-green-600 text-white  hover:bg-green-700 transition-colors"
+                    className="px-4 py-2 bg-green-600 text-white hover:bg-green-700 transition-colors w-full sm:w-auto"
                   >
                     Create Admin
                   </button>
@@ -873,17 +877,17 @@ export default function AdminManagement() {
                     </select>
                   </div>
                 </div>
-                <div className="flex justify-end gap-3 pt-4">
+                <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 pt-4">
                   <button
                     type="button"
                     onClick={() => setEditingAdmin(null)}
-                    className="px-4 py-2 text-gray-700 border border-gray-300  hover:bg-gray-50 transition-colors"
+                    className="px-4 py-2 text-gray-700 border border-gray-300 hover:bg-gray-50 transition-colors w-full sm:w-auto"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    className="px-4 py-2 bg-blue-600 text-white  hover:bg-blue-700 transition-colors"
+                    className="px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 transition-colors w-full sm:w-auto"
                   >
                     Save Changes
                   </button>

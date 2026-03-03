@@ -29,7 +29,7 @@ const DeliveryAgents = () => {
   const [currentUser, setCurrentUser] = useState(null);
   const [checkingUser, setCheckingUser] = useState(true);
   const [zones, setZones] = useState([]);
-  const allowedRoles = ['super_admin', 'admin'];
+  const allowedRoles = ['super_admin', 'admin', 'delivery_manager'];
   const navigate = useNavigate();
 
   const fetchAgents = async () => {
@@ -252,6 +252,8 @@ const DeliveryAgents = () => {
   useEffect(() => { fetchCurrentUser(); }, [fetchCurrentUser]);
   const isAuthorized = allowedRoles.includes(currentUser?.role);
 
+  console.log('DeliveryAgents - currentUser:', currentUser, 'role:', currentUser?.role, 'isAuthorized:', isAuthorized);
+
   useEffect(() => {
     if (isAuthorized) {
       fetchAgents();
@@ -273,7 +275,7 @@ const DeliveryAgents = () => {
       <div className="flex flex-col items-center justify-center min-h-screen">
         <Ban className='w-16 h-16 text-red-500 mb-2' />
         <h2 className="text-xl font-semibold text-gray-800 mb-2">Access Denied</h2>
-        <p className="text-gray-600">Only Admins and Super Admins can view delivery agents.</p>
+        <p className="text-gray-600">Only Delivery Managers, Admins, and Super Admins can view delivery agents.</p>
       </div>
     );
   }

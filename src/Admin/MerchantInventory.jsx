@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Package, Search, AlertTriangle, CheckCircle, XCircle, Edit, Save, X, ChevronLeft, ChevronRight, Filter, SlidersHorizontal, Trash2, Plus, Check, FileSpreadsheet, ArrowUp, ArrowDown, ArrowUpDown } from 'lucide-react';
+import { ArrowLeft, Package, Search, AlertTriangle, CheckCircle, XCircle, Edit, Save, X, ChevronLeft, ChevronRight, Filter, SlidersHorizontal, Trash2, Plus, Check, FileSpreadsheet, ArrowUp, ArrowDown, ArrowUpDown, ChevronDown } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Layout from '../Components/Layout';
 
@@ -305,12 +305,29 @@ const MerchantInventory = () => {
   const [showProductModal, setShowProductModal] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
 
+  // Export dropdown state
+  const [showExportDropdown, setShowExportDropdown] = useState(false);
+  const exportDropdownRef = useRef(null);
+
   // Bulk selection states
   const [selectedItems, setSelectedItems] = useState([]);
   const [selectAll, setSelectAll] = useState(false);
 
   // Debounce ref for search
   const searchTimeoutRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (exportDropdownRef.current && !exportDropdownRef.current.contains(event.target)) {
+        setShowExportDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   // Fetch merchant details with inventory
   const fetchMerchantInventory = useCallback(async (params = {}) => {
@@ -570,6 +587,41 @@ const MerchantInventory = () => {
     } catch (error) {
       console.error('Export error:', error);
       toast.error('Failed to export inventory');
+    }
+  };
+
+  const handleExportJson = () => {
+    try {
+      const exportData = {
+        merchantId: merchant?._id || id,
+        merchantName: merchant?.businessInfo?.displayName || 'Merchant',
+        exportedAt: new Date().toISOString(),
+        filters: {
+          search: searchTerm,
+          status: statusFilter,
+          category: categoryFilter,
+          sortBy,
+          sortOrder,
+          page,
+        },
+        totalItems,
+        items: filteredInventory,
+      };
+
+      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `merchant_${id}_inventory.json`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      setShowExportDropdown(false);
+      toast.success('Inventory exported as JSON successfully');
+    } catch (error) {
+      console.error('JSON export error:', error);
+      toast.error('Failed to export inventory as JSON');
     }
   };
 
@@ -1051,17 +1103,17 @@ const MerchantInventory = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* Header */}
           <div className="mb-8">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center space-y-4 sm:space-y-0 sm:space-x-4">
                 <button
                   onClick={() => navigate(`/merchants/${id}`)}
-                  className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
+                  className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors w-fit"
                 >
                   <ArrowLeft size={16} className="mr-2" />
                   Back to Merchant
                 </button>
-                <div className="border-l border-gray-300 pl-4">
-                  <h1 className="text-3xl font-bold text-gray-900">
+                <div className="sm:border-l sm:border-gray-300 sm:pl-4">
+                  <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
                     {merchant?.businessInfo?.displayName || 'Merchant'} Inventory
                   </h1>
                   <p className="mt-1 text-sm text-gray-500">
@@ -1074,8 +1126,8 @@ const MerchantInventory = () => {
 
           {/* Search Bar */}
           <div className="mb-8">
-            <div className="flex gap-4">
-              <div className="flex-1 max-w-lg">
+            <div className="flex flex-col sm:flex-row gap-4">
+              <div className="flex-1">
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <Search className="h-5 w-5 text-gray-400" />
@@ -1090,34 +1142,37 @@ const MerchantInventory = () => {
                   />
                 </div>
               </div>
-              <button
-                onClick={handleSearch}
-                className="inline-flex items-center px-6 py-3 border border-transparent text-sm font-medium rounded-lg text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
-              >
-                Search
-              </button>
-              <button
-                onClick={handleSortPrice}
-                className="inline-flex items-center px-6 py-3 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
-              >
-                <ArrowUpDown className="h-4 w-4 mr-2" />
-                Sort by Price {sortOrder === 'asc' ? '↑' : '↓'}
-              </button>
+              <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                <button
+                  onClick={handleSearch}
+                  className="inline-flex items-center justify-center px-6 py-3 border border-transparent text-sm font-medium rounded-lg text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors w-full sm:w-auto"
+                >
+                  Search
+                </button>
+                <button
+                  onClick={handleSortPrice}
+                  className="inline-flex items-center justify-center px-6 py-3 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors w-full sm:w-auto"
+                >
+                  <ArrowUpDown className="h-4 w-4 mr-2" />
+                  Sort by Price {sortOrder === 'asc' ? '↑' : '↓'}
+                </button>
+              </div>
             </div>
           </div>
 
           {/* Filters */}
           <div className="mb-8">
-            <div className="flex flex-wrap items-center gap-4">
+            <div className="flex flex-col sm:flex-row sm:flex-wrap items-start sm:items-center gap-4">
               <div className="flex items-center gap-2">
                 <SlidersHorizontal className="h-5 w-5 text-gray-500" />
                 <span className="text-sm font-medium text-gray-700">Filters:</span>
               </div>
 
               {/* Status Filter */}
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-600">Status:</span>
-                <div className="flex rounded-lg border border-gray-300 overflow-hidden">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full sm:w-auto">
+                <span className="text-sm text-gray-600 hidden sm:inline">Status:</span>
+                <div className="w-full sm:w-auto overflow-x-auto -mx-1 px-1 pb-1">
+                  <div className="inline-flex rounded-lg border border-gray-300 overflow-hidden min-w-max">
                   {[
                     { key: 'all', label: 'All', color: 'bg-gray-100 text-gray-700 hover:bg-gray-200' },
                     { key: 'in_stock', label: 'In Stock', color: 'bg-green-100 text-green-700 hover:bg-green-200' },
@@ -1136,16 +1191,17 @@ const MerchantInventory = () => {
                       {label}
                     </button>
                   ))}
+                  </div>
                 </div>
               </div>
 
               {/* Category Filter */}
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-600">Category:</span>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full sm:w-auto">
+                <span className="text-sm text-gray-600 hidden sm:inline">Category:</span>
                 <select
                   value={categoryFilter}
                   onChange={(e) => handleCategoryFilter(e.target.value)}
-                  className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-green-500 focus:border-green-500 w-full sm:w-auto"
                 >
                   <option value="all">All Categories</option>
                   {allCategories.map(category => (
@@ -1158,7 +1214,7 @@ const MerchantInventory = () => {
               {(statusFilter !== 'all' || categoryFilter !== 'all' || searchTerm) && (
                 <button
                   onClick={clearFilters}
-                  className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                  className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors w-full sm:w-auto justify-center"
                 >
                   <X className="h-4 w-4 mr-1" />
                   Clear Filters
@@ -1169,11 +1225,11 @@ const MerchantInventory = () => {
 
           {/* Restock Button */}
           <div className="mb-8">
-            <div className="flex gap-4">
+            <div className="flex flex-col sm:flex-row gap-4 sm:items-center">
               <button
                 onClick={handleRestock}
                 disabled={updating}
-                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto"
               >
                 {updating ? (
                   <>
@@ -1190,7 +1246,7 @@ const MerchantInventory = () => {
               <button
                 onClick={handleMakeOutOfStock}
                 disabled={updating}
-                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto"
               >
                 {updating ? (
                   <>
@@ -1206,7 +1262,7 @@ const MerchantInventory = () => {
               </button>
               <button
                 onClick={() => navigate(`/merchants/${id}/inventory/add`)}
-                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
+                className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors w-full sm:w-auto"
               >
                 <Plus className="h-4 w-4 mr-2" />
                 Add Product
@@ -1214,7 +1270,7 @@ const MerchantInventory = () => {
               <button
                 onClick={handleBulkRemove}
                 disabled={updating || selectedItems.length === 0}
-                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto"
               >
                 {updating ? (
                   <>
@@ -1228,13 +1284,36 @@ const MerchantInventory = () => {
                   </>
                 )}
               </button>
-              <button
-                onClick={handleExportExcel}
-                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
-              >
-                <FileSpreadsheet className="h-4 w-4 mr-2" />
-                Export to Excel
-              </button>
+              <div className="relative">
+                <button
+                  onClick={() => setShowExportDropdown(prev => !prev)}
+                  className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors w-full sm:w-auto"
+                >
+                  <FileSpreadsheet className="h-4 w-4 mr-2" />
+                  Export
+                  <ChevronDown className="h-4 w-4 ml-2" />
+                </button>
+
+                {showExportDropdown && (
+                  <div className="absolute right-0 mt-2 w-44 bg-white border border-gray-200 rounded-lg shadow-lg z-20 overflow-hidden">
+                    <button
+                      onClick={() => {
+                        handleExportExcel();
+                        setShowExportDropdown(false);
+                      }}
+                      className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                    >
+                      Export as Excel
+                    </button>
+                    <button
+                      onClick={handleExportJson}
+                      className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors border-t border-gray-100"
+                    >
+                      Export as JSON
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
             <p className="text-xs text-gray-500 mt-1">
               Restock adds 1 unit to out of stock items • Make out of stock sets all in-stock items to 0
@@ -1242,7 +1321,7 @@ const MerchantInventory = () => {
           </div>
 
           {/* Inventory Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             <div className="bg-white overflow-hidden shadow-sm rounded-lg border border-gray-200 hover:shadow-md transition-shadow">
               <div className="p-6">
                 <div className="flex items-center">
@@ -1314,10 +1393,10 @@ const MerchantInventory = () => {
             </div>
           </div>
 
-          {/* Inventory Table */}
+          {/* Inventory Items */}
           <div className="bg-white shadow-sm rounded-lg border border-gray-200 overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                 <h2 className="text-lg font-semibold text-gray-900">Inventory Items</h2>
                 <div className="text-sm text-gray-500">
                   {totalItems} total items
@@ -1334,87 +1413,311 @@ const MerchantInventory = () => {
                 </p>
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        <input
-                          type="checkbox"
-                          checked={selectAll}
-                          onChange={handleSelectAll}
-                          className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
-                        />
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Product
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Category
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Weight
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Stock
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors" onClick={() => handleSort('price')}>
-                        <div className="flex items-center gap-1">
-                          Price
-                          {sortBy === 'price' && (
-                            sortOrder === 'asc' ? <ArrowUp size={14} /> : <ArrowDown size={14} />
-                          )}
-                        </div>
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Markup Price
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Status
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Actions
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
+              <>
+                {/* Mobile Card View */}
+                <div className="block md:hidden">
+                  <div className="divide-y divide-gray-200">
                     {filteredInventory.map((item, index) => (
-                      <InventoryItem
-                        key={item._id || index}
-                        item={item}
-                        index={index}
-                        selectedItems={selectedItems}
-                        handleSelectItem={handleSelectItem}
-                        editingItem={editingItem}
-                        editedPrice={editedPrice}
-                        setEditedPrice={setEditedPrice}
-                        updating={updating}
-                        handleSavePrice={handleSavePrice}
-                        handleCancelEdit={handleCancelEdit}
-                        editingWeight={editingWeight}
-                        editedWeightValue={editedWeightValue}
-                        setEditedWeightValue={setEditedWeightValue}
-                        editedWeightUnit={editedWeightUnit}
-                        setEditedWeightUnit={setEditedWeightUnit}
-                        handleSaveWeight={handleSaveWeight}
-                        editingMarkupPrice={editingMarkupPrice}
-                        editedMarkupPrice={editedMarkupPrice}
-                        setEditedMarkupPrice={setEditedMarkupPrice}
-                        handleSaveMarkupPrice={handleSaveMarkupPrice}
-                        handleEditWeight={handleEditWeight}
-                        handleEditMarkupPrice={handleEditMarkupPrice}
-                        handleEditPrice={handleEditPrice}
-                        openProductModal={openProductModal}
-                        getStockStatus={getStockStatus}
-                        handleCancelEditWeight={() => setEditingWeight(null)}
-                        handleCancelEditMarkupPrice={() => setEditingMarkupPrice(null)}
-                        handleRemoveItem={handleRemoveItem}
-                        removing={removing}
-                      />
+                      <div key={item._id || index} className="p-4 hover:bg-gray-50 transition-colors">
+                        <div className="flex items-start space-x-4">
+                          <input
+                            type="checkbox"
+                            checked={selectedItems.includes(item._id)}
+                            onChange={() => handleSelectItem(item._id)}
+                            className="mt-1 h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center space-x-3">
+                              {item.image && (
+                                <img
+                                  className="h-12 w-12 rounded-lg object-cover border border-gray-200 cursor-pointer hover:opacity-80 transition-opacity"
+                                  src={item.image}
+                                  alt={item.name}
+                                  onClick={() => openProductModal(item)}
+                                />
+                              )}
+                              <div className="flex-1">
+                                <h3 className="text-sm font-medium text-gray-900 truncate">{item.name}</h3>
+                                <p className="text-sm text-gray-500">{item.category}</p>
+                              </div>
+                            </div>
+                            <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 text-sm">
+                              <div>
+                                <span className="text-gray-500">Weight:</span>
+                                <span className="ml-1 text-gray-900">
+                                  {item.weightDimension ? `${item.weightDimension.value} ${item.weightDimension.unit}` : 'N/A'}
+                                </span>
+                              </div>
+                              <div>
+                                <span className="text-gray-500">Stock:</span>
+                                <span className="ml-1 text-gray-900">{item.quantity} / {item.maxStock}</span>
+                              </div>
+                              <div>
+                                <span className="text-gray-500">Price:</span>
+                                <span className="ml-1 text-gray-900">₹{item.price}</span>
+                              </div>
+                              <div>
+                                <span className="text-gray-500">Markup:</span>
+                                <span className="ml-1 text-gray-900">₹{item.markupPrice || 0}</span>
+                              </div>
+                            </div>
+                            <div className="mt-3 flex flex-col gap-2">
+                              <div className="flex items-center justify-between">
+                              <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-full ${getStockStatus(item.quantity, item.minStock).color}`}>
+                                {React.createElement(getStockStatus(item.quantity, item.minStock).icon, { size: 14 })}
+                                {getStockStatus(item.quantity, item.minStock).status}
+                              </span>
+                              </div>
+                              <div className="flex flex-wrap gap-2 justify-end">
+                                <button
+                                  className="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded text-green-700 bg-green-100 hover:bg-green-200"
+                                  onClick={() => handleEditPrice(item)}
+                                >
+                                  <Edit size={12} className="mr-1" />
+                                  Price
+                                </button>
+                                <button
+                                  className="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded text-blue-700 bg-blue-100 hover:bg-blue-200"
+                                  onClick={() => handleEditWeight(item)}
+                                >
+                                  <Edit size={12} className="mr-1" />
+                                  Weight
+                                </button>
+                                <button
+                                  className="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded text-purple-700 bg-purple-100 hover:bg-purple-200"
+                                  onClick={() => handleEditMarkupPrice(item)}
+                                >
+                                  <Edit size={12} className="mr-1" />
+                                  Markup
+                                </button>
+                                <button
+                                  className="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded text-red-700 bg-red-100 hover:bg-red-200"
+                                  onClick={() => handleRemoveItem(item)}
+                                  disabled={removing === item._id}
+                                >
+                                  {removing === item._id ? (
+                                    <div className="animate-spin rounded-full h-3 w-3 border-b border-red-700"></div>
+                                  ) : (
+                                    <Trash2 size={12} className="mr-1" />
+                                  )}
+                                </button>
+                              </div>
+                            </div>
+                            {/* Inline editing for mobile */}
+                            {editingItem === item._id && (
+                              <div className="mt-3 p-3 bg-gray-50 rounded-lg">
+                                <div className="flex items-center space-x-2">
+                                  <span className="text-gray-500">₹</span>
+                                  <input
+                                    type="number"
+                                    value={editedPrice}
+                                    onChange={(e) => setEditedPrice(e.target.value)}
+                                    className="flex-1 px-2 py-1 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                                    min="0"
+                                    step="0.01"
+                                    disabled={updating}
+                                  />
+                                </div>
+                                <div className="mt-2 flex space-x-2">
+                                  <button
+                                    className="flex-1 inline-flex items-center justify-center px-3 py-1 border border-transparent text-xs font-medium rounded text-white bg-green-600 hover:bg-green-700"
+                                    onClick={() => handleSavePrice(item)}
+                                    disabled={updating}
+                                  >
+                                    <Save size={12} className="mr-1" />
+                                    Save
+                                  </button>
+                                  <button
+                                    className="flex-1 inline-flex items-center justify-center px-3 py-1 border border-gray-300 text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50"
+                                    onClick={handleCancelEdit}
+                                    disabled={updating}
+                                  >
+                                    <X size={12} className="mr-1" />
+                                    Cancel
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+                            {editingWeight === item._id && (
+                              <div className="mt-3 p-3 bg-gray-50 rounded-lg">
+                                <div className="flex space-x-2">
+                                  <input
+                                    type="number"
+                                    value={editedWeightValue}
+                                    onChange={(e) => setEditedWeightValue(e.target.value)}
+                                    className="flex-1 px-2 py-1 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                                    min="0"
+                                    step="0.01"
+                                    placeholder="Value"
+                                    disabled={updating}
+                                  />
+                                  <select
+                                    value={editedWeightUnit}
+                                    onChange={(e) => setEditedWeightUnit(e.target.value)}
+                                    className="px-2 py-1 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                                    disabled={updating}
+                                  >
+                                    <option value="">Select Unit</option>
+                                    <option value="g">g</option>
+                                    <option value="kg">kg</option>
+                                    <option value="ml">ml</option>
+                                    <option value="l">l</option>
+                                    <option value="pack">pack</option>
+                                    <option value="piece">piece</option>
+                                    <option value="unit">unit</option>
+                                    <option value="dozen">dozen</option>
+                                    <option value="cm">cm</option>
+                                    <option value="mm">mm</option>
+                                    <option value="inch">inch</option>
+                                    <option value="feet">feet</option>
+                                    <option value="meter">meter</option>
+                                    <option value="other">other</option>
+                                  </select>
+                                </div>
+                                <div className="mt-2 flex space-x-2">
+                                  <button
+                                    className="flex-1 inline-flex items-center justify-center px-3 py-1 border border-transparent text-xs font-medium rounded text-white bg-green-600 hover:bg-green-700"
+                                    onClick={() => handleSaveWeight(item)}
+                                    disabled={updating}
+                                  >
+                                    <Save size={12} className="mr-1" />
+                                    Save
+                                  </button>
+                                  <button
+                                    className="flex-1 inline-flex items-center justify-center px-3 py-1 border border-gray-300 text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50"
+                                    onClick={() => setEditingWeight(null)}
+                                    disabled={updating}
+                                  >
+                                    <X size={12} className="mr-1" />
+                                    Cancel
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+                            {editingMarkupPrice === item._id && (
+                              <div className="mt-3 p-3 bg-gray-50 rounded-lg">
+                                <div className="flex items-center space-x-2">
+                                  <span className="text-gray-500">₹</span>
+                                  <input
+                                    type="number"
+                                    value={editedMarkupPrice}
+                                    onChange={(e) => setEditedMarkupPrice(e.target.value)}
+                                    className="flex-1 px-2 py-1 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                                    min="0"
+                                    step="0.01"
+                                    disabled={updating}
+                                  />
+                                </div>
+                                <div className="mt-2 flex space-x-2">
+                                  <button
+                                    className="flex-1 inline-flex items-center justify-center px-3 py-1 border border-transparent text-xs font-medium rounded text-white bg-green-600 hover:bg-green-700"
+                                    onClick={() => handleSaveMarkupPrice(item)}
+                                    disabled={updating}
+                                  >
+                                    <Save size={12} className="mr-1" />
+                                    Save
+                                  </button>
+                                  <button
+                                    className="flex-1 inline-flex items-center justify-center px-3 py-1 border border-gray-300 text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50"
+                                    onClick={() => setEditingMarkupPrice(null)}
+                                    disabled={updating}
+                                  >
+                                    <X size={12} className="mr-1" />
+                                    Cancel
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
                     ))}
-                  </tbody>
-                </table>
-              </div>
+                  </div>
+                </div>
+
+                {/* Desktop Table View */}
+                <div className="hidden md:block overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          <input
+                            type="checkbox"
+                            checked={selectAll}
+                            onChange={handleSelectAll}
+                            className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                          />
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Product
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Category
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Weight
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Stock
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors" onClick={() => handleSort('price')}>
+                          <div className="flex items-center gap-1">
+                            Price
+                            {sortBy === 'price' && (
+                              sortOrder === 'asc' ? <ArrowUp size={14} /> : <ArrowDown size={14} />
+                            )}
+                          </div>
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Markup Price
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Status
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Actions
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {filteredInventory.map((item, index) => (
+                        <InventoryItem
+                          key={item._id || index}
+                          item={item}
+                          index={index}
+                          selectedItems={selectedItems}
+                          handleSelectItem={handleSelectItem}
+                          editingItem={editingItem}
+                          editedPrice={editedPrice}
+                          setEditedPrice={setEditedPrice}
+                          updating={updating}
+                          handleSavePrice={handleSavePrice}
+                          handleCancelEdit={handleCancelEdit}
+                          editingWeight={editingWeight}
+                          editedWeightValue={editedWeightValue}
+                          setEditedWeightValue={setEditedWeightValue}
+                          editedWeightUnit={editedWeightUnit}
+                          setEditedWeightUnit={setEditedWeightUnit}
+                          handleSaveWeight={handleSaveWeight}
+                          editingMarkupPrice={editingMarkupPrice}
+                          editedMarkupPrice={editedMarkupPrice}
+                          setEditedMarkupPrice={setEditedMarkupPrice}
+                          handleSaveMarkupPrice={handleSaveMarkupPrice}
+                          handleEditWeight={handleEditWeight}
+                          handleEditMarkupPrice={handleEditMarkupPrice}
+                          handleEditPrice={handleEditPrice}
+                          openProductModal={openProductModal}
+                          getStockStatus={getStockStatus}
+                          handleCancelEditWeight={() => setEditingWeight(null)}
+                          handleCancelEditMarkupPrice={() => setEditingMarkupPrice(null)}
+                          handleRemoveItem={handleRemoveItem}
+                          removing={removing}
+                        />
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </>
             )}
           </div>
 
@@ -1468,7 +1771,7 @@ const MerchantInventory = () => {
               <div className="absolute inset-0 bg-black opacity-50" onClick={() => setShowProductModal(false)}></div>
             </div>
 
-            <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full relative z-60">
+            <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all w-full max-w-lg sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full relative z-60 mx-auto">
               <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
                 <div className="flex items-start justify-between">
                   <div className="flex items-center space-x-4">

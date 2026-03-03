@@ -517,17 +517,17 @@ const MerchantDetails = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* Header */}
           <div className="mb-8">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-4">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-4 space-y-3 sm:space-y-0">
                 <button
                   onClick={() => navigate('/merchants')}
-                  className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
+                  className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors w-fit"
                 >
                   <ArrowLeft size={16} className="mr-2" />
                   Back to Merchants
                 </button>
-                <div className="border-l border-gray-300 pl-4">
-                  <h1 className="text-3xl font-bold text-gray-900">
+                <div className="sm:border-l sm:border-gray-300 sm:pl-4">
+                  <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
                     {businessInfo.displayName || merchant.displayName || 'N/A'}
                   </h1>
                   <p className="mt-1 text-sm text-gray-500">
@@ -535,10 +535,10 @@ const MerchantDetails = () => {
                   </p>
                 </div>
               </div>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-col sm:flex-row flex-wrap gap-2 w-full sm:w-auto">
                 <button
                   onClick={handleClearDeviceLogin}
-                  className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors"
+                  className="inline-flex items-center justify-center px-3 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors w-full sm:w-auto"
                 >
                   <Settings size={16} className="mr-2" />
                   Clear Device Login
@@ -546,7 +546,7 @@ const MerchantDetails = () => {
                 <button
                   onClick={merchant?.storeStatus === 'closed' ? handleOpenShop : handleCloseShop}
                   disabled={storeActionLoading}
-                  className={`inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors ${
+                  className={`inline-flex items-center justify-center px-3 py-2 border border-transparent text-sm font-medium rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors w-full sm:w-auto ${
                     storeActionLoading
                       ? 'opacity-50 cursor-not-allowed bg-gray-500'
                       : merchant?.storeStatus === 'closed'
@@ -573,21 +573,21 @@ const MerchantDetails = () => {
                 </button>
                 <button
                   onClick={() => navigate(`/merchants/${id}/inventory`)}
-                  className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
+                  className="inline-flex items-center justify-center px-3 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors w-full sm:w-auto"
                 >
                   <Package size={16} className="mr-2" />
                   View Inventory
                 </button>
                 <button
                   onClick={handleEdit}
-                  className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+                  className="inline-flex items-center justify-center px-3 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors w-full sm:w-auto"
                 >
                   <Edit size={16} className="mr-2" />
                   Edit Merchant
                 </button>
                 <button
                   onClick={handleClearStats}
-                  className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-colors"
+                  className="inline-flex items-center justify-center px-3 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-colors w-full sm:w-auto"
                 >
                   <BarChart3 size={16} className="mr-2" />
                   Clear Stats
@@ -597,7 +597,7 @@ const MerchantDetails = () => {
           </div>
 
           {/* Status Banner */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
             <div className={`bg-white shadow-lg border-l-4 ${getStatusColor(merchant.status)} p-6 rounded-lg`}>
               <div className="flex items-center gap-4">
                 {getStatusIcon(merchant.status)}

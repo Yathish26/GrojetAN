@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { FiUsers, FiUser, FiSearch, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
-import { Ban, Loader } from 'lucide-react';
+import { Ban } from 'lucide-react';
 import LoaderSpinner from '../Components/Loader';
 import Layout from '../Components/Layout';
 
@@ -266,13 +266,13 @@ export default function Users() {
   return (
     <Layout title="Users">
       <div className="min-h-screen bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-6 sm:py-8">
           {/* Header */}
           <div className="mb-8">
             <div className="flex items-center justify-between">
-              <div className="hidden md:flex items-center space-x-4">
+              <div className="flex items-center space-x-4">
                 <div>
-                  <h1 className="text-3xl font-bold text-gray-900">Users</h1>
+                  <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Users</h1>
                   <p className="mt-1 text-sm text-gray-500">Manage and monitor all registered users</p>
                 </div>
               </div>
@@ -281,9 +281,9 @@ export default function Users() {
 
           {/* Stats Cards */}
           {stats && (
-            <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-1 gap-6 mb-8">
+            <div className="grid grid-cols-1 gap-4 sm:gap-6 mb-8">
               <div className="bg-white shadow-lg rounded-lg overflow-hidden">
-                <div className="bg-gray-600 px-6 py-4">
+                <div className="bg-gray-600 px-4 sm:px-6 py-4">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium text-blue-100 uppercase tracking-wide">Total Users</p>
@@ -305,8 +305,8 @@ export default function Users() {
               </h2>
             </div>
             <div className="p-6">
-              <form onSubmit={handleSearch} className="flex gap-4 flex-col sm:flex-row">
-                <div className="flex-1 max-w-lg">
+              <form onSubmit={handleSearch} className="flex flex-col gap-4">
+                <div className="w-full sm:max-w-lg">
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                       <FiSearch className="h-5 w-5 text-gray-400" />
@@ -316,12 +316,11 @@ export default function Users() {
                       placeholder="Search by name, email, or phone"
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
                       className="block w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                     />
                   </div>
                 </div>
-                <div className="flex items-center gap-4">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
                   <label className="flex items-center">
                     <input
                       type="checkbox"
@@ -339,8 +338,8 @@ export default function Users() {
                     <span className="ml-2 text-sm text-gray-700">Has Email</span>
                   </label>
                   <button
-                    onClick={handleSearch}
-                    className="inline-flex items-center px-6 py-3 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+                    type="submit"
+                    className="inline-flex items-center justify-center px-6 py-3 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors w-full sm:w-auto"
                   >
                     <FiSearch className="w-4 h-4 mr-2" />
                     Search
@@ -370,7 +369,7 @@ export default function Users() {
             ) : (
               <>
                 {/* Desktop Table View */}
-                <div className="overflow-x-auto">
+                <div className="hidden md:block overflow-x-auto">
                   <table className="w-full">
                     <thead className="bg-gray-50">
                       <tr>

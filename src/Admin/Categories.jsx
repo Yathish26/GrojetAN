@@ -433,100 +433,181 @@ export default function Categories() {
     }
 
     return (
-      <div className="overflow-x-auto  shadow-sm">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Main Category</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Image</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Show on Home</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Products</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Order</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {filteredCategories.map(category => (
-              <tr key={category._id} className={!category.isActive ? 'bg-gray-50' : ''}>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="flex items-center">
-                    <div className="text-sm font-medium text-gray-900">{category.name}</div>
+      <>
+        <div className="block md:hidden space-y-3 p-3 sm:p-4">
+          {filteredCategories.map(category => (
+            <div key={category._id} className={`border rounded-lg p-4 ${!category.isActive ? 'bg-gray-50' : 'bg-white'}`}>
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-900">{category.name}</h3>
+                  <p className="text-xs text-gray-500 mt-1">{category.mainCategory}</p>
+                </div>
+                {category.image ? (
+                  <img
+                    src={category.image}
+                    alt={category.name}
+                    className="h-10 w-10 object-cover rounded"
+                    onError={(e) => {
+                      e.target.src = `https://placehold.co/40x40/E0E0E0/888888?text=N/A`;
+                    }}
+                  />
+                ) : (
+                  <ImageIcon size={20} className="text-gray-400" />
+                )}
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 mt-3 text-xs">
+                <div>
+                  <span className="text-gray-500">Status</span>
+                  <div className="mt-1">
+                    {category.isActive ? (
+                      <span className="px-2 py-0.5 inline-flex text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                        Active
+                      </span>
+                    ) : (
+                      <span className="px-2 py-0.5 inline-flex text-xs font-semibold rounded-full bg-red-100 text-red-800">
+                        Inactive
+                      </span>
+                    )}
                   </div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm text-gray-500">{category.mainCategory}</div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  {category.image && (
-                    <a
-                      href={category.image}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-green-500 hover:underline text-sm flex items-center"
-                    >
-                      <img
-                        src={category.image}
-                        alt={category.name}
-                        className="h-8 w-8 mr-1  object-cover"
-                        onError={(e) => {
-                          e.target.src = `https://placehold.co/32x32/E0E0E0/888888?text=N/A`;
-                        }}
-                      />
-                    </a>
-                  )}
-                  {!category.image && (
-                    <ImageIcon size={20} className="text-gray-400" />
-                  )}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  {category.isActive ? (
-                    <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                      Active
-                    </span>
-                  ) : (
-                    <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
-                      Inactive
-                    </span>
-                  )}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-center">
-                  {category.showOnHome ? (
-                    <CircleCheck className="text-green-500 mx-auto" size={18} />
-                  ) : (
-                    <XCircle className="text-red-500 mx-auto" size={18} />
-                  )}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {category.productCount || 0}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {category.order}
-                </td>
-                <td className="px-6 py-4 flex whitespace-nowrap text-right text-sm font-medium">
+                </div>
+                <div>
+                  <span className="text-gray-500">Homepage</span>
+                  <div className="mt-1">
+                    {category.showOnHome ? (
+                      <CircleCheck className="text-green-500" size={16} />
+                    ) : (
+                      <XCircle className="text-red-500" size={16} />
+                    )}
+                  </div>
+                </div>
+                <div>
+                  <span className="text-gray-500">Products</span>
+                  <p className="text-gray-800 mt-1">{category.productCount || 0}</p>
+                </div>
+                <div>
+                  <span className="text-gray-500">Order</span>
+                  <p className="text-gray-800 mt-1">{category.order}</p>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-4 mt-4 pt-3 border-t border-gray-100">
+                <button
+                  onClick={() => handleEditClick(category)}
+                  className="text-green-600 cursor-pointer hover:text-green-900 flex items-center justify-center"
+                  title="Edit Category"
+                >
+                  <Edit size={16} />
+                </button>
+                {currentUser?.role === 'super_admin' && (
                   <button
-                    onClick={() => handleEditClick(category)}
-                    className="text-green-600 cursor-pointer hover:text-green-900 mr-4 flex items-center justify-center"
-                    title="Edit Category"
+                    onClick={() => handleDeleteClick(category)}
+                    className="text-red-600 cursor-pointer hover:text-red-900 flex items-center justify-center"
+                    title="Delete Category"
                   >
-                    <Edit size={16} />
+                    <Trash2 size={16} />
                   </button>
-                  {currentUser?.role === 'super_admin' && (
-                    <button
-                      onClick={() => handleDeleteClick(category)}
-                      className="text-red-600 cursor-pointer hover:text-red-900 flex items-center justify-center"
-                      title="Delete Category"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  )}
-                </td>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="hidden md:block overflow-x-auto shadow-sm">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Main Category</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Image</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Show on Home</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Products</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Order</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {filteredCategories.map(category => (
+                <tr key={category._id} className={!category.isActive ? 'bg-gray-50' : ''}>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex items-center">
+                      <div className="text-sm font-medium text-gray-900">{category.name}</div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm text-gray-500">{category.mainCategory}</div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    {category.image && (
+                      <a
+                        href={category.image}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-green-500 hover:underline text-sm flex items-center"
+                      >
+                        <img
+                          src={category.image}
+                          alt={category.name}
+                          className="h-8 w-8 mr-1 object-cover"
+                          onError={(e) => {
+                            e.target.src = `https://placehold.co/32x32/E0E0E0/888888?text=N/A`;
+                          }}
+                        />
+                      </a>
+                    )}
+                    {!category.image && (
+                      <ImageIcon size={20} className="text-gray-400" />
+                    )}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    {category.isActive ? (
+                      <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                        Active
+                      </span>
+                    ) : (
+                      <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                        Inactive
+                      </span>
+                    )}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-center">
+                    {category.showOnHome ? (
+                      <CircleCheck className="text-green-500 mx-auto" size={18} />
+                    ) : (
+                      <XCircle className="text-red-500 mx-auto" size={18} />
+                    )}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {category.productCount || 0}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {category.order}
+                  </td>
+                  <td className="px-6 py-4 flex whitespace-nowrap text-right text-sm font-medium">
+                    <button
+                      onClick={() => handleEditClick(category)}
+                      className="text-green-600 cursor-pointer hover:text-green-900 mr-4 flex items-center justify-center"
+                      title="Edit Category"
+                    >
+                      <Edit size={16} />
+                    </button>
+                    {currentUser?.role === 'super_admin' && (
+                      <button
+                        onClick={() => handleDeleteClick(category)}
+                        className="text-red-600 cursor-pointer hover:text-red-900 flex items-center justify-center"
+                        title="Delete Category"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </>
     );
   };
 
@@ -560,17 +641,17 @@ export default function Categories() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* Header */}
           <div className="mb-8">
-            <div className="flex items-center justify-between">
-              <div className="hidden md:flex items-center space-x-4">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-center space-x-4">
                 <div>
-                  <h1 className="text-3xl font-bold text-gray-900">Categories</h1>
+                  <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Categories</h1>
                   <p className="mt-1 text-sm text-gray-500">Manage and organize product categories</p>
                 </div>
               </div>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
                 <button
                   onClick={handleExportToExcel}
-                  className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+                  className="inline-flex justify-center items-center px-3 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors w-full sm:w-auto"
                 >
                   <FileSpreadsheet size={16} className="mr-2" />
                   Export to Excel
@@ -589,7 +670,7 @@ export default function Categories() {
                     setSelectedFile(null);
                     setIsModalOpen(true);
                   }}
-                  className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
+                  className="inline-flex justify-center items-center px-3 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors w-full sm:w-auto"
                 >
                   <Plus size={16} className="mr-2" />
                   Add Category
@@ -609,8 +690,8 @@ export default function Categories() {
             <div className="p-6">
               {/* Search Bar */}
               <div className="mb-6">
-                <div className="flex gap-4">
-                  <div className="flex-1 max-w-lg">
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <div className="flex-1 sm:max-w-lg">
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                         <Search className="h-5 w-5 text-gray-400" />
@@ -625,8 +706,8 @@ export default function Categories() {
                     </div>
                   </div>
                   <button
-                    onClick={() => {}}
-                    className="inline-flex items-center px-6 py-3 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+                    onClick={handleSearch}
+                    className="inline-flex justify-center items-center px-6 py-3 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors w-full sm:w-auto"
                   >
                     <Search size={16} className="mr-2" />
                     Search
@@ -635,19 +716,19 @@ export default function Categories() {
               </div>
 
               {/* Filters */}
-              <div className="flex flex-wrap items-center gap-4">
+              <div className="flex flex-col sm:flex-row sm:flex-wrap items-start sm:items-center gap-4">
                 <div className="flex items-center gap-2">
                   <Filter className="h-5 w-5 text-gray-500" />
                   <span className="text-sm font-medium text-gray-700">Filters:</span>
                 </div>
 
                 {/* Main Category Filter */}
-                <div className="flex items-center gap-2">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full sm:w-auto">
                   <span className="text-sm text-gray-600">Main Category:</span>
                   <select
                     value={filterMainCategory}
                     onChange={(e) => setFilterMainCategory(e.target.value)}
-                    className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-full sm:w-auto"
                   >
                     <option value="">All Categories</option>
                     {mainCategories.map((category, index) => (
@@ -659,9 +740,9 @@ export default function Categories() {
                 </div>
 
                 {/* Active Status Filter */}
-                <div className="flex items-center gap-2">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full sm:w-auto">
                   <span className="text-sm text-gray-600">Status:</span>
-                  <div className="flex rounded-lg border border-gray-300 overflow-hidden">
+                  <div className="flex rounded-lg border border-gray-300 overflow-hidden w-full sm:w-auto">
                     {[
                       { key: 'all', label: 'All', color: 'bg-gray-100 text-gray-700 hover:bg-gray-200' },
                       { key: 'true', label: 'Active', color: 'bg-green-100 text-green-700 hover:bg-green-200' },
@@ -682,9 +763,9 @@ export default function Categories() {
                 </div>
 
                 {/* Show on Home Filter */}
-                <div className="flex items-center gap-2">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full sm:w-auto">
                   <span className="text-sm text-gray-600">Homepage:</span>
-                  <div className="flex rounded-lg border border-gray-300 overflow-hidden">
+                  <div className="flex rounded-lg border border-gray-300 overflow-hidden w-full sm:w-auto">
                     {[
                       { key: 'all', label: 'All', color: 'bg-gray-100 text-gray-700 hover:bg-gray-200' },
                       { key: 'true', label: 'Show', color: 'bg-blue-100 text-blue-700 hover:bg-blue-200' },
@@ -707,7 +788,7 @@ export default function Categories() {
                 {/* Reset Filters */}
                 <button
                   onClick={handleResetFilters}
-                  className="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
+                  className="inline-flex items-center justify-center px-3 py-1.5 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors w-full sm:w-auto"
                 >
                   <RotateCcw size={14} className="mr-1" />
                   Reset
@@ -741,17 +822,7 @@ export default function Categories() {
                 </button>
               </div>
             </div>
-            <div className="p-6 max-h-[80vh] overflow-y-auto">
-              <button
-                onClick={() => setIsModalOpen(false)}
-                className="text-gray-500 hover:text-gray-700 transition-colors duration-200"
-                aria-label="Close modal"
-              >
-                &times;
-              </button>
-            </div>
-
-            <form onSubmit={handleSubmit} className="p-6 space-y-4">
+            <form onSubmit={handleSubmit} className="px-4 sm:px-6 pb-6 pt-4 sm:pt-6 space-y-4 max-h-[80vh] overflow-y-auto">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
@@ -864,18 +935,18 @@ export default function Categories() {
                 </div>
               </div>
 
-              <div className="flex justify-end space-x-3 pt-6 border-t border-gray-200 mt-6">
+              <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 pt-6 border-t border-gray-200 mt-6">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
+                  className="inline-flex justify-center items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors w-full sm:w-auto"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={loading || uploadingImage}
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  className="inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors w-full sm:w-auto"
                 >
                   {(loading || uploadingImage) && <Loader2 className="animate-spin mr-2" size={16} />}
                   {editingCategory ? 'Update Category' : 'Add Category'}
@@ -916,17 +987,17 @@ export default function Categories() {
                   <p className="text-gray-600 mb-4">
                     Are you sure you want to delete "<span className="font-semibold text-gray-900">{categoryToDelete.name}</span>"? This action cannot be undone and will permanently remove the category and its image.
                   </p>
-                  <div className="flex justify-end space-x-3">
+                  <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
                     <button
                       onClick={() => setIsDeleteModalOpen(false)}
-                      className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors"
+                      className="inline-flex justify-center items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors w-full sm:w-auto"
                     >
                       Cancel
                     </button>
                     <button
                       onClick={handleDelete}
                       disabled={loading}
-                      className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      className="inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors w-full sm:w-auto"
                     >
                       {loading && <Loader2 className="animate-spin mr-2" size={16} />}
                       Delete Category

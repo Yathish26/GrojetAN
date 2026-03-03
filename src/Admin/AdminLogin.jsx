@@ -90,7 +90,12 @@ export default function AdminLogin() {
 
         if (data.success) {
           toast.success(`Welcome back, ${data.admin?.name || 'Admin'}!`);
-          navigate('/');
+          // Redirect based on role
+          if (data.admin?.role === 'delivery_manager') {
+            navigate('/delivery-agents');
+          } else {
+            navigate('/');
+          }
         }
       }
     } catch (err) {

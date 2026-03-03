@@ -347,15 +347,15 @@ export default function Finance() {
 
   return (
     <Layout title="Finance">
-      <div>
+      <div className="px-3 py-4 sm:px-6 sm:py-6">
         <div className="mb-6">
-          <h1 className="text-3xl font-bold text-gray-900">Finance Dashboard</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Finance Dashboard</h1>
           <p className="text-gray-600 mt-1">Monitor financial performance and key metrics</p>
         </div>
 
         {/* Key Metrics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-lg shadow p-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
+          <div className="bg-white rounded-lg shadow p-4 sm:p-6">
             <div className="flex items-center">
               <div className="p-2 bg-green-100 rounded-lg">
                 <DollarSign className="h-6 w-6 text-green-600" />
@@ -371,7 +371,7 @@ export default function Finance() {
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-6">
+          <div className="bg-white rounded-lg shadow p-4 sm:p-6">
             <div className="flex items-center">
               <div className="p-2 bg-red-100 rounded-lg">
                 <DollarSign className="h-6 w-6 text-red-600" />
@@ -387,7 +387,7 @@ export default function Finance() {
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-6">
+          <div className="bg-white rounded-lg shadow p-4 sm:p-6 sm:col-span-2 lg:col-span-1">
             <div className="flex items-center">
               <div className="p-2 bg-blue-100 rounded-lg">
                 <DollarSign className="h-6 w-6 text-blue-600" />
@@ -407,14 +407,14 @@ export default function Finance() {
         {/* Charts Section */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
             {/* Monthly Revenue Trend */}
-            <div className="bg-white rounded-lg shadow p-6">
-              <div className="flex items-center justify-between mb-4">
+            <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
                 <h2 className="text-xl font-semibold text-gray-900">Revenue Trend</h2>
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center gap-2 w-full sm:w-auto">
                   <select
                     value={selectedPeriod}
                     onChange={(e) => setSelectedPeriod(e.target.value)}
-                    className="px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                    className="px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-green-500 w-full sm:w-auto"
                   >
                     <option value="12months">Last 12 Months</option>
                     <option value="30days">Last 30 Days</option>
@@ -432,8 +432,8 @@ export default function Finance() {
         </div>
 
         {/* Transaction History Section */}
-        <div className="bg-white rounded-lg shadow p-6 mb-8">
-          <div className="flex items-center justify-between mb-4">
+        <div className="bg-white rounded-lg shadow p-4 sm:p-6 mb-8">
+          <div className="flex items-center justify-between mb-4 gap-3">
             <h2 className="text-xl font-semibold text-gray-900">Recent Transactions</h2>
             <div className="flex items-center space-x-2">
               <button
@@ -452,7 +452,44 @@ export default function Finance() {
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
             </div>
           ) : (
-            <div className="overflow-x-auto">
+            <>
+              <div className="md:hidden divide-y divide-gray-200 border border-gray-100 rounded-lg overflow-hidden">
+                {transactions.slice(0, 10).map((transaction) => (
+                  <div key={transaction.id} className="p-4 bg-white">
+                    <div className="flex items-start justify-between gap-3">
+                      <p className="text-sm font-semibold text-gray-900">₹{transaction.amount.toLocaleString()}</p>
+                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                        transaction.status === 'captured'
+                          ? 'bg-green-100 text-green-800'
+                          : transaction.status === 'failed'
+                          ? 'bg-red-100 text-red-800'
+                          : transaction.status === 'refunded'
+                          ? 'bg-yellow-100 text-yellow-800'
+                          : 'bg-gray-100 text-gray-800'
+                      }`}>
+                        {transaction.status.charAt(0).toUpperCase() + transaction.status.slice(1)}
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-800 mt-2">{transaction.contact || 'N/A'}</p>
+                    <p className="text-xs text-gray-500 mt-1">{transaction.description || 'No description'}</p>
+                    <div className="mt-2 text-xs text-gray-500 space-y-1">
+                      <p>
+                        {new Date(transaction.createdAt).toLocaleDateString('en-IN', {
+                          day: '2-digit',
+                          month: 'short',
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </p>
+                      <p className="capitalize">Method: {transaction.method || 'N/A'}</p>
+                      <p className="break-all">ID: {transaction.id}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="hidden md:block overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
@@ -523,12 +560,13 @@ export default function Finance() {
                   ))}
                 </tbody>
               </table>
+              </div>
               {transactions.length === 0 && (
                 <div className="text-center py-8 text-gray-500">
                   No transactions found
                 </div>
               )}
-            </div>
+            </>
           )}
         </div>
 

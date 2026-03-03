@@ -21,7 +21,15 @@ import { VERSION } from '../../version.js';
 const Layout = ({ children, title }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
-  const [currentAdmin, setCurrentAdmin] = useState(null);
+  const [currentAdmin, setCurrentAdmin] = useState(() => {
+    try {
+      const cached = localStorage.getItem('adminUser');
+      return cached ? JSON.parse(cached) : null;
+    } catch {
+      return null;
+    }
+  });
+  const [adminLoading, setAdminLoading] = useState(true);
   const [updateNotes, setUpdateNotes] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const navRef = useRef(null);
@@ -32,6 +40,7 @@ const Layout = ({ children, title }) => {
 
   useEffect(() => {
     const fetchAdminProfile = async () => {
+      setAdminLoading(true);
       try {
         const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/auth/profile`, {
           credentials: 'include',
@@ -50,11 +59,20 @@ const Layout = ({ children, title }) => {
         // Clear invalid cached data on error
         localStorage.removeItem('adminUser');
         setCurrentAdmin(null);
+      } finally {
+        setAdminLoading(false);
       }
     };
 
     fetchAdminProfile();
   }, []);
+
+  // Redirect to login if not authenticated after loading
+  useEffect(() => {
+    if (!adminLoading && !currentAdmin) {
+      navigate('/login');
+    }
+  }, [adminLoading, currentAdmin, navigate]);
 
   // Fetch update notes for notifications
   const fetchUpdateNotes = async () => {
@@ -162,9 +180,9 @@ const Layout = ({ children, title }) => {
     { name: 'Eateries', icon: ChefHat, path: '/eateries', roles: ['super_admin', 'admin'] },
     { name: 'Darkstore', icon: Warehouse, path: '/darkstore', roles: ['super_admin', 'admin'] },
     { name: 'Support', icon: Headphones, path: '/support', roles: ['super_admin', 'admin'] },
-    { name: 'Delivery Agents', icon: Truck, path: '/delivery-agents', roles: ['super_admin', 'admin'] },
-    { name: 'Delivery Ratings', icon: Star, path: '/delivery-ratings', roles: ['super_admin', 'admin'] },
-    { name: 'Delivery Zones', icon: MapPin, path: '/delivery-zones', roles: ['super_admin', 'admin'] },
+    { name: 'Delivery Agents', icon: Truck, path: '/delivery-agents', roles: ['super_admin', 'admin', 'delivery_manager'] },
+    { name: 'Delivery Ratings', icon: Star, path: '/delivery-ratings', roles: ['super_admin', 'admin', 'delivery_manager'] },
+    { name: 'Delivery Zones', icon: MapPin, path: '/delivery-zones', roles: ['super_admin', 'admin', 'delivery_manager'] },
     { name: 'Market Area', icon: MapPin, path: '/market-area', roles: ['super_admin', 'admin'] },
     { name: 'Offers', icon: Gift, path: '/offers', roles: ['super_admin', 'admin'] },
     { name: 'Home Ads', icon: Smartphone, path: '/home-ads', roles: ['super_admin', 'admin'] },
@@ -182,7 +200,7 @@ const Layout = ({ children, title }) => {
   ];
 
   const filteredMenuItems = menuItems.filter(item =>
-    !currentAdmin || item.roles.includes(currentAdmin.role)
+    adminLoading ? false : (!currentAdmin || item.roles.includes(currentAdmin.role))
   );
 
   const isActive = (path) => {
