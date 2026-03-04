@@ -52,6 +52,7 @@ import S3store from './Admin/S3store.jsx'
 import PublicStore from './Admin/PublicStore.jsx'
 import PublicStoreDetails from './Admin/PublicStoreDetails.jsx'
 import Darkstore from './Admin/Darkstore.jsx'
+import Logs from './Admin/Logs.jsx'
 
 function App() {
   return (
@@ -160,6 +161,7 @@ function App() {
           {/* Admin Management (Super Admin only) */}
           <Route path="/admin-management" element={<AdminManagement />} />
           <Route path="/security" element={<Security />} />
+          <Route path="/logs" element={<Logs />} />
           <Route path="/admin-register" element={<AdminRegister />} />
           <Route path="/update-notes" element={<UpdateNotesAdmin />} />
           <Route path="/bug-reports" element={<BugReports />} />

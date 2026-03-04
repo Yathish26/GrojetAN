@@ -19,6 +19,7 @@ export default function DeliveryAgentSignup() {
   const [showPassword, setShowPassword] = useState(false);
   const [availableZones, setAvailableZones] = useState([]);
   const [zonesLoading, setZonesLoading] = useState(true);
+  const [errors, setErrors] = useState({});
   const [formData, setFormData] = useState({
     // Personal Information
     personalInfo: {
@@ -127,6 +128,16 @@ export default function DeliveryAgentSignup() {
     'car'
   ];
 
+  const buildKey = (section, field) => (section ? `${section}.${field}` : field);
+
+  const inputClasses = (key) =>
+    `w-full px-3 py-2 border rounded-lg focus:ring-2 ${errors[key]
+      ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+      : 'border-gray-300 focus:ring-green-500 focus:border-green-500'}`;
+
+  const renderError = (key) =>
+    errors[key] ? <p className="text-red-600 text-sm mt-1">{errors[key]}</p> : null;
+
   // Fetch delivery zones on component mount
   const fetchDeliveryZones = async () => {
       try {
@@ -161,8 +172,17 @@ export default function DeliveryAgentSignup() {
     };
 
   const handleInputChange = (section, field, value) => {
+    const key = buildKey(section, field);
+    if (errors[key]) {
+      setErrors((prev) => {
+        const next = { ...prev };
+        delete next[key];
+        return next;
+      });
+    }
+
     if (section) {
-      setFormData(prev => {
+      setFormData((prev) => {
         const keys = field.split('.');
         const updatedSection = { ...prev[section] };
         let current = updatedSection;
@@ -177,7 +197,7 @@ export default function DeliveryAgentSignup() {
         };
       });
     } else {
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
         [field]: value
       }));
@@ -185,25 +205,77 @@ export default function DeliveryAgentSignup() {
   };
 
   const validateForm = () => {
-    return formData.personalInfo.firstName && 
-           formData.personalInfo.email && formData.personalInfo.phone && 
-           formData.personalInfo.dateOfBirth &&
-           formData.address.street && formData.address.city && 
-           formData.address.state && formData.address.zipCode &&
-           formData.password && formData.confirmPassword &&
-           formData.password === formData.confirmPassword &&
-           formData.password.length >= 6 &&
-           formData.emergencyContact.name && formData.emergencyContact.phone &&
-           formData.emergencyContact.relationship &&
-           formData.vehicleInfo.vehicleType && formData.vehicleInfo.vehicleNumber &&
-           formData.documents.bankAccount.accountNumber && formData.documents.bankAccount.ifscCode &&
-           formData.documents.bankAccount.bankName && formData.documents.bankAccount.accountHolderName &&
-           formData.agreedToTerms && formData.agreedToPrivacy;
+    const newErrors = {};
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!formData.personalInfo.firstName.trim()) newErrors['personalInfo.firstName'] = 'First name is required';
+    if (!formData.personalInfo.email.trim()) {
+      newErrors['personalInfo.email'] = 'Email is required';
+    } else if (!emailPattern.test(formData.personalInfo.email.trim())) {
+      newErrors['personalInfo.email'] = 'Enter a valid email address';
+    }
+    if (!formData.personalInfo.phone.trim()) newErrors['personalInfo.phone'] = 'Phone number is required';
+    if (!formData.personalInfo.dateOfBirth) newErrors['personalInfo.dateOfBirth'] = 'Date of birth is required';
+    if (!formData.personalInfo.gender) newErrors['personalInfo.gender'] = 'Gender is required';
+
+    if (!formData.address.street.trim()) newErrors['address.street'] = 'Street address is required';
+    if (!formData.address.city.trim()) newErrors['address.city'] = 'City is required';
+    if (!formData.address.state.trim()) newErrors['address.state'] = 'State is required';
+    if (!formData.address.zipCode.trim()) newErrors['address.zipCode'] = 'ZIP code is required';
+
+    if (!formData.password) {
+      newErrors.password = 'Password is required';
+    } else if (formData.password.length < 6) {
+      newErrors.password = 'Password must be at least 6 characters';
+    }
+    if (!formData.confirmPassword) {
+      newErrors.confirmPassword = 'Confirm your password';
+    } else if (formData.password !== formData.confirmPassword) {
+      newErrors.confirmPassword = 'Passwords must match';
+    }
+
+    if (!formData.emergencyContact.name.trim()) newErrors['emergencyContact.name'] = 'Contact name is required';
+    if (!formData.emergencyContact.phone.trim()) newErrors['emergencyContact.phone'] = 'Contact phone is required';
+    if (!formData.emergencyContact.relationship) newErrors['emergencyContact.relationship'] = 'Relationship is required';
+
+    if (!formData.vehicleInfo.vehicleType) newErrors['vehicleInfo.vehicleType'] = 'Vehicle type is required';
+    if (!formData.vehicleInfo.vehicleNumber.trim()) newErrors['vehicleInfo.vehicleNumber'] = 'Vehicle number is required';
+
+    if (!formData.documents.bankAccount.accountNumber.trim()) newErrors['documents.bankAccount.accountNumber'] = 'Account number is required';
+    if (!formData.documents.bankAccount.ifscCode.trim()) newErrors['documents.bankAccount.ifscCode'] = 'IFSC code is required';
+    if (!formData.documents.bankAccount.bankName) newErrors['documents.bankAccount.bankName'] = 'Bank name is required';
+    if (!formData.documents.bankAccount.accountHolderName.trim()) newErrors['documents.bankAccount.accountHolderName'] = 'Account holder name is required';
+
+    if (!formData.documents.documentsLink.trim()) {
+      newErrors['documents.documentsLink'] = 'Documents link is required';
+    } else {
+      try {
+        // Basic URL validation to ensure a proper link is provided
+        // eslint-disable-next-line no-new
+        new URL(formData.documents.documentsLink.trim());
+      } catch (err) {
+        newErrors['documents.documentsLink'] = 'Enter a valid URL';
+      }
+    }
+
+    if (formData.workInfo.experience === '') {
+      newErrors['workInfo.experience'] = 'Work experience is required';
+    } else if (Number(formData.workInfo.experience) < 0) {
+      newErrors['workInfo.experience'] = 'Experience cannot be negative';
+    }
+
+    if (!formData.workInfo.assignedZone) newErrors['workInfo.assignedZone'] = 'Assigned zone is required';
+
+    if (!formData.agreedToTerms) newErrors.agreedToTerms = 'Please accept the Terms and Conditions';
+    if (!formData.agreedToPrivacy) newErrors.agreedToPrivacy = 'Please accept the Privacy Policy';
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async () => {
     if (!validateForm()) {
-      toast.error('Please fill in all required fields');
+      toast.error('Please fix the highlighted fields');
       return;
     }
 
@@ -283,6 +355,7 @@ export default function DeliveryAgentSignup() {
         },
         agreedToTerms: false, agreedToPrivacy: false
       });
+      setErrors({});
       
     } catch (err) {
       toast.error(err.message);
@@ -359,8 +432,10 @@ export default function DeliveryAgentSignup() {
                     required
                     value={formData.personalInfo.firstName}
                     onChange={(e) => handleInputChange('personalInfo', 'firstName', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    className={inputClasses('personalInfo.firstName')}
+                    aria-invalid={!!errors['personalInfo.firstName']}
                   />
+                  {renderError('personalInfo.firstName')}
                 </div>
                 
                 <div>
@@ -372,7 +447,7 @@ export default function DeliveryAgentSignup() {
                     maxLength={100}
                     value={formData.personalInfo.lastName}
                     onChange={(e) => handleInputChange('personalInfo', 'lastName', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    className={inputClasses('personalInfo.lastName')}
                   />
                 </div>
                 
@@ -386,8 +461,10 @@ export default function DeliveryAgentSignup() {
                     required
                     value={formData.personalInfo.email}
                     onChange={(e) => handleInputChange('personalInfo', 'email', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    className={inputClasses('personalInfo.email')}
+                    aria-invalid={!!errors['personalInfo.email']}
                   />
+                  {renderError('personalInfo.email')}
                 </div>
                 
                 <div>
@@ -405,8 +482,10 @@ export default function DeliveryAgentSignup() {
                   }}
                     value={formData.personalInfo.phone}
                     onChange={(e) => handleInputChange('personalInfo', 'phone', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    className={inputClasses('personalInfo.phone')}
+                    aria-invalid={!!errors['personalInfo.phone']}
                   />
+                  {renderError('personalInfo.phone')}
                 </div>
                 
                 <div>
@@ -418,8 +497,10 @@ export default function DeliveryAgentSignup() {
                     required
                     value={formData.personalInfo.dateOfBirth}
                     onChange={(e) => handleInputChange('personalInfo', 'dateOfBirth', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    className={inputClasses('personalInfo.dateOfBirth')}
+                    aria-invalid={!!errors['personalInfo.dateOfBirth']}
                   />
+                  {renderError('personalInfo.dateOfBirth')}
                 </div>
                 
                 <div>
@@ -430,12 +511,14 @@ export default function DeliveryAgentSignup() {
                     required
                     value={formData.personalInfo.gender}
                     onChange={(e) => handleInputChange('personalInfo', 'gender', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    className={inputClasses('personalInfo.gender')}
+                    aria-invalid={!!errors['personalInfo.gender']}
                   >
                     <option value="male">Male</option>
                     <option value="female">Female</option>
                     <option value="other">Other</option>
                   </select>
+                  {renderError('personalInfo.gender')}
                 </div>
               </div>
 
@@ -452,8 +535,10 @@ export default function DeliveryAgentSignup() {
                       required
                       value={formData.address.street}
                       onChange={(e) => handleInputChange('address', 'street', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                      className={inputClasses('address.street')}
+                      aria-invalid={!!errors['address.street']}
                     />
+                    {renderError('address.street')}
                   </div>
                   
                   <div>
@@ -466,8 +551,10 @@ export default function DeliveryAgentSignup() {
                       required
                       value={formData.address.city}
                       onChange={(e) => handleInputChange('address', 'city', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                      className={inputClasses('address.city')}
+                      aria-invalid={!!errors['address.city']}
                     />
+                    {renderError('address.city')}
                   </div>
                   
                   <div>
@@ -480,8 +567,10 @@ export default function DeliveryAgentSignup() {
                       required
                       value={formData.address.state}
                       onChange={(e) => handleInputChange('address', 'state', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                      className={inputClasses('address.state')}
+                      aria-invalid={!!errors['address.state']}
                     />
+                    {renderError('address.state')}
                   </div>
                   
                   <div>
@@ -499,8 +588,10 @@ export default function DeliveryAgentSignup() {
                     }}
                       value={formData.address.zipCode}
                       onChange={(e) => handleInputChange('address', 'zipCode', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                      className={inputClasses('address.zipCode')}
+                      aria-invalid={!!errors['address.zipCode']}
                     />
+                    {renderError('address.zipCode')}
                   </div>
                   
                   <div>
@@ -512,7 +603,7 @@ export default function DeliveryAgentSignup() {
                       maxLength={100}
                       value={formData.address.landmark}
                       onChange={(e) => handleInputChange('address', 'landmark', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                      className={inputClasses('address.landmark')}
                     />
                   </div>
                 </div>
@@ -534,7 +625,8 @@ export default function DeliveryAgentSignup() {
                       required
                       value={formData.password}
                       onChange={(e) => handleInputChange(null, 'password', e.target.value)}
-                      className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                      className={`${inputClasses('password')} pr-10`}
+                      aria-invalid={!!errors.password}
                       minLength={6}
                     />
                     <button
@@ -545,6 +637,7 @@ export default function DeliveryAgentSignup() {
                       {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
                   </div>
+                  {renderError('password')}
                 </div>
 
                 <div>
@@ -556,11 +649,10 @@ export default function DeliveryAgentSignup() {
                     required
                     value={formData.confirmPassword}
                     onChange={(e) => handleInputChange(null, 'confirmPassword', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    className={inputClasses('confirmPassword')}
+                    aria-invalid={!!errors.confirmPassword}
                   />
-                  {formData.confirmPassword && formData.password !== formData.confirmPassword && (
-                    <p className="text-red-600 text-sm mt-1">Passwords do not match</p>
-                  )}
+                  {renderError('confirmPassword')}
                 </div>
               </div>
 
@@ -577,8 +669,10 @@ export default function DeliveryAgentSignup() {
                       required
                       value={formData.emergencyContact.name}
                       onChange={(e) => handleInputChange('emergencyContact', 'name', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                      className={inputClasses('emergencyContact.name')}
+                      aria-invalid={!!errors['emergencyContact.name']}
                     />
+                    {renderError('emergencyContact.name')}
                   </div>
 
                   <div>
@@ -591,13 +685,15 @@ export default function DeliveryAgentSignup() {
                       required
                       value={formData.emergencyContact.phone}
                       onChange={(e) => handleInputChange('emergencyContact', 'phone', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                      className={inputClasses('emergencyContact.phone')}
+                      aria-invalid={!!errors['emergencyContact.phone']}
                       onKeyDown={(e) => {
                       if (['e', 'E', '+', '-'].includes(e.key)) {
                       e.preventDefault();
                          }
                        }}
                     />
+                    {renderError('emergencyContact.phone')}
                   </div>
 
                   <div>
@@ -608,7 +704,8 @@ export default function DeliveryAgentSignup() {
                       required
                       value={formData.emergencyContact.relationship}
                       onChange={(e) => handleInputChange('emergencyContact', 'relationship', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                      className={inputClasses('emergencyContact.relationship')}
+                      aria-invalid={!!errors['emergencyContact.relationship']}
                     >
                       <option value="">Select</option>
                       <option value="parent">Parent</option>
@@ -617,6 +714,7 @@ export default function DeliveryAgentSignup() {
                       <option value="friend">Friend</option>
                       <option value="other">Other</option>
                     </select>
+                    {renderError('emergencyContact.relationship')}
                   </div>
                 </div>
               </div>
@@ -635,7 +733,8 @@ export default function DeliveryAgentSignup() {
                     required
                     value={formData.vehicleInfo.vehicleType}
                     onChange={(e) => handleInputChange('vehicleInfo', 'vehicleType', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    className={inputClasses('vehicleInfo.vehicleType')}
+                    aria-invalid={!!errors['vehicleInfo.vehicleType']}
                   >
                     <option value="">Select Vehicle Type</option>
                     {vehicleTypes.map(type => (
@@ -644,6 +743,7 @@ export default function DeliveryAgentSignup() {
                       </option>
                     ))}
                   </select>
+                  {renderError('vehicleInfo.vehicleType')}
                 </div>
 
                 <div>
@@ -656,9 +756,11 @@ export default function DeliveryAgentSignup() {
                     required
                     value={formData.vehicleInfo.vehicleNumber}
                     onChange={(e) => handleInputChange('vehicleInfo', 'vehicleNumber', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    className={inputClasses('vehicleInfo.vehicleNumber')}
+                    aria-invalid={!!errors['vehicleInfo.vehicleNumber']}
                     placeholder="e.g., KA01AB1234"
                   />
+                  {renderError('vehicleInfo.vehicleNumber')}
                 </div>
               </div>
             </div>
@@ -685,9 +787,11 @@ export default function DeliveryAgentSignup() {
                            }
                       }}
                       onChange={(e) => handleInputChange('documents', 'bankAccount.accountNumber', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                      className={inputClasses('documents.bankAccount.accountNumber')}
+                      aria-invalid={!!errors['documents.bankAccount.accountNumber']}
                       placeholder="Enter account number"
                     />
+                    {renderError('documents.bankAccount.accountNumber')}
                   </div>
 
                   <div>
@@ -699,9 +803,11 @@ export default function DeliveryAgentSignup() {
                       maxLength={20}
                       value={formData.documents.bankAccount.ifscCode}
                       onChange={(e) => handleInputChange('documents', 'bankAccount.ifscCode', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                      className={inputClasses('documents.bankAccount.ifscCode')}
+                      aria-invalid={!!errors['documents.bankAccount.ifscCode']}
                       placeholder="e.g., SBIN0001234"
                     />
+                    {renderError('documents.bankAccount.ifscCode')}
                   </div>
 
                   <div>
@@ -711,7 +817,8 @@ export default function DeliveryAgentSignup() {
                     <select
                       value={formData.documents.bankAccount.bankName}
                       onChange={(e) => handleInputChange('documents', 'bankAccount.bankName', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                      className={inputClasses('documents.bankAccount.bankName')}
+                      aria-invalid={!!errors['documents.bankAccount.bankName']}
                     >
                       <option value="">Select Bank</option>
                       {/* Public Sector Banks */}
@@ -826,6 +933,7 @@ export default function DeliveryAgentSignup() {
                         <option value="Other">Other Bank</option>
                       </optgroup>
                     </select>
+                    {renderError('documents.bankAccount.bankName')}
                   </div>
 
                   <div>
@@ -837,9 +945,11 @@ export default function DeliveryAgentSignup() {
                       maxLength={100}
                       value={formData.documents.bankAccount.accountHolderName}
                       onChange={(e) => handleInputChange('documents', 'bankAccount.accountHolderName', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                      className={inputClasses('documents.bankAccount.accountHolderName')}
+                      aria-invalid={!!errors['documents.bankAccount.accountHolderName']}
                       placeholder="Enter account holder name"
                     />
+                    {renderError('documents.bankAccount.accountHolderName')}
                   </div>
                 </div>
 
@@ -855,8 +965,10 @@ export default function DeliveryAgentSignup() {
                       value={formData.documents.documentsLink}
                       onChange={(e) => handleInputChange('documents', 'documentsLink', e.target.value)}
                       placeholder="https://drive.google.com/..."
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                      className={inputClasses('documents.documentsLink')}
+                      aria-invalid={!!errors['documents.documentsLink']}
                     />
+                    {renderError('documents.documentsLink')}
                     <p className="text-xs text-gray-500 mt-1">
                       Paste the link to your documents folder (Google Drive, Dropbox, etc.)
                     </p>
@@ -880,7 +992,8 @@ export default function DeliveryAgentSignup() {
                       maxLength={2}
                       value={formData.workInfo.experience}
                       onChange={(e) => handleInputChange('workInfo', 'experience', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                      className={inputClasses('workInfo.experience')}
+                      aria-invalid={!!errors['workInfo.experience']}
                       min="0"
                       max="20"
                       step="0.5"
@@ -890,6 +1003,7 @@ export default function DeliveryAgentSignup() {
                         }
                        }}
                     />
+                    {renderError('workInfo.experience')}
                   </div>
                 </div>
 
@@ -900,7 +1014,8 @@ export default function DeliveryAgentSignup() {
                   <select
                     value={formData.workInfo.assignedZone}
                     onChange={(e) => handleInputChange('workInfo', 'assignedZone', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    className={inputClasses('workInfo.assignedZone')}
+                    aria-invalid={!!errors['workInfo.assignedZone']}
                     disabled={zonesLoading}
                   >
                     <option value="">
@@ -912,6 +1027,7 @@ export default function DeliveryAgentSignup() {
                       </option>
                     ))}
                   </select>
+                  {renderError('workInfo.assignedZone')}
                   {!zonesLoading && availableZones.length === 0 && (
                     <p className="text-sm text-gray-500 mt-1">No delivery zones available</p>
                   )}
@@ -933,6 +1049,8 @@ export default function DeliveryAgentSignup() {
                       </span>
                     </label>
 
+                    {renderError('agreedToTerms')}
+
                     <label className="flex items-start gap-3">
                       <input
                         type="checkbox"
@@ -944,6 +1062,7 @@ export default function DeliveryAgentSignup() {
                         I agree to the <a href="#" className="text-blue-600 hover:text-blue-700">Privacy Policy</a> *
                       </span>
                     </label>
+                    {renderError('agreedToPrivacy')}
                   </div>
                 </div>
               </div>

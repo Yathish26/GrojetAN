@@ -12,7 +12,8 @@ import {
   Cloud,
   Star,
   ChefHat,
-  Warehouse
+  Warehouse,
+  FileText
 } from 'lucide-react';
 import { MdAdminPanelSettings } from 'react-icons/md';
 import toast from 'react-hot-toast';
@@ -193,6 +194,7 @@ const Layout = ({ children, title }) => {
     { name: 'S3 Media Manager', icon: Package, path: '/s3-store', roles: ['super_admin'] },
     { name: 'Admin Management', icon: Shield, path: '/admin-management', roles: ['super_admin'] },
     { name: 'Security', icon: ShieldPlus, path: '/security', roles: ['super_admin'] },
+    { name: 'Logs', icon: FileText, path: '/logs', roles: ['super_admin'] },
     { name: 'Update Notes', icon: Bell, path: '/update-notes', roles: ['super_admin'] },
     { name: 'Contact Queries', icon: MessageSquare, path: '/contact-qur', roles: ['super_admin', 'admin'] },
     { name: 'Email Sender', icon: Mail, path: '/email-sender', roles: ['super_admin', 'admin'] },
