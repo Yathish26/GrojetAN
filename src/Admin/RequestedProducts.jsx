@@ -13,10 +13,7 @@ function RequestedProducts() {
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [rejectingRequest, setRejectingRequest] = useState(null);
   const [rejectionReason, setRejectionReason] = useState('');
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [deletingRequest, setDeletingRequest] = useState(null);
-  const [deleteStep, setDeleteStep] = useState(1); // 1 for first confirmation, 2 for second
-  const [deleteConfirmationText, setDeleteConfirmationText] = useState('');
+  const [pendingDeleteId, setPendingDeleteId] = useState(null);
   const [currentAdmin, setCurrentAdmin] = useState(null);
   const [checkingUser, setCheckingUser] = useState(true);
   const [redirecting, setRedirecting] = useState(false);
@@ -157,33 +154,18 @@ function RequestedProducts() {
     setRejectionReason('');
   };
 
-  // Handle delete button click
+  // Handle delete button click (double tap)
   const handleDeleteClick = (requestId) => {
-    setDeletingRequest(requestId);
-    setDeleteStep(1);
-    setShowDeleteModal(true);
-  };
-
-  // Handle delete confirmation
-  const handleDeleteConfirm = () => {
-    if (deleteStep === 1) {
-      setDeleteStep(2);
+    if (pendingDeleteId === requestId) {
+      deleteRequest(requestId);
+      setPendingDeleteId(null);
     } else {
-      // This is now called when the delete button is clicked in step 2
-      deleteRequest(deletingRequest);
-      setShowDeleteModal(false);
-      setDeletingRequest(null);
-      setDeleteStep(1);
-      setDeleteConfirmationText('');
+      setPendingDeleteId(requestId);
+      // reset after 5 seconds if user doesn't click again
+      setTimeout(() => {
+        setPendingDeleteId(prev => (prev === requestId ? null : prev));
+      }, 5000);
     }
-  };
-
-  // Handle delete modal close
-  const handleDeleteCancel = () => {
-    setShowDeleteModal(false);
-    setDeletingRequest(null);
-    setDeleteStep(1);
-    setDeleteConfirmationText('');
   };
 
   // Delete request function
@@ -419,14 +401,14 @@ function RequestedProducts() {
                             <button
                               onClick={() => handleDeleteClick(request.id)}
                               disabled={updating === request.id}
-                              className="px-3 py-2 bg-gray-600 hover:bg-gray-700 text-white text-sm rounded-none flex items-center justify-center gap-1 disabled:opacity-50 w-full sm:w-auto"
+                              className={`px-3 py-2 ${pendingDeleteId === request.id ? 'bg-red-700 hover:bg-red-800' : 'bg-gray-600 hover:bg-gray-700'} text-white text-sm rounded-none flex items-center justify-center gap-1 disabled:opacity-50 w-full sm:w-auto`}
                             >
                               {updating === request.id ? (
                                 <Loader2 className="animate-spin" size={14} />
                               ) : (
                                 <Trash2 size={14} />
                               )}
-                              Delete
+                              {pendingDeleteId === request.id ? 'Click again to delete' : 'Delete'}
                             </button>
                           </div>
                         )}
@@ -529,60 +511,7 @@ function RequestedProducts() {
         </div>
       )}
 
-      {/* Delete Confirmation Modal */}
-      {showDeleteModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-none p-4 md:p-6 w-full max-w-md mx-auto">
-            <div className="text-center">
-              <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-none bg-red-100 mb-4">
-                <Trash2 className="h-6 w-6 text-red-600" />
-              </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                {deleteStep === 1 ? 'Delete Product Request?' : 'Confirm Deletion'}
-              </h3>
-              <p className="text-sm text-gray-600 mb-6 break-words">
-                {deleteStep === 1
-                  ? 'This action cannot be undone. Are you sure you want to delete this product request?'
-                  : 'This will permanently remove the product request from the system. Type "DELETE" to confirm.'
-                }
-              </p>
-              {deleteStep === 2 && (
-                <input
-                  type="text"
-                  placeholder="Type DELETE to confirm"
-                  value={deleteConfirmationText}
-                  onChange={(e) => setDeleteConfirmationText(e.target.value)}
-                  className="w-full p-3 border border-gray-300 rounded-none mb-4 focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                />
-              )}
-              <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                <button
-                  onClick={handleDeleteCancel}
-                  className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-none transition-colors order-2 sm:order-1"
-                >
-                  Cancel
-                </button>
-                {deleteStep === 1 && (
-                  <button
-                    onClick={handleDeleteConfirm}
-                    className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-none order-1 sm:order-2"
-                  >
-                    Delete
-                  </button>
-                )}
-                {deleteStep === 2 && deleteConfirmationText === 'DELETE' && (
-                  <button
-                    onClick={handleDeleteConfirm}
-                    className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-none order-1 sm:order-2"
-                  >
-                    Confirm Delete
-                  </button>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+
 
     </Layout>
   );
