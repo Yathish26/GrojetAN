@@ -187,9 +187,11 @@ export default function Users() {
 
   // Show loading spinner while loading
   if (checkingUser) return (
-    <div className="flex items-center justify-center h-screen">
-      <div className="animate-spin h-12 w-12 border-4 border-green-200 border-t-green-600 rounded-full"></div>
-    </div>
+    <Layout title="Users">
+      <div className="flex items-center justify-center py-12">
+        <div className="animate-spin h-12 w-12 border-4 border-green-200 border-t-green-600 rounded-full"></div>
+      </div>
+    </Layout>
   );
 
   if (!isAuthorized) return (

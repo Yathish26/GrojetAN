@@ -30,7 +30,14 @@ const Layout = ({ children, title }) => {
       return null;
     }
   });
-  const [adminLoading, setAdminLoading] = useState(true);
+  const [adminLoading, setAdminLoading] = useState(() => {
+    try {
+      const cached = localStorage.getItem('adminUser');
+      return !cached; // If we have cached data, don't show loading
+    } catch {
+      return true;
+    }
+  });
   const [updateNotes, setUpdateNotes] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const navRef = useRef(null);
@@ -90,8 +97,10 @@ const Layout = ({ children, title }) => {
   };
 
   useEffect(() => {
-    fetchUpdateNotes();
-  }, []);
+    if (currentAdmin) {
+      fetchUpdateNotes();
+    }
+  }, [currentAdmin]);
 
   // Preserve sidebar scroll position across navigations
   useEffect(() => {
@@ -202,7 +211,7 @@ const Layout = ({ children, title }) => {
   ];
 
   const filteredMenuItems = menuItems.filter(item =>
-    adminLoading ? false : (!currentAdmin || item.roles.includes(currentAdmin.role))
+    !currentAdmin || item.roles.includes(currentAdmin.role)
   );
 
   const isActive = (path) => {
