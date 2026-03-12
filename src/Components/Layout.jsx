@@ -207,7 +207,6 @@ const Layout = ({ children, title }) => {
     { name: 'Update Notes', icon: Bell, path: '/update-notes', roles: ['super_admin'] },
     { name: 'Contact Queries', icon: MessageSquare, path: '/contact-qur', roles: ['super_admin', 'admin'] },
     { name: 'Email Sender', icon: Mail, path: '/email-sender', roles: ['super_admin', 'admin'] },
-    { name: 'Live Chat (Beta)', icon: Headphones, path: '/live-chat', roles: ['super_admin', 'admin'] },
   ];
 
   const filteredMenuItems = menuItems.filter(item =>

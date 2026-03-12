@@ -41,7 +41,6 @@ import UpdateNotesAdmin from './Admin/UpdateNotesAdmin.jsx'
 import HomeAds from './Admin/HomeAds.jsx'
 import BugReports from './Admin/BugReports.jsx'
 import Support from './Admin/Support.jsx'
-import LiveChat from './Admin/LiveChat.jsx'
 import Security from './Admin/Security.jsx'
 import Xpress from './Admin/Xpress.jsx'
 import XpressOrderDetails from './Admin/XpressOrderDetails.jsx'
@@ -151,8 +150,6 @@ function App() {
           <Route path="/contact-qur" element={<ContactQur />} />
           <Route path="/email-sender" element={<EmailSender />} />
           
-          {/* Live Chat */}
-          <Route path="/live-chat" element={<LiveChat />} />
           
           {/* Analytics & Reports */}
           <Route path="/analytics" element={<Analytics />} />

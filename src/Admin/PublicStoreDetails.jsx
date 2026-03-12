@@ -412,7 +412,7 @@ const PublicStoreDetails = () => {
       setUpdatingStoreStatus(true);
 
       const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/merchant-stores/${id}`, {
-        method: 'PUT',
+        method: 'PATCH',
         credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
