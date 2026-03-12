@@ -249,40 +249,45 @@ export default function Categories() {
     const toastId = toast.loading('Uploading image...', { duration: 0 });
 
     const formDataUpload = new FormData();
-    formDataUpload.append('image', selectedFile);
+    formDataUpload.append('file', selectedFile);
+    // categorize uploads under the "categories" folder for easier S3 organization
+    formDataUpload.append('folder', 'categories');
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_SERVER}/image/upload/cloudinary`, {
+      const response = await fetch(`${import.meta.env.VITE_SERVER}/image/upload/s3`, {
         method: 'POST',
+        credentials: 'include',
         body: formDataUpload,
       });
 
       const data = await response.json();
 
       if (response.ok) {
-        // If editing and there's an original image, delete it
+        // If editing and there's an original image, delete it from S3
         if (editingCategory && originalImageUrl) {
           try {
-            await fetch(`${import.meta.env.VITE_SERVER}/image/delete/cloudinary`, {
+            await fetch(`${import.meta.env.VITE_SERVER}/image/delete/s3`, {
               method: 'DELETE',
               headers: {
                 'Content-Type': 'application/json',
               },
               body: JSON.stringify({ imageUrl: originalImageUrl }),
+              credentials: 'include',
             });
-            // We don't show error for delete failure, as the new image is already uploaded
           } catch (deleteError) {
-            console.warn('Failed to delete old image:', deleteError);
+            console.warn('Failed to delete old image from S3:', deleteError);
           }
         }
 
         toast.success('Image uploaded successfully!', { id: toastId });
-        return data.imageUrl;
+        // s3 endpoint returns `url` instead of `imageUrl`
+        return data.url;
       } else {
         toast.error(data.error || 'Upload failed', { id: toastId });
         return null;
       }
     } catch (error) {
+      console.error('Upload failed', error);
       toast.error('Upload failed', { id: toastId });
       return null;
     }
@@ -295,19 +300,20 @@ export default function Categories() {
     try {
       setLoading(true);
 
-      // Delete the category image from Cloudinary if it exists
+      // Delete the category image from S3 if it exists
       if (categoryToDelete.image) {
         try {
-          await fetch(`${import.meta.env.VITE_SERVER}/image/delete/cloudinary`, {
+          await fetch(`${import.meta.env.VITE_SERVER}/image/delete/s3`, {
             method: 'DELETE',
             headers: {
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({ imageUrl: categoryToDelete.image }),
+            credentials: 'include',
           });
           // We don't show error for delete failure, as the category deletion is more important
         } catch (deleteError) {
-          console.warn('Failed to delete image:', deleteError);
+          console.warn('Failed to delete image from S3:', deleteError);
         }
       }
 
