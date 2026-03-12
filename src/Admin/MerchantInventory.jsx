@@ -450,7 +450,7 @@ const MerchantInventory = () => {
 
   // Separate effect for pagination changes
   useEffect(() => {
-    if (currentUser && id && page > 1) {
+    if (currentUser && id) {
       fetchMerchantInventory({ page, status: statusFilter, category: categoryFilter, search: searchTerm, sortBy, sortOrder });
     }
   }, [page, currentUser, id]);
