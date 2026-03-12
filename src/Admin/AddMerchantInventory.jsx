@@ -299,6 +299,40 @@ const AddMerchantInventory = () => {
     setShowProductModal(true);
   };
 
+  const handleTogglePanIndia = async (product) => {
+    const productId = product._id || product.productId;
+    setPanIndiaUpdating(productId);
+    try {
+      const resp = await fetch(`${import.meta.env.VITE_SERVER}/admin/products/${productId}`, {
+        method: 'PUT',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ panIndia: true })
+      });
+      if (resp.status === 401) {
+        navigate('/login');
+        return;
+      }
+      const data = await resp.json();
+      if (data.tokenValid === false) {
+        navigate('/login', { replace: true });
+        return;
+      }
+      if (data.success) {
+        toast.success('Product marked pan‑India');
+        // update selectedProduct state if open
+        setSelectedProduct(prev => prev && { ...prev, panIndia: true });
+      } else {
+        throw new Error(data.message || 'Failed to update product');
+      }
+    } catch (err) {
+      console.error('Error updating panIndia:', err);
+      toast.error(err.message || 'Failed to mark pan‑India');
+    } finally {
+      setPanIndiaUpdating(null);
+    }
+  };
+
   if (checkingUser) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -453,6 +487,16 @@ const AddMerchantInventory = () => {
                                     onClick={() => openProductModal(product)}
                                   />
                                 )}
+                                <span
+                                  className={`text-xl ml-1 cursor-pointer ${product.panIndia ? '' : 'opacity-50'}`}
+                                  onClick={() => handleTogglePanIndia(product)}
+                                  title="Mark pan-India"
+                                >
+                                  🇮🇳
+                                </span>
+                                {panIndiaUpdating === product._id && (
+                                  <div className="animate-spin h-4 w-4 border-b-2 border-green-600 ml-1" />
+                                )}
                                 <div className="flex-1 min-w-0">
                                   <h4 className="text-sm font-medium text-gray-900 truncate">{product.name}</h4>
                                   <p className="text-sm text-gray-500 truncate">{product.category?.name || 'Unknown'}</p>
@@ -586,13 +630,20 @@ const AddMerchantInventory = () => {
                           alt={selectedProduct.name}
                         />
                       )}
-                      <div>
+                      <div className="flex items-center space-x-2">
                         <h3 className="text-2xl font-bold text-gray-900">{selectedProduct.name}</h3>
-                        <p className="text-sm text-gray-500">Category: {selectedProduct.category?.name || 'Unknown'}</p>
-                        {selectedProduct.brand && (
-                          <p className="text-sm text-gray-500">Brand: {selectedProduct.brand}</p>
-                        )}
+                        <span
+                          className={`text-xl cursor-pointer ${selectedProduct.panIndia ? '' : 'opacity-50'}`}
+                          onClick={() => handleTogglePanIndia(selectedProduct)}
+                          title="Mark pan-India"
+                        >
+                          🇮🇳
+                        </span>
                       </div>
+                      <p className="text-sm text-gray-500">Category: {selectedProduct.category?.name || 'Unknown'}</p>
+                      {selectedProduct.brand && (
+                        <p className="text-sm text-gray-500">Brand: {selectedProduct.brand}</p>
+                      )}
                     </div>
                     <button
                       onClick={() => setShowProductModal(false)}

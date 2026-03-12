@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Package, Search, AlertTriangle, CheckCircle, XCircle, Edit, Save, X, ChevronLeft, ChevronRight, Filter, SlidersHorizontal, Trash2, Plus, Check, FileSpreadsheet, ArrowUp, ArrowDown, ArrowUpDown, ChevronDown } from 'lucide-react';
+import { ArrowLeft, Package, Search, AlertTriangle, CheckCircle, XCircle, Edit, Save, X, ChevronLeft, ChevronRight, Filter, SlidersHorizontal, Trash2, Plus, Check, FileSpreadsheet, ArrowUp, ArrowDown, ArrowUpDown, ChevronDown, Flag } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Layout from '../Components/Layout';
 
@@ -10,6 +10,8 @@ const InventoryItem = React.memo(({
   index,
   selectedItems,
   handleSelectItem,
+  handleTogglePanIndia,
+  panIndiaUpdating,
   editingItem,
   editedPrice,
   setEditedPrice,
@@ -42,12 +44,26 @@ const InventoryItem = React.memo(({
   return (
     <tr className="hover:bg-gray-50 transition-colors">
       <td className="px-6 py-4 whitespace-nowrap">
-        <input
-          type="checkbox"
-          checked={selectedItems.includes(item._id)}
-          onChange={() => handleSelectItem(item._id)}
-          className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
-        />
+        <div className="flex items-center space-x-2">
+          <input
+            type="checkbox"
+            checked={selectedItems.includes(item._id)}
+            onChange={() => handleSelectItem(item._id)}
+            className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+          />
+          <span className="flex items-center">
+            <span className="relative">
+              <Flag
+                className={`cursor-pointer text-xl ${item.panIndia ? 'text-green-600' : 'text-gray-400'}
+                  ${panIndiaUpdating === (item.productId || item._id) ? 'opacity-50' : ''}`}
+                onClick={() => handleTogglePanIndia(item)}
+                title="Toggle pan-India"
+                size={20}
+              />
+
+            </span>
+          </span>
+        </div>
       </td>
       <td className="px-6 py-4 whitespace-nowrap">
         <div className="flex items-center">
@@ -312,6 +328,9 @@ const MerchantInventory = () => {
   // Bulk selection states
   const [selectedItems, setSelectedItems] = useState([]);
   const [selectAll, setSelectAll] = useState(false);
+
+  // Pan-India update state (holds productId being updated)
+  const [panIndiaUpdating, setPanIndiaUpdating] = useState(null);
 
   // Debounce ref for search
   const searchTimeoutRef = useRef(null);
@@ -864,6 +883,48 @@ const MerchantInventory = () => {
   const handleCancelEditMarkupPrice = () => {
     setEditingMarkupPrice(null);
     setEditedMarkupPrice('');
+  };
+
+  // Toggle panIndia flag for a product
+  const handleTogglePanIndia = async (item) => {
+    const productId = item.productId || item._id;
+    setPanIndiaUpdating(productId);
+    const toastId = toast.loading('Updating...');
+    try {
+      const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/products/${productId}`, {
+        method: 'PUT',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ panIndia: !item.panIndia })
+      });
+      if (response.status === 401) {
+        navigate('/login');
+        return;
+      }
+      const data = await response.json();
+      if (data.tokenValid === false) {
+        navigate('/login', { replace: true });
+        return;
+      }
+      if (data.success) {
+        // Refresh inventory before clearing toast
+        await fetchMerchantInventory({ page, search: searchTerm, status: statusFilter, category: categoryFilter, sortBy, sortOrder, silent: true });
+        if (selectedProduct) {
+          const pid = selectedProduct.productId || selectedProduct._id;
+          if (pid === productId) {
+            setSelectedProduct(prev => ({ ...prev, panIndia: !item.panIndia }));
+          }
+        }
+        toast.success('Product marked pan‑India', { id: toastId });
+      } else {
+        throw new Error(data.message || 'Failed to update product');
+      }
+    } catch (err) {
+      console.error('Error updating panIndia flag:', err);
+      toast.error(err.message || 'Failed to update pan‑India flag', { id: toastId });
+    } finally {
+      setPanIndiaUpdating(null);
+    }
   };
 
   const handleSaveMarkupPrice = async (item) => {
@@ -1426,6 +1487,18 @@ const MerchantInventory = () => {
                             onChange={() => handleSelectItem(item._id)}
                             className="mt-1 h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
                           />
+                          <div className="flex items-center space-x-2">
+                            <span className="relative">
+                              <Flag
+                                className={`mt-1 cursor-pointer ${item.panIndia ? 'text-green-600' : 'text-gray-400'}
+                                  ${panIndiaUpdating === (item.productId || item._id) ? 'opacity-50' : ''}`}
+                                onClick={() => handleTogglePanIndia(item)}
+                                title="Toggle pan-India"
+                                size={20}
+                              />
+
+                            </span>
+                          </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center space-x-3">
                               {item.image && (
@@ -1687,6 +1760,8 @@ const MerchantInventory = () => {
                           index={index}
                           selectedItems={selectedItems}
                           handleSelectItem={handleSelectItem}
+                          handleTogglePanIndia={handleTogglePanIndia}
+                          panIndiaUpdating={panIndiaUpdating}
                           editingItem={editingItem}
                           editedPrice={editedPrice}
                           setEditedPrice={setEditedPrice}
@@ -1782,13 +1857,22 @@ const MerchantInventory = () => {
                         alt={selectedProduct.name}
                       />
                     )}
-                    <div>
+                    <div className="flex items-center space-x-2">
                       <h3 className="text-2xl font-bold text-gray-900">{selectedProduct.name}</h3>
-                      <p className="text-sm text-gray-500">Category: {selectedProduct.category}</p>
-                      {selectedProduct.brand && (
-                        <p className="text-sm text-gray-500">Brand: {selectedProduct.brand}</p>
-                      )}
+                      <span
+                        className={`text-xl cursor-pointer ${selectedProduct.panIndia ? 'text-green-600' : 'text-gray-400'}
+                          ${panIndiaUpdating === (selectedProduct.productId || selectedProduct._id) ? 'opacity-50' : ''}`}
+                        onClick={() => handleTogglePanIndia(selectedProduct)}
+                        title="Mark pan-India"
+                      >
+                        🇮🇳
+                      </span>
+}
                     </div>
+                    <p className="text-sm text-gray-500">Category: {selectedProduct.category}</p>
+                    {selectedProduct.brand && (
+                      <p className="text-sm text-gray-500">Brand: {selectedProduct.brand}</p>
+                    )}
                   </div>
                   <button
                     onClick={() => setShowProductModal(false)}
