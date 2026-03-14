@@ -43,6 +43,7 @@ export default function AppControls() {
   // Xpress controls states
   const [xpressGstPercentage, setXpressGstPercentage] = useState(18);
   const [xpressCodEnabled, setXpressCodEnabled] = useState(true);
+  const [xpressUpiEnabled, setXpressUpiEnabled] = useState(true);
   const [xpressMaxDistanceKm, setXpressMaxDistanceKm] = useState(10);
   const [xpressBaseDistanceKm, setXpressBaseDistanceKm] = useState(3);
   const [xpressBasePrice, setXpressBasePrice] = useState(60);
@@ -57,6 +58,7 @@ export default function AppControls() {
   const [xpressUpdateLogs, setXpressUpdateLogs] = useState({
     xpressGstPercentage: { updatedBy: null, updatedAt: null },
     xpressCodEnabled: { updatedBy: null, updatedAt: null },
+    xpressUpiEnabled: { updatedBy: null, updatedAt: null },
     xpressMaxDistanceKm: { updatedBy: null, updatedAt: null },
     xpressBaseDistanceKm: { updatedBy: null, updatedAt: null },
     xpressBasePrice: { updatedBy: null, updatedAt: null },
@@ -143,6 +145,7 @@ export default function AppControls() {
         // Set Xpress controls
         setXpressGstPercentage(data.xpressGstPercentage?.value || 18);
         setXpressCodEnabled(data.xpressCodEnabled?.value !== undefined ? data.xpressCodEnabled.value : true);
+        setXpressUpiEnabled(data.xpressUpiEnabled?.value !== undefined ? data.xpressUpiEnabled.value : true);
         setXpressMaxDistanceKm(data.xpressMaxDistanceKm?.value || 10);
         setXpressBaseDistanceKm(data.xpressBaseDistanceKm?.value || 3);
         setXpressBasePrice(data.xpressBasePrice?.value || 60);
@@ -157,6 +160,10 @@ export default function AppControls() {
           xpressCodEnabled: {
             updatedBy: data.xpressCodEnabled?.updatedBy,
             updatedAt: data.xpressCodEnabled?.updatedAt
+          },
+          xpressUpiEnabled: {
+            updatedBy: data.xpressUpiEnabled?.updatedBy,
+            updatedAt: data.xpressUpiEnabled?.updatedAt
           },
           xpressBaseDistanceKm: {
             updatedBy: data.xpressBaseDistanceKm?.updatedBy,
@@ -265,7 +272,7 @@ export default function AppControls() {
     hours = hours ? hours : 12; // the hour '0' should be '12'
     const formattedTime = `${hours}:${minutes} ${ampm}`;
     const formattedDate = `${day}/${month}/${year} ${formattedTime}`;
-    const adminName = log.updatedBy ? (log.updatedBy.name || log.updatedBy.email || 'Unknown Admin') : 'Unknown Admin';
+    const adminName = log.updatedBy ? (log.updatedBy.name || log.updatedBy.email || 'Admin') : 'Unknown Admin';
     return `Last updated by ${adminName} on ${formattedDate}`;
   };
 
@@ -299,6 +306,7 @@ export default function AppControls() {
     setXpressOriginalValues({
       xpressGstPercentage,
       xpressCodEnabled,
+      xpressUpiEnabled,
       xpressMaxDistanceKm,
       xpressBaseDistanceKm,
       xpressBasePrice,
@@ -311,6 +319,7 @@ export default function AppControls() {
     // Restore original values
     setXpressGstPercentage(xpressOriginalValues.xpressGstPercentage);
     setXpressCodEnabled(xpressOriginalValues.xpressCodEnabled);
+    setXpressUpiEnabled(xpressOriginalValues.xpressUpiEnabled);
     setXpressMaxDistanceKm(xpressOriginalValues.xpressMaxDistanceKm);
     setXpressBaseDistanceKm(xpressOriginalValues.xpressBaseDistanceKm);
     setXpressBasePrice(xpressOriginalValues.xpressBasePrice);
@@ -337,6 +346,7 @@ export default function AppControls() {
         body: JSON.stringify({
           xpressGstPercentage: parseFloat(xpressGstPercentage),
           xpressCodEnabled: xpressCodEnabled,
+          xpressUpiEnabled: xpressUpiEnabled,
           xpressMaxDistanceKm: parseFloat(xpressMaxDistanceKm),
           xpressBaseDistanceKm: parseFloat(xpressBaseDistanceKm),
           xpressBasePrice: parseFloat(xpressBasePrice),
@@ -356,6 +366,7 @@ export default function AppControls() {
         setXpressOriginalValues({
           xpressGstPercentage: parseFloat(xpressGstPercentage),
           xpressCodEnabled: xpressCodEnabled,
+          xpressUpiEnabled: xpressUpiEnabled,
           xpressMaxDistanceKm: parseFloat(xpressMaxDistanceKm),
           xpressBaseDistanceKm: parseFloat(xpressBaseDistanceKm),
           xpressBasePrice: parseFloat(xpressBasePrice),
@@ -371,6 +382,10 @@ export default function AppControls() {
           xpressCodEnabled: {
             updatedBy: data.xpressCodEnabled?.updatedBy,
             updatedAt: data.xpressCodEnabled?.updatedAt
+          },
+          xpressUpiEnabled: {
+            updatedBy: data.xpressUpiEnabled?.updatedBy,
+            updatedAt: data.xpressUpiEnabled?.updatedAt
           },
           xpressBaseDistanceKm: {
             updatedBy: data.xpressBaseDistanceKm?.updatedBy,
@@ -1438,6 +1453,38 @@ export default function AppControls() {
               </p>
               <p className="text-xs text-blue-600 mt-1">
                 {formatUpdateLog(xpressUpdateLogs.xpressCodEnabled)}
+              </p>
+            </div>
+
+            {/* Xpress UPI Enabled */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                UPI Payment
+              </label>
+              <div className="flex items-center">
+                <button
+                  type="button"
+                  onClick={() => isEditingXpress && setXpressUpiEnabled(!xpressUpiEnabled)}
+                  disabled={!isEditingXpress}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 ${
+                    xpressUpiEnabled ? 'bg-green-600' : 'bg-gray-200'
+                  } ${!isEditingXpress ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      xpressUpiEnabled ? 'translate-x-6' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+                <span className="ml-3 text-sm text-gray-700">
+                  {xpressUpiEnabled ? 'Enabled' : 'Disabled'}
+                </span>
+              </div>
+              <p className="text-xs text-gray-500 mt-1">
+                Allow UPI/Card payments for Xpress orders.
+              </p>
+              <p className="text-xs text-blue-600 mt-1">
+                {formatUpdateLog(xpressUpdateLogs.xpressUpiEnabled)}
               </p>
             </div>
 
