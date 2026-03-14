@@ -299,6 +299,70 @@ const Xpress = () => {
     }
   };
 
+  const isRazorpayPending = (order) => (
+    order?.pricing?.paymentMethod !== 'cod' && order?.pricing?.paymentStatus === 'pending'
+  );
+
+  const getPaymentBadgeClasses = (order) => {
+    if (order?.pricing?.paymentMethod === 'cod') {
+      return 'bg-green-100 text-green-800 border-green-200';
+    }
+
+    if (order?.pricing?.paymentStatus === 'paid') {
+      return 'bg-blue-100 text-blue-800 border-blue-200';
+    }
+
+    if (order?.pricing?.paymentStatus === 'refund_pending') {
+      return 'bg-orange-100 text-orange-800 border-orange-200';
+    }
+
+    if (order?.pricing?.paymentStatus === 'failed') {
+      return 'bg-red-100 text-red-800 border-red-200';
+    }
+
+    return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+  };
+
+  const getPaymentLabel = (order) => {
+    if (order?.pricing?.paymentMethod === 'cod') {
+      return 'Cash';
+    }
+
+    if (order?.pricing?.paymentStatus === 'paid') {
+      return 'Razorpay Paid';
+    }
+
+    if (order?.pricing?.paymentStatus === 'refund_pending') {
+      return 'Refund Pending';
+    }
+
+    if (order?.pricing?.paymentStatus === 'failed') {
+      return 'Razorpay Failed';
+    }
+
+    return 'Razorpay Pending';
+  };
+
+  const getPaymentMeta = (order) => {
+    if (order?.pricing?.paymentMethod === 'cod') {
+      return 'Collect on delivery';
+    }
+
+    if (order?.pricing?.paymentStatus === 'paid') {
+      return order?.razorpaySignature ? 'Signature verified' : 'Payment confirmed';
+    }
+
+    if (order?.pricing?.paymentStatus === 'refund_pending') {
+      return 'Awaiting refund processing';
+    }
+
+    if (order?.pricing?.paymentStatus === 'failed') {
+      return 'Payment not captured';
+    }
+
+    return 'Waiting for payment confirmation';
+  };
+
   if (checkingUser) {
     return (
       <Layout title="Xpress">
@@ -508,9 +572,9 @@ const Xpress = () => {
                         • {new Date(order.createdAt).toLocaleTimeString()}
                       </p>
                     </div>
-                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(order.status)}`}>
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${isRazorpayPending(order) ? 'bg-yellow-100 text-yellow-800 border-yellow-200' : getStatusColor(order.status)}`}>
                       {getStatusIcon(order.status)}
-                      <span className="ml-1 capitalize">{order.status.replace('_', ' ')}</span>
+                      <span className="ml-1 capitalize">{isRazorpayPending(order) ? 'Razorpay pending' : order.status.replace('_', ' ')}</span>
                     </span>
                   </div>
 
@@ -537,9 +601,8 @@ const Xpress = () => {
                     </div>
                     <div>
                       <p className="text-gray-500">Payment</p>
-                      <p className="text-gray-800 mt-1">
-                        {order.pricing?.paymentMethod === 'cod' ? 'Cash' : 'Razorpay'}
-                      </p>
+                      <p className="text-gray-800 mt-1">{getPaymentLabel(order)}</p>
+                      <p className="text-[11px] text-gray-500 mt-1">{getPaymentMeta(order)}</p>
                     </div>
                     <div>
                       <p className="text-gray-500">Source</p>
@@ -657,22 +720,26 @@ const Xpress = () => {
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                          order.pricing?.paymentMethod === 'cod'
-                            ? 'bg-green-100 text-green-800 border-green-200'
-                            : 'bg-blue-100 text-blue-800 border-blue-200'
-                        }`}>
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getPaymentBadgeClasses(order)}`}>
                           {order.pricing?.paymentMethod === 'cod' ? '💵' : '💳'}
                           <span className="ml-1">
-                            {order.pricing?.paymentMethod === 'cod' ? 'Cash' : 'Razorpay'}
+                            {getPaymentLabel(order)}
                           </span>
                         </span>
+                        <div className="text-xs text-gray-500 mt-1">
+                          {getPaymentMeta(order)}
+                        </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(order.status)}`}>
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${isRazorpayPending(order) ? 'bg-yellow-100 text-yellow-800 border-yellow-200' : getStatusColor(order.status)}`}>
                           {getStatusIcon(order.status)}
-                          <span className="ml-1 capitalize">{order.status.replace('_', ' ')}</span>
+                          <span className="ml-1 capitalize">{isRazorpayPending(order) ? 'Razorpay pending' : order.status.replace('_', ' ')}</span>
                         </span>
+                        {!isRazorpayPending(order) && order?.pricing?.paymentMethod !== 'cod' && (
+                          <div className="text-xs text-gray-500 mt-1">
+                            {order?.razorpayPaymentId ? `Payment ID: ${order.razorpayPaymentId}` : 'Awaiting payment reference'}
+                          </div>
+                        )}
                       </td>
                         <td className="px-6 py-4 whitespace-nowrap">
   <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${

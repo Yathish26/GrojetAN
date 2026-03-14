@@ -30,6 +30,8 @@ const XpressOrderDetails = () => {
   const [agentEarnings, setAgentEarnings] = useState('');
   const [refreshingStatus, setRefreshingStatus] = useState(false);
   const [refreshingOrder, setRefreshingOrder] = useState(false);
+  const [verifyingPayment, setVerifyingPayment] = useState(false);
+  const [paymentVerificationMeta, setPaymentVerificationMeta] = useState(null);
   const [editingLocation, setEditingLocation] = useState(null); // 'pickup' or 'drop'
   const [tempCoordinates, setTempCoordinates] = useState({ latitude: 0, longitude: 0 });
   const [searchQuery, setSearchQuery] = useState('');
@@ -326,6 +328,58 @@ const XpressOrderDetails = () => {
       toast.error('Failed to refresh assignment status');
     } finally {
       setRefreshingStatus(false);
+    }
+  };
+
+  const verifyPaymentStatus = async () => {
+    try {
+      setVerifyingPayment(true);
+      const response = await fetch(
+        `${import.meta.env.VITE_SERVER}/admin/xpress/${id}/verify-payment-status`,
+        {
+          method: 'POST',
+          credentials: 'include'
+        }
+      );
+
+      const data = await response.json();
+
+      if (data.tokenValid === false) {
+        navigate('/login', { replace: true });
+        return;
+      }
+
+      if (data.order) {
+        setOrder(data.order);
+      }
+
+      setPaymentVerificationMeta({
+        checkedAt: new Date().toISOString(),
+        gateway: data.gateway || null,
+        message: data.message || null,
+        notifications: data.notifications || null,
+      });
+
+      if (data.confirmed) {
+        const notificationSummary = [];
+        if (data.notifications?.telegramSent) notificationSummary.push('Telegram sent');
+        if (data.notifications?.customerPushSent) notificationSummary.push('customer notified');
+
+        toast.success(
+          notificationSummary.length
+            ? `${data.message || 'Payment verified successfully'} • ${notificationSummary.join(' • ')}`
+            : (data.message || 'Payment verified successfully')
+        );
+      } else if (data.pending) {
+        toast(data.message || 'Payment is still pending on Razorpay');
+      } else {
+        toast.error(data.message || 'Payment verification failed');
+      }
+    } catch (error) {
+      console.error('Error verifying payment status:', error);
+      toast.error('Failed to verify payment status');
+    } finally {
+      setVerifyingPayment(false);
     }
   };
 
@@ -897,6 +951,34 @@ const XpressOrderDetails = () => {
     }
   };
 
+  const getPaymentStatusColor = (status) => {
+    switch (status) {
+      case 'paid':
+        return 'bg-green-100 text-green-800 border-green-200';
+      case 'failed':
+        return 'bg-red-100 text-red-800 border-red-200';
+      case 'refund_pending':
+        return 'bg-orange-100 text-orange-800 border-orange-200';
+      case 'pending':
+      default:
+        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+    }
+  };
+
+  const getReadablePaymentStatus = (status) => {
+    switch (status) {
+      case 'paid':
+        return 'Paid';
+      case 'failed':
+        return 'Failed';
+      case 'refund_pending':
+        return 'Refund Pending';
+      case 'pending':
+      default:
+        return 'Pending';
+    }
+  };
+
   const isAuthorized = allowedRoles.includes(currentUser?.role);
 
   if (checkingUser) {
@@ -1050,6 +1132,12 @@ const XpressOrderDetails = () => {
                 {getStatusIcon(order.status)}
                 <span className="ml-2 capitalize">{order.status.replace('_', ' ')}</span>
               </span>
+              {order.pricing?.paymentMethod !== 'cod' && (
+                <span className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-medium border ${getPaymentStatusColor(order.pricing?.paymentStatus)}`}>
+                  <IndianRupee size={16} />
+                  <span className="ml-2">Razorpay {getReadablePaymentStatus(order.pricing?.paymentStatus)}</span>
+                </span>
+              )}
               {['super_admin', 'admin'].includes(currentUser?.role) && (
                 <select
                   value={order.status}
@@ -1570,10 +1658,22 @@ const XpressOrderDetails = () => {
           <div className="space-y-6">
             {/* Pricing Details */}
             <div className="bg-white rounded-lg shadow-sm border p-4 md:p-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
-                <IndianRupee size={20} className="mr-2" />
-                Pricing Details
-              </h2>
+              <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <h2 className="text-xl font-semibold text-gray-900 flex items-center">
+                  <IndianRupee size={20} className="mr-2" />
+                  Pricing Details
+                </h2>
+                {order.pricing?.paymentMethod !== 'cod' && (
+                  <button
+                    onClick={verifyPaymentStatus}
+                    disabled={verifyingPayment}
+                    className="inline-flex items-center justify-center px-2 py-1 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <RefreshCw size={14} className={`mr-2 ${verifyingPayment ? 'animate-spin' : ''}`} />
+                    {verifyingPayment ? 'Verifying...' : 'Verify Payment'}
+                  </button>
+                )}
+              </div>
               <div className="space-y-3">
                 <div className="flex justify-between">
                   <span className="text-sm text-gray-600">Distance</span>
@@ -1597,6 +1697,37 @@ const XpressOrderDetails = () => {
                   <span className="text-gray-600">Payment Method</span>
                   <span className="text-gray-900 capitalize">{order.pricing?.paymentMethod || 'N/A'}</span>
                 </div>
+                <div className="flex justify-between items-center text-sm gap-3">
+                  <span className="text-gray-600">Payment Status</span>
+                  <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${getPaymentStatusColor(order.pricing?.paymentStatus)}`}>
+                    {order.pricing?.paymentMethod === 'cod'
+                      ? 'Cash on Delivery'
+                      : `Razorpay ${getReadablePaymentStatus(order.pricing?.paymentStatus)}`}
+                  </span>
+                </div>
+                {paymentVerificationMeta?.gateway?.status && (
+                  <div className="flex justify-between text-sm gap-3">
+                    <span className="text-gray-600">Gateway Status</span>
+                    <span className="text-gray-900 capitalize">{paymentVerificationMeta.gateway.status.replace('_', ' ')}</span>
+                  </div>
+                )}
+                {paymentVerificationMeta?.checkedAt && (
+                  <div className="flex justify-between text-sm gap-3">
+                    <span className="text-gray-600">Last Verified</span>
+                    <span className="text-gray-900">{formatDateTime(paymentVerificationMeta.checkedAt)}</span>
+                  </div>
+                )}
+                {paymentVerificationMeta?.message && (
+                  <div className="rounded-lg border border-blue-100 bg-blue-50 px-3 py-2 text-sm text-blue-800">
+                    {paymentVerificationMeta.message}
+                  </div>
+                )}
+                {paymentVerificationMeta?.notifications && (
+                  <div className="rounded-lg border border-green-100 bg-green-50 px-3 py-2 text-sm text-green-800 space-y-1">
+                    <div>Telegram: {paymentVerificationMeta.notifications.telegramSent ? 'Sent' : 'Not sent'}</div>
+                    <div>Customer push: {paymentVerificationMeta.notifications.customerPushSent ? 'Sent' : 'Not sent'}</div>
+                  </div>
+                )}
                 {order.status === 'delivered' && (
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-600">Time Taken</span>
