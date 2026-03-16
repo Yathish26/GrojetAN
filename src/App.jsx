@@ -48,6 +48,7 @@ import { WebSocketProvider } from './context/WebSocketContext.jsx'
 import ContactQur from './Admin/ContactQur.jsx'
 import EmailSender from './Admin/EmailSender.jsx'
 import S3store from './Admin/S3store.jsx'
+import SuperTags from './Admin/SuperTags.jsx'
 import PublicStore from './Admin/PublicStore.jsx'
 import PublicStoreDetails from './Admin/PublicStoreDetails.jsx'
 import Darkstore from './Admin/Darkstore.jsx'
@@ -162,6 +163,7 @@ function App() {
           <Route path="/admin-register" element={<AdminRegister />} />
           <Route path="/update-notes" element={<UpdateNotesAdmin />} />
           <Route path="/bug-reports" element={<BugReports />} />
+          <Route path="/super-tags" element={<SuperTags />} />
           
           {/* Settings & Profile */}
           <Route path="/profile" element={<Profile />} />

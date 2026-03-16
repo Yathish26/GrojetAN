@@ -204,7 +204,8 @@ const Layout = ({ children, title }) => {
     { name: 'Admin Management', icon: Shield, path: '/admin-management', roles: ['super_admin'] },
     { name: 'Security', icon: ShieldPlus, path: '/security', roles: ['super_admin'] },
     { name: 'Logs', icon: FileText, path: '/logs', roles: ['super_admin'] },
-    { name: 'Update Notes', icon: Bell, path: '/update-notes', roles: ['super_admin'] },
+    { name: 'Update Notes', icon: FileText, path: '/update-notes', roles: ['super_admin'] },
+    { name: 'Super Tags', icon: Star, path: '/super-tags', roles: ['super_admin'] },
     { name: 'Contact Queries', icon: MessageSquare, path: '/contact-qur', roles: ['super_admin', 'admin'] },
     { name: 'Email Sender', icon: Mail, path: '/email-sender', roles: ['super_admin', 'admin'] },
   ];

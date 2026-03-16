@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Package, Search, AlertTriangle, CheckCircle, XCircle, Edit, Save, X, ChevronLeft, ChevronRight, Filter, SlidersHorizontal, Trash2, Plus, Check, FileSpreadsheet, ArrowUp, ArrowDown, ArrowUpDown, ChevronDown, Flag } from 'lucide-react';
+import { ArrowLeft, Package, Search, AlertTriangle, CheckCircle, XCircle, Edit, Save, X, ChevronLeft, ChevronRight, Filter, SlidersHorizontal, Trash2, Plus, Check, FileSpreadsheet, ArrowUp, ArrowDown, ArrowUpDown, ChevronDown, Flag, Tag } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Layout from '../Components/Layout';
 
@@ -331,6 +331,12 @@ const MerchantInventory = () => {
 
   // Pan-India update state (holds productId being updated)
   const [panIndiaUpdating, setPanIndiaUpdating] = useState(null);
+
+  // Super Tags modal states
+  const [showSuperTagsModal, setShowSuperTagsModal] = useState(false);
+  const [availableSuperTags, setAvailableSuperTags] = useState([]);
+  const [selectedSuperTags, setSelectedSuperTags] = useState([]);
+  const [loadingSuperTags, setLoadingSuperTags] = useState(false);
 
   // Debounce ref for search
   const searchTimeoutRef = useRef(null);
@@ -1094,6 +1100,94 @@ const MerchantInventory = () => {
     }
   };
 
+  const handleAddSuperTags = async () => {
+    if (selectedItems.length === 0) {
+      toast.error('Please select items to add super tags');
+      return;
+    }
+
+    // Fetch available super tags
+    setLoadingSuperTags(true);
+    try {
+      const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/super-tags/active`, {
+        credentials: 'include'
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setAvailableSuperTags(data.superTags || []);
+        setSelectedSuperTags([]);
+        setShowSuperTagsModal(true);
+      } else {
+        toast.error('Failed to fetch super tags');
+      }
+    } catch (error) {
+      console.error('Error fetching super tags:', error);
+      toast.error('Failed to fetch super tags');
+    } finally {
+      setLoadingSuperTags(false);
+    }
+  };
+
+  const handleSuperTagSelection = (tagId) => {
+    setSelectedSuperTags(prev => 
+      prev.includes(tagId) 
+        ? prev.filter(id => id !== tagId)
+        : [...prev, tagId]
+    );
+  };
+
+  const handleApplySuperTags = async () => {
+    if (selectedSuperTags.length === 0) {
+      toast.error('Please select at least one super tag');
+      return;
+    }
+
+    setUpdating(true);
+    try {
+      const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/merchant-stores/${id}/inventory/super-tags`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          itemIds: selectedItems,
+          superTagIds: selectedSuperTags 
+        }),
+      });
+
+      if (response.status === 401) {
+        navigate('/login');
+        return;
+      }
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.tokenValid === false) {
+          navigate('/login', { replace: true });
+          return;
+        }
+        if (data.success) {
+          toast.success(data.message || 'Super tags added successfully');
+          setSelectedItems([]);
+          setSelectAll(false);
+          setShowSuperTagsModal(false);
+          fetchMerchantInventory({ page, search: searchTerm, status: statusFilter, category: categoryFilter, sortBy, sortOrder, silent: true });
+        } else {
+          throw new Error(data.message || 'Failed to add super tags');
+        }
+      } else {
+        throw new Error('Failed to add super tags');
+      }
+    } catch (error) {
+      console.error('Error adding super tags:', error);
+      toast.error(error.message || 'Failed to add super tags');
+    } finally {
+      setUpdating(false);
+    }
+  };
+
   // Handle opening product details modal
   const openProductModal = (product) => {
     setSelectedProduct(product);
@@ -1342,6 +1436,23 @@ const MerchantInventory = () => {
                   <>
                     <Trash2 className="h-4 w-4 mr-2" />
                     Remove Selected ({selectedItems.length})
+                  </>
+                )}
+              </button>
+              <button
+                onClick={handleAddSuperTags}
+                disabled={updating || selectedItems.length === 0}
+                className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto"
+              >
+                {updating ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Adding Tags...
+                  </>
+                ) : (
+                  <>
+                    <Tag className="h-4 w-4 mr-2" />
+                    Add Super Tags ({selectedItems.length})
                   </>
                 )}
               </button>
@@ -1966,6 +2077,108 @@ const MerchantInventory = () => {
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Super Tags Modal */}
+      {showSuperTagsModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-gray-500/75"
+            aria-hidden="true"
+            onClick={() => setShowSuperTagsModal(false)}
+          ></div>
+
+          <div className="relative z-[101] w-full max-w-lg bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all">
+              <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                <div className="sm:flex sm:items-start">
+                  <div className="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-purple-100 sm:mx-0 sm:h-10 sm:w-10">
+                    <Tag className="h-6 w-6 text-purple-600" />
+                  </div>
+                  <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left flex-1">
+                    <h3 className="text-lg leading-6 font-medium text-gray-900">
+                      Add Super Tags
+                    </h3>
+                    <div className="mt-2">
+                      <p className="text-sm text-gray-500">
+                        Select super tags to add to {selectedItems.length} selected item(s)
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-4">
+                  {loadingSuperTags ? (
+                    <div className="flex items-center justify-center py-8">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+                      <span className="ml-2 text-gray-600">Loading super tags...</span>
+                    </div>
+                  ) : availableSuperTags.length === 0 ? (
+                    <div className="text-center py-8">
+                      <Tag className="mx-auto h-12 w-12 text-gray-400" />
+                      <h3 className="mt-2 text-sm font-medium text-gray-900">No super tags available</h3>
+                      <p className="mt-1 text-sm text-gray-500">Create some super tags first to add them to products.</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3 max-h-60 overflow-y-auto">
+                      {availableSuperTags.map((tag) => (
+                        <div
+                          key={tag._id}
+                          className={`flex items-center p-3 rounded-lg border cursor-pointer transition-colors ${
+                            selectedSuperTags.includes(tag._id)
+                              ? 'border-purple-500 bg-purple-50'
+                              : 'border-gray-200 hover:border-gray-300'
+                          }`}
+                          onClick={() => handleSuperTagSelection(tag._id)}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={selectedSuperTags.includes(tag._id)}
+                            onChange={() => handleSuperTagSelection(tag._id)}
+                            className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
+                          />
+                          <div className="ml-3 flex-1">
+                            <div className="flex items-center">
+                              <span className="text-sm font-medium text-gray-900">{tag.name}</span>
+                            </div>
+                            {tag.description && (
+                              <p className="text-sm text-gray-500 mt-1">{tag.description}</p>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                <button
+                  onClick={handleApplySuperTags}
+                  disabled={updating || selectedSuperTags.length === 0}
+                  className="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed sm:ml-3 sm:w-auto"
+                >
+                  {updating ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      Adding...
+                    </>
+                  ) : (
+                    <>
+                      <Tag className="h-4 w-4 mr-2" />
+                      Add Tags ({selectedSuperTags.length})
+                    </>
+                  )}
+                </button>
+                <button
+                  onClick={() => setShowSuperTagsModal(false)}
+                  disabled={updating}
+                  className="mt-3 w-full inline-flex justify-center items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 disabled:opacity-50 sm:mt-0 sm:ml-3 sm:w-auto"
+                >
+                  Cancel
+                </button>
+              </div>
           </div>
         </div>
       )}
