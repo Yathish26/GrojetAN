@@ -30,24 +30,25 @@ export default function AppControls() {
   const [customerBulkNotificationProgress, setCustomerBulkNotificationProgress] = useState(null);
 
   // New states for app controls
-  const [taxPercentageOnDeliveryFee, setTaxPercentageOnDeliveryFee] = useState(18);
-  const [deliveryFee, setDeliveryFee] = useState(40);
-  const [smallCartFee, setSmallCartFee] = useState(40);
-  const [smallCartThreshold, setSmallCartThreshold] = useState(499);
-  const [freeDeliveryThreshold, setFreeDeliveryThreshold] = useState(499);
-  const [cashOnDeliveryEnabled, setCashOnDeliveryEnabled] = useState(true);
+  const [taxPercentageOnDeliveryFee, setTaxPercentageOnDeliveryFee] = useState(null);
+  const [deliveryFee, setDeliveryFee] = useState(null);
+  const [smallCartFee, setSmallCartFee] = useState(null);
+  const [smallCartThreshold, setSmallCartThreshold] = useState(null);
+  const [freeDeliveryThreshold, setFreeDeliveryThreshold] = useState(null);
+  const [cashOnDeliveryEnabled, setCashOnDeliveryEnabled] = useState(null);
   const [loading, setLoading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [originalValues, setOriginalValues] = useState({});
+  const [controlsLoaded, setControlsLoaded] = useState(false);
 
   // Xpress controls states
-  const [xpressGstPercentage, setXpressGstPercentage] = useState(18);
-  const [xpressCodEnabled, setXpressCodEnabled] = useState(true);
-  const [xpressUpiEnabled, setXpressUpiEnabled] = useState(true);
-  const [xpressMaxDistanceKm, setXpressMaxDistanceKm] = useState(10);
-  const [xpressBaseDistanceKm, setXpressBaseDistanceKm] = useState(3);
-  const [xpressBasePrice, setXpressBasePrice] = useState(60);
-  const [xpressPerKmRate, setXpressPerKmRate] = useState(6);
+  const [xpressGstPercentage, setXpressGstPercentage] = useState(null);
+  const [xpressCodEnabled, setXpressCodEnabled] = useState(null);
+  const [xpressUpiEnabled, setXpressUpiEnabled] = useState(null);
+  const [xpressMaxDistanceKm, setXpressMaxDistanceKm] = useState(null);
+  const [xpressBaseDistanceKm, setXpressBaseDistanceKm] = useState(null);
+  const [xpressBasePrice, setXpressBasePrice] = useState(null);
+  const [xpressPerKmRate, setXpressPerKmRate] = useState(null);
 
   // Xpress editing states
   const [isEditingXpress, setIsEditingXpress] = useState(false);
@@ -135,21 +136,21 @@ export default function AppControls() {
       const result = await response.json();
       if (result.success) {
         const data = result.data;
-        setTaxPercentageOnDeliveryFee(data.taxPercentageOnDeliveryFee?.value || 18);
-        setDeliveryFee(data.deliveryFee?.value || 40);
-        setSmallCartFee(data.smallCartFee?.value || 40);
-        setSmallCartThreshold(data.smallCartThreshold?.value || 499);
-        setFreeDeliveryThreshold(data.freeDeliveryThreshold?.value || 499);
-        setCashOnDeliveryEnabled(data.cashOnDeliveryEnabled?.value !== undefined ? data.cashOnDeliveryEnabled.value : true);
+        setTaxPercentageOnDeliveryFee(data.taxPercentageOnDeliveryFee?.value ?? 18);
+        setDeliveryFee(data.deliveryFee?.value ?? 40);
+        setSmallCartFee(data.smallCartFee?.value ?? 40);
+        setSmallCartThreshold(data.smallCartThreshold?.value ?? 499);
+        setFreeDeliveryThreshold(data.freeDeliveryThreshold?.value ?? 499);
+        setCashOnDeliveryEnabled(data.cashOnDeliveryEnabled?.value ?? true);
         
         // Set Xpress controls
-        setXpressGstPercentage(data.xpressGstPercentage?.value || 18);
-        setXpressCodEnabled(data.xpressCodEnabled?.value !== undefined ? data.xpressCodEnabled.value : true);
-        setXpressUpiEnabled(data.xpressUpiEnabled?.value !== undefined ? data.xpressUpiEnabled.value : true);
-        setXpressMaxDistanceKm(data.xpressMaxDistanceKm?.value || 10);
-        setXpressBaseDistanceKm(data.xpressBaseDistanceKm?.value || 3);
-        setXpressBasePrice(data.xpressBasePrice?.value || 60);
-        setXpressPerKmRate(data.xpressPerKmRate?.value || 6);
+        setXpressGstPercentage(data.xpressGstPercentage?.value ?? 18);
+        setXpressCodEnabled(data.xpressCodEnabled?.value ?? true);
+        setXpressUpiEnabled(data.xpressUpiEnabled?.value ?? true);
+        setXpressMaxDistanceKm(data.xpressMaxDistanceKm?.value ?? 10);
+        setXpressBaseDistanceKm(data.xpressBaseDistanceKm?.value ?? 3);
+        setXpressBasePrice(data.xpressBasePrice?.value ?? 60);
+        setXpressPerKmRate(data.xpressPerKmRate?.value ?? 6);
         
         // Set Xpress update logs
         setXpressUpdateLogs({
@@ -213,23 +214,25 @@ export default function AppControls() {
         
         // Store original values for cancel functionality
         setOriginalValues({
-          taxPercentageOnDeliveryFee: data.taxPercentageOnDeliveryFee?.value || 18,
-          deliveryFee: data.deliveryFee?.value || 40,
-          smallCartFee: data.smallCartFee?.value || 40,
-          smallCartThreshold: data.smallCartThreshold?.value || 499,
-          freeDeliveryThreshold: data.freeDeliveryThreshold?.value || 499,
-          cashOnDeliveryEnabled: data.cashOnDeliveryEnabled?.value !== undefined ? data.cashOnDeliveryEnabled.value : true,
+          taxPercentageOnDeliveryFee: data.taxPercentageOnDeliveryFee?.value ?? 18,
+          deliveryFee: data.deliveryFee?.value ?? 40,
+          smallCartFee: data.smallCartFee?.value ?? 40,
+          smallCartThreshold: data.smallCartThreshold?.value ?? 499,
+          freeDeliveryThreshold: data.freeDeliveryThreshold?.value ?? 499,
+          cashOnDeliveryEnabled: data.cashOnDeliveryEnabled?.value ?? true,
         });
         
         // Store Xpress original values for cancel functionality
         setXpressOriginalValues({
-          xpressGstPercentage: data.xpressGstPercentage?.value || 18,
-          xpressCodEnabled: data.xpressCodEnabled?.value !== undefined ? data.xpressCodEnabled.value : true,
-          xpressMaxDistanceKm: data.xpressMaxDistanceKm?.value || 10,
-          xpressBaseDistanceKm: data.xpressBaseDistanceKm?.value || 3,
-          xpressBasePrice: data.xpressBasePrice?.value || 60,
-          xpressPerKmRate: data.xpressPerKmRate?.value || 6,
+          xpressGstPercentage: data.xpressGstPercentage?.value ?? 18,
+          xpressCodEnabled: data.xpressCodEnabled?.value ?? true,
+          xpressMaxDistanceKm: data.xpressMaxDistanceKm?.value ?? 10,
+          xpressBaseDistanceKm: data.xpressBaseDistanceKm?.value ?? 3,
+          xpressBasePrice: data.xpressBasePrice?.value ?? 60,
+          xpressPerKmRate: data.xpressPerKmRate?.value ?? 6,
         });
+        
+        setControlsLoaded(true);
       }
     } catch (error) {
       console.error('Error fetching app controls:', error);
@@ -237,8 +240,8 @@ export default function AppControls() {
     }
   };
 
-  // Show loading while checking auth
-  if (checkingUser || redirecting) {
+  // Show loading while checking auth or loading controls
+  if (checkingUser || redirecting || !controlsLoaded) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-green-500"></div>
@@ -404,6 +407,8 @@ export default function AppControls() {
             updatedAt: data.xpressPerKmRate?.updatedAt
           },
         });
+        // Refetch to ensure state reflects server values
+        fetchAppControls();
         return true;
       } else {
         toast.error(result.message || 'Failed to update Xpress controls');
@@ -489,6 +494,8 @@ export default function AppControls() {
             updatedAt: data.cashOnDeliveryEnabled?.updatedAt
           },
         });
+        // Refetch to ensure state reflects server values
+        fetchAppControls();
         return true;
       } else {
         toast.error(result.message || 'Failed to update app controls');
@@ -1217,7 +1224,7 @@ export default function AppControls() {
                 max="100"
                 step="0.1"
                 value={taxPercentageOnDeliveryFee}
-                onChange={(e) => setTaxPercentageOnDeliveryFee(e.target.value)}
+                onChange={(e) => setTaxPercentageOnDeliveryFee(parseFloat(e.target.value) || 0)}
                 disabled={!isEditing}
                 className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm ${
                   !isEditing ? 'bg-gray-50 cursor-not-allowed' : ''
@@ -1241,7 +1248,7 @@ export default function AppControls() {
                 min="0"
                 step="0.01"
                 value={deliveryFee}
-                onChange={(e) => setDeliveryFee(e.target.value)}
+                onChange={(e) => setDeliveryFee(parseFloat(e.target.value) || 0)}
                 disabled={!isEditing}
                 className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm ${
                   !isEditing ? 'bg-gray-50 cursor-not-allowed' : ''
@@ -1265,7 +1272,7 @@ export default function AppControls() {
                 min="0"
                 step="0.01"
                 value={smallCartFee}
-                onChange={(e) => setSmallCartFee(e.target.value)}
+                onChange={(e) => setSmallCartFee(parseFloat(e.target.value) || 0)}
                 disabled={!isEditing}
                 className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm ${
                   !isEditing ? 'bg-gray-50 cursor-not-allowed' : ''
@@ -1289,7 +1296,7 @@ export default function AppControls() {
                 min="0"
                 step="0.01"
                 value={smallCartThreshold}
-                onChange={(e) => setSmallCartThreshold(e.target.value)}
+                onChange={(e) => setSmallCartThreshold(parseFloat(e.target.value) || 0)}
                 disabled={!isEditing}
                 className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm ${
                   !isEditing ? 'bg-gray-50 cursor-not-allowed' : ''
@@ -1313,7 +1320,7 @@ export default function AppControls() {
                 min="0"
                 step="0.01"
                 value={freeDeliveryThreshold}
-                onChange={(e) => setFreeDeliveryThreshold(e.target.value)}
+                onChange={(e) => setFreeDeliveryThreshold(parseFloat(e.target.value) || 0)}
                 disabled={!isEditing}
                 className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm ${
                   !isEditing ? 'bg-gray-50 cursor-not-allowed' : ''
@@ -1410,7 +1417,7 @@ export default function AppControls() {
                 max="100"
                 step="0.01"
                 value={xpressGstPercentage}
-                onChange={(e) => setXpressGstPercentage(e.target.value)}
+                onChange={(e) => setXpressGstPercentage(parseFloat(e.target.value) || 0)}
                 disabled={!isEditingXpress}
                 className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm ${
                   !isEditingXpress ? 'bg-gray-50 cursor-not-allowed' : ''
@@ -1499,7 +1506,7 @@ export default function AppControls() {
                 max="50"
                 step="0.1"
                 value={xpressMaxDistanceKm}
-                onChange={(e) => setXpressMaxDistanceKm(e.target.value)}
+                onChange={(e) => setXpressMaxDistanceKm(parseFloat(e.target.value) || 0)}
                 disabled={!isEditingXpress}
                 className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm ${
                   !isEditingXpress ? 'bg-gray-50 cursor-not-allowed' : ''
@@ -1524,7 +1531,7 @@ export default function AppControls() {
                 max="20"
                 step="0.1"
                 value={xpressBaseDistanceKm}
-                onChange={(e) => setXpressBaseDistanceKm(e.target.value)}
+                onChange={(e) => setXpressBaseDistanceKm(parseFloat(e.target.value) || 0)}
                 disabled={!isEditingXpress}
                 className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm ${
                   !isEditingXpress ? 'bg-gray-50 cursor-not-allowed' : ''
@@ -1548,7 +1555,7 @@ export default function AppControls() {
                 min="0"
                 step="1"
                 value={xpressBasePrice}
-                onChange={(e) => setXpressBasePrice(e.target.value)}
+                onChange={(e) => setXpressBasePrice(parseFloat(e.target.value) || 0)}
                 disabled={!isEditingXpress}
                 className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm ${
                   !isEditingXpress ? 'bg-gray-50 cursor-not-allowed' : ''
@@ -1572,7 +1579,7 @@ export default function AppControls() {
                 min="0"
                 step="0.5"
                 value={xpressPerKmRate}
-                onChange={(e) => setXpressPerKmRate(e.target.value)}
+                onChange={(e) => setXpressPerKmRate(parseFloat(e.target.value) || 0)}
                 disabled={!isEditingXpress}
                 className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm ${
                   !isEditingXpress ? 'bg-gray-50 cursor-not-allowed' : ''
