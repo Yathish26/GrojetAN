@@ -133,7 +133,7 @@ const DeliveryAgents = () => {
 
   const handleSearch = (e) => {
     if (!isAuthorized) return;
-    e.preventDefault();
+    if (e) e.preventDefault();
     setPagination(prev => ({ ...prev, page: 1 }));
     fetchAgents();
   };
