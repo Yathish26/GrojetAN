@@ -31,6 +31,9 @@ const AddMerchantInventory = () => {
   const [showProductModal, setShowProductModal] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
 
+  // Pan India updating state
+  const [panIndiaUpdating, setPanIndiaUpdating] = useState(null);
+
   // Refs
   const productsScrollRef = useRef(null);
   const loadingMoreRef = useRef(false);
