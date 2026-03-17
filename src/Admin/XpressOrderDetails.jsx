@@ -5,8 +5,9 @@ import { GoogleMap, Marker, DirectionsRenderer } from '../Components/GoogleMapCo
 import {
   ArrowLeft, MapPin, Phone, Package, Clock,
   User, Calendar, Truck, CheckCircle, XCircle,
-  AlertCircle, Navigation, IndianRupee, RefreshCw, Trash2,X,
-  Download, FileText
+  AlertCircle, AlertTriangle, Navigation, IndianRupee, RefreshCw, Trash2, X,
+  Download, FileText,
+  TriangleAlert
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import io from 'socket.io-client';
@@ -82,17 +83,17 @@ const XpressOrderDetails = () => {
 
   const calculateTimeTaken = (createdAt, deliveredAt) => {
     if (!createdAt || !deliveredAt) return null;
-    
+
     const created = new Date(createdAt);
     const delivered = new Date(deliveredAt);
     const diffMs = delivered - created;
-    
+
     if (diffMs < 0) return null; // Invalid dates
-    
+
     const diffMinutes = Math.floor(diffMs / (1000 * 60));
     const diffHours = Math.floor(diffMinutes / 60);
     const remainingMinutes = diffMinutes % 60;
-    
+
     if (diffHours > 0) {
       return `${diffHours}h ${remainingMinutes}m`;
     } else {
@@ -254,7 +255,7 @@ const XpressOrderDetails = () => {
             'Content-Type': 'application/json',
           },
           credentials: 'include',
-          body: JSON.stringify({ 
+          body: JSON.stringify({
             status: 'cancelled',
             reason: cancelReason.trim()
           })
@@ -405,7 +406,7 @@ const XpressOrderDetails = () => {
             'Content-Type': 'application/json'
           },
           credentials: 'include',
-          body: JSON.stringify({ 
+          body: JSON.stringify({
             agentId,
             agentEarnings: earningsAmount
           })
@@ -474,32 +475,32 @@ const XpressOrderDetails = () => {
     }
   }, [currentUser, id]);
 
-    // Seed agent location once on load (REST) so marker appears even before socket events arrive
-    const seedAgentLocation = useCallback(async () => {
-      if (!id) return;
-      try {
-        const response = await fetch(`${import.meta.env.VITE_SERVER}/xpress/${id}/agent-location`, {
-          credentials: 'include'
-        });
-        const data = await response.json();
-        if (response.ok && data.success && data.data?.location) {
-          const loc = data.data.location;
-          if (typeof loc.latitude === 'number' && typeof loc.longitude === 'number') {
-            const locationUpdate = {
-              latitude: loc.latitude,
-              longitude: loc.longitude,
-              heading: typeof loc.heading === 'number' ? ((loc.heading % 360) + 360) % 360 : null,
-              accuracy: typeof loc.accuracy === 'number' ? loc.accuracy : null,
-              lastUpdated: loc.lastUpdated ? new Date(loc.lastUpdated) : new Date()
-            };
-            lastAgentLocationRef.current = locationUpdate;
-            setAgentLocation(locationUpdate);
-          }
+  // Seed agent location once on load (REST) so marker appears even before socket events arrive
+  const seedAgentLocation = useCallback(async () => {
+    if (!id) return;
+    try {
+      const response = await fetch(`${import.meta.env.VITE_SERVER}/xpress/${id}/agent-location`, {
+        credentials: 'include'
+      });
+      const data = await response.json();
+      if (response.ok && data.success && data.data?.location) {
+        const loc = data.data.location;
+        if (typeof loc.latitude === 'number' && typeof loc.longitude === 'number') {
+          const locationUpdate = {
+            latitude: loc.latitude,
+            longitude: loc.longitude,
+            heading: typeof loc.heading === 'number' ? ((loc.heading % 360) + 360) % 360 : null,
+            accuracy: typeof loc.accuracy === 'number' ? loc.accuracy : null,
+            lastUpdated: loc.lastUpdated ? new Date(loc.lastUpdated) : new Date()
+          };
+          lastAgentLocationRef.current = locationUpdate;
+          setAgentLocation(locationUpdate);
         }
-      } catch (err) {
-        console.warn('Seed agent location failed', err?.message || err);
       }
-    }, [id]);
+    } catch (err) {
+      console.warn('Seed agent location failed', err?.message || err);
+    }
+  }, [id]);
 
   // WebSocket connection for live agent tracking
   useEffect(() => {
@@ -1006,7 +1007,7 @@ const XpressOrderDetails = () => {
     return (
       <Layout title="Xpress Order Details">
         <div className="flex flex-col items-center justify-center min-h-screen">
-          <XCircle className='w-16 h-16 text-red-500 mb-2'/>
+          <XCircle className='w-16 h-16 text-red-500 mb-2' />
           <h2 className="text-xl font-semibold text-gray-800 mb-2">Access Denied</h2>
           <p className="text-gray-600">Only Admins and Super Admins can view order details.</p>
         </div>
@@ -1028,7 +1029,7 @@ const XpressOrderDetails = () => {
     return (
       <Layout title="Xpress Order Details">
         <div className="flex flex-col items-center justify-center min-h-screen">
-          <AlertCircle className='w-16 h-16 text-red-500 mb-2'/>
+          <AlertCircle className='w-16 h-16 text-red-500 mb-2' />
           <h2 className="text-xl font-semibold text-gray-800 mb-2">Order Not Found</h2>
           <p className="text-gray-600">The requested order could not be found.</p>
         </div>
@@ -1112,7 +1113,13 @@ const XpressOrderDetails = () => {
 
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Order #{order.orderNumber}</h1>
+              <div className='flex gap-2 items-center'>
+                <h1 className="text-3xl font-bold text-gray-900">Order #{order.orderNumber} </h1>
+                <div className='bg-red-700 text-white rounded-full w-fit py-1 px-3 flex gap-2 items-center'>
+                  <TriangleAlert size={20} className="text-white" />
+                  <h1 className=' font-semibold'>{order.packageDetails?.fragile && 'Fragile'}</h1>
+                </div>
+              </div>
               <p className="text-gray-600 mt-1">
                 Placed on {formatDate(order.createdAt)} at {formatTime12Hour(order.createdAt)}
               </p>
@@ -1199,61 +1206,61 @@ const XpressOrderDetails = () => {
               )}
             </div>
 
-            
+
 
             {/* Map Preview */}
             {order.pickup?.coordinates?.latitude && order.drop?.coordinates?.latitude &&
-             !isNaN(parseFloat(order.pickup.coordinates.latitude)) && !isNaN(parseFloat(order.drop.coordinates.latitude)) &&
-             parseFloat(order.pickup.coordinates.latitude) !== 0 && parseFloat(order.drop.coordinates.latitude) !== 0 && (
-              <div className="bg-white rounded-lg shadow-sm border p-4 md:p-6 mb-6">
-                <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
-                  <Navigation size={20} className="mr-2" />
-                  {agentLocation && order?.assignment?.agent && !['delivered', 'cancelled'].includes(order?.status || '') 
-                    ? 'Live Tracking' 
-                    : 'Route Preview'}
-                </h2>
-                <div className="h-96 w-full rounded-lg overflow-hidden">
-                  <GoogleMap
-                    center={{
-                      lat: (parseFloat(order.pickup.coordinates.latitude) + parseFloat(order.drop.coordinates.latitude)) / 2,
-                      lng: (parseFloat(order.pickup.coordinates.longitude) + parseFloat(order.drop.coordinates.longitude)) / 2
-                    }}
-                    zoom={12}
-                    style={{ height: '400px', width: '100%', border: 'none' }}
-                  >
-                    {agentToPickupDirections && (
-                      <DirectionsRenderer
-                        directions={agentToPickupDirections}
-                        options={{
-                          suppressMarkers: true,
-                          polylineOptions: {
-                            strokeColor: '#22c55e',
-                            strokeOpacity: 0.9,
-                            strokeWeight: 5
-                          }
-                        }}
-                      />
-                    )}
-                    {agentToDropDirections && (
-                      <DirectionsRenderer
-                        directions={agentToDropDirections}
-                        options={{
-                          suppressMarkers: true,
-                          polylineOptions: {
-                            strokeColor: '#ec4899',
-                            strokeOpacity: 0.9,
-                            strokeWeight: 5
-                          }
-                        }}
-                      />
-                    )}
-                    <Marker
-                      position={{
-                        lat: parseFloat(order.pickup.coordinates.latitude),
-                        lng: parseFloat(order.pickup.coordinates.longitude)
+              !isNaN(parseFloat(order.pickup.coordinates.latitude)) && !isNaN(parseFloat(order.drop.coordinates.latitude)) &&
+              parseFloat(order.pickup.coordinates.latitude) !== 0 && parseFloat(order.drop.coordinates.latitude) !== 0 && (
+                <div className="bg-white rounded-lg shadow-sm border p-4 md:p-6 mb-6">
+                  <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
+                    <Navigation size={20} className="mr-2" />
+                    {agentLocation && order?.assignment?.agent && !['delivered', 'cancelled'].includes(order?.status || '')
+                      ? 'Live Tracking'
+                      : 'Route Preview'}
+                  </h2>
+                  <div className="h-96 w-full rounded-lg overflow-hidden">
+                    <GoogleMap
+                      center={{
+                        lat: (parseFloat(order.pickup.coordinates.latitude) + parseFloat(order.drop.coordinates.latitude)) / 2,
+                        lng: (parseFloat(order.pickup.coordinates.longitude) + parseFloat(order.drop.coordinates.longitude)) / 2
                       }}
-                      title="Pickup Location"
-                      infoContent={`
+                      zoom={12}
+                      style={{ height: '400px', width: '100%', border: 'none' }}
+                    >
+                      {agentToPickupDirections && (
+                        <DirectionsRenderer
+                          directions={agentToPickupDirections}
+                          options={{
+                            suppressMarkers: true,
+                            polylineOptions: {
+                              strokeColor: '#22c55e',
+                              strokeOpacity: 0.9,
+                              strokeWeight: 5
+                            }
+                          }}
+                        />
+                      )}
+                      {agentToDropDirections && (
+                        <DirectionsRenderer
+                          directions={agentToDropDirections}
+                          options={{
+                            suppressMarkers: true,
+                            polylineOptions: {
+                              strokeColor: '#ec4899',
+                              strokeOpacity: 0.9,
+                              strokeWeight: 5
+                            }
+                          }}
+                        />
+                      )}
+                      <Marker
+                        position={{
+                          lat: parseFloat(order.pickup.coordinates.latitude),
+                          lng: parseFloat(order.pickup.coordinates.longitude)
+                        }}
+                        title="Pickup Location"
+                        infoContent={`
                         <div style="max-width: 250px;">
                           <strong>Pickup Location</strong><br/>
                           ${order.pickup.name || 'N/A'}<br/>
@@ -1261,24 +1268,24 @@ const XpressOrderDetails = () => {
                           ${order.pickup.phone ? `Phone: ${order.pickup.phone}` : ''}
                         </div>
                       `}
-                      icon={window.google && window.google.maps ? {
-                        url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
+                        icon={window.google && window.google.maps ? {
+                          url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
                           <svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
                             <circle cx="20" cy="20" r="18" fill="#10B981" stroke="white" stroke-width="3"/>
                             <text x="20" y="25" text-anchor="middle" fill="white" font-size="16" font-weight="bold">P</text>
                           </svg>
                         `),
-                        scaledSize: new window.google.maps.Size(40, 40),
-                        anchor: new window.google.maps.Point(20, 40)
-                      } : null}
-                    />
-                    <Marker
-                      position={{
-                        lat: parseFloat(order.drop.coordinates.latitude),
-                        lng: parseFloat(order.drop.coordinates.longitude)
-                      }}
-                      title="Drop Location"
-                      infoContent={`
+                          scaledSize: new window.google.maps.Size(40, 40),
+                          anchor: new window.google.maps.Point(20, 40)
+                        } : null}
+                      />
+                      <Marker
+                        position={{
+                          lat: parseFloat(order.drop.coordinates.latitude),
+                          lng: parseFloat(order.drop.coordinates.longitude)
+                        }}
+                        title="Drop Location"
+                        infoContent={`
                         <div style="max-width: 250px;">
                           <strong>Drop Location</strong><br/>
                           ${order.drop.name || 'N/A'}<br/>
@@ -1286,28 +1293,28 @@ const XpressOrderDetails = () => {
                           ${order.drop.phone ? `Phone: ${order.drop.phone}` : ''}
                         </div>
                       `}
-                      icon={window.google && window.google.maps ? {
-                        url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
+                        icon={window.google && window.google.maps ? {
+                          url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
                           <svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
                             <circle cx="20" cy="20" r="18" fill="#EF4444" stroke="white" stroke-width="3"/>
                             <text x="20" y="25" text-anchor="middle" fill="white" font-size="16" font-weight="bold">D</text>
                           </svg>
                         `),
-                        scaledSize: new window.google.maps.Size(40, 40),
-                        anchor: new window.google.maps.Point(20, 40)
-                      } : null}
-                    />
-                    
-                    {/* Delivery Agent Marker - Only show when agent is assigned and tracking */}
-                    {agentLocation && order?.assignment?.agent && !['delivered', 'cancelled'].includes(order?.status || '') && (
-                      <Marker
-                        position={{
-                          lat: parseFloat(agentLocation.latitude),
-                          lng: parseFloat(agentLocation.longitude)
-                        }}
-                        title="Delivery Agent (Live)"
-                        rotation={typeof agentLocation.heading === 'number' ? agentLocation.heading : 0}
-                        infoContent={`
+                          scaledSize: new window.google.maps.Size(40, 40),
+                          anchor: new window.google.maps.Point(20, 40)
+                        } : null}
+                      />
+
+                      {/* Delivery Agent Marker - Only show when agent is assigned and tracking */}
+                      {agentLocation && order?.assignment?.agent && !['delivered', 'cancelled'].includes(order?.status || '') && (
+                        <Marker
+                          position={{
+                            lat: parseFloat(agentLocation.latitude),
+                            lng: parseFloat(agentLocation.longitude)
+                          }}
+                          title="Delivery Agent (Live)"
+                          rotation={typeof agentLocation.heading === 'number' ? agentLocation.heading : 0}
+                          infoContent={`
                           <div style="max-width: 250px;">
                             <strong>Delivery Agent</strong><br/>
                             ${order.assignment.agent.personalInfo?.firstName || ''} ${order.assignment.agent.personalInfo?.lastName || ''}<br/>
@@ -1315,19 +1322,19 @@ const XpressOrderDetails = () => {
                             <small>Last updated: ${agentLocation.lastUpdated ? new Date(agentLocation.lastUpdated).toLocaleTimeString() : 'Just now'}</small>
                           </div>
                         `}
-                        icon={window.google && window.google.maps ? {
-                          url: BIKERIDER_ICON,
-                          scaledSize: new window.google.maps.Size(46, 46),
-                          anchor: new window.google.maps.Point(23, 23)
-                        } : null}
-                      />
-                    )}
-                    
-                    {directions && <DirectionsRenderer directions={directions} />}
-                  </GoogleMap>
+                          icon={window.google && window.google.maps ? {
+                            url: BIKERIDER_ICON,
+                            scaledSize: new window.google.maps.Size(46, 46),
+                            anchor: new window.google.maps.Point(23, 23)
+                          } : null}
+                        />
+                      )}
+
+                      {directions && <DirectionsRenderer directions={directions} />}
+                    </GoogleMap>
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
 
             {/* Delivery Agent Assignment */}
             {['super_admin', 'admin'].includes(currentUser?.role) && (
@@ -1339,23 +1346,20 @@ const XpressOrderDetails = () => {
 
                 {order.assignment?.agent ? (
                   <div className="space-y-4">
-                    <div className={`border rounded-lg p-4 ${
-                      order.assignment.status === 'accepted' ? 'bg-green-50 border-green-200' :
+                    <div className={`border rounded-lg p-4 ${order.assignment.status === 'accepted' ? 'bg-green-50 border-green-200' :
                       order.assignment.status === 'rejected' ? 'bg-red-50 border-red-200' :
-                      'bg-yellow-50 border-yellow-200'
-                    }`}>
+                        'bg-yellow-50 border-yellow-200'
+                      }`}>
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center">
-                          <div className={`w-10 h-10 rounded-full flex items-center justify-center mr-3 ${
-                            order.assignment.status === 'accepted' ? 'bg-green-100' :
+                          <div className={`w-10 h-10 rounded-full flex items-center justify-center mr-3 ${order.assignment.status === 'accepted' ? 'bg-green-100' :
                             order.assignment.status === 'rejected' ? 'bg-red-100' :
-                            'bg-yellow-100'
-                          }`}>
-                            <User size={20} className={`${
-                              order.assignment.status === 'accepted' ? 'text-green-600' :
+                              'bg-yellow-100'
+                            }`}>
+                            <User size={20} className={`${order.assignment.status === 'accepted' ? 'text-green-600' :
                               order.assignment.status === 'rejected' ? 'text-red-600' :
-                              'text-yellow-600'
-                            }`} />
+                                'text-yellow-600'
+                              }`} />
                           </div>
                           <div className="flex-1">
                             <h3 className="text-lg font-medium text-gray-900">
@@ -1363,14 +1367,13 @@ const XpressOrderDetails = () => {
                             </h3>
                             <p className="text-sm text-gray-600">{order.assignment.agent.personalInfo.phone}</p>
                             <div className="flex items-center gap-2 mt-1">
-                              <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                                order.assignment.status === 'accepted' ? 'bg-green-100 text-green-800' :
+                              <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${order.assignment.status === 'accepted' ? 'bg-green-100 text-green-800' :
                                 order.assignment.status === 'rejected' ? 'bg-red-100 text-red-800' :
-                                'bg-yellow-100 text-yellow-800'
-                              }`}>
+                                  'bg-yellow-100 text-yellow-800'
+                                }`}>
                                 {order.assignment.status === 'accepted' ? 'Accepted' :
-                                 order.assignment.status === 'rejected' ? 'Rejected' :
-                                 'Pending Confirmation'}
+                                  order.assignment.status === 'rejected' ? 'Rejected' :
+                                    'Pending Confirmation'}
                               </span>
                               {order.status !== 'delivered' && (
                                 <button
@@ -1443,8 +1446,8 @@ const XpressOrderDetails = () => {
                           <div>
                             <h3 className="text-lg font-medium text-gray-900">Online Agents ({agents.length})</h3>
                             <p className="text-sm text-gray-500">
-                              {order?.pickup?.coordinates?.latitude && order?.pickup?.coordinates?.longitude 
-                                ? 'Sorted by distance to pickup location' 
+                              {order?.pickup?.coordinates?.latitude && order?.pickup?.coordinates?.longitude
+                                ? 'Sorted by distance to pickup location'
                                 : 'Showing all online agents (pickup location not available for distance sorting)'}
                             </p>
                           </div>
@@ -1634,11 +1637,10 @@ const XpressOrderDetails = () => {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Source</label>
-                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                    order.source === 'website'
-                      ? 'bg-blue-100 text-blue-800 border border-blue-200'
-                      : 'bg-purple-100 text-purple-800 border border-purple-200'
-                  }`}>
+                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${order.source === 'website'
+                    ? 'bg-blue-100 text-blue-800 border border-blue-200'
+                    : 'bg-purple-100 text-purple-800 border border-purple-200'
+                    }`}>
                     {order.source === 'website' ? '🌐 Website' : '📱 Mobile App'}
                   </span>
                 </div>
@@ -1649,6 +1651,12 @@ const XpressOrderDetails = () => {
                   <p className="text-sm text-gray-900">
                     {order.schedule.type === 'now' ? 'Deliver Now' : `Scheduled for ${formatDate(order.schedule.dateTime)} at ${formatTime12Hour(order.schedule.dateTime)}`}
                   </p>
+                </div>
+              )}
+              {order.packageDetails?.fragile && (
+                <div className="mt-4 w-fit bg-red-700 border border-red-800 text-white px-3 py-2 rounded-full flex items-center">
+                  <AlertTriangle size={16} className="mr-2" />
+                  <span className="text-sm font-medium">Fragile Item</span>
                 </div>
               )}
             </div>
@@ -1799,8 +1807,8 @@ const XpressOrderDetails = () => {
                       <p className="text-sm font-medium text-gray-900">Delivered</p>
                       <p className="text-xs text-gray-500">
                         {order.deliveredAt ? formatDateTime(order.deliveredAt) :
-                         order.dropOtp?.verifiedAt ? formatDateTime(order.dropOtp.verifiedAt) :
-                         'Package delivered successfully'}
+                          order.dropOtp?.verifiedAt ? formatDateTime(order.dropOtp.verifiedAt) :
+                            'Package delivered successfully'}
                       </p>
                       <p className="text-xs text-blue-600 mt-1">
                         Time taken: {calculateTimeTaken(order.createdAt, order.deliveredAt || order.dropOtp?.verifiedAt)}
@@ -1861,12 +1869,12 @@ const XpressOrderDetails = () => {
                 Cancel Order
               </h3>
             </div>
-            
+
             <div className="mb-6">
               <p className="text-sm text-gray-600 mb-4">
                 Are you sure you want to cancel this order? This action cannot be undone and will notify the customer.
               </p>
-              
+
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Cancellation Reason <span className="text-red-500">*</span>
@@ -1880,7 +1888,7 @@ const XpressOrderDetails = () => {
                   required
                 />
               </div>
-              
+
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Type <span className="font-bold text-red-600">CANCEL</span> to confirm:
@@ -1917,11 +1925,10 @@ const XpressOrderDetails = () => {
                   }
                 }}
                 disabled={cancelConfirmationText !== 'CANCEL' || !cancelReason.trim() || updating}
-                className={`flex-1 px-4 py-2 rounded-lg font-medium transition-colors duration-200 ${
-                  cancelConfirmationText === 'CANCEL' && cancelReason.trim() && !updating
-                    ? 'bg-red-600 hover:bg-red-700 text-white'
-                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                }`}
+                className={`flex-1 px-4 py-2 rounded-lg font-medium transition-colors duration-200 ${cancelConfirmationText === 'CANCEL' && cancelReason.trim() && !updating
+                  ? 'bg-red-600 hover:bg-red-700 text-white'
+                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  }`}
               >
                 {updating ? 'Cancelling...' : 'Cancel Order'}
               </button>
@@ -1980,11 +1987,10 @@ const XpressOrderDetails = () => {
                   }
                 }}
                 disabled={deleteConfirmationText !== 'DELETE'}
-                className={`flex-1 px-4 py-2 rounded-lg font-medium transition-colors duration-200 ${
-                  deleteConfirmationText === 'DELETE'
-                    ? 'bg-red-600 hover:bg-red-700 text-white'
-                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                }`}
+                className={`flex-1 px-4 py-2 rounded-lg font-medium transition-colors duration-200 ${deleteConfirmationText === 'DELETE'
+                  ? 'bg-red-600 hover:bg-red-700 text-white'
+                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  }`}
               >
                 Delete Order
               </button>

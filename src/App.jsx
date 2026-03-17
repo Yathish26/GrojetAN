@@ -53,6 +53,7 @@ import PublicStore from './Admin/PublicStore.jsx'
 import PublicStoreDetails from './Admin/PublicStoreDetails.jsx'
 import Darkstore from './Admin/Darkstore.jsx'
 import Logs from './Admin/Logs.jsx'
+import Tags from './Admin/Tags.jsx'
 
 function App() {
   return (
@@ -61,121 +62,122 @@ function App() {
         <div className="min-h-screen bg-gray-50">
           <Toaster
             position="top-center"
-              toastOptions={{
-                duration: 3000,
+            toastOptions={{
+              duration: 3000,
               style: {
                 background: '#fff',
                 color: '#333',
                 border: '1px solid #e5e7eb',
                 padding: '16px',
                 boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)'
-            },
-            success: {
-              iconTheme: {
-                primary: '#10B981',
-                secondary: '#fff'
+              },
+              success: {
+                iconTheme: {
+                  primary: '#10B981',
+                  secondary: '#fff'
+                }
+              },
+              error: {
+                iconTheme: {
+                  primary: '#EF4444',
+                  secondary: '#fff'
+                }
               }
-            },
-            error: {
-              iconTheme: {
-                primary: '#EF4444',
-                secondary: '#fff'
-              }
-            }
-          }}
-        />
-        
-        <Routes>
-          {/* Main Dashboard */}
-          <Route path="/" element={<AdminNew />} />
-          <Route path="/public-store" element={<PublicStore />} />
-          <Route path="/public-store-details/:id" element={<PublicStoreDetails />} />
-          
-          {/* Authentication */}
-          <Route path="/login" element={<AdminLogin />} />
-          
-          {/* Product Management */}
-          <Route path="/products" element={<Products />} />
-          <Route path="/products/add" element={<AddProduct />} />
-          <Route path="/products/requests" element={<RequestedProducts />} />
-          
-          {/* Order Management */}
-          <Route path="/orders" element={<Orders />} />
-          <Route path="/orders/:id" element={<OrderDetails />} />
-          
-          {/* User Management */}
-          <Route path="/users" element={<Users />} />
-          <Route path="/users/:id" element={<UserData />} />
-          <Route path="/users/:id/orders" element={<UserOrders />} />
-          <Route path="/user-analytics" element={<UserAnalytics />} />
-          
-          {/* Merchant Management */}
-          <Route path="/merchant-enquiries" element={<MerchantEnq />} />
-          <Route path="/merchants" element={<Merchants />} />
-          <Route path="/merchants/add" element={<AddMerchant />} />
-          <Route path="/merchants/:id" element={<MerchantDetails />} />
-          <Route path="/merchants/:id/edit" element={<EditMerchant />} />
-          <Route path="/merchants/:id/inventory" element={<MerchantInventory />} />
-          <Route path="/merchants/:id/inventory/add" element={<AddMerchantInventory />} />
-          <Route path="/eateries" element={<Eateries />} />
-          <Route path="/darkstore" element={<Darkstore />} />
-          <Route path="/darkstore/add" element={<Darkstore />} />
-          
-          {/* Support Management */}
-          <Route path="/support" element={<Support />} />
-          
-          {/* Category Management */}
-          <Route path="/categories" element={<Categories />} />
-          
-          {/* Xpress */}
-          <Route path="/xpress" element={<Xpress />} />
-          <Route path="/xpress/:id" element={<XpressOrderDetails />} />
-          
-          {/* Careers Management */}
-          <Route path="/careers" element={<Careers />} />
-          
-          {/* Delivery Management */}
-          <Route path="/delivery-agents" element={<DeliveryAgents />} />
-          <Route path="/delivery-agents/:id" element={<DeliveryAgentDetails />} />
-          <Route path="/delivery-ratings" element={<DeliveryRatings />} />
-          <Route path="/riders-zone" element={<RidersZone />} />
-          <Route path="/delivery-zones" element={<DeliveryZones />} />
-          <Route path="/market-area" element={<MarketArea />} />
-          <Route path="/delivery-signup" element={<DeliveryAgentSignup />} />
-          <Route path="/offers" element={<Offers />} />
-          
-          {/* Home Ads Management */}
-          <Route path="/home-ads" element={<HomeAds />} />
-          
-          {/* Dark Store */}
-          <Route path="/contact-qur" element={<ContactQur />} />
-          <Route path="/email-sender" element={<EmailSender />} />
-          
-          
-          {/* Analytics & Reports */}
-          <Route path="/analytics" element={<Analytics />} />
-          <Route path="/finance" element={<Finance />} />
-          
-          {/* Admin Management (Super Admin only) */}
-          <Route path="/admin-management" element={<AdminManagement />} />
-          <Route path="/security" element={<Security />} />
-          <Route path="/logs" element={<Logs />} />
-          <Route path="/admin-register" element={<AdminRegister />} />
-          <Route path="/update-notes" element={<UpdateNotesAdmin />} />
-          <Route path="/bug-reports" element={<BugReports />} />
-          <Route path="/super-tags" element={<SuperTags />} />
-          
-          {/* Settings & Profile */}
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/settings" element={<Settings />} />
-          <Route path="/app-controls" element={<AppControls />} />
-          <Route path="/s3-store" element={<S3store />} />
+            }}
+          />
 
-          {/* 404 */}
-          <Route path="*" element={<Error404 />} />
-        </Routes>
-      </div>
-    </Router>
+          <Routes>
+            {/* Main Dashboard */}
+            <Route path="/" element={<AdminNew />} />
+            <Route path="/public-store" element={<PublicStore />} />
+            <Route path="/public-store-details/:id" element={<PublicStoreDetails />} />
+
+            {/* Authentication */}
+            <Route path="/login" element={<AdminLogin />} />
+
+            {/* Product Management */}
+            <Route path="/products" element={<Products />} />
+            <Route path="/products/add" element={<AddProduct />} />
+            <Route path="/products/requests" element={<RequestedProducts />} />
+
+            {/* Order Management */}
+            <Route path="/orders" element={<Orders />} />
+            <Route path="/orders/:id" element={<OrderDetails />} />
+
+            {/* User Management */}
+            <Route path="/users" element={<Users />} />
+            <Route path="/users/:id" element={<UserData />} />
+            <Route path="/users/:id/orders" element={<UserOrders />} />
+            <Route path="/user-analytics" element={<UserAnalytics />} />
+
+            {/* Merchant Management */}
+            <Route path="/merchant-enquiries" element={<MerchantEnq />} />
+            <Route path="/merchants" element={<Merchants />} />
+            <Route path="/merchants/add" element={<AddMerchant />} />
+            <Route path="/merchants/:id" element={<MerchantDetails />} />
+            <Route path="/merchants/:id/edit" element={<EditMerchant />} />
+            <Route path="/merchants/:id/inventory" element={<MerchantInventory />} />
+            <Route path="/merchants/:id/inventory/add" element={<AddMerchantInventory />} />
+            <Route path="/eateries" element={<Eateries />} />
+            <Route path="/darkstore" element={<Darkstore />} />
+            <Route path="/darkstore/add" element={<Darkstore />} />
+
+            {/* Support Management */}
+            <Route path="/support" element={<Support />} />
+
+            {/* Category Management */}
+            <Route path="/categories" element={<Categories />} />
+
+            {/* Xpress */}
+            <Route path="/xpress" element={<Xpress />} />
+            <Route path="/xpress/:id" element={<XpressOrderDetails />} />
+
+            {/* Careers Management */}
+            <Route path="/careers" element={<Careers />} />
+
+            {/* Delivery Management */}
+            <Route path="/delivery-agents" element={<DeliveryAgents />} />
+            <Route path="/delivery-agents/:id" element={<DeliveryAgentDetails />} />
+            <Route path="/delivery-ratings" element={<DeliveryRatings />} />
+            <Route path="/riders-zone" element={<RidersZone />} />
+            <Route path="/delivery-zones" element={<DeliveryZones />} />
+            <Route path="/market-area" element={<MarketArea />} />
+            <Route path="/delivery-signup" element={<DeliveryAgentSignup />} />
+            <Route path="/offers" element={<Offers />} />
+
+            {/* Home Ads Management */}
+            <Route path="/home-ads" element={<HomeAds />} />
+
+            {/* Dark Store */}
+            <Route path="/contact-qur" element={<ContactQur />} />
+            <Route path="/email-sender" element={<EmailSender />} />
+
+
+            {/* Analytics & Reports */}
+            <Route path="/analytics" element={<Analytics />} />
+            <Route path="/finance" element={<Finance />} />
+
+            {/* Admin Management (Super Admin only) */}
+            <Route path="/admin-management" element={<AdminManagement />} />
+            <Route path="/security" element={<Security />} />
+            <Route path="/logs" element={<Logs />} />
+            <Route path="/admin-register" element={<AdminRegister />} />
+            <Route path="/update-notes" element={<UpdateNotesAdmin />} />
+            <Route path="/bug-reports" element={<BugReports />} />
+            <Route path="/super-tags" element={<SuperTags />} />
+            <Route path="/tags" element={<Tags />} />
+
+            {/* Settings & Profile */}
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/settings" element={<Settings />} />
+            <Route path="/app-controls" element={<AppControls />} />
+            <Route path="/s3-store" element={<S3store />} />
+
+            {/* 404 */}
+            <Route path="*" element={<Error404 />} />
+          </Routes>
+        </div>
+      </Router>
     </WebSocketProvider>
   )
 }
