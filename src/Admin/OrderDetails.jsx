@@ -114,6 +114,8 @@ export default function OrderDetails() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [agentEarnings, setAgentEarnings] = useState('');
   const [directions, setDirections] = useState(null);
+  const [verifyingPayment, setVerifyingPayment] = useState(false);
+  const [paymentVerificationMeta, setPaymentVerificationMeta] = useState(null);
 
   const checkUser = async () => {
     try {
@@ -248,6 +250,55 @@ export default function OrderDetails() {
     setIsRefreshing(true);
     await fetchOrderDetails();
     setIsRefreshing(false);
+  };
+
+  const verifyPaymentStatus = async () => {
+    try {
+      setVerifyingPayment(true);
+      const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/orders/${orderId}/verify-payment-status`, {
+        method: 'POST',
+        credentials: 'include'
+      });
+
+      const data = await response.json();
+      if (data.tokenValid === false) {
+        navigate('/login', { replace: true });
+        return;
+      }
+
+      if (data.order) {
+        await fetchOrderDetails();
+      }
+
+      setPaymentVerificationMeta({
+        checkedAt: new Date().toISOString(),
+        gateway: data.gateway || null,
+        message: data.message || null,
+        notifications: data.notifications || null,
+      });
+
+      if (data.confirmed) {
+        const notificationSummary = [];
+        if (data.notifications?.telegramSent) notificationSummary.push('Telegram sent');
+        if (data.notifications?.merchantPushSent) notificationSummary.push('merchant notified');
+        if (data.notifications?.customerPushSent) notificationSummary.push('customer notified');
+
+        toast.success(
+          notificationSummary.length
+            ? `${data.message || 'Payment verified successfully'} • ${notificationSummary.join(' • ')}`
+            : (data.message || 'Payment verified successfully')
+        );
+      } else if (data.pending) {
+        toast(data.message || 'Payment is still pending on Razorpay');
+      } else {
+        toast.error(data.message || 'Payment verification failed');
+      }
+    } catch (error) {
+      console.error('Error verifying payment status:', error);
+      toast.error('Failed to verify payment status');
+    } finally {
+      setVerifyingPayment(false);
+    }
   };
 
   const updateOrderStatus = async (newStatus) => {
@@ -698,6 +749,7 @@ export default function OrderDetails() {
   const getStatusIcon = (status) => {
     const statusValue = getStatusValue(status);
     switch (statusValue) {
+      case 'payment_pending':
       case 'pending':
         return <Clock className="w-5 h-5 text-yellow-500" />;
       case 'confirmed':
@@ -718,6 +770,7 @@ export default function OrderDetails() {
   const getStatusColor = (status) => {
     const statusValue = getStatusValue(status);
     switch (statusValue) {
+      case 'payment_pending':
       case 'pending':
         return 'bg-yellow-100 text-yellow-800 border-yellow-200';
       case 'confirmed':
@@ -1921,6 +1974,17 @@ export default function OrderDetails() {
                 </div>
 
                 <div className="mt-4 space-y-3">
+                  {order.payment?.method !== 'cash' && (
+                    <button
+                      onClick={verifyPaymentStatus}
+                      disabled={verifyingPayment}
+                      className="inline-flex items-center justify-center px-3 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <RefreshCw className={`w-4 h-4 mr-2 ${verifyingPayment ? 'animate-spin' : ''}`} />
+                      {verifyingPayment ? 'Verifying...' : 'Verify Payment'}
+                    </button>
+                  )}
+
                   <div className="p-3 bg-gray-50 rounded-none">
                     <div className="flex items-center gap-2">
                       <CreditCard className="w-4 h-4 text-gray-500" />
@@ -1930,11 +1994,42 @@ export default function OrderDetails() {
                       {order.payment?.method || order.paymentMethod || 'Not specified'}
                     </p>
                     <p className={`text-sm mt-1 ${(order.payment?.status || order.paymentStatus) === 'paid' ? 'text-green-600' :
-                      (order.payment?.status || order.paymentStatus) === 'pending' ? 'text-yellow-600' : 'text-red-600'
+                      ['pending', 'payment_pending'].includes(order.payment?.status || order.paymentStatus) ? 'text-yellow-600' : 'text-red-600'
                       }`}>
                       Status: {order.payment?.status || order.paymentStatus || 'Unknown'}
                     </p>
                   </div>
+
+                  {paymentVerificationMeta?.gateway?.status && (
+                    <div className="p-3 bg-blue-50 rounded-none">
+                      <div className="flex items-center gap-2">
+                        <RefreshCw className="w-4 h-4 text-blue-500" />
+                        <span className="text-sm text-blue-600">Gateway Status</span>
+                      </div>
+                      <p className="font-medium text-blue-800 mt-1 capitalize">
+                        {paymentVerificationMeta.gateway.status.replace('_', ' ')}
+                      </p>
+                      {paymentVerificationMeta.checkedAt && (
+                        <p className="text-xs text-blue-700 mt-1">
+                          Last verified: {new Date(paymentVerificationMeta.checkedAt).toLocaleString('en-IN')}
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  {paymentVerificationMeta?.message && (
+                    <div className="p-3 bg-sky-50 rounded-none text-sm text-sky-800 border border-sky-100">
+                      {paymentVerificationMeta.message}
+                    </div>
+                  )}
+
+                  {paymentVerificationMeta?.notifications && (
+                    <div className="p-3 bg-green-50 rounded-none text-sm text-green-800 border border-green-100 space-y-1">
+                      <div>Telegram: {paymentVerificationMeta.notifications.telegramSent ? 'Sent' : 'Not sent'}</div>
+                      <div>Merchant push: {paymentVerificationMeta.notifications.merchantPushSent ? 'Sent' : 'Not sent'}</div>
+                      <div>Customer push: {paymentVerificationMeta.notifications.customerPushSent ? 'Sent' : 'Not sent'}</div>
+                    </div>
+                  )}
 
                   {order.payment?.transactionId && (
                     <div className="p-3 bg-blue-50 rounded-none">

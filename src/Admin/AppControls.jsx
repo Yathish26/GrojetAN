@@ -36,6 +36,7 @@ export default function AppControls() {
   const [smallCartThreshold, setSmallCartThreshold] = useState(null);
   const [freeDeliveryThreshold, setFreeDeliveryThreshold] = useState(null);
   const [cashOnDeliveryEnabled, setCashOnDeliveryEnabled] = useState(null);
+  const [groceryUpiEnabled, setGroceryUpiEnabled] = useState(null);
   const [loading, setLoading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [originalValues, setOriginalValues] = useState({});
@@ -74,6 +75,7 @@ export default function AppControls() {
     smallCartThreshold: { updatedBy: null, updatedAt: null },
     freeDeliveryThreshold: { updatedBy: null, updatedAt: null },
     cashOnDeliveryEnabled: { updatedBy: null, updatedAt: null },
+    groceryUpiEnabled: { updatedBy: null, updatedAt: null },
   });
 
   // 🔐 Auth check (Always fetch from server)
@@ -142,6 +144,7 @@ export default function AppControls() {
         setSmallCartThreshold(data.smallCartThreshold?.value ?? 499);
         setFreeDeliveryThreshold(data.freeDeliveryThreshold?.value ?? 499);
         setCashOnDeliveryEnabled(data.cashOnDeliveryEnabled?.value ?? true);
+        setGroceryUpiEnabled(data.groceryUpiEnabled?.value ?? true);
         
         // Set Xpress controls
         setXpressGstPercentage(data.xpressGstPercentage?.value ?? 18);
@@ -188,27 +191,31 @@ export default function AppControls() {
         setUpdateLogs({
           taxPercentageOnDeliveryFee: {
             updatedBy: data.taxPercentageOnDeliveryFee?.updatedBy,
-            updatedAt: data.taxPercentageOnDeliveryFee?.updatedAt || data.updatedAt
+            updatedAt: data.taxPercentageOnDeliveryFee?.updatedAt
           },
           deliveryFee: {
             updatedBy: data.deliveryFee?.updatedBy,
-            updatedAt: data.deliveryFee?.updatedAt || data.updatedAt
+            updatedAt: data.deliveryFee?.updatedAt
           },
           smallCartFee: {
             updatedBy: data.smallCartFee?.updatedBy,
-            updatedAt: data.smallCartFee?.updatedAt || data.updatedAt
+            updatedAt: data.smallCartFee?.updatedAt
           },
           smallCartThreshold: {
             updatedBy: data.smallCartThreshold?.updatedBy,
-            updatedAt: data.smallCartThreshold?.updatedAt || data.updatedAt
+            updatedAt: data.smallCartThreshold?.updatedAt
           },
           freeDeliveryThreshold: {
             updatedBy: data.freeDeliveryThreshold?.updatedBy,
-            updatedAt: data.freeDeliveryThreshold?.updatedAt || data.updatedAt
+            updatedAt: data.freeDeliveryThreshold?.updatedAt
           },
           cashOnDeliveryEnabled: {
             updatedBy: data.cashOnDeliveryEnabled?.updatedBy,
-            updatedAt: data.cashOnDeliveryEnabled?.updatedAt || data.updatedAt
+            updatedAt: data.cashOnDeliveryEnabled?.updatedAt
+          },
+          groceryUpiEnabled: {
+            updatedBy: data.groceryUpiEnabled?.updatedBy,
+            updatedAt: data.groceryUpiEnabled?.updatedAt
           },
         });
         
@@ -220,6 +227,7 @@ export default function AppControls() {
           smallCartThreshold: data.smallCartThreshold?.value ?? 499,
           freeDeliveryThreshold: data.freeDeliveryThreshold?.value ?? 499,
           cashOnDeliveryEnabled: data.cashOnDeliveryEnabled?.value ?? true,
+          groceryUpiEnabled: data.groceryUpiEnabled?.value ?? true,
         });
         
         // Store Xpress original values for cancel functionality
@@ -288,6 +296,7 @@ export default function AppControls() {
       smallCartThreshold,
       freeDeliveryThreshold,
       cashOnDeliveryEnabled,
+      groceryUpiEnabled,
     });
     setIsEditing(true);
   };
@@ -300,6 +309,7 @@ export default function AppControls() {
     setSmallCartThreshold(originalValues.smallCartThreshold);
     setFreeDeliveryThreshold(originalValues.freeDeliveryThreshold);
     setCashOnDeliveryEnabled(originalValues.cashOnDeliveryEnabled);
+    setGroceryUpiEnabled(originalValues.groceryUpiEnabled);
     setIsEditing(false);
   };
 
@@ -446,6 +456,7 @@ export default function AppControls() {
           smallCartThreshold: parseFloat(smallCartThreshold),
           freeDeliveryThreshold: parseFloat(freeDeliveryThreshold),
           cashOnDeliveryEnabled: cashOnDeliveryEnabled,
+          groceryUpiEnabled: groceryUpiEnabled,
         }),
       });
 
@@ -465,6 +476,7 @@ export default function AppControls() {
           smallCartThreshold: parseFloat(smallCartThreshold),
           freeDeliveryThreshold: parseFloat(freeDeliveryThreshold),
           cashOnDeliveryEnabled: cashOnDeliveryEnabled,
+          groceryUpiEnabled: groceryUpiEnabled,
         });
         // Update update logs with the returned data
         const data = result.data;
@@ -492,6 +504,10 @@ export default function AppControls() {
           cashOnDeliveryEnabled: {
             updatedBy: data.cashOnDeliveryEnabled?.updatedBy,
             updatedAt: data.cashOnDeliveryEnabled?.updatedAt
+          },
+          groceryUpiEnabled: {
+            updatedBy: data.groceryUpiEnabled?.updatedBy,
+            updatedAt: data.groceryUpiEnabled?.updatedAt
           },
         });
         // Refetch to ensure state reflects server values
@@ -1363,6 +1379,38 @@ export default function AppControls() {
               </p>
               <p className="text-xs text-blue-600 mt-1">
                 {formatUpdateLog(updateLogs.cashOnDeliveryEnabled)}
+              </p>
+            </div>
+
+            {/* Grocery UPI Payment */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Grocery UPI Payment
+              </label>
+              <div className="flex items-center">
+                <button
+                  type="button"
+                  onClick={() => isEditing && setGroceryUpiEnabled(!groceryUpiEnabled)}
+                  disabled={!isEditing}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 ${
+                    groceryUpiEnabled ? 'bg-green-600' : 'bg-gray-200'
+                  } ${!isEditing ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      groceryUpiEnabled ? 'translate-x-6' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+                <span className="ml-3 text-sm text-gray-700">
+                  {groceryUpiEnabled ? 'Enabled' : 'Disabled'}
+                </span>
+              </div>
+              <p className="text-xs text-gray-500 mt-1">
+                Allow customers to pay for grocery orders using UPI/Cards/Net Banking.
+              </p>
+              <p className="text-xs text-blue-600 mt-1">
+                {formatUpdateLog(updateLogs.groceryUpiEnabled)}
               </p>
             </div>
 
