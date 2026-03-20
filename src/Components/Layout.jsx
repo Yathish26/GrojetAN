@@ -14,7 +14,8 @@ import {
   ChefHat,
   Warehouse,
   FileText,
-  Tag
+  Tag,
+  Target
 } from 'lucide-react';
 import { MdAdminPanelSettings } from 'react-icons/md';
 import toast from 'react-hot-toast';
@@ -208,6 +209,7 @@ const Layout = ({ children, title }) => {
     { name: 'Update Notes', icon: FileText, path: '/update-notes', roles: ['super_admin'] },
     { name: 'Super Tags', icon: Star, path: '/super-tags', roles: ['super_admin'] },
     { name: 'Tags', icon: Tag, path: '/tags', roles: ['super_admin'] },
+    { name: 'Brands', icon: Target, path: '/brands', roles: ['super_admin'] },
     { name: 'Contact Queries', icon: MessageSquare, path: '/contact-qur', roles: ['super_admin', 'admin'] },
     { name: 'Email Sender', icon: Mail, path: '/email-sender', roles: ['super_admin', 'admin'] },
   ];

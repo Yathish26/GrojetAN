@@ -316,6 +316,7 @@ const MerchantInventory = () => {
   // Sorting states
   const [sortBy, setSortBy] = useState('name');
   const [sortOrder, setSortOrder] = useState('asc');
+  const [showSortDropdown, setShowSortDropdown] = useState(false);
 
   // Product modal states
   const [showProductModal, setShowProductModal] = useState(false);
@@ -345,6 +346,10 @@ const MerchantInventory = () => {
     const handleClickOutside = (event) => {
       if (exportDropdownRef.current && !exportDropdownRef.current.contains(event.target)) {
         setShowExportDropdown(false);
+      }
+      // Close sort dropdown when clicking outside
+      if (!event.target.closest('.sort-dropdown')) {
+        setShowSortDropdown(false);
       }
     };
 
@@ -538,6 +543,21 @@ const MerchantInventory = () => {
     setSelectAll(false);
   };
 
+  // Get current sort label
+  const getSortLabel = () => {
+    const sortOptions = {
+      'addedDate_desc': 'Newest First',
+      'addedDate_asc': 'Oldest First',
+      'name_asc': 'Name A-Z',
+      'name_desc': 'Name Z-A',
+      'price_asc': 'Price: Low to High',
+      'price_desc': 'Price: High to Low',
+      'quantity_asc': 'Stock: Low to High',
+      'quantity_desc': 'Stock: High to Low'
+    };
+    return sortOptions[`${sortBy}_${sortOrder}`] || 'Name A-Z';
+  };
+
   const handleStatusFilter = (status) => {
     setStatusFilter(status);
     setSearchTerm('');
@@ -561,6 +581,8 @@ const MerchantInventory = () => {
     setCategoryFilter('all');
     setSearchTerm('');
     setPendingSearch('');
+    setSortBy('name');
+    setSortOrder('asc');
     setPage(1);
     setSelectedItems([]);
     setSelectAll(false);
@@ -1304,13 +1326,6 @@ const MerchantInventory = () => {
                 >
                   Search
                 </button>
-                <button
-                  onClick={handleSortPrice}
-                  className="inline-flex items-center justify-center px-6 py-3 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors w-full sm:w-auto"
-                >
-                  <ArrowUpDown className="h-4 w-4 mr-2" />
-                  Sort by Price {sortOrder === 'asc' ? '↑' : '↓'}
-                </button>
               </div>
             </div>
           </div>
@@ -1365,8 +1380,59 @@ const MerchantInventory = () => {
                 </select>
               </div>
 
+              {/* Sort Filter */}
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full sm:w-auto">
+                <span className="text-sm text-gray-600 hidden sm:inline">Sort:</span>
+                <div className="relative sort-dropdown">
+                  <button
+                    onClick={() => setShowSortDropdown(!showSortDropdown)}
+                    className="inline-flex items-center justify-center px-3 py-1.5 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors w-full sm:w-auto"
+                  >
+                    <ArrowUpDown className="h-4 w-4 mr-2" />
+                    {getSortLabel()}
+                    <ChevronDown className="h-4 w-4 ml-2" />
+                  </button>
+
+                  {showSortDropdown && (
+                    <div className="absolute right-0 mt-2 w-56 bg-white border border-gray-200 rounded-lg shadow-lg z-20 overflow-hidden">
+                      <div className="py-1">
+                        {[
+                          { key: 'newest', label: 'Newest First', field: 'addedDate', order: 'desc' },
+                          { key: 'oldest', label: 'Oldest First', field: 'addedDate', order: 'asc' },
+                          { key: 'name_asc', label: 'Name A-Z', field: 'name', order: 'asc' },
+                          { key: 'name_desc', label: 'Name Z-A', field: 'name', order: 'desc' },
+                          { key: 'price_low', label: 'Price: Low to High', field: 'price', order: 'asc' },
+                          { key: 'price_high', label: 'Price: High to Low', field: 'price', order: 'desc' },
+                          { key: 'stock_low', label: 'Stock: Low to High', field: 'quantity', order: 'asc' },
+                          { key: 'stock_high', label: 'Stock: High to Low', field: 'quantity', order: 'desc' }
+                        ].map(({ key, label, field, order }) => (
+                          <button
+                            key={key}
+                            onClick={() => {
+                              setSortBy(field);
+                              setSortOrder(order);
+                              setShowSortDropdown(false);
+                              setPage(1);
+                              setSelectedItems([]);
+                              setSelectAll(false);
+                            }}
+                            className={`w-full text-left px-4 py-2 text-sm transition-colors ${
+                              sortBy === field && sortOrder === order
+                                ? 'bg-green-50 text-green-700 font-medium'
+                                : 'text-gray-700 hover:bg-gray-50'
+                            }`}
+                          >
+                            {label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
               {/* Clear Filters */}
-              {(statusFilter !== 'all' || categoryFilter !== 'all' || searchTerm) && (
+              {(statusFilter !== 'all' || categoryFilter !== 'all' || searchTerm || sortBy !== 'name' || sortOrder !== 'asc') && (
                 <button
                   onClick={clearFilters}
                   className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors w-full sm:w-auto justify-center"

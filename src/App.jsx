@@ -49,11 +49,13 @@ import ContactQur from './Admin/ContactQur.jsx'
 import EmailSender from './Admin/EmailSender.jsx'
 import S3store from './Admin/S3store.jsx'
 import SuperTags from './Admin/SuperTags.jsx'
+import SuperTagProducts from './Admin/SuperTagProducts.jsx'
 import PublicStore from './Admin/PublicStore.jsx'
 import PublicStoreDetails from './Admin/PublicStoreDetails.jsx'
 import Darkstore from './Admin/Darkstore.jsx'
 import Logs from './Admin/Logs.jsx'
 import Tags from './Admin/Tags.jsx'
+import Brands from './Admin/Brands.jsx'
 
 function App() {
   return (
@@ -165,7 +167,9 @@ function App() {
             <Route path="/update-notes" element={<UpdateNotesAdmin />} />
             <Route path="/bug-reports" element={<BugReports />} />
             <Route path="/super-tags" element={<SuperTags />} />
+            <Route path="/super-tags/:tagName" element={<SuperTagProducts />} />
             <Route path="/tags" element={<Tags />} />
+            <Route path="/brands" element={<Brands />} />
 
             {/* Settings & Profile */}
             <Route path="/profile" element={<Profile />} />

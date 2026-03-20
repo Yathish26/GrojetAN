@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Layout from '../Components/Layout';
 import toast from 'react-hot-toast';
 import { Plus, Edit, Trash2, Tag } from 'lucide-react';
 
 export default function SuperTags() {
+  const navigate = useNavigate();
   const [superTags, setSuperTags] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -12,6 +14,15 @@ export default function SuperTags() {
     name: '',
     description: ''
   });
+
+  // Helper function to format date as DD/MM/YY
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear().toString().slice(-2);
+    return `${day}/${month}/${year}`;
+  };
 
   // Fetch super tags
   const fetchSuperTags = async () => {
@@ -152,11 +163,13 @@ export default function SuperTags() {
           {superTags.map((tag) => (
             <div
               key={tag._id}
-              className="bg-white rounded-lg shadow-sm border border-gray-200 p-6"
+              onClick={() => navigate(`/super-tags/${encodeURIComponent(tag.name)}`)}
+              className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 cursor-pointer hover:border-green-400 hover:shadow-md transition-all"
             >
               <div className="flex items-start justify-between mb-4">
                 <div>
                   <h3 className="font-semibold text-gray-900">{tag.name}</h3>
+                  <p className="text-xs text-green-600 mt-1">Click to view products</p>
                 </div>
               </div>
 
@@ -166,17 +179,23 @@ export default function SuperTags() {
 
               <div className="flex items-center justify-between">
                 <div className="text-xs text-gray-500">
-                  Created: {new Date(tag.createdAt).toLocaleDateString()}
+                  Created: {formatDate(tag.createdAt)}
                 </div>
                 <div className="flex items-center gap-2">
                   <button
-                    onClick={() => handleEdit(tag)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleEdit(tag);
+                    }}
                     className="p-2 text-gray-400 hover:text-blue-600 transition-colors"
                   >
                     <Edit size={16} />
                   </button>
                   <button
-                    onClick={() => handleDelete(tag._id)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDelete(tag._id);
+                    }}
                     className="p-2 text-gray-400 hover:text-red-600 transition-colors"
                   >
                     <Trash2 size={16} />
