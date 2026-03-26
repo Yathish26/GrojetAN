@@ -1276,6 +1276,7 @@ const EditMerchant = () => {
                     <option value="Grocery">Grocery</option>
                     <option value="Healthcare">Healthcare</option>
                     <option value="Fresh Fruits & Vegetables">Fresh Fruits & Vegetables</option>
+                    <option value="Eateries">Eateries</option>
                     <option value="Meats">Meats</option>
                     <option value="Pet">Pet</option>
                     <option value="Electronics">Electronics</option>
