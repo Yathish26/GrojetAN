@@ -1,24 +1,72 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import Layout from '../Components/Layout'
 
-export default function Tags() {
-    const [brands, setBrands] = useState([
-        "Nike",
-        "Adidas",
-        "Puma",
-        "Zara"
-    ])
+export default function Brands() {
+    const [brands, setBrands] = useState([])
+    const [search, setSearch] = useState('')
+    const [loading, setLoading] = useState(true)
+    const [error, setError] = useState('')
 
-    const [newBrand, setNewBrand] = useState("")
+    const fetchBrands = async () => {
+        setLoading(true)
+        setError('')
+        try {
+            const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/products/brands`, {
+                credentials: 'include'
+            })
 
-    const handleAddBrand = () => {
-        if (!newBrand.trim()) return
-        setBrands([...brands, newBrand])
-        setNewBrand("")
+            if (response.status === 401) {
+                setError('Unauthorized. Please login again.')
+                setBrands([])
+                return
+            }
+
+            if (!response.ok) {
+                const err = await response.json().catch(() => null)
+                throw new Error(err?.message || 'Failed to fetch brands')
+            }
+
+            const data = await response.json()
+            setBrands(data.brands || [])
+        } catch (err) {
+            console.error('Error loading brands', err)
+            setError(err.message || 'Failed to load brands')
+        } finally {
+            setLoading(false)
+        }
     }
 
-    const handleDeleteBrand = (index) => {
-        setBrands(brands.filter((_, i) => i !== index))
+    useEffect(() => {
+        fetchBrands()
+    }, [])
+
+    const filteredBrands = brands.filter((brandItem) =>
+        brandItem.brand.toLowerCase().includes(search.toLowerCase())
+    )
+
+    const downloadFile = (content, filename, mimeType) => {
+        const blob = new Blob([content], { type: mimeType })
+        const url = URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.download = filename
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+        URL.revokeObjectURL(url)
+    }
+
+    const handleExportJSON = () => {
+        const payload = filteredBrands.map(({ brand, count }) => ({ brand, count }))
+        const jsonContent = JSON.stringify(payload, null, 2)
+        downloadFile(jsonContent, `product-brands-${Date.now()}.json`, 'application/json')
+    }
+
+    const handleExportExcel = () => {
+        const csvHeader = 'Brand,Product Count\n'
+        const csvRows = filteredBrands.map((item) => `${JSON.stringify(item.brand)},${item.count}`).join('\n')
+        const csvContent = csvHeader + csvRows
+        downloadFile(csvContent, `product-brands-${Date.now()}.csv`, 'text/csv')
     }
 
     return (
@@ -26,50 +74,72 @@ export default function Tags() {
             <div className="p-6">
 
                 {/* Header */}
-                <h1 className="text-2xl font-semibold mb-6">Brands</h1>
+                <div className="flex justify-between items-center mb-6">
+                    <h1 className="text-2xl font-semibold">Brands</h1>
+                    <span className="bg-blue-100 text-blue-600 px-3 py-1 rounded-full text-sm">
+                        {brands.length} Total
+                    </span>
+                </div>
 
-                {/* Add Brand */}
-                <div className="bg-white p-4 rounded-xl shadow mb-6 flex gap-3">
+                {/* Top Controls */}
+                <div className="bg-white p-4 rounded-xl shadow mb-6 flex flex-col md:flex-row items-center gap-3">
                     <input
                         type="text"
-                        placeholder="Enter brand name"
-                        value={newBrand}
-                        onChange={(e) => setNewBrand(e.target.value)}
-                        className="flex-1 border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
+                        placeholder="Search brands..."
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        className="border px-3 py-2 rounded-lg flex-1 focus:ring-2 focus:ring-gray-400"
                     />
+
                     <button
-                        onClick={handleAddBrand}
-                        className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg"
+                        onClick={handleExportJSON}
+                        className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg"
                     >
-                        Add
+                        Export JSON
+                    </button>
+
+                    <button
+                        onClick={handleExportExcel}
+                        className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg"
+                    >
+                        Export CSV (Excel)
                     </button>
                 </div>
 
-                {/* Brands List */}
-                <div className="bg-white p-4 rounded-xl shadow">
-                    <h2 className="text-lg font-medium mb-4">All Brands</h2>
-
-                    <div className="flex flex-wrap gap-3">
-                        {brands.map((brand, index) => (
-                            <div
-                                key={index}
-                                className="flex items-center gap-2 bg-gray-100 px-4 py-2 rounded-full"
-                            >
-                                <span className="text-sm">{brand}</span>
-                                <button
-                                    onClick={() => handleDeleteBrand(index)}
-                                    className="text-white bg-red-500 hover:bg-red-600 rounded-full w-5 h-5 flex items-center justify-center text-xs"
-                                >
-                                    ×
-                                </button>
-                            </div>
-                        ))}
+                {/* Error / Loading */}
+                {error && (
+                    <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
+                        {error}
                     </div>
+                )}
 
-                    {brands.length === 0 && (
-                        <p className="text-gray-500 text-sm">No brands available</p>
-                    )}
-                </div>
+                {loading ? (
+                    <div className="p-6 text-center text-gray-500">Loading brands...</div>
+                ) : (
+                    <div className="bg-white rounded-xl shadow overflow-hidden">
+                        <table className="w-full text-sm text-left">
+                            <thead className="bg-gray-100 text-gray-600 uppercase text-xs">
+                                <tr>
+                                    <th className="px-6 py-3">#</th>
+                                    <th className="px-6 py-3">Brand</th>
+                                    <th className="px-6 py-3 text-right">Product Count</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {filteredBrands.map((brand, index) => (
+                                    <tr key={brand.brand} className="border-b hover:bg-gray-50">
+                                        <td className="px-6 py-4">{index + 1}</td>
+                                        <td className="px-6 py-4">{brand.brand}</td>
+                                        <td className="px-6 py-4 text-right font-semibold">{brand.count}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                        {filteredBrands.length === 0 && (
+                            <div className="p-6 text-center text-gray-500">No brands found</div>
+                        )}
+                    </div>
+                )}
 
             </div>
         </Layout>

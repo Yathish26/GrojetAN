@@ -143,6 +143,7 @@ const EditMerchant = () => {
     },
     homeStore: false,
     headStore: false,
+    eateries: false,
     darkStore: false,
     productCategories: [],
     storeType: '',    // Documents (Text inputs)
@@ -248,6 +249,7 @@ const EditMerchant = () => {
             },
             homeStore: merchant.operationalInfo?.homeStore || false,
             headStore: merchant.operationalInfo?.headStore || false,
+            eateries: merchant.operationalInfo?.eateries || false,
             darkStore: merchant.darkStore || false,
             storeType: merchant.operationalInfo?.storeType || '',
             productCategories: merchant.operationalInfo?.productCategories || [],
@@ -566,6 +568,7 @@ const EditMerchant = () => {
           },
           homeStore: formData.homeStore,
           headStore: formData.headStore,
+          eateries: formData.eateries,
           storeType: formData.storeType,
           productCategories: formData.productCategories
         },
@@ -1228,6 +1231,17 @@ const EditMerchant = () => {
                   />
                   <label className="text-sm font-medium text-gray-700">
                     Head Store
+                  </label>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <input
+                    type="checkbox"
+                    checked={formData.eateries}
+                    onChange={(e) => setFormData(prev => ({ ...prev, eateries: e.target.checked }))}
+                    className="w-4 h-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                  />
+                  <label className="text-sm font-medium text-gray-700">
+                    Eateries
                   </label>
                 </div>
                 <div className="flex items-center space-x-3">

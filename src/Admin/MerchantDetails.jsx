@@ -944,6 +944,16 @@ const MerchantDetails = () => {
                     </span>
                   </p>
                 </div>
+                {operationalInfo.eateries && (
+                  <div>
+                    <label className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Eateries</label>
+                    <p className="mt-2 text-gray-900 text-base font-medium break-words">
+                      <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                        Eateries
+                      </span>
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           </div>

@@ -1,49 +1,73 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import Layout from '../Components/Layout'
 
 export default function Tags() {
-    const [tags, setTags] = useState([
-        "Summer",
-        "Discount",
-        "New Arrival",
-        "Popular"
-    ])
+    const [tags, setTags] = useState([])
+    const [search, setSearch] = useState('')
+    const [loading, setLoading] = useState(true)
+    const [error, setError] = useState('')
 
-    const [newTag, setNewTag] = useState("")
-    const [search, setSearch] = useState("")
-    const [editIndex, setEditIndex] = useState(null)
-    const [editValue, setEditValue] = useState("")
+    const fetchTags = async () => {
+        setLoading(true)
+        setError('')
+        try {
+            const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/products/tags`, {
+                credentials: 'include'
+            })
 
-    // Add Tag
-    const handleAddTag = () => {
-        if (!newTag.trim()) return
-        setTags([...tags, newTag])
-        setNewTag("")
+            if (response.status === 401) {
+                setError('Unauthorized. Please login again.')
+                setTags([])
+                return
+            }
+
+            if (!response.ok) {
+                const err = await response.json().catch(() => null)
+                throw new Error(err?.message || 'Failed to fetch tags')
+            }
+
+            const data = await response.json()
+            setTags(data.tags || [])
+        } catch (err) {
+            console.error('Error loading tags', err)
+            setError(err.message || 'Failed to load tags')
+        } finally {
+            setLoading(false)
+        }
     }
 
-    // Delete Tag
-    const handleDeleteTag = (index) => {
-        setTags(tags.filter((_, i) => i !== index))
-    }
+    useEffect(() => {
+        fetchTags()
+    }, [])
 
-    // Edit Start
-    const handleEdit = (index) => {
-        setEditIndex(index)
-        setEditValue(tags[index])
-    }
-
-    // Save Edit
-    const handleSaveEdit = () => {
-        const updated = [...tags]
-        updated[editIndex] = editValue
-        setTags(updated)
-        setEditIndex(null)
-        setEditValue("")
-    }
-
-    const filteredTags = tags.filter(tag =>
-        tag.toLowerCase().includes(search.toLowerCase())
+    const filteredTags = tags.filter((tagItem) =>
+        tagItem.tag.toLowerCase().includes(search.toLowerCase())
     )
+
+    const downloadFile = (content, filename, mimeType) => {
+        const blob = new Blob([content], { type: mimeType })
+        const url = URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.download = filename
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+        URL.revokeObjectURL(url)
+    }
+
+    const handleExportJSON = () => {
+        const payload = filteredTags.map(({ tag, count }) => ({ tag, count }))
+        const jsonContent = JSON.stringify(payload, null, 2)
+        downloadFile(jsonContent, `product-tags-${Date.now()}.json`, 'application/json')
+    }
+
+    const handleExportExcel = () => {
+        const csvHeader = 'Tag,Product Count\n'
+        const csvRows = filteredTags.map((item) => `${JSON.stringify(item.tag)},${item.count}`).join('\n')
+        const csvContent = csvHeader + csvRows
+        downloadFile(csvContent, `product-tags-${Date.now()}.csv`, 'text/csv')
+    }
 
     return (
         <Layout title="Tags Management">
@@ -58,101 +82,64 @@ export default function Tags() {
                 </div>
 
                 {/* Top Controls */}
-                <div className="bg-white p-4 rounded-xl shadow mb-6 flex flex-col md:flex-row gap-3">
-
+                <div className="bg-white p-4 rounded-xl shadow mb-6 flex flex-col md:flex-row items-center gap-3">
                     <input
                         type="text"
-                        placeholder="Add new tag..."
-                        value={newTag}
-                        onChange={(e) => setNewTag(e.target.value)}
-                        className="border px-3 py-2 rounded-lg flex-1 focus:ring-2 focus:ring-blue-500"
-                    />
-
-                    <button
-                        onClick={handleAddTag}
-                        className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg"
-                    >
-                        Add Tag
-                    </button>
-
-                    <input
-                        type="text"
-                        placeholder="Search..."
+                        placeholder="Search tags..."
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                         className="border px-3 py-2 rounded-lg flex-1 focus:ring-2 focus:ring-gray-400"
                     />
+
+                    <button
+                        onClick={handleExportJSON}
+                        className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg"
+                    >
+                        Export JSON
+                    </button>
+
+                    <button
+                        onClick={handleExportExcel}
+                        className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg"
+                    >
+                        Export CSV (Excel)
+                    </button>
                 </div>
 
-                {/* Table */}
-                <div className="bg-white rounded-xl shadow overflow-hidden">
-                    <table className="w-full text-sm text-left">
-                        
-                        {/* Table Head */}
-                        <thead className="bg-gray-100 text-gray-600 uppercase text-xs">
-                            <tr>
-                                <th className="px-6 py-3">#</th>
-                                <th className="px-6 py-3">Tag Name</th>
-                                <th className="px-6 py-3 text-right">Actions</th>
-                            </tr>
-                        </thead>
+                {/* Error / Loading */}
+                {error && (
+                    <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
+                        {error}
+                    </div>
+                )}
 
-                        {/* Table Body */}
-                        <tbody>
-                            {filteredTags.map((tag, index) => (
-                                <tr key={index} className="border-b hover:bg-gray-50">
-
-                                    <td className="px-6 py-4">{index + 1}</td>
-
-                                    <td className="px-6 py-4">
-                                        {editIndex === index ? (
-                                            <input
-                                                value={editValue}
-                                                onChange={(e) => setEditValue(e.target.value)}
-                                                className="border px-2 py-1 rounded"
-                                            />
-                                        ) : (
-                                            tag
-                                        )}
-                                    </td>
-
-                                    <td className="px-6 py-4 text-right space-x-3">
-                                        {editIndex === index ? (
-                                            <button
-                                                onClick={handleSaveEdit}
-                                                className="text-green-600 hover:underline"
-                                            >
-                                                Save
-                                            </button>
-                                        ) : (
-                                            <>
-                                                <button
-                                                    onClick={() => handleEdit(index)}
-                                                    className="text-blue-600 hover:underline"
-                                                >
-                                                    Edit
-                                                </button>
-                                                <button
-                                                    onClick={() => handleDeleteTag(index)}
-                                                    className="text-red-600 hover:underline"
-                                                >
-                                                    Delete
-                                                </button>
-                                            </>
-                                        )}
-                                    </td>
-
+                {loading ? (
+                    <div className="p-6 text-center text-gray-500">Loading tags...</div>
+                ) : (
+                    <div className="bg-white rounded-xl shadow overflow-hidden">
+                        <table className="w-full text-sm text-left">
+                            <thead className="bg-gray-100 text-gray-600 uppercase text-xs">
+                                <tr>
+                                    <th className="px-6 py-3">#</th>
+                                    <th className="px-6 py-3">Tag</th>
+                                    <th className="px-6 py-3 text-right">Product Count</th>
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
-
-                    {filteredTags.length === 0 && (
-                        <div className="p-6 text-center text-gray-500">
-                            No tags found
-                        </div>
-                    )}
-                </div>
+                            </thead>
+                            <tbody>
+                                {filteredTags.map((tag, index) => (
+                                    <tr key={tag.tag} className="border-b hover:bg-gray-50">
+                                        <td className="px-6 py-4">{index + 1}</td>
+                                        <td className="px-6 py-4">{tag.tag}</td>
+                                        <td className="px-6 py-4 text-right font-semibold">{tag.count}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                        {filteredTags.length === 0 && (
+                            <div className="p-6 text-center text-gray-500">No tags found</div>
+                        )}
+                    </div>
+                )}
 
             </div>
         </Layout>

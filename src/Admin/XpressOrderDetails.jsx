@@ -1115,10 +1115,11 @@ const XpressOrderDetails = () => {
             <div>
               <div className='flex gap-2 items-center'>
                 <h1 className="text-3xl font-bold text-gray-900">Order #{order.orderNumber} </h1>
-                <div className='bg-red-700 text-white rounded-full w-fit py-1 px-3 flex gap-2 items-center'>
-                  <TriangleAlert size={20} className="text-white" />
-                  <h1 className=' font-semibold'>{order.packageDetails?.fragile && 'Fragile'}</h1>
-                </div>
+                {order.packageDetails?.fragile &&
+                  (<div className='bg-red-700 text-white rounded-full w-fit py-1 px-3 flex gap-2 items-center'>
+                    <TriangleAlert size={20} className="text-white" />
+                    <h1 className=' font-semibold'>Fragile</h1>
+                  </div>)}
               </div>
               <p className="text-gray-600 mt-1">
                 Placed on {formatDate(order.createdAt)} at {formatTime12Hour(order.createdAt)}

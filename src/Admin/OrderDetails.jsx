@@ -511,9 +511,10 @@ export default function OrderDetails() {
       XLSX.utils.book_append_sheet(wb, ws1, 'Order Summary');
 
       // Order Items Sheet
-      const itemsHeaders = [['Item Name', 'Quantity', 'Unit Price', 'Total Price']];
+      const itemsHeaders = [['Item Name', 'Weight', 'Quantity', 'Unit Price', 'Total Price']];
       const itemsData = order.items?.map(item => [
         item.productId?.name || item.name || 'N/A',
+        item.weightDimension ? `${item.weightDimension.value || ''} ${item.weightDimension.unit || ''}`.trim() || 'N/A' : 'N/A',
         item.quantity,
         `₹${item.price.toFixed(2)}`,
         `₹${(item.quantity * item.price).toFixed(2)}`
@@ -967,6 +968,11 @@ export default function OrderDetails() {
                           <div className="flex items-center gap-2">
                             <p className="text-sm text-gray-600">Qty: {item.quantity}</p>
                           </div>
+                          {item.weightDimension && (
+                            <p className="text-sm text-gray-600">
+                              Weight: {item.weightDimension.value} {item.weightDimension.unit}
+                            </p>
+                          )}
                           <p className="text-sm text-gray-500">Unit Price: ₹{item.price}</p>
                         </div>
                         <div className="text-right">
@@ -3060,6 +3066,7 @@ export default function OrderDetails() {
                 <thead>
                   <tr className="bg-gray-100">
                     <th className="border border-gray-400 px-3 py-2 text-left text-sm font-semibold">Item</th>
+                    <th className="border border-gray-400 px-3 py-2 text-center text-sm font-semibold">Weight</th>
                     <th className="border border-gray-400 px-3 py-2 text-center text-sm font-semibold">Qty</th>
                     <th className="border border-gray-400 px-3 py-2 text-right text-sm font-semibold">Price</th>
                     <th className="border border-gray-400 px-3 py-2 text-right text-sm font-semibold">Total</th>
@@ -3073,6 +3080,12 @@ export default function OrderDetails() {
                           <p className="font-medium">{item.productId?.name || item.name || 'N/A'}</p>
                           {item.variant && <p className="text-xs text-gray-600">{item.variant}</p>}
                         </div>
+                      </td>
+                      <td className="border border-gray-400 px-3 py-2 text-center text-sm">
+                        {item.weightDimension ? 
+                          `${item.weightDimension.value || ''} ${item.weightDimension.unit || ''}`.trim() || 'N/A'
+                          : 'N/A'
+                        }
                       </td>
                       <td className="border border-gray-400 px-3 py-2 text-center text-sm">{item.quantity}</td>
                       <td className="border border-gray-400 px-3 py-2 text-right text-sm">₹{item.price?.toFixed(2) || '0.00'}</td>
