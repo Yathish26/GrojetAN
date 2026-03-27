@@ -23,7 +23,6 @@ const Eateries = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [totalEateries, setTotalEateries] = useState(0);
-    const [showAddForm, setShowAddForm] = useState(false);
     const [stats, setStats] = useState({
         totalEateries: 0,
         openEateries: 0,
@@ -50,11 +49,8 @@ const Eateries = () => {
                 params.append('status', status);
             }
 
-            // For now, we'll use the same merchant-stores endpoint but filter for eateries
-            // You can modify this to use a specific eateries endpoint when available
-            params.append('storeType', 'Restaurant');
-
-            const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/merchant-stores?${params}`, {
+            // Use dedicated eateries endpoint
+            const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/eateries?${params}`, {
                 method: 'GET',
                 credentials: 'include',
                 headers: {
@@ -69,34 +65,34 @@ const Eateries = () => {
                     return;
                 }
                 if (data.success) {
-                    const transformedEateries = data.merchants.map(eatery => ({
+                    const transformedEateries = data.eateries.map(eatery => ({
                         id: eatery.id,
-                        merchantId: eatery.merchantId,
+                        merchantId: eatery.id,
                         name: eatery.displayName,
                         email: eatery.email,
                         phone: eatery.mobile,
-                        address: eatery.city ? `${eatery.city}, India` : 'Address not available',
+                        address: eatery.city ? `${eatery.city}, ${eatery.state}` : 'Address not available',
                         status: eatery.status,
                         storeStatus: eatery.storeStatus,
                         rating: eatery.rating || 0,
-                        totalOrders: eatery.totalOrders,
-                        totalRevenue: eatery.totalRevenue,
+                        totalOrders: eatery.totalOrders || 0,
+                        totalRevenue: eatery.totalRevenue || 0,
                         todaysOrders: eatery.todaysOrders || 0,
                         todaysRevenue: eatery.todaysRevenue || 0,
-                        joinDate: eatery.registrationDate ? new Date(eatery.registrationDate).toISOString().split('T')[0] : 'N/A',
+                        joinDate: eatery.createdAt ? new Date(eatery.createdAt).toISOString().split('T')[0] : 'N/A',
                         profileImage: null,
                         brandingInfo: eatery.brandingInfo || null,
                         operationalInfo: eatery.operationalInfo || null,
-                        cuisine: eatery.operationalInfo?.cuisineType || 'Various',
+                        cuisine: eatery.cuisine || 'Various',
                         deliveryTime: eatery.operationalInfo?.deliveryTime || '30-45 mins'
                     }));
 
                     setEateries(transformedEateries);
                     setFilteredEateries(transformedEateries);
                     setStats({
-                        totalEateries: data.stats.totalMerchants,
-                        openEateries: data.stats.openMerchants,
-                        activeEateries: data.stats.activeMerchants,
+                        totalEateries: data.stats.totalEateries,
+                        openEateries: data.stats.openEateries,
+                        activeEateries: data.stats.activeEateries,
                         totalRevenue: data.stats.totalRevenue
                     });
                     setTotalPages(data.pagination.totalPages);
@@ -264,7 +260,7 @@ const Eateries = () => {
                                     {loading ? 'Exporting...' : 'Export'}
                                 </button>
                                 <button
-                                    onClick={() => setShowAddForm(true)}
+                                    onClick={() => navigate('/eateries/add')}
                                     className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
                                 >
                                     <Plus size={16} className="mr-2" />
@@ -414,7 +410,7 @@ const Eateries = () => {
                                 <p className="mt-1 text-sm text-gray-500">Get started by adding a new eatery.</p>
                                 <div className="mt-6">
                                     <button
-                                        onClick={() => setShowAddForm(true)}
+                                        onClick={() => navigate('/eateries/add')}
                                         className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
                                     >
                                         <Plus className="h-5 w-5 mr-2" />
@@ -573,155 +569,6 @@ const Eateries = () => {
                 </div>
             </div>
 
-            {/* Add Eatery Modal */}
-            {showAddForm && (
-                <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-                    <div className="relative top-20 mx-auto p-5 border w-11/12 max-w-2xl shadow-lg rounded-md bg-white">
-                        <div className="mt-3">
-                            <div className="flex items-center justify-between mb-4">
-                                <h3 className="text-lg font-medium text-gray-900">Add a Restaurant</h3>
-                                <button
-                                    onClick={() => setShowAddForm(false)}
-                                    className="text-gray-400 hover:text-gray-600"
-                                >
-                                    <span className="sr-only">Close</span>
-                                    <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                    </svg>
-                                </button>
-                            </div>
-                            <form className="space-y-6">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">Restaurant Name *</label>
-                                        <input
-                                            type="text"
-                                            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm"
-                                            placeholder="Enter restaurant name"
-                                            required
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">Email *</label>
-                                        <input
-                                            type="email"
-                                            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm"
-                                            placeholder="restaurant@example.com"
-                                            required
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">Phone Number *</label>
-                                        <input
-                                            type="tel"
-                                            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm"
-                                            placeholder="+91 9876543210"
-                                            required
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">Cuisine Type</label>
-                                        <select
-                                            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm"
-                                        >
-                                            <option value="">Select cuisine type</option>
-                                            <option value="north-indian">North Indian</option>
-                                            <option value="south-indian">South Indian</option>
-                                            <option value="chinese">Chinese</option>
-                                            <option value="italian">Italian</option>
-                                            <option value="continental">Continental</option>
-                                            <option value="fast-food">Fast Food</option>
-                                            <option value="desserts">Desserts</option>
-                                            <option value="beverages">Beverages</option>
-                                            <option value="other">Other</option>
-                                        </select>
-                                    </div>
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700">Address *</label>
-                                    <textarea
-                                        rows={3}
-                                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm"
-                                        placeholder="Enter complete address"
-                                        required
-                                    />
-                                </div>
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">City *</label>
-                                        <input
-                                            type="text"
-                                            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm"
-                                            placeholder="Enter city"
-                                            required
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">State</label>
-                                        <input
-                                            type="text"
-                                            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm"
-                                            placeholder="Enter state"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">PIN Code</label>
-                                        <input
-                                            type="text"
-                                            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm"
-                                            placeholder="Enter PIN code"
-                                        />
-                                    </div>
-                                </div>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">Delivery Time (minutes)</label>
-                                        <input
-                                            type="number"
-                                            min="15"
-                                            max="120"
-                                            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm"
-                                            placeholder="30"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">Minimum Order Amount</label>
-                                        <input
-                                            type="number"
-                                            min="0"
-                                            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm"
-                                            placeholder="100"
-                                        />
-                                    </div>
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700">Description</label>
-                                    <textarea
-                                        rows={3}
-                                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm"
-                                        placeholder="Brief description about the restaurant"
-                                    />
-                                </div>
-                                <div className="flex justify-end space-x-3 pt-4">
-                                    <button
-                                        type="button"
-                                        onClick={() => setShowAddForm(false)}
-                                        className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
-                                    >
-                                        Cancel
-                                    </button>
-                                    <button
-                                        type="submit"
-                                        className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
-                                    >
-                                        Add Restaurant
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-            )}
         </Layout>
     );
 };
