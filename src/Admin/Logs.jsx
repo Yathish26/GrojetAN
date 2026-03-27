@@ -4,18 +4,55 @@ import Layout from '../Components/Layout';
 const Logs = () => {
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  const formatDateDDMMYY = (dateValue) => {
+    const date = new Date(dateValue);
+    if (Number.isNaN(date.getTime())) return '-';
+
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = String(date.getFullYear()).slice(-2);
+
+    return `${day}/${month}/${year}`;
+  };
 
   useEffect(() => {
-    // Fetch logs immediately without artificial delay
-    const dummyLogs = [
-      { id: 1, timestamp: '2026-03-04 10:00:00', level: 'INFO', message: 'User logged in', user: 'admin@example.com' },
-      { id: 2, timestamp: '2026-03-04 09:45:00', level: 'WARN', message: 'Failed login attempt', user: 'unknown' },
-      { id: 3, timestamp: '2026-03-04 09:30:00', level: 'ERROR', message: 'Database connection failed', user: 'system' },
-      { id: 4, timestamp: '2026-03-04 09:15:00', level: 'INFO', message: 'Order processed', user: 'merchant@example.com' },
-      { id: 5, timestamp: '2026-03-04 09:00:00', level: 'DEBUG', message: 'Cache cleared', user: 'system' },
-    ];
-    setLogs(dummyLogs);
-    setLoading(false);
+    const fetchLogs = async () => {
+      try {
+        const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/logs`, {
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+        if (response.ok) {
+          const data = await response.json();
+          const mappedLogs = (data.logs || []).map(log => ({
+            id: log._id,
+            timestamp: formatDateDDMMYY(log.timestamp),
+            level: log.level,
+            message: log.message,
+            user: log.user || 'system',
+            platform: log.platform || 'web'
+          }));
+          setLogs(mappedLogs);
+          setError('');
+        } else {
+          const errorData = await response.json().catch(() => ({}));
+          setError(errorData.message || 'Failed to fetch logs');
+          setLogs([]);
+        }
+      } catch (error) {
+        console.error('Error fetching logs:', error);
+        setError('Unable to fetch logs. Please try again.');
+        setLogs([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchLogs();
   }, []);
 
   const downloadFile = (content, filename, mimeType) => {
@@ -31,7 +68,7 @@ const Logs = () => {
   }
 
   const handleExportText = () => {
-    const text = logs.map(log => `${log.timestamp} [${log.level}] ${log.user}: ${log.message}`).join('\n')
+    const text = logs.map(log => `${log.timestamp} [${log.level}] ${log.user}: ${log.message} (${log.platform})`).join('\n')
     downloadFile(text, `system-logs-${Date.now()}.txt`, 'text/plain')
   }
 
@@ -59,6 +96,14 @@ const Logs = () => {
               <div className="animate-spin h-12 w-12 border-4 border-green-200 border-t-green-600 rounded-full"></div>
               <span className="ml-3 text-gray-600 font-medium">Loading logs…</span>
             </div>
+          ) : error ? (
+            <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 text-sm">
+              {error}
+            </div>
+          ) : logs.length === 0 ? (
+            <div className="bg-white border border-gray-200 rounded-lg px-4 py-6 text-sm text-gray-500">
+              No logs found.
+            </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200 bg-white border border-gray-200 rounded-lg">
@@ -68,6 +113,7 @@ const Logs = () => {
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Level</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Message</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Platform</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
@@ -86,6 +132,7 @@ const Logs = () => {
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-900">{log.message}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{log.user}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{log.platform}</td>
                     </tr>
                   ))}
                 </tbody>
