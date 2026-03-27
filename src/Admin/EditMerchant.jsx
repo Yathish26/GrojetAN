@@ -12,6 +12,7 @@ import { AddressSearch } from '../Components/GoogleMapComponents';
 import toast from 'react-hot-toast';
 import { INDIAN_STATES } from '../utils/states';
 import { INDIAN_BANKS } from '../utils/banks';
+import { VERSION } from '../../version.js';
 
 const EditMerchant = () => {
   const { id } = useParams();
@@ -598,6 +599,7 @@ const EditMerchant = () => {
         credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
+          'x-admin-version': VERSION,
         },
         body: JSON.stringify(submitData)
       });
@@ -641,7 +643,10 @@ const EditMerchant = () => {
     try {
       const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/merchant-stores/${id}`, {
         method: 'DELETE',
-        credentials: 'include'
+        credentials: 'include',
+        headers: {
+          'x-admin-version': VERSION,
+        },
       });
 
       if (!response.ok) {

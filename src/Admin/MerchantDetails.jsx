@@ -11,6 +11,7 @@ import {
 import Layout from '../Components/Layout';
 import { GoogleMap, Marker } from '../Components/GoogleMapComponents';
 import toast from 'react-hot-toast';
+import { VERSION } from '../../version.js';
 
 const MerchantDetails = () => {
   const { id } = useParams();
@@ -241,6 +242,7 @@ const MerchantDetails = () => {
         credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
+          'x-admin-version': VERSION,
         },
         body: JSON.stringify({
           storeStatus: 'closed'
@@ -279,6 +281,7 @@ const MerchantDetails = () => {
         credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
+          'x-admin-version': VERSION,
         },
         body: JSON.stringify({
           storeStatus: 'open'
@@ -321,6 +324,7 @@ const MerchantDetails = () => {
         credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
+          'x-admin-version': VERSION,
         }
       });
 

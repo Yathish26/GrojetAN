@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Layout from '../Components/Layout';
 import * as XLSX from 'xlsx';
+import { RotateCw } from 'lucide-react';
 
 const Logs = () => {
   const [logs, setLogs] = useState([]);
@@ -44,50 +45,51 @@ const Logs = () => {
       .replace(/(Edited\s+product-)(?!\n)/i, '$1\n');
   };
 
-  useEffect(() => {
-    const fetchLogs = async () => {
-      try {
-        const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/logs`, {
-          credentials: 'include',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+  const fetchLogs = useCallback(async () => {
+    try {
+      setLoading(true);
+      const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/logs`, {
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        const mappedLogs = (data.logs || []).map((log) => {
+          const formattedTimestamp = formatDateTimeDDMMYY(log.timestamp);
+
+          return {
+            id: log._id,
+            timestamp: `${formattedTimestamp.date}${formattedTimestamp.time ? `, ${formattedTimestamp.time}` : ''}`,
+            timestampDate: formattedTimestamp.date,
+            timestampTime: formattedTimestamp.time,
+            level: log.level,
+            message: log.message,
+            user: log.user || 'system',
+            platform: log.platform || 'web',
+            version: extractVersion(log)
+          };
         });
-        if (response.ok) {
-          const data = await response.json();
-          const mappedLogs = (data.logs || []).map((log) => {
-            const formattedTimestamp = formatDateTimeDDMMYY(log.timestamp);
-
-            return {
-              id: log._id,
-              timestamp: `${formattedTimestamp.date}${formattedTimestamp.time ? `, ${formattedTimestamp.time}` : ''}`,
-              timestampDate: formattedTimestamp.date,
-              timestampTime: formattedTimestamp.time,
-              level: log.level,
-              message: log.message,
-              user: log.user || 'system',
-              platform: log.platform || 'web',
-              version: extractVersion(log)
-            };
-          });
-          setLogs(mappedLogs);
-          setError('');
-        } else {
-          const errorData = await response.json().catch(() => ({}));
-          setError(errorData.message || 'Failed to fetch logs');
-          setLogs([]);
-        }
-      } catch (error) {
-        console.error('Error fetching logs:', error);
-        setError('Unable to fetch logs. Please try again.');
+        setLogs(mappedLogs);
+        setError('');
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        setError(errorData.message || 'Failed to fetch logs');
         setLogs([]);
-      } finally {
-        setLoading(false);
       }
-    };
-
-    fetchLogs();
+    } catch (error) {
+      console.error('Error fetching logs:', error);
+      setError('Unable to fetch logs. Please try again.');
+      setLogs([]);
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    fetchLogs();
+  }, [fetchLogs]);
 
   const handleExportExcel = () => {
     const rows = logs.map((log) => ({
@@ -124,12 +126,23 @@ const Logs = () => {
                 <h1 className="text-3xl font-bold text-gray-900">System Logs</h1>
                 <p className="mt-1 text-sm text-gray-500">View, search, and export system logs.</p>
               </div>
-              <button
-                onClick={handleExportExcel}
-                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors"
-              >
-                Export to Excel
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={fetchLogs}
+                  disabled={loading}
+                  className="inline-flex items-center justify-center w-9 h-9 border border-gray-300 rounded-lg text-gray-700 bg-white hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-400 transition-colors disabled:opacity-60"
+                  aria-label="Refresh logs"
+                  title="Refresh logs"
+                >
+                  <RotateCw size={16} className={loading ? 'animate-spin' : ''} />
+                </button>
+                <button
+                  onClick={handleExportExcel}
+                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors"
+                >
+                  Export to Excel
+                </button>
+              </div>
             </div>
           </div>
 

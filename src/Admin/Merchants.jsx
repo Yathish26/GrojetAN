@@ -9,6 +9,7 @@ import {
 import Layout from '../Components/Layout';
 import { GoogleMap, Marker } from '../Components/GoogleMapComponents';
 import toast from 'react-hot-toast';
+import { VERSION } from '../../version.js';
 
 const Merchants = () => {
     const navigate = useNavigate();
@@ -535,6 +536,7 @@ const Merchants = () => {
                 credentials: 'include',
                 headers: {
                     'Content-Type': 'application/json',
+                    'x-admin-version': VERSION,
                 },
             });
 

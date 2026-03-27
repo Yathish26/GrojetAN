@@ -11,6 +11,7 @@ import { AddressSearch } from '../Components/GoogleMapComponents';
 import { INDIAN_STATES } from '../utils/states';
 import { INDIAN_BANKS } from '../utils/banks';
 import toast from 'react-hot-toast';
+import { VERSION } from '../../version.js';
 
 const AddMerchant = () => {
   const navigate = useNavigate();
@@ -301,6 +302,7 @@ const AddMerchant = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'x-admin-version': VERSION,
         },
         credentials: 'include',
         body: JSON.stringify(formData)
