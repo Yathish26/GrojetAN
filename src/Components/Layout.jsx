@@ -164,6 +164,9 @@ const Layout = ({ children, title }) => {
     try {
       await fetch(`${import.meta.env.VITE_SERVER}/admin/auth/logout`, {
         method: 'POST',
+        headers: {
+          'x-admin-version': VERSION,
+        },
         credentials: 'include'
       });
       toast.success('Logged out successfully');

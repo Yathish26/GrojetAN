@@ -6,6 +6,7 @@ import Modal from 'react-modal';
 import ChipInput from '../Components/ChipInput';
 import LoaderSpinner from '../Components/Loader';
 import Layout from '../Components/Layout';
+import { VERSION } from '../../version.js';
 
 Modal.setAppElement('#root');
 
@@ -808,6 +809,8 @@ export default function Products() {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
+          'x-admin-version': VERSION,
+          'x-log-action': 'edit-product',
         },
         credentials: 'include',
         body: JSON.stringify(baseProductData),
@@ -864,6 +867,7 @@ export default function Products() {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
+              'x-admin-version': VERSION,
             },
             credentials: 'include',
             body: JSON.stringify(variantProductData),

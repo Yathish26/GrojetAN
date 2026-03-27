@@ -49,7 +49,8 @@ export default function AdminLogin() {
         const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/auth/login`, {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'x-admin-version': VERSION,
           },
           body: JSON.stringify({
             id: formData.id,
@@ -73,7 +74,8 @@ export default function AdminLogin() {
         const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/auth/verify-login-otp`, {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'x-admin-version': VERSION,
           },
           body: JSON.stringify({
             email: formData.id, // ID is email

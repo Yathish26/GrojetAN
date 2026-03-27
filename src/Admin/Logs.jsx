@@ -1,20 +1,47 @@
 import React, { useState, useEffect } from 'react';
 import Layout from '../Components/Layout';
+import * as XLSX from 'xlsx';
 
 const Logs = () => {
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  const formatDateDDMMYY = (dateValue) => {
+  const formatDateTimeDDMMYY = (dateValue) => {
     const date = new Date(dateValue);
-    if (Number.isNaN(date.getTime())) return '-';
+    if (Number.isNaN(date.getTime())) return { date: '-', time: '' };
 
     const day = String(date.getDate()).padStart(2, '0');
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const year = String(date.getFullYear()).slice(-2);
+    const rawHours = date.getHours();
+    const period = rawHours >= 12 ? 'PM' : 'AM';
+    const hours12 = rawHours % 12 || 12;
+    const hours = String(hours12).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    const seconds = String(date.getSeconds()).padStart(2, '0');
 
-    return `${day}/${month}/${year}`;
+    return {
+      date: `${day}/${month}/${year}`,
+      time: `${hours}:${minutes}:${seconds} ${period}`,
+    };
+  };
+
+  const extractVersion = (log) => {
+    if (log?.version) return log.version;
+
+    const message = log?.message || '';
+    const match = message.match(/Admin\s+([Vv][\w.-]+)/);
+    return match?.[1] || '-';
+  };
+
+  const formatMessageForDisplay = (message) => {
+    const safeMessage = (message || '').toString();
+
+    // For product audit logs, push product name to the next line to avoid a very wide message column.
+    return safeMessage
+      .replace(/(Added\s+product-)(?!\n)/i, '$1\n')
+      .replace(/(Edited\s+product-)(?!\n)/i, '$1\n');
   };
 
   useEffect(() => {
@@ -28,14 +55,21 @@ const Logs = () => {
         });
         if (response.ok) {
           const data = await response.json();
-          const mappedLogs = (data.logs || []).map(log => ({
-            id: log._id,
-            timestamp: formatDateDDMMYY(log.timestamp),
-            level: log.level,
-            message: log.message,
-            user: log.user || 'system',
-            platform: log.platform || 'web'
-          }));
+          const mappedLogs = (data.logs || []).map((log) => {
+            const formattedTimestamp = formatDateTimeDDMMYY(log.timestamp);
+
+            return {
+              id: log._id,
+              timestamp: `${formattedTimestamp.date}${formattedTimestamp.time ? `, ${formattedTimestamp.time}` : ''}`,
+              timestampDate: formattedTimestamp.date,
+              timestampTime: formattedTimestamp.time,
+              level: log.level,
+              message: log.message,
+              user: log.user || 'system',
+              platform: log.platform || 'web',
+              version: extractVersion(log)
+            };
+          });
           setLogs(mappedLogs);
           setError('');
         } else {
@@ -55,21 +89,29 @@ const Logs = () => {
     fetchLogs();
   }, []);
 
-  const downloadFile = (content, filename, mimeType) => {
-    const blob = new Blob([content], { type: mimeType })
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = url
-    link.download = filename
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-    URL.revokeObjectURL(url)
-  }
+  const handleExportExcel = () => {
+    const rows = logs.map((log) => ({
+      Timestamp: log.timestampTime ? `${log.timestampDate} ${log.timestampTime}` : log.timestampDate,
+      User: log.user,
+      Platform: log.platform,
+      Message: log.message,
+      Level: log.level,
+      Version: log.version,
+    }));
 
-  const handleExportText = () => {
-    const text = logs.map(log => `${log.timestamp} [${log.level}] ${log.user}: ${log.message} (${log.platform})`).join('\n')
-    downloadFile(text, `system-logs-${Date.now()}.txt`, 'text/plain')
+    const worksheet = XLSX.utils.json_to_sheet(rows);
+    worksheet['!cols'] = [
+      { wch: 24 },
+      { wch: 20 },
+      { wch: 14 },
+      { wch: 45 },
+      { wch: 10 },
+      { wch: 10 },
+    ];
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Logs');
+    XLSX.writeFile(workbook, `system-logs-${Date.now()}.xlsx`);
   }
 
   return (
@@ -83,10 +125,10 @@ const Logs = () => {
                 <p className="mt-1 text-sm text-gray-500">View, search, and export system logs.</p>
               </div>
               <button
-                onClick={handleExportText}
+                onClick={handleExportExcel}
                 className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors"
               >
-                Export to TXT
+                Export to Excel
               </button>
             </div>
           </div>
@@ -106,20 +148,31 @@ const Logs = () => {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200 bg-white border border-gray-200 rounded-lg">
+              <table className="min-w-full table-fixed divide-y divide-gray-200 bg-white border border-gray-200 rounded-lg">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Timestamp</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Level</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Message</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Platform</th>
+                    <th className="w-40 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Timestamp</th>
+                    <th className="w-36 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
+                    <th className="w-24 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Platform</th>
+                    <th className="w-[12rem] px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Message</th>
+                    <th className="w-24 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Level</th>
+                    <th className="w-24 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Version</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {logs.map((log) => (
                     <tr key={log.id}>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{log.timestamp}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        <div>{log.timestampDate}</div>
+                        {log.timestampTime && (
+                          <div className="text-xs font-semibold text-black-500">{log.timestampTime}</div>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{log.user}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{log.platform}</td>
+                      <td className="px-6 py-4 text-sm text-gray-900 align-top">
+                        <div className="max-w-[12rem] whitespace-pre-line break-words">{formatMessageForDisplay(log.message)}</div>
+                      </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
                           log.level === 'ERROR' ? 'bg-red-100 text-red-800' :
@@ -130,9 +183,7 @@ const Logs = () => {
                           {log.level}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-sm text-gray-900">{log.message}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{log.user}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{log.platform}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{log.version}</td>
                     </tr>
                   ))}
                 </tbody>

@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import toast, { Toaster } from 'react-hot-toast';
 import ChipInput from '../Components/ChipInput';
 import Layout from '../Components/Layout';
+import { VERSION } from '../../version.js';
 
 export default function AddProduct() {
   const navigate = useNavigate();
@@ -479,6 +480,7 @@ export default function AddProduct() {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
+              'x-admin-version': VERSION,
             },
             credentials: 'include',
             body: JSON.stringify(baseWithoutImages)
@@ -508,7 +510,10 @@ export default function AddProduct() {
             // Update base product with images
             const updateResponse = await fetch(`${import.meta.env.VITE_SERVER}/admin/products/${baseProduct._id}`, {
               method: 'PUT',
-              headers: { 'Content-Type': 'application/json' },
+              headers: {
+                'Content-Type': 'application/json',
+                'x-admin-version': VERSION,
+              },
               credentials: 'include',
               body: JSON.stringify({ thumbnail: finalThumbnail, images: finalImages })
             });
@@ -546,6 +551,7 @@ export default function AddProduct() {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
+              'x-admin-version': VERSION,
             },
             credentials: 'include',
             body: JSON.stringify(variantProductData)
@@ -574,6 +580,7 @@ export default function AddProduct() {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            'x-admin-version': VERSION,
           },
           credentials: 'include',
           body: JSON.stringify(productWithoutImages)
@@ -603,7 +610,10 @@ export default function AddProduct() {
           // Update product with images
           const updateResponse = await fetch(`${import.meta.env.VITE_SERVER}/admin/products/${product._id}`, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+              'Content-Type': 'application/json',
+              'x-admin-version': VERSION,
+            },
             credentials: 'include',
             body: JSON.stringify({ thumbnail: finalThumbnail, images: finalImages })
           });
