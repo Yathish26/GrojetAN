@@ -30,6 +30,8 @@ import Eateries from './Admin/Eateries.jsx'
 import AddMerchant from './Admin/AddMerchant.jsx'
 import MerchantDetails from './Admin/MerchantDetails.jsx'
 import EditMerchant from './Admin/EditMerchant.jsx'
+import AddEatery from './Admin/AddEatery.jsx'
+import EateryDetails from './Admin/EateryDetails.jsx'
 import MerchantInventory from './Admin/MerchantInventory.jsx'
 import AddMerchantInventory from './Admin/AddMerchantInventory.jsx'
 import AppControls from './Admin/AppControls.jsx'
@@ -121,6 +123,8 @@ function App() {
             <Route path="/merchants/:id/inventory" element={<MerchantInventory />} />
             <Route path="/merchants/:id/inventory/add" element={<AddMerchantInventory />} />
             <Route path="/eateries" element={<Eateries />} />
+            <Route path="/eateries/add" element={<AddEatery />} />
+            <Route path="/eateries/:id" element={<EateryDetails />} />
             <Route path="/darkstore" element={<Darkstore />} />
             <Route path="/darkstore/add" element={<Darkstore />} />
 
