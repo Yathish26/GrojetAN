@@ -5,7 +5,8 @@ import {
   Trash2,
   Edit,
   Loader2,
-  Briefcase
+  Briefcase,
+  Activity
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Layout from '../Components/Layout';
@@ -17,6 +18,8 @@ export default function Careers() {
   const [redirecting, setRedirecting] = useState(false);
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [logsLoading, setLogsLoading] = useState(false);
+  const [careerLogs, setCareerLogs] = useState([]);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -75,6 +78,7 @@ export default function Careers() {
     }
     if (currentUser) {
       fetchJobs();
+      fetchCareerLogs();
     }
   }, [currentUser, navigate]);
 
@@ -100,6 +104,34 @@ export default function Careers() {
     } catch (error) {
       console.error('Failed to fetch jobs:', error);
       toast.error('Failed to load jobs');
+    }
+  };
+
+  const fetchCareerLogs = async () => {
+    try {
+      setLogsLoading(true);
+      const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/jobs/logs?limit=12`, {
+        credentials: 'include'
+      });
+
+      if (response.status === 401) {
+        navigate('/login');
+        return;
+      }
+
+      const data = await response.json();
+      if (data.tokenValid === false) {
+        navigate('/login', { replace: true });
+        return;
+      }
+
+      if (response.ok) {
+        setCareerLogs(data.logs || []);
+      }
+    } catch (error) {
+      console.error('Failed to fetch career logs:', error);
+    } finally {
+      setLogsLoading(false);
     }
   };
 
@@ -143,6 +175,7 @@ export default function Careers() {
         setCharacterCounts({ title: 0, description: 0, location: 0 });
         setEditingId(null);
         fetchJobs();
+        fetchCareerLogs();
       } else {
         toast.error('Failed to save job');
       }
@@ -228,6 +261,7 @@ export default function Careers() {
       if (response.ok) {
         toast.success('Job deleted successfully');
         fetchJobs();
+        fetchCareerLogs();
       } else {
         toast.error('Failed to delete job');
       }
@@ -508,6 +542,38 @@ export default function Careers() {
                         </div>
                       </div>
                     </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Career Activity Logs */}
+          <div className="mt-8 bg-white shadow-lg rounded-lg overflow-hidden">
+            <div className="bg-green-600 px-6 py-4">
+              <h2 className="text-xl font-semibold text-white flex items-center gap-3">
+                <Activity className="w-6 h-6" />
+                Career Activity Logs
+              </h2>
+            </div>
+
+            {logsLoading ? (
+              <div className="flex items-center justify-center py-10">
+                <div className="animate-spin h-7 w-7 border-4 border-indigo-200 border-t-indigo-600 rounded-full"></div>
+                <span className="ml-3 text-gray-600 font-medium">Loading logs...</span>
+              </div>
+            ) : careerLogs.length === 0 ? (
+              <div className="p-8 text-center text-gray-500">
+                No career activity logs yet.
+              </div>
+            ) : (
+              <div className="divide-y divide-gray-200">
+                {careerLogs.map((log) => (
+                  <div key={log._id} className="px-6 py-4 flex items-start justify-between gap-4">
+                    <p className="text-sm text-gray-800">{log.message}</p>
+                    <span className="text-xs text-gray-500 whitespace-nowrap">
+                      {new Date(log.timestamp || log.createdAt).toLocaleString('en-IN')}
+                    </span>
                   </div>
                 ))}
               </div>

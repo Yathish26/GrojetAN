@@ -36,6 +36,7 @@ import toast from 'react-hot-toast';
 import { GoogleMap, Marker } from '../Components/GoogleMapComponents';
 import { useWebSocket } from '../context/WebSocketContext';
 import * as XLSX from 'xlsx';
+import { VERSION } from '../../version.js';
 
 export default function DeliveryAgentDetails() {
   const { id } = useParams();
@@ -337,6 +338,42 @@ export default function DeliveryAgentDetails() {
     return null;
   };
 
+  const createLog = async (message) => {
+    try {
+      await fetch(`${import.meta.env.VITE_SERVER}/admin/logs`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          level: 'INFO',
+          message,
+          user: currentUser?.name || currentUser?.email || 'admin',
+          platform: 'Admin',
+          version: VERSION
+        })
+      });
+    } catch (err) {
+      console.error('Failed to create log:', err);
+    }
+  };
+
+  const getFieldLabel = (field) => {
+    if (field === 'personalInfo.firstName') return 'agent details (full name)';
+    if (field === 'personalInfo.phone') return 'contact (phone)';
+    if (field === 'personalInfo.email') return 'contact (email)';
+    if (field === 'personalInfo.dateOfBirth') return 'agent details (date of birth)';
+    if (field?.startsWith('personalInfo.')) return `agent details (${field.split('.')[1]})`;
+    if (field === 'address.edit') return 'address';
+    if (field?.startsWith('address.')) return `address (${field.split('.')[1]})`;
+    if (field?.startsWith('vehicleInfo.')) return `vehicle info (${field.split('.')[1]})`;
+    if (field === 'emergencyContact.edit') return 'emergency contact';
+    if (field?.startsWith('emergencyContact.')) return `emergency contact (${field.split('.')[1]})`;
+    if (field === 'bankAccount.edit') return 'bank account';
+    if (field === 'status.deliveryZone') return 'delivery zone';
+    if (field === 'documents.documentsLink') return 'documents link';
+    return field || 'details';
+  };
+
   const updateAgentStatus = async (newStatus) => {
     if (!isAuthorized) return;
     const loadingToast = toast.loading('Updating agent status...');
@@ -361,6 +398,9 @@ export default function DeliveryAgentDetails() {
       }
       setAgent(data.agent);
       toast.success(`Application ${newStatus} successfully`);
+      const agentName = `${agent?.personalInfo?.firstName || ''} ${agent?.personalInfo?.lastName || ''}`.trim();
+      const adminName = currentUser?.name || currentUser?.email || 'Admin';
+      await createLog(`${adminName} changed application status to "${newStatus}" for delivery agent ${agentName}`);
     } catch (err) {
       toast.error(err.message);
     } finally {
@@ -388,6 +428,9 @@ export default function DeliveryAgentDetails() {
       }
       setAgent(data.agent);
       toast.success('Application approved successfully');
+      const agentName = `${agent?.personalInfo?.firstName || ''} ${agent?.personalInfo?.lastName || ''}`.trim();
+      const adminName = currentUser?.name || currentUser?.email || 'Admin';
+      await createLog(`${adminName} approved the application of delivery agent ${agentName}`);
     } catch (err) {
       toast.error(err.message);
     } finally {
@@ -420,6 +463,9 @@ export default function DeliveryAgentDetails() {
       }
       setAgent(data.agent);
       toast.success('Application rejected successfully');
+      const agentName = `${agent?.personalInfo?.firstName || ''} ${agent?.personalInfo?.lastName || ''}`.trim();
+      const adminName = currentUser?.name || currentUser?.email || 'Admin';
+      await createLog(`${adminName} rejected the application of delivery agent ${agentName}`);
     } catch (err) {
       toast.error(err.message);
     } finally {
@@ -554,7 +600,7 @@ export default function DeliveryAgentDetails() {
     }
   };
 
-  const updateAgentDetails = async (updateData) => {
+  const updateAgentDetails = async (updateData, fieldLabel = 'details') => {
     if (!isAuthorized) return;
     const loadingToast = toast.loading('Updating agent details...');
     try {
@@ -578,6 +624,9 @@ export default function DeliveryAgentDetails() {
       }
       setAgent(data.agent);
       toast.success('Agent details updated successfully');
+      const agentName = `${agent?.personalInfo?.firstName || ''} ${agent?.personalInfo?.lastName || ''}`.trim();
+      const adminName = currentUser?.name || currentUser?.email || 'Admin';
+      await createLog(`${adminName} edited the ${fieldLabel} of delivery agent ${agentName}`);
       setEditingField(null);
       setEditValue('');
       setEmergencyContactEdit({
@@ -821,7 +870,7 @@ export default function DeliveryAgentDetails() {
       updateData.documents = { documentsLink: editValue.trim() };
     }
 
-    updateAgentDetails(updateData);
+    updateAgentDetails(updateData, getFieldLabel(editingField));
   };
 
   const getStatusIcon = (status) => {
@@ -1398,7 +1447,7 @@ export default function DeliveryAgentDetails() {
                                   landmark: addressEdit.landmark.trim()
                                 }
                               };
-                              updateAgentDetails(updateData);
+                              updateAgentDetails(updateData, 'address');
                             }}
                             className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
                           >
@@ -1490,7 +1539,7 @@ export default function DeliveryAgentDetails() {
                                   relationship: emergencyContactEdit.relationship.trim()
                                 }
                               };
-                              updateAgentDetails(updateData);
+                              updateAgentDetails(updateData, 'emergency contact');
                             }}
                             className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
                           >
@@ -2225,7 +2274,7 @@ export default function DeliveryAgentDetails() {
                                 }
                               }
                             };
-                            updateAgentDetails(updateData);
+                            updateAgentDetails(updateData, 'bank account');
                           }}
                           className="flex items-center gap-1 px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700"
                         >

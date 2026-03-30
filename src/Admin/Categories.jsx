@@ -19,6 +19,7 @@ import {
 import toast, { Toaster } from 'react-hot-toast';
 import Layout from '../Components/Layout';
 import * as XLSX from 'xlsx';
+import { VERSION } from '../../version.js';
 
 export default function Categories() {
   const navigate = useNavigate();
@@ -122,6 +123,42 @@ export default function Categories() {
     }
   }, [navigate]);
 
+  const createLog = useCallback(async (message) => {
+    try {
+      await fetch(`${import.meta.env.VITE_SERVER}/admin/logs`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          level: 'INFO',
+          message,
+          user: currentUser?.name || currentUser?.email || 'Admin',
+          platform: 'Admin',
+          version: VERSION,
+        }),
+      });
+    } catch (error) {
+      console.error('Failed to create log:', error);
+    }
+  }, [currentUser]);
+
+  const buildCategoryCreateMessage = useCallback((categoryName) => {
+    const adminName = currentUser?.name || currentUser?.email || 'Admin';
+    return `${adminName} Added category-${categoryName}.`;
+  }, [currentUser]);
+
+  const buildCategoryEditMessage = useCallback((categoryName) => {
+    const adminName = currentUser?.name || currentUser?.email || 'Admin';
+    return `${adminName} Edited category-${categoryName}.`;
+  }, [currentUser]);
+
+  const buildCategoryDeleteMessage = useCallback((categoryName) => {
+    const adminName = currentUser?.name || currentUser?.email || 'Admin';
+    return `${adminName} Deleted category-${categoryName}.`;
+  }, [currentUser]);
+
   useEffect(() => {
     if (isAuthorized) fetchCategories();
   }, [fetchCategories, isAuthorized]);
@@ -203,6 +240,14 @@ export default function Categories() {
 
       if (!response.ok) {
         throw new Error(data.message || 'Failed to save category');
+      }
+
+      if (!editingCategory) {
+        const savedCategoryName = data.category?.name || formData.name;
+        await createLog(buildCategoryCreateMessage(savedCategoryName));
+      } else {
+        const savedCategoryName = data.category?.name || formData.name;
+        await createLog(buildCategoryEditMessage(savedCategoryName));
       }
 
       toast.success(
@@ -337,6 +382,8 @@ export default function Categories() {
       if (!response.ok) {
         throw new Error(data.message || 'Failed to delete category');
       }
+
+      await createLog(buildCategoryDeleteMessage(categoryToDelete.name));
 
       toast.success('Category deleted successfully!');
       setIsDeleteModalOpen(false);

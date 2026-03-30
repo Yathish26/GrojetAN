@@ -6,12 +6,14 @@ import { RotateCw } from 'lucide-react';
 const Logs = () => {
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState(false);
   const [error, setError] = useState('');
 
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(50);
   const [total, setTotal] = useState(0);
   const [pages, setPages] = useState(1);
+  const [selectedDate, setSelectedDate] = useState('');
 
   const formatDateTimeDDMMYY = (dateValue) => {
     const date = new Date(dateValue);
@@ -47,14 +49,42 @@ const Logs = () => {
     // For product audit logs, push product name to the next line to avoid a very wide message column.
     return safeMessage
       .replace(/(Added\s+product-)(?!\n)/i, '$1\n')
-      .replace(/(Edited\s+product-)(?!\n)/i, '$1\n');
+      .replace(/(Edited\s+product-)(?!\n)/i, '$1\n')
+      .replace(/(Added\s+category-)(?!\n)/i, '$1\n')
+      .replace(/(Edited\s+category-)(?!\n)/i, '$1\n')
+      .replace(/(Deleted\s+category-)(?!\n)/i, '$1\n');
+  };
+
+  const mapLogForTable = (log) => {
+    const formattedTimestamp = formatDateTimeDDMMYY(log.timestamp);
+
+    return {
+      id: log._id,
+      timestamp: `${formattedTimestamp.date}${formattedTimestamp.time ? `, ${formattedTimestamp.time}` : ''}`,
+      timestampDate: formattedTimestamp.date,
+      timestampTime: formattedTimestamp.time,
+      level: log.level,
+      message: log.message,
+      user: log.user || 'system',
+      platform: log.platform || 'web',
+      version: extractVersion(log),
+    };
   };
 
   const fetchLogs = useCallback(async () => {
     try {
       setLoading(true);
+      const queryParams = new URLSearchParams({
+        page: String(page),
+        limit: String(limit),
+      });
+
+      if (selectedDate) {
+        queryParams.set('date', selectedDate);
+      }
+
       const response = await fetch(
-        `${import.meta.env.VITE_SERVER}/admin/logs?page=${page}&limit=${limit}`,
+        `${import.meta.env.VITE_SERVER}/admin/logs?${queryParams.toString()}`,
         {
           credentials: 'include',
           headers: {
@@ -64,25 +94,11 @@ const Logs = () => {
       );
       if (response.ok) {
         const data = await response.json();
-        const mappedLogs = (data.logs || []).map((log) => {
-          const formattedTimestamp = formatDateTimeDDMMYY(log.timestamp);
-
-          return {
-            id: log._id,
-            timestamp: `${formattedTimestamp.date}${formattedTimestamp.time ? `, ${formattedTimestamp.time}` : ''}`,
-            timestampDate: formattedTimestamp.date,
-            timestampTime: formattedTimestamp.time,
-            level: log.level,
-            message: log.message,
-            user: log.user || 'system',
-            platform: log.platform || 'web',
-            version: extractVersion(log),
-          };
-        });
+        const mappedLogs = (data.logs || []).map(mapLogForTable);
 
         setLogs(mappedLogs);
         setTotal(data.pagination?.total || 0);
-        setPages(data.pagination?.pages || 1);
+        setPages(Math.max(1, data.pagination?.pages || 1));
         setError('');
       } else {
         const errorData = await response.json().catch(() => ({}));
@@ -96,7 +112,7 @@ const Logs = () => {
     } finally {
       setLoading(false);
     }
-  }, [page, limit]);
+  }, [page, limit, selectedDate]);
 
   useEffect(() => {
     fetchLogs();
@@ -116,34 +132,91 @@ const Logs = () => {
     setPage(1);
   };
 
+  const handleDateChange = (event) => {
+    setSelectedDate(event.target.value);
+    setPage(1);
+  };
+
+  const clearDateFilter = () => {
+    setSelectedDate('');
+    setPage(1);
+  };
+
   const handleGotoPage = (newPage) => {
     setPage(Math.max(1, Math.min(newPage, pages)));
   };
 
-  const handleExportExcel = () => {
-    const rows = logs.map((log) => ({
-      Timestamp: log.timestampTime ? `${log.timestampDate} ${log.timestampTime}` : log.timestampDate,
-      User: log.user,
-      Platform: log.platform,
-      Message: log.message,
-      Level: log.level,
-      Version: log.version,
-    }));
+  const handleExportExcel = async () => {
+    try {
+      setExporting(true);
+      setError('');
 
-    const worksheet = XLSX.utils.json_to_sheet(rows);
-    worksheet['!cols'] = [
-      { wch: 24 },
-      { wch: 20 },
-      { wch: 14 },
-      { wch: 45 },
-      { wch: 10 },
-      { wch: 10 },
-    ];
+      const exportLimit = 1000;
+      let exportPage = 1;
+      let exportPages = 1;
+      const allLogs = [];
 
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Logs');
-    XLSX.writeFile(workbook, `system-logs-${Date.now()}.xlsx`);
-  }
+      while (exportPage <= exportPages) {
+        const queryParams = new URLSearchParams({
+          page: String(exportPage),
+          limit: String(exportLimit),
+        });
+
+        if (selectedDate) {
+          queryParams.set('date', selectedDate);
+        }
+
+        const response = await fetch(
+          `${import.meta.env.VITE_SERVER}/admin/logs?${queryParams.toString()}`,
+          {
+            credentials: 'include',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          }
+        );
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.message || 'Failed to export logs');
+        }
+
+        const data = await response.json();
+        allLogs.push(...(data.logs || []));
+        exportPages = Math.max(1, data.pagination?.pages || 1);
+        exportPage += 1;
+      }
+
+      const mappedLogs = allLogs.map(mapLogForTable);
+      const rows = mappedLogs.map((log) => ({
+        Timestamp: log.timestampTime ? `${log.timestampDate} ${log.timestampTime}` : log.timestampDate,
+        User: log.user,
+        Platform: log.platform,
+        Message: log.message,
+        Level: log.level,
+        Version: log.version,
+      }));
+
+      const worksheet = XLSX.utils.json_to_sheet(rows);
+      worksheet['!cols'] = [
+        { wch: 24 },
+        { wch: 20 },
+        { wch: 14 },
+        { wch: 45 },
+        { wch: 10 },
+        { wch: 10 },
+      ];
+
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Logs');
+      XLSX.writeFile(workbook, `system-logs-${Date.now()}.xlsx`);
+    } catch (exportError) {
+      console.error('Error exporting logs:', exportError);
+      setError(exportError.message || 'Failed to export logs');
+    } finally {
+      setExporting(false);
+    }
+  };
 
   return (
     <Layout title="Logs">
@@ -157,7 +230,26 @@ const Logs = () => {
                   <p className="mt-1 text-sm text-gray-500">View, search, and export system logs.</p>
                 </div>
                 <div className="flex flex-col sm:flex-row sm:items-center sm:gap-3">
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                    <div className="flex items-center gap-2">
+                      <label className="text-sm text-gray-600 whitespace-nowrap">Filter by date</label>
+                      <input
+                        type="date"
+                        value={selectedDate}
+                        onChange={handleDateChange}
+                        className="border border-gray-300 rounded-lg px-3 py-2 bg-white text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      />
+                      {selectedDate && (
+                        <button
+                          onClick={clearDateFilter}
+                          className="px-3 py-2 border border-gray-300 rounded-lg bg-white text-sm text-gray-700 hover:bg-gray-100"
+                        >
+                          Clear
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-2">
                     <button
                       onClick={fetchLogs}
                       disabled={loading}
@@ -169,10 +261,12 @@ const Logs = () => {
                     </button>
                     <button
                       onClick={handleExportExcel}
+                      disabled={exporting}
                       className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors"
                     >
-                      Export to Excel
+                      {exporting ? 'Exporting...' : 'Export to Excel'}
                     </button>
+                    </div>
                   </div>
                   <div className="mt-2 sm:mt-0 flex items-center gap-2 text-sm text-gray-700">
                     <button

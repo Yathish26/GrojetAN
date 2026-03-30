@@ -12,6 +12,7 @@ import {
 import toast from 'react-hot-toast';
 import io from 'socket.io-client';
 import bikeriderImg from '/assets/bikerider.png';
+import { VERSION } from '../../version.js';
 
 const BIKERIDER_ICON = bikeriderImg;
 
@@ -207,11 +208,16 @@ const XpressOrderDetails = () => {
         }
       );
 
+      const data = await response.json();
+
       if (response.ok) {
+        const adminName = currentUser?.name || currentUser?.email || 'Admin';
+        const orderNumber = data.order?.orderNumber || order?.orderNumber || id;
+        await createLog(`${adminName} changed xpress order status to ${newStatus}-${orderNumber}`);
         toast.success('Order status updated successfully');
-        setOrder(prev => ({ ...prev, status: newStatus }));
+        setOrder(data.order || { ...order, status: newStatus });
       } else {
-        toast.error('Failed to update order status');
+        toast.error(data.message || 'Failed to update order status');
       }
     } catch (error) {
       console.error('Error updating order status:', error);
@@ -262,12 +268,16 @@ const XpressOrderDetails = () => {
         }
       );
 
+      const data = await response.json();
+
       if (response.ok) {
+        const adminName = currentUser?.name || currentUser?.email || 'Admin';
+        const orderNumber = data.order?.orderNumber || order?.orderNumber || id;
+        await createLog(`${adminName} Cancelled the xpress order- ${orderNumber}`);
         toast.success('Order cancelled successfully');
         // Refresh the order details
         await fetchOrderDetails();
       } else {
-        const data = await response.json();
         toast.error(data.message || 'Failed to cancel order');
       }
     } catch (error) {
@@ -431,6 +441,25 @@ const XpressOrderDetails = () => {
     }
   };
 
+  const createLog = async (message) => {
+    try {
+      await fetch(`${import.meta.env.VITE_SERVER}/admin/logs`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          level: 'INFO',
+          message,
+          user: currentUser?.name || currentUser?.email || 'admin',
+          platform: 'Admin',
+          version: VERSION
+        })
+      });
+    } catch (err) {
+      console.error('Failed to create log:', err);
+    }
+  };
+
   const saveLocation = async () => {
     try {
       const response = await fetch(
@@ -453,6 +482,9 @@ const XpressOrderDetails = () => {
       if (response.ok) {
         const data = await response.json();
         setOrder(data.order);
+        const locLabel = editingLocation === 'pickup' ? 'Pickup' : 'Drop';
+        const adminName = currentUser?.name || currentUser?.email || 'Admin';
+        await createLog(`${adminName} changed the ${locLabel} location-${data.order?.orderNumber || order.orderNumber}`);
         setEditingLocation(null);
         toast.success('Location updated successfully');
       } else {

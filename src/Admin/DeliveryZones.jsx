@@ -15,6 +15,7 @@ import {
 import toast from 'react-hot-toast';
 import Layout from '../Components/Layout';
 import { GoogleMap, DrawingManager, AddressSearch, googleMapsApi, Marker } from '../Components/GoogleMapComponents';
+import { VERSION } from '../../version.js';
 
 // Lightweight overlay to render a zone polygon on a GoogleMap
 const ZonePolygon = ({ map, zone }) => {
@@ -404,7 +405,8 @@ export default function DeliveryZones() {
       const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/delivery-zones`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'x-admin-version': VERSION
         },
         credentials: 'include',
         body: JSON.stringify(payload)
@@ -421,6 +423,7 @@ export default function DeliveryZones() {
         return;
       }
       setZones([...zones, data.zone]);
+      await createLog(buildZoneCreateMessage(data.zone?.name || createForm.name));
       setShowCreateModal(false);
       setCreateForm({
         name: '',
@@ -446,6 +449,7 @@ export default function DeliveryZones() {
     }
 
     try {
+      const deletedZone = zones.find(zone => zone._id === zoneId);
       const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/delivery-zones/${zoneId}`, {
         method: 'DELETE',
         credentials: 'include'
@@ -461,10 +465,71 @@ export default function DeliveryZones() {
         return;
       }
       setZones(zones.filter(zone => zone._id !== zoneId));
+      await createLog(buildZoneDeleteMessage(deletedZone?.name || 'Unknown'));
       toast.success('Zone deleted successfully');
     } catch (err) {
       toast.error(err.message);
     }
+  };
+
+  const createLog = async (message) => {
+    try {
+      await fetch(`${import.meta.env.VITE_SERVER}/admin/logs`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          level: 'INFO',
+          message,
+          user: currentUser?.name || currentUser?.email || 'Admin',
+          platform: 'Admin',
+          version: VERSION
+        })
+      });
+    } catch (err) {
+      console.error('Failed to create log:', err);
+    }
+  };
+
+  const buildZoneCreateMessage = (zoneName) => {
+    const adminName = currentUser?.name || currentUser?.email || 'Admin';
+    return `${adminName} created new zone in ${zoneName}.`;
+  };
+
+  const buildZoneDeleteMessage = (zoneName) => {
+    const adminName = currentUser?.name || currentUser?.email || 'Admin';
+    return `${adminName} deleted ${zoneName} zone.`;
+  };
+
+  const buildZoneChangeMessages = (oldZone, updates) => {
+    const adminName = currentUser?.name || currentUser?.email || 'Admin';
+    const zoneName = oldZone.name;
+    const msgs = [];
+
+    if ('name' in updates && String(oldZone.name || '').trim() !== String(updates.name || '').trim()) {
+      msgs.push(`${adminName} changed the name in ${zoneName} zone.`);
+    }
+    if ('description' in updates && String(oldZone.description || '').trim() !== String(updates.description || '').trim()) {
+      msgs.push(`${adminName} changed the description in ${zoneName} zone.`);
+    }
+    if ('isActive' in updates && Boolean(oldZone.isActive) !== Boolean(updates.isActive)) {
+      const action = Boolean(updates.isActive) ? 'checked' : 'unchecked';
+      msgs.push(`${adminName} ${action} the active zone in ${zoneName} zone.`);
+    }
+    if ('supportsXpress' in updates && Boolean(oldZone.supportsXpress) !== Boolean(updates.supportsXpress)) {
+      const action = Boolean(updates.supportsXpress) ? 'checked' : 'unchecked';
+      msgs.push(`${adminName} ${action} the support xpress in ${zoneName} zone.`);
+    }
+    if ('supportsMerchant' in updates && Boolean(oldZone.supportsMerchant) !== Boolean(updates.supportsMerchant)) {
+      const action = Boolean(updates.supportsMerchant) ? 'checked' : 'unchecked';
+      msgs.push(`${adminName} ${action} the support merchant in ${zoneName} zone.`);
+    }
+    if (updates.boundaries?.coordinates) {
+      const prev = JSON.stringify(oldZone.boundaries?.coordinates || []);
+      const next = JSON.stringify(updates.boundaries.coordinates || []);
+      if (prev !== next) msgs.push(`${adminName} changed the boundaries in ${zoneName} zone.`);
+    }
+    return msgs;
   };
 
   const handleUpdateZone = async (zoneId, updates) => {
@@ -473,10 +538,12 @@ export default function DeliveryZones() {
       return;
     }
     try {
+      const oldZone = zones.find(z => z._id === zoneId);
       const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/delivery-zones/${zoneId}`, {
         method: 'PUT',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'x-admin-version': VERSION
         },
         credentials: 'include',
         body: JSON.stringify(updates)
@@ -496,6 +563,13 @@ export default function DeliveryZones() {
         zone._id === zoneId ? data.zone : zone
       ));
       toast.success('Zone updated successfully');
+
+      if (oldZone) {
+        const messages = buildZoneChangeMessages(oldZone, updates);
+        for (const msg of messages) {
+          await createLog(msg);
+        }
+      }
     } catch (err) {
       toast.error(err.message);
     }

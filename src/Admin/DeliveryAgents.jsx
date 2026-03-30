@@ -5,13 +5,15 @@ import {
   Truck, Search, Filter, Eye, MapPin, Star,
   CircleCheck, XCircle, Clock, User, Phone,
   Mail, AlertCircle, Plus, RefreshCw,
-  Ban, Bell
+  Ban, Bell, Download
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import * as XLSX from 'xlsx';
 
 const DeliveryAgents = () => {
   const [agents, setAgents] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isExporting, setIsExporting] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [filters, setFilters] = useState({
     status: '',
@@ -131,6 +133,103 @@ const DeliveryAgents = () => {
     }
   };
 
+  const exportAgentsToExcel = async () => {
+    if (!isAuthorized || isExporting) return;
+
+    try {
+      setIsExporting(true);
+
+      const queryParams = new URLSearchParams({
+        page: 1,
+        limit: String(Math.max(pagination.total || 0, agents.length || 0, pagination.limit, 1)),
+        search: searchTerm,
+        ...filters
+      });
+
+      const response = await fetch(
+        `${import.meta.env.VITE_SERVER}/admin/delivery-agents?${queryParams}`,
+        { credentials: 'include' }
+      );
+
+      if (response.status === 401) {
+        navigate('/login', { replace: true });
+        return;
+      }
+
+      const data = await response.json();
+      if (data.tokenValid === false) {
+        navigate('/login', { replace: true });
+        return;
+      }
+
+      const exportAgents = data.success ? (data.agents || []) : [];
+
+      if (exportAgents.length === 0) {
+        toast.error('No delivery agents available to export');
+        return;
+      }
+
+      const excelRows = exportAgents.map((agent, index) => ({
+        'S. No.': index + 1,
+        'Agent ID': agent.agentId || 'N/A',
+        'First Name': agent.personalInfo?.firstName || 'N/A',
+        'Last Name': agent.personalInfo?.lastName || 'N/A',
+        Email: agent.personalInfo?.email || 'N/A',
+        Phone: agent.personalInfo?.phone || 'N/A',
+        'Application Status': agent.status?.applicationStatus || 'N/A',
+        'Account Status': agent.status?.isActive ? 'Active' : 'Inactive',
+        'Online Status': agent.status?.isOnline ? 'Online' : 'Offline',
+        'Delivery Zone': agent.status?.deliveryZone?.name || 'Not assigned',
+        'Vehicle Type': agent.vehicleInfo?.vehicleType || 'N/A',
+        'Vehicle Number': agent.vehicleInfo?.vehicleNumber || 'N/A',
+        Rating: agent.status?.rating ? agent.status.rating.toFixed(1) : 'No ratings',
+        'Total Ratings': agent.status?.totalRatings || 0,
+        'Total Deliveries': agent.status?.totalDeliveries || 0,
+        'App Version': agent.authentication?.deviceInfo?.appVersion || 'Unknown',
+        'Last App Update': agent.authentication?.deviceInfo?.lastAppUpdate
+          ? new Date(agent.authentication.deviceInfo.lastAppUpdate).toLocaleString('en-GB')
+          : 'Not updated',
+        'Last Location Update': agent.status?.currentLocation?.lastUpdated
+          ? new Date(agent.status.currentLocation.lastUpdated).toLocaleString('en-GB')
+          : 'Never'
+      }));
+
+      const worksheet = XLSX.utils.json_to_sheet(excelRows);
+      worksheet['!cols'] = [
+        { wch: 8 },
+        { wch: 14 },
+        { wch: 18 },
+        { wch: 18 },
+        { wch: 28 },
+        { wch: 16 },
+        { wch: 18 },
+        { wch: 16 },
+        { wch: 14 },
+        { wch: 22 },
+        { wch: 16 },
+        { wch: 16 },
+        { wch: 10 },
+        { wch: 14 },
+        { wch: 16 },
+        { wch: 14 },
+        { wch: 22 },
+        { wch: 22 }
+      ];
+
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Delivery Agents');
+
+      const dateLabel = new Date().toISOString().slice(0, 10);
+      XLSX.writeFile(workbook, `delivery_agents_${dateLabel}.xlsx`);
+      toast.success('Delivery agents exported successfully');
+    } catch (error) {
+      console.error('Error exporting delivery agents:', error);
+      toast.error('Failed to export delivery agents');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   const handleSearch = (e) => {
     if (!isAuthorized) return;
     if (e) e.preventDefault();
@@ -202,6 +301,20 @@ const DeliveryAgents = () => {
       rejected: <XCircle size={16} />
     };
     return icons[status] || <AlertCircle size={16} />;
+  };
+
+  const formatDateTimeWithAmPm = (dateValue) => {
+    if (!dateValue) return 'Never';
+
+    return new Date(dateValue).toLocaleString('en-GB', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: true
+    });
   };
 
   const StatCard = ({ title, value, icon: Icon, color = 'text-gray-600' }) => (
@@ -294,6 +407,18 @@ const DeliveryAgents = () => {
                 </div>
               </div>
               <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={exportAgentsToExcel}
+                  disabled={isExporting}
+                  className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-emerald-700 hover:bg-emerald-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {isExporting ? (
+                    <div className="animate-spin h-4 w-4 border-2 border-emerald-400 border-t-emerald-100 rounded-full mr-2"></div>
+                  ) : (
+                    <Download size={16} className="mr-2" />
+                  )}
+                  {isExporting ? 'Exporting...' : 'Export to Excel'}
+                </button>
                 <button
                   onClick={() => navigate('/riders-zone')}
                   className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
@@ -651,7 +776,7 @@ const DeliveryAgents = () => {
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="text-sm text-gray-900">
                               {agent.status.currentLocation?.lastUpdated ?
-                                new Date(agent.status.currentLocation.lastUpdated).toLocaleString('en-GB') :
+                                formatDateTimeWithAmPm(agent.status.currentLocation.lastUpdated) :
                                 'Never'
                               }
                             </div>
@@ -747,7 +872,7 @@ const DeliveryAgents = () => {
                                 <span className="text-gray-500">Last Updated:</span>
                                 <div className="font-medium text-gray-900">
                                   {agent.status.currentLocation?.lastUpdated ?
-                                    new Date(agent.status.currentLocation.lastUpdated).toLocaleString('en-GB') :
+                                    formatDateTimeWithAmPm(agent.status.currentLocation.lastUpdated) :
                                     'Never'
                                   }
                                 </div>

@@ -389,7 +389,7 @@ const DeliveryRatings = () => {
                               {rating.review ? (
                                 <div className="flex items-start gap-1">
                                   <MessageSquare size={14} className="mt-0.5 flex-shrink-0" />
-                                  <span className="line-clamp-2">{rating.review}</span>
+                                  <span>{rating.review}</span>
                                 </div>
                               ) : (
                                 <span className="text-gray-400 italic">No review</span>

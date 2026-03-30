@@ -58,6 +58,7 @@ import Darkstore from './Admin/Darkstore.jsx'
 import Logs from './Admin/Logs.jsx'
 import Tags from './Admin/Tags.jsx'
 import Brands from './Admin/Brands.jsx'
+import Tickets from './Admin/Tickets.jsx'
 
 function App() {
   return (
@@ -174,6 +175,7 @@ function App() {
             <Route path="/super-tags/:tagName" element={<SuperTagProducts />} />
             <Route path="/tags" element={<Tags />} />
             <Route path="/brands" element={<Brands />} />
+            <Route path="/tickets" element={<Tickets />} />
 
             {/* Settings & Profile */}
             <Route path="/profile" element={<Profile />} />

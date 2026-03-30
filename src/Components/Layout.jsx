@@ -15,7 +15,8 @@ import {
   Warehouse,
   FileText,
   Tag,
-  Target
+  Target,
+  TicketsPlane
 } from 'lucide-react';
 import { MdAdminPanelSettings } from 'react-icons/md';
 import toast from 'react-hot-toast';
@@ -215,6 +216,7 @@ const Layout = ({ children, title }) => {
     { name: 'Brands', icon: Target, path: '/brands', roles: ['super_admin'] },
     { name: 'Contact Queries', icon: MessageSquare, path: '/contact-qur', roles: ['super_admin', 'admin'] },
     { name: 'Email Sender', icon: Mail, path: '/email-sender', roles: ['super_admin', 'admin'] },
+    { name: 'Tickets', icon: TicketsPlane, path: '/tickets', roles: ['super_admin', 'admin'] },
   ];
 
   const filteredMenuItems = menuItems.filter(item =>
