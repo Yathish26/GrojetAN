@@ -26,8 +26,7 @@ const Eateries = () => {
     const [stats, setStats] = useState({
         totalEateries: 0,
         openEateries: 0,
-        activeEateries: 0,
-        totalRevenue: 0
+        activeEateries: 0
     });
 
     // Fetch eateries from API with search and filters
@@ -76,9 +75,7 @@ const Eateries = () => {
                         storeStatus: eatery.storeStatus,
                         rating: eatery.rating || 0,
                         totalOrders: eatery.totalOrders || 0,
-                        totalRevenue: eatery.totalRevenue || 0,
                         todaysOrders: eatery.todaysOrders || 0,
-                        todaysRevenue: eatery.todaysRevenue || 0,
                         joinDate: eatery.createdAt ? new Date(eatery.createdAt).toISOString().split('T')[0] : 'N/A',
                         profileImage: null,
                         brandingInfo: eatery.brandingInfo || null,
@@ -92,8 +89,7 @@ const Eateries = () => {
                     setStats({
                         totalEateries: data.stats.totalEateries,
                         openEateries: data.stats.openEateries,
-                        activeEateries: data.stats.activeEateries,
-                        totalRevenue: data.stats.totalRevenue
+                        activeEateries: data.stats.activeEateries
                     });
                     setTotalPages(data.pagination.totalPages);
                     setTotalEateries(data.pagination.total);
@@ -320,21 +316,6 @@ const Eateries = () => {
                             </div>
                         </div>
 
-                        <div className="bg-white overflow-hidden shadow rounded-lg">
-                            <div className="p-5">
-                                <div className="flex items-center">
-                                    <div className="flex-shrink-0">
-                                        <DollarSign className="h-6 w-6 text-yellow-400" />
-                                    </div>
-                                    <div className="ml-5 w-0 flex-1">
-                                        <dl>
-                                            <dt className="text-sm font-medium text-gray-500 truncate">Total Revenue</dt>
-                                            <dd className="text-lg font-medium text-gray-900">₹{stats.totalRevenue?.toLocaleString() || 0}</dd>
-                                        </dl>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
                     </div>
 
                     {/* Search and Filters */}
@@ -486,10 +467,6 @@ const Eateries = () => {
                                                 <div>
                                                     <span className="text-gray-500">Orders:</span>
                                                     <span className="ml-1 font-medium">{eatery.totalOrders}</span>
-                                                </div>
-                                                <div>
-                                                    <span className="text-gray-500">Revenue:</span>
-                                                    <span className="ml-1 font-medium">₹{eatery.totalRevenue?.toLocaleString() || 0}</span>
                                                 </div>
                                             </div>
                                         </div>

@@ -8,6 +8,11 @@ const Logs = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(50);
+  const [total, setTotal] = useState(0);
+  const [pages, setPages] = useState(1);
+
   const formatDateTimeDDMMYY = (dateValue) => {
     const date = new Date(dateValue);
     if (Number.isNaN(date.getTime())) return { date: '-', time: '' };
@@ -48,12 +53,15 @@ const Logs = () => {
   const fetchLogs = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/logs`, {
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
+      const response = await fetch(
+        `${import.meta.env.VITE_SERVER}/admin/logs?page=${page}&limit=${limit}`,
+        {
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
       if (response.ok) {
         const data = await response.json();
         const mappedLogs = (data.logs || []).map((log) => {
@@ -68,10 +76,13 @@ const Logs = () => {
             message: log.message,
             user: log.user || 'system',
             platform: log.platform || 'web',
-            version: extractVersion(log)
+            version: extractVersion(log),
           };
         });
+
         setLogs(mappedLogs);
+        setTotal(data.pagination?.total || 0);
+        setPages(data.pagination?.pages || 1);
         setError('');
       } else {
         const errorData = await response.json().catch(() => ({}));
@@ -85,11 +96,29 @@ const Logs = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [page, limit]);
 
   useEffect(() => {
     fetchLogs();
   }, [fetchLogs]);
+
+  const handlePrevPage = () => {
+    setPage((prev) => Math.max(prev - 1, 1));
+  };
+
+  const handleNextPage = () => {
+    setPage((prev) => Math.min(prev + 1, pages));
+  };
+
+  const handleLimitChange = (event) => {
+    const newLimit = Number(event.target.value) || 50;
+    setLimit(newLimit);
+    setPage(1);
+  };
+
+  const handleGotoPage = (newPage) => {
+    setPage(Math.max(1, Math.min(newPage, pages)));
+  };
 
   const handleExportExcel = () => {
     const rows = logs.map((log) => ({
@@ -120,28 +149,65 @@ const Logs = () => {
     <Layout title="Logs">
       <div className="min-h-screen bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="mb-8">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900">System Logs</h1>
-                <p className="mt-1 text-sm text-gray-500">View, search, and export system logs.</p>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={fetchLogs}
-                  disabled={loading}
-                  className="inline-flex items-center justify-center w-9 h-9 border border-gray-300 rounded-lg text-gray-700 bg-white hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-400 transition-colors disabled:opacity-60"
-                  aria-label="Refresh logs"
-                  title="Refresh logs"
-                >
-                  <RotateCw size={16} className={loading ? 'animate-spin' : ''} />
-                </button>
-                <button
-                  onClick={handleExportExcel}
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors"
-                >
-                  Export to Excel
-                </button>
+          <div className="sticky top-0 z-20 bg-gray-50 border-b border-gray-200 pb-4">
+            <div className="mb-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h1 className="text-3xl font-bold text-gray-900">System Logs</h1>
+                  <p className="mt-1 text-sm text-gray-500">View, search, and export system logs.</p>
+                </div>
+                <div className="flex flex-col sm:flex-row sm:items-center sm:gap-3">
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={fetchLogs}
+                      disabled={loading}
+                      className="inline-flex items-center justify-center w-9 h-9 border border-gray-300 rounded-lg text-gray-700 bg-white hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-400 transition-colors disabled:opacity-60"
+                      aria-label="Refresh logs"
+                      title="Refresh logs"
+                    >
+                      <RotateCw size={16} className={loading ? 'animate-spin' : ''} />
+                    </button>
+                    <button
+                      onClick={handleExportExcel}
+                      className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors"
+                    >
+                      Export to Excel
+                    </button>
+                  </div>
+                  <div className="mt-2 sm:mt-0 flex items-center gap-2 text-sm text-gray-700">
+                    <button
+                      onClick={handlePrevPage}
+                      disabled={loading || page <= 1}
+                      className="px-3 py-1 border border-gray-300 rounded-lg bg-white hover:bg-gray-100 disabled:opacity-50"
+                    >
+                      Previous
+                    </button>
+                    <span>
+                      Page {page} / {pages} ({total} logs)
+                    </span>
+                    <button
+                      onClick={handleNextPage}
+                      disabled={loading || page >= pages}
+                      className="px-3 py-1 border border-gray-300 rounded-lg bg-white hover:bg-gray-100 disabled:opacity-50"
+                    >
+                      Next
+                    </button>
+                    <label className="flex items-center gap-1">
+                      <span className="text-xs text-gray-500">Rows:</span>
+                      <select
+                        value={limit}
+                        onChange={handleLimitChange}
+                        className="border border-gray-300 rounded-lg px-2 py-1 bg-white text-sm"
+                      >
+                        {[25, 50, 100, 250].map((opt) => (
+                          <option key={opt} value={opt}>
+                            {opt}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -161,7 +227,8 @@ const Logs = () => {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="min-w-full table-fixed divide-y divide-gray-200 bg-white border border-gray-200 rounded-lg">
+              <div className="max-h-[calc(100vh-250px)] overflow-y-auto">
+                <table className="min-w-full table-fixed divide-y divide-gray-200 bg-white border border-gray-200 rounded-lg">
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="w-40 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Timestamp</th>
@@ -201,6 +268,7 @@ const Logs = () => {
                   ))}
                 </tbody>
               </table>
+            </div>
             </div>
           )}
         </div>

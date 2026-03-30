@@ -480,7 +480,8 @@ const XpressOrderDetails = () => {
     if (!id) return;
     try {
       const response = await fetch(`${import.meta.env.VITE_SERVER}/xpress/${id}/agent-location`, {
-        credentials: 'include'
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' }
       });
       const data = await response.json();
       if (response.ok && data.success && data.data?.location) {
