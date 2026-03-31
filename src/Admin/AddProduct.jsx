@@ -59,6 +59,9 @@ export default function AddProduct() {
       value: '',
       unit: ''
     },
+    // Food classification
+    isFood: false,
+    foodType: '',
     pricing: {
       mrp: "",
     },
@@ -645,6 +648,9 @@ export default function AddProduct() {
             value: '',
             unit: ''
           },
+          // Food classification
+          isFood: false,
+          foodType: '',
           pricing: {
             mrp: "",
           },
@@ -744,6 +750,66 @@ export default function AddProduct() {
                   onChange={handleChange}
                   placeholder="Product description..."
                 />
+              </div>
+
+              {/* Food Classification */}
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700">
+                  Food Classification
+                </label>
+                <div className="flex items-center space-x-4">
+                  <div className="flex items-center">
+                    <input
+                      type="checkbox"
+                      id="isFood"
+                      name="isFood"
+                      checked={formData.isFood}
+                      onChange={(e) => {
+                        const isChecked = e.target.checked;
+                        setFormData(prev => ({
+                          ...prev,
+                          isFood: isChecked,
+                          foodType: isChecked ? prev.foodType : '' // Clear foodType if unchecked
+                        }));
+                      }}
+                      className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                    />
+                    <label htmlFor="isFood" className="ml-2 text-sm text-gray-700">
+                      This is a food item
+                    </label>
+                  </div>
+                </div>
+
+                {formData.isFood && (
+                  <div className="mt-3 space-y-2">
+                    <label className="block text-sm font-medium text-gray-700">
+                      Food Type *
+                    </label>
+                    <div className="space-y-2">
+                      {[
+                        { value: 'veg', label: 'Vegetarian', icon: '🥬' },
+                        { value: 'non-veg', label: 'Non-Vegetarian', icon: '🍖' },
+                      ].map((option) => (
+                        <div key={option.value} className="flex items-center">
+                          <input
+                            type="radio"
+                            id={`foodType-${option.value}`}
+                            name="foodType"
+                            value={option.value}
+                            checked={formData.foodType === option.value}
+                            onChange={(e) => setFormData(prev => ({ ...prev, foodType: e.target.value }))}
+                            className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300"
+                            required={formData.isFood}
+                          />
+                          <label htmlFor={`foodType-${option.value}`} className="ml-2 text-sm text-gray-700 flex items-center">
+                            <span className="mr-2">{option.icon}</span>
+                            {option.label}
+                          </label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Highlights removed from product form */}
