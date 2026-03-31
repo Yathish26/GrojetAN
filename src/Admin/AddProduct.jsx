@@ -62,6 +62,7 @@ export default function AddProduct() {
     // Food classification
     isFood: false,
     foodType: '',
+    foodCategory: '',
     pricing: {
       mrp: "",
     },
@@ -769,7 +770,8 @@ export default function AddProduct() {
                         setFormData(prev => ({
                           ...prev,
                           isFood: isChecked,
-                          foodType: isChecked ? prev.foodType : '' // Clear foodType if unchecked
+                          foodType: isChecked ? prev.foodType : '', // Clear foodType if unchecked
+                          foodCategory: isChecked ? prev.foodCategory : '' // Clear foodCategory if unchecked
                         }));
                       }}
                       className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
@@ -807,6 +809,34 @@ export default function AddProduct() {
                           </label>
                         </div>
                       ))}
+                    </div>
+
+                    <div className="mt-3">
+                      <label className="block text-sm font-medium text-gray-700">
+                        Food Category
+                      </label>
+                      <select
+                        name="foodCategory"
+                        className="w-full px-4 py-2.5 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                        value={formData.foodCategory}
+                        onChange={handleChange}
+                      >
+                        <option value="">Select Food Category</option>
+                        <option value="Snacks">Snacks</option>
+                        <option value="Beverages">Beverages</option>
+                        <option value="Dairy">Dairy</option>
+                        <option value="Bakery">Bakery</option>
+                        <option value="Fruits & Vegetables">Fruits & Vegetables</option>
+                        <option value="Meat & Poultry">Meat & Poultry</option>
+                        <option value="Seafood">Seafood</option>
+                        <option value="Grains & Cereals">Grains & Cereals</option>
+                        <option value="Sweets & Desserts">Sweets & Desserts</option>
+                        <option value="Ready-to-Eat">Ready-to-Eat</option>
+                        <option value="Frozen Foods">Frozen Foods</option>
+                        <option value="Canned & Packaged">Canned & Packaged</option>
+                        <option value="Spices & Condiments">Spices & Condiments</option>
+                        <option value="Other">Other</option>
+                      </select>
                     </div>
                   </div>
                 )}

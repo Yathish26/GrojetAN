@@ -188,6 +188,7 @@ const Layout = ({ children, title }) => {
     { name: 'Eateries', icon: ChefHat, path: '/eateries', roles: ['super_admin', 'admin'] },
     { name: 'Requested Products', icon: Shield, path: '/products/requests', roles: ['super_admin', 'admin'] },
     { name: 'Categories', icon: ChartBarStacked, path: '/categories', roles: ['super_admin', 'admin'] },
+    { name: 'Food Categories', icon: ChefHat, path: '/food-categories', roles: ['super_admin', 'admin'] },
     { name: 'Xpress', icon: Zap, path: '/xpress', roles: ['super_admin', 'admin'] },
     { name: 'Careers', icon: Briefcase, path: '/careers', roles: ['super_admin', 'admin'] },
     { name: 'Users', icon: Users, path: '/users', roles: ['super_admin', 'admin'] },

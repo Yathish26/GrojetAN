@@ -3,6 +3,7 @@ import AdminNew from './Admin/AdminNew.jsx'
 import AdminLogin from './Admin/AdminLogin.jsx'
 import AdminRegister from './Admin/AdminRegister.jsx'
 import Categories from './Admin/Categories.jsx'
+import FoodCategories from './Admin/FoodCategories.jsx'
 import Products from './Admin/Products.jsx'
 import AddProduct from './Admin/AddProduct.jsx'
 import Users from './Admin/Users.jsx'
@@ -134,6 +135,7 @@ function App() {
 
             {/* Category Management */}
             <Route path="/categories" element={<Categories />} />
+            <Route path="/food-categories" element={<FoodCategories />} />
 
             {/* Xpress */}
             <Route path="/xpress" element={<Xpress />} />
