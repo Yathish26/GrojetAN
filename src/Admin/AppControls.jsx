@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import Layout from '../Components/Layout';
+import { VERSION } from '../../version';
 
 export default function AppControls() {
   const navigate = useNavigate();
@@ -84,6 +85,9 @@ export default function AppControls() {
       try {
         setCheckingUser(true);
         const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/auth/profile`, {
+          headers: {
+            'x-admin-version': VERSION,
+          },
           credentials: 'include'
         });
         if (response.status === 401) {
@@ -127,6 +131,9 @@ export default function AppControls() {
     try {
       const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/app-controls/app-controls`, {
         method: 'GET',
+        headers: {
+          'x-admin-version': VERSION,
+        },
         credentials: 'include',
       });
 
@@ -354,6 +361,7 @@ export default function AppControls() {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
+          'x-admin-version': VERSION,
         },
         credentials: 'include',
         body: JSON.stringify({
@@ -447,6 +455,7 @@ export default function AppControls() {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
+          'x-admin-version': VERSION,
         },
         credentials: 'include',
         body: JSON.stringify({
@@ -567,6 +576,7 @@ export default function AppControls() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'x-admin-version': VERSION,
         },
         credentials: 'include',
         body: JSON.stringify({
@@ -644,6 +654,7 @@ export default function AppControls() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'x-admin-version': VERSION,
         },
         credentials: 'include',
         body: JSON.stringify(requestBody),
@@ -706,6 +717,7 @@ export default function AppControls() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'x-admin-version': VERSION,
         },
         credentials: 'include',
         body: JSON.stringify({

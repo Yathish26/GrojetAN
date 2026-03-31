@@ -238,6 +238,7 @@ const XpressOrderDetails = () => {
       );
 
       if (response.ok) {
+        await createLog(`${currentUser?.name || currentUser?.email || 'Admin'} deleted the order - ${order?.orderNumber || id}`);
         toast.success('Order deleted successfully');
         navigate('/xpress');
       } else {
