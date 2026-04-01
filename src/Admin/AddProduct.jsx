@@ -75,6 +75,8 @@ export default function AddProduct() {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(false);
   const [loadingCategories, setLoadingCategories] = useState(true);
+  const [foodCategories, setFoodCategories] = useState([]);
+  const [loadingFoodCategories, setLoadingFoodCategories] = useState(true);
 
   // File upload states
   const [selectedThumbnailFile, setSelectedThumbnailFile] = useState(null);
@@ -134,6 +136,34 @@ export default function AddProduct() {
     };
 
     fetchCategories();
+     
+  }, [navigate, isAuthorized]);
+
+  useEffect(() => {
+    if (!isAuthorized) return; // wait until authorized
+    const fetchFoodCategories = async () => {
+      try {
+        const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/food-categories`, {
+          credentials: 'include', // use cookie for auth
+        });
+
+        if (!response.ok) throw new Error('Failed to fetch food categories');
+
+        const data = await response.json();
+        if (data.tokenValid === false) {
+          navigate('/login', { replace: true });
+          return;
+        }
+        setFoodCategories(data.categories || []);
+      } catch (error) {
+        console.error('Error fetching food categories:', error);
+        toast.error('Failed to load food categories. Please refresh the page.');
+      } finally {
+        setLoadingFoodCategories(false);
+      }
+    };
+
+    fetchFoodCategories();
      
   }, [navigate, isAuthorized]);
 
@@ -767,12 +797,23 @@ export default function AddProduct() {
                       checked={formData.isFood}
                       onChange={(e) => {
                         const isChecked = e.target.checked;
-                        setFormData(prev => ({
-                          ...prev,
-                          isFood: isChecked,
-                          foodType: isChecked ? prev.foodType : '', // Clear foodType if unchecked
-                          foodCategory: isChecked ? prev.foodCategory : '' // Clear foodCategory if unchecked
-                        }));
+                        setFormData(prev => {
+                          let newCategory = prev.category;
+                          if (isChecked) {
+                            // Automatically select "Food" category if it exists
+                            const foodCategory = categories.find(cat => cat.name.toLowerCase() === 'food');
+                            if (foodCategory) {
+                              newCategory = foodCategory._id;
+                            }
+                          }
+                          return {
+                            ...prev,
+                            isFood: isChecked,
+                            foodType: isChecked ? prev.foodType : '', // Clear foodType if unchecked
+                            foodCategory: isChecked ? prev.foodCategory : '', // Clear foodCategory if unchecked
+                            category: newCategory
+                          };
+                        });
                       }}
                       className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
                     />
@@ -815,28 +856,26 @@ export default function AddProduct() {
                       <label className="block text-sm font-medium text-gray-700">
                         Food Category
                       </label>
-                      <select
-                        name="foodCategory"
-                        className="w-full px-4 py-2.5 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                        value={formData.foodCategory}
-                        onChange={handleChange}
-                      >
-                        <option value="">Select Food Category</option>
-                        <option value="Snacks">Snacks</option>
-                        <option value="Beverages">Beverages</option>
-                        <option value="Dairy">Dairy</option>
-                        <option value="Bakery">Bakery</option>
-                        <option value="Fruits & Vegetables">Fruits & Vegetables</option>
-                        <option value="Meat & Poultry">Meat & Poultry</option>
-                        <option value="Seafood">Seafood</option>
-                        <option value="Grains & Cereals">Grains & Cereals</option>
-                        <option value="Sweets & Desserts">Sweets & Desserts</option>
-                        <option value="Ready-to-Eat">Ready-to-Eat</option>
-                        <option value="Frozen Foods">Frozen Foods</option>
-                        <option value="Canned & Packaged">Canned & Packaged</option>
-                        <option value="Spices & Condiments">Spices & Condiments</option>
-                        <option value="Other">Other</option>
-                      </select>
+                      {loadingFoodCategories ? (
+                        <div className="flex items-center space-x-2 py-2.5">
+                          <div className="animate-spin h-4 w-4 border-2 border-green-200 border-t-green-600 rounded-full"></div>
+                          <span className="text-sm text-gray-500">Loading food categories...</span>
+                        </div>
+                      ) : (
+                        <select
+                          name="foodCategory"
+                          className="w-full px-4 py-2.5 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                          value={formData.foodCategory}
+                          onChange={handleChange}
+                        >
+                          <option value="">Select Food Category</option>
+                          {foodCategories.map(category => (
+                            <option key={category._id} value={category._id}>
+                              {category.name}
+                            </option>
+                          ))}
+                        </select>
+                      )}
                     </div>
                   </div>
                 )}
