@@ -15,10 +15,20 @@ export default function Tickets() {
   const [tickets, setTickets] = useState([])
   const [isLoadingTickets, setIsLoadingTickets] = useState(false)
   const [resolvingTicketId, setResolvingTicketId] = useState('')
+  const [deletingTicketId, setDeletingTicketId] = useState('')
   const [expandedTicketId, setExpandedTicketId] = useState('')
+  const [selectedDepartmentFilter, setSelectedDepartmentFilter] = useState('all')
   const [selectedTicketImage, setSelectedTicketImage] = useState(null)
   const [replyText, setReplyText] = useState('')
   const [departments, setDepartments] = useState([])
+  const [currentAdminRole] = useState(() => {
+    try {
+      const cachedAdmin = localStorage.getItem('adminUser')
+      return cachedAdmin ? JSON.parse(cachedAdmin)?.role || '' : ''
+    } catch {
+      return ''
+    }
+  })
 
   // Fetch departments on mount
   useEffect(() => {
@@ -96,10 +106,20 @@ export default function Tickets() {
     }
   }
 
-  const fetchTickets = async () => {
+  const fetchTickets = async (departmentFilter = selectedDepartmentFilter) => {
     try {
       setIsLoadingTickets(true)
-      const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/tickets`, {
+      const query = new URLSearchParams()
+
+      if (departmentFilter && departmentFilter !== 'all') {
+        query.set('department', departmentFilter)
+      }
+
+      const requestUrl = query.toString()
+        ? `${import.meta.env.VITE_SERVER}/admin/tickets?${query.toString()}`
+        : `${import.meta.env.VITE_SERVER}/admin/tickets`
+
+      const response = await fetch(requestUrl, {
         credentials: 'include'
       })
       const data = await response.json()
@@ -122,6 +142,15 @@ export default function Tickets() {
     setShowAllTickets(nextValue)
     if (nextValue) {
       await fetchTickets()
+    }
+  }
+
+  const handleDepartmentFilterChange = async (e) => {
+    const nextDepartment = e.target.value
+    setSelectedDepartmentFilter(nextDepartment)
+
+    if (showAllTickets) {
+      await fetchTickets(nextDepartment)
     }
   }
 
@@ -158,11 +187,47 @@ export default function Tickets() {
     }
   }
 
-  const toggleTicketDetails = (ticketId) => {
-    setExpandedTicketId(prev => (prev === ticketId ? '' : ticketId))
-    if (ticketId === expandedTicketId) {
-      setReplyText('')
+  const handleDeleteTicket = async (ticketId) => {
+    if (!window.confirm('Delete this ticket permanently?')) {
+      return
     }
+
+    try {
+      setDeletingTicketId(ticketId)
+      const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/tickets/${ticketId}`, {
+        method: 'DELETE',
+        credentials: 'include'
+      })
+      const data = await response.json()
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.message || 'Failed to delete ticket')
+      }
+
+      setTickets(prev => prev.filter(ticket => ticket._id !== ticketId))
+      if (expandedTicketId === ticketId) {
+        setExpandedTicketId('')
+        setReplyText('')
+      }
+      toast.success('Ticket deleted successfully')
+    } catch (error) {
+      console.error('Failed to delete ticket:', error)
+      toast.error(error.message || 'Failed to delete ticket')
+    } finally {
+      setDeletingTicketId('')
+    }
+  }
+
+  const toggleTicketDetails = (ticketId) => {
+    if (ticketId === expandedTicketId) {
+      setExpandedTicketId('')
+      setReplyText('')
+      return
+    }
+
+    const ticket = tickets.find(item => item._id === ticketId)
+    setExpandedTicketId(ticketId)
+    setReplyText(ticket?.adminNote || '')
   }
 
   const handleReplySubmit = async (ticketId, resolve = false) => {
@@ -243,24 +308,8 @@ export default function Tickets() {
       return
     }
 
-    const remainingSlots = Math.max(0, 5 - imageFiles.length)
-    const filesToAdd = validFiles.slice(0, remainingSlots)
-    const previewsToAdd = nextPreviewUrls.slice(0, remainingSlots)
-
-    nextPreviewUrls.slice(remainingSlots).forEach((url) => URL.revokeObjectURL(url))
-
-    if (!filesToAdd.length) {
-      toast.error('You can upload up to 5 images only')
-      e.target.value = ''
-      return
-    }
-
-    if (filesToAdd.length < validFiles.length) {
-      toast.error('Only 5 images are allowed per ticket')
-    }
-
-    setImageFiles(prev => [...prev, ...filesToAdd])
-    setPreviewUrls(prev => [...prev, ...previewsToAdd])
+    setImageFiles(prev => [...prev, ...validFiles])
+    setPreviewUrls(prev => [...prev, ...nextPreviewUrls])
     e.target.value = ''
   }
 
@@ -290,6 +339,35 @@ export default function Tickets() {
     }
 
     return []
+  }
+
+  const openTicketImageViewer = (ticket, startIndex = 0) => {
+    const images = getTicketImages(ticket)
+
+    if (!images.length) {
+      return
+    }
+
+    setSelectedTicketImage({
+      images,
+      index: startIndex,
+      title: ticket.title
+    })
+  }
+
+  const changeSelectedTicketImage = (direction) => {
+    setSelectedTicketImage(prev => {
+      if (!prev || !Array.isArray(prev.images) || prev.images.length <= 1) {
+        return prev
+      }
+
+      const nextIndex = (prev.index + direction + prev.images.length) % prev.images.length
+
+      return {
+        ...prev,
+        index: nextIndex
+      }
+    })
   }
 
   const handleSubmit = async (e) => {
@@ -345,6 +423,9 @@ export default function Tickets() {
     }
   }
 
+  const currentTicketImage = selectedTicketImage?.images?.[selectedTicketImage.index] || null
+  const activeTicket = tickets.find(ticket => ticket._id === expandedTicketId) || null
+
   return (
     <Layout title={"Tickets"}>
       <div className="max-w-3xl mx-auto px-4 py-8">
@@ -353,7 +434,7 @@ export default function Tickets() {
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Raise a Ticket</h1>
               <p className="text-sm text-gray-600 mt-1">
-                Share your issue details below. You can optionally attach up to 5 images.
+                Share your issue details below. You can optionally attach the images.
               </p>
             </div>
             <button
@@ -367,16 +448,28 @@ export default function Tickets() {
 
           {showAllTickets ? (
             <div className="mt-6">
-              <div className="flex items-center justify-between gap-3 mb-4">
+              <div className="flex flex-col gap-3 mb-4 sm:flex-row sm:items-center sm:justify-between">
                 <h2 className="text-lg font-semibold text-gray-900">All Tickets</h2>
-                <button
-                  type="button"
-                  onClick={fetchTickets}
-                  disabled={isLoadingTickets}
-                  className="rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-60"
-                >
-                  {isLoadingTickets ? 'Loading...' : 'Refresh'}
-                </button>
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                  <select
+                    value={selectedDepartmentFilter}
+                    onChange={handleDepartmentFilterChange}
+                    className="min-w-[180px] rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200"
+                  >
+                    <option value="all">All Departments</option>
+                    {departments.map(dept => (
+                      <option key={dept} value={dept}>{dept}</option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    onClick={() => fetchTickets()}
+                    disabled={isLoadingTickets}
+                    className="rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+                  >
+                    {isLoadingTickets ? 'Loading...' : 'Refresh'}
+                  </button>
+                </div>
               </div>
 
               {isLoadingTickets ? (
@@ -397,6 +490,25 @@ export default function Tickets() {
                             <span className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold ${getStatusClasses(ticket.status)}`}>
                               {formatStatusLabel(ticket.status)}
                             </span>
+                            {getTicketImages(ticket).length > 0 && (
+                              <span
+                                className="inline-flex items-center justify-center rounded-full border border-emerald-200 bg-emerald-50 p-1.5 text-emerald-600"
+                                title="Attachment available"
+                                aria-label="Attachment available"
+                              >
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="2"
+                                  className="h-3.5 w-3.5"
+                                  aria-hidden="true"
+                                >
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M21.44 11.05 12.25 20.24a6 6 0 0 1-8.49-8.49l9.2-9.19a4 4 0 0 1 5.65 5.66l-9.2 9.19a2 2 0 0 1-2.82-2.83l8.48-8.48" />
+                                </svg>
+                              </span>
+                            )}
                           </div>
                           <p className="mt-1 text-xs text-gray-500">
                             {ticket.department} • Raised {formatDateTime(ticket.createdAt)}
@@ -415,7 +527,7 @@ export default function Tickets() {
                             onClick={() => toggleTicketDetails(ticket._id)}
                             className="rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-100"
                           >
-                            {expandedTicketId === ticket._id ? 'Hide Details' : 'Open Ticket'}
+                            View Ticket
                           </button>
                           <button
                             type="button"
@@ -425,104 +537,19 @@ export default function Tickets() {
                           >
                             {resolvingTicketId === ticket._id ? 'Resolving...' : ticket.status === 'resolved' || ticket.status === 'closed' ? 'Resolved' : 'Resolve'}
                           </button>
+                          {currentAdminRole === 'super_admin' && (
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteTicket(ticket._id)}
+                              disabled={deletingTicketId === ticket._id}
+                              className="rounded-lg border border-red-300 px-3 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
+                            >
+                              {deletingTicketId === ticket._id ? 'Deleting...' : 'Delete'}
+                            </button>
+                          )}
                         </div>
                       </div>
 
-                      {expandedTicketId === ticket._id && (
-                        <div className="mt-4 rounded-xl border border-gray-200 bg-white p-4">
-                          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                            <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
-                              <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Title</p>
-                              <p className="mt-2 text-sm font-semibold text-gray-900">{ticket.title || '-'}</p>
-                            </div>
-                            <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
-                              <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Department</p>
-                              <p className="mt-2 text-sm font-semibold text-gray-900">{ticket.department || '-'}</p>
-                            </div>
-                            <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
-                              <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Status</p>
-                              <span className={`mt-2 inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold ${getStatusClasses(ticket.status)}`}>
-                                {formatStatusLabel(ticket.status)}
-                              </span>
-                            </div>
-                          </div>
-
-                          <div className="mt-4 grid gap-3 text-sm text-gray-700 sm:grid-cols-2">
-                            <div>
-                              <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Raised By</p>
-                              <p className="mt-1 text-sm text-gray-900">{ticket.raisedBy?.name || '-'}</p>
-                              <p className="text-xs text-gray-500">{ticket.raisedBy?.email || '-'}</p>
-                            </div>
-                            <div>
-                              <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Timeline</p>
-                              <p className="mt-1 text-sm text-gray-900">Created: {formatDateTime(ticket.createdAt)}</p>
-                              <p className="mt-1 text-sm text-gray-900">Resolved: {formatDateTime(ticket.resolvedAt)}</p>
-                            </div>
-                          </div>
-
-                          <div className="mt-4">
-                            <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Description</p>
-                            <p className="mt-2 whitespace-pre-wrap text-sm text-gray-700">
-                              {ticket.description || 'No description provided.'}
-                            </p>
-                          </div>
-
-                          <div className="mt-4">
-                            <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Solutions Note</p>
-                            <p className="mt-2 text-sm text-gray-700">
-                              {ticket.adminNote || 'No reply yet.'}
-                            </p>
-                          </div>
-
-                          <div className="mt-4">
-                            <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Attachments</p>
-                            {getTicketImages(ticket).length > 0 ? (
-                              <div className="mt-2 flex flex-wrap gap-2">
-                                {getTicketImages(ticket).map((image, index) => (
-                                  <button
-                                    key={image.key || `${ticket._id}-${index}`}
-                                    type="button"
-                                    onClick={() => setSelectedTicketImage({
-                                      url: image.url,
-                                      title: ticket.title
-                                    })}
-                                    className="block"
-                                  >
-                                    <img
-                                      src={image.url}
-                                      alt={`${ticket.title} ${index + 1}`}
-                                      className="h-20 w-20 rounded-lg border border-gray-200 object-cover"
-                                    />
-                                  </button>
-                                ))}
-                              </div>
-                            ) : (
-                              <p className="mt-2 text-sm text-gray-500">No attachments provided.</p>
-                            )}
-                          </div>
-
-                          <div className="mt-5 rounded-xl border border-gray-200 bg-gray-50 p-4">
-                            <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Resolve Issue</p>
-                            <p className="text-xs text-gray-500">Add a note and mark the ticket resolved.</p>
-                            <textarea
-                              value={replyText}
-                              onChange={(e) => setReplyText(e.target.value)}
-                              rows={4}
-                              placeholder="Enter resolution comment"
-                              className="mt-2 w-full rounded-xl border border-gray-300 px-3 py-2 text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200"
-                            />
-                            <button
-                              type="button"
-                              onClick={() => handleReplySubmit(ticket._id, true)}
-                              disabled={resolvingTicketId === ticket._id || ticket.status === 'resolved' || ticket.status === 'closed' || !replyText.trim()}
-                              className="mt-3 rounded-lg bg-emerald-600 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
-                            >
-                              Resolve Ticket
-                            </button>
-                          </div>
-
-                        </div>
-                      )}
                     </div>
                   ))}
                 </div>
@@ -597,7 +624,7 @@ export default function Tickets() {
                   onChange={handleImageChange}
                   className="block w-full text-sm text-gray-600 file:mr-4 file:rounded-lg file:border-0 file:bg-gray-100 file:px-4 file:py-2 file:text-sm file:font-medium file:text-gray-700 hover:file:bg-gray-200"
                 />
-                <p className="mt-2 text-xs text-gray-500">You can upload up to 5 images.</p>
+                <p className="mt-2 text-xs text-gray-500">You can upload multiple images. Each image must be under 5MB.</p>
 
                 {previewUrls.length > 0 && (
                   <div className="mt-4 rounded-xl border border-gray-200 p-3 bg-gray-50">
@@ -638,13 +665,151 @@ export default function Tickets() {
         </div>
       </div>
 
+      {activeTicket && (
+        <div
+          className="fixed inset-0 z-40 flex items-center justify-center bg-black/50 px-4 py-6"
+          onClick={() => {
+            setExpandedTicketId('')
+            setReplyText('')
+          }}
+        >
+          <div
+            className="relative max-h-[90vh] w-full max-w-4xl overflow-auto rounded-2xl bg-white p-6 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => {
+                setExpandedTicketId('')
+                setReplyText('')
+              }}
+              className="absolute right-4 top-4 rounded-lg bg-black/70 px-3 py-1 text-sm font-semibold text-white"
+            >
+              Close
+            </button>
+
+            <div className="pr-20">
+              <div className="flex flex-wrap items-center gap-2">
+                <h2 className="text-2xl font-bold text-gray-900">{activeTicket.title || '-'}</h2>
+                <span className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold ${getStatusClasses(activeTicket.status)}`}>
+                  {formatStatusLabel(activeTicket.status)}
+                </span>
+              </div>
+              <p className="mt-2 text-sm text-gray-500">
+                {activeTicket.department} • Raised {formatDateTime(activeTicket.createdAt)}
+              </p>
+            </div>
+
+            <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
+                <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Title</p>
+                <p className="mt-2 text-sm font-semibold text-gray-900">{activeTicket.title || '-'}</p>
+              </div>
+              <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
+                <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Department</p>
+                <p className="mt-2 text-sm font-semibold text-gray-900">{activeTicket.department || '-'}</p>
+              </div>
+              <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
+                <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Status</p>
+                <span className={`mt-2 inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold ${getStatusClasses(activeTicket.status)}`}>
+                  {formatStatusLabel(activeTicket.status)}
+                </span>
+              </div>
+            </div>
+
+            <div className="mt-4 grid gap-3 text-sm text-gray-700 sm:grid-cols-2">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Raised By</p>
+                <p className="mt-1 text-sm text-gray-900">{activeTicket.raisedBy?.name || '-'}</p>
+                <p className="text-xs text-gray-500">{activeTicket.raisedBy?.email || '-'}</p>
+              </div>
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Timeline</p>
+                <p className="mt-1 text-sm text-gray-900">Created: {formatDateTime(activeTicket.createdAt)}</p>
+                <p className="mt-1 text-sm text-gray-900">Resolved: {formatDateTime(activeTicket.resolvedAt)}</p>
+              </div>
+            </div>
+
+            <div className="mt-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Description</p>
+              <p className="mt-2 whitespace-pre-wrap text-sm text-gray-700">
+                {activeTicket.description || 'No description provided.'}
+              </p>
+            </div>
+
+            <div className="mt-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Solutions Note</p>
+              <p className="mt-2 text-sm text-gray-700">
+                {activeTicket.adminNote || 'No reply yet.'}
+              </p>
+            </div>
+
+            <div className="mt-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Attachments</p>
+              {getTicketImages(activeTicket).length > 0 ? (
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {getTicketImages(activeTicket).map((image, index) => (
+                    <button
+                      key={image.key || `${activeTicket._id}-${index}`}
+                      type="button"
+                      onClick={() => openTicketImageViewer(activeTicket, index)}
+                      className="block"
+                    >
+                      <img
+                        src={image.url}
+                        alt={`${activeTicket.title} ${index + 1}`}
+                        className="h-20 w-20 rounded-lg border border-gray-200 object-cover"
+                      />
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <p className="mt-2 text-sm text-gray-500">No attachments provided.</p>
+              )}
+            </div>
+
+            <div className="mt-5 rounded-xl border border-gray-200 bg-gray-50 p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Resolve Issue</p>
+              <p className="text-xs text-gray-500">Add a note and mark the ticket resolved.</p>
+              <textarea
+                value={replyText}
+                onChange={(e) => setReplyText(e.target.value)}
+                rows={4}
+                placeholder="Enter resolution comment"
+                className="mt-2 w-full rounded-xl border border-gray-300 px-3 py-2 text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200"
+              />
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleReplySubmit(activeTicket._id, true)}
+                  disabled={resolvingTicketId === activeTicket._id || activeTicket.status === 'resolved' || activeTicket.status === 'closed' || !replyText.trim()}
+                  className="rounded-lg bg-emerald-600 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  Resolve Ticket
+                </button>
+                {currentAdminRole === 'super_admin' && (
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteTicket(activeTicket._id)}
+                    disabled={deletingTicketId === activeTicket._id}
+                    className="rounded-lg border border-red-300 px-3 py-2 text-sm font-semibold text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {deletingTicketId === activeTicket._id ? 'Deleting...' : 'Delete Ticket'}
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {selectedTicketImage && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4"
           onClick={() => setSelectedTicketImage(null)}
         >
           <div
-            className="relative max-w-3xl rounded-2xl bg-white p-4 shadow-2xl"
+            className="relative w-full max-w-4xl rounded-2xl bg-white p-4 shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             <button
@@ -654,11 +819,66 @@ export default function Tickets() {
             >
               Close
             </button>
-            <img
-              src={selectedTicketImage.url}
-              alt={selectedTicketImage.title}
-              className="max-h-[80vh] w-full rounded-xl object-contain"
-            />
+            {currentTicketImage && (
+              <>
+                <div className="flex items-center justify-between gap-3 pb-3 pr-20">
+                  <p className="text-sm font-semibold text-gray-900">{selectedTicketImage.title}</p>
+                  {selectedTicketImage.images.length > 1 && (
+                    <p className="text-xs font-medium text-gray-500">
+                      {selectedTicketImage.index + 1} / {selectedTicketImage.images.length}
+                    </p>
+                  )}
+                </div>
+
+                <div className="relative flex items-center justify-center">
+                  {selectedTicketImage.images.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => changeSelectedTicketImage(-1)}
+                      className="absolute left-2 z-10 rounded-full bg-black/70 p-2 text-white hover:bg-black/80"
+                      aria-label="Previous image"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-5 w-5">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="m15 18-6-6 6-6" />
+                      </svg>
+                    </button>
+                  )}
+
+                  <img
+                    src={currentTicketImage.url}
+                    alt={`${selectedTicketImage.title} ${selectedTicketImage.index + 1}`}
+                    className="max-h-[80vh] w-full rounded-xl object-contain"
+                  />
+
+                  {selectedTicketImage.images.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => changeSelectedTicketImage(1)}
+                      className="absolute right-2 z-10 rounded-full bg-black/70 p-2 text-white hover:bg-black/80"
+                      aria-label="Next image"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-5 w-5">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="m9 6 6 6-6 6" />
+                      </svg>
+                    </button>
+                  )}
+                </div>
+
+                {selectedTicketImage.images.length > 1 && (
+                  <div className="mt-4 flex justify-center gap-2">
+                    {selectedTicketImage.images.map((image, index) => (
+                      <button
+                        key={image.key || `${image.url}-${index}`}
+                        type="button"
+                        onClick={() => setSelectedTicketImage(prev => prev ? { ...prev, index } : prev)}
+                        className={`h-2.5 w-2.5 rounded-full ${index === selectedTicketImage.index ? 'bg-emerald-600' : 'bg-gray-300'}`}
+                        aria-label={`View image ${index + 1}`}
+                      />
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
           </div>
         </div>
       )}
