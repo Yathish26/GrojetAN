@@ -60,6 +60,7 @@ import Logs from './Admin/Logs.jsx'
 import Tags from './Admin/Tags.jsx'
 import Brands from './Admin/Brands.jsx'
 import Tickets from './Admin/Tickets.jsx'
+import TicketGroups from './Admin/TicketGroups.jsx'
 
 function App() {
   return (
@@ -178,6 +179,7 @@ function App() {
             <Route path="/tags" element={<Tags />} />
             <Route path="/brands" element={<Brands />} />
             <Route path="/tickets" element={<Tickets />} />
+            <Route path="/ticket-groups" element={<TicketGroups />} />
 
             {/* Settings & Profile */}
             <Route path="/profile" element={<Profile />} />

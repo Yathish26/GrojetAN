@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import toast from 'react-hot-toast'
 import Layout from '../Components/Layout'
 
@@ -11,11 +11,57 @@ export default function Tickets() {
   const [imageFiles, setImageFiles] = useState([])
   const [previewUrls, setPreviewUrls] = useState([])
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [showAllTickets, setShowAllTickets] = useState(false)
+  const [showAllTickets, setShowAllTickets] = useState(true)
   const [tickets, setTickets] = useState([])
   const [isLoadingTickets, setIsLoadingTickets] = useState(false)
-  const [deletingTicketId, setDeletingTicketId] = useState('')
+  const [resolvingTicketId, setResolvingTicketId] = useState('')
+  const [expandedTicketId, setExpandedTicketId] = useState('')
   const [selectedTicketImage, setSelectedTicketImage] = useState(null)
+  const [replyText, setReplyText] = useState('')
+  const [departments, setDepartments] = useState([])
+
+  // Fetch departments on mount
+  useEffect(() => {
+    fetchDepartments()
+    if (showAllTickets) {
+      fetchTickets()
+    }
+  }, [])
+
+  const fetchDepartments = async () => {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/tickets/groups/list`, {
+        credentials: 'include'
+      })
+      const data = await response.json()
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.message || 'Failed to fetch departments')
+      }
+
+      const uniqueDepartments = [...new Set(
+        (Array.isArray(data.groups) ? data.groups : [])
+          .map(group => (group?.department || group?.name || '').trim())
+          .filter(Boolean)
+      )]
+
+      setDepartments(uniqueDepartments)
+
+      setFormData(prev => {
+        if (prev.department || uniqueDepartments.length === 0) {
+          return prev
+        }
+
+        return {
+          ...prev,
+          department: uniqueDepartments[0]
+        }
+      })
+    } catch (error) {
+      console.error('Failed to fetch departments:', error)
+      toast.error(error.message || 'Failed to fetch departments')
+    }
+  }
 
   const formatDateTime = (value) => {
     if (!value) return '-'
@@ -26,6 +72,28 @@ export default function Tickets() {
       hour: '2-digit',
       minute: '2-digit'
     })
+  }
+
+  const formatStatusLabel = (status) => {
+    if (!status) return 'Open'
+
+    return status
+      .split('_')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ')
+  }
+
+  const getStatusClasses = (status) => {
+    switch (status) {
+      case 'resolved':
+        return 'bg-emerald-100 text-emerald-700 border border-emerald-200'
+      case 'in_progress':
+        return 'bg-amber-100 text-amber-700 border border-amber-200'
+      case 'closed':
+        return 'bg-slate-200 text-slate-700 border border-slate-300'
+      default:
+        return 'bg-blue-100 text-blue-700 border border-blue-200'
+    }
   }
 
   const fetchTickets = async () => {
@@ -57,30 +125,86 @@ export default function Tickets() {
     }
   }
 
-  const handleDeleteTicket = async (ticketId) => {
-    if (!window.confirm('Are you sure you want to delete this ticket?')) {
+  const handleResolveTicket = async (ticketId) => {
+    if (!window.confirm('Mark this ticket as resolved?')) {
       return
     }
 
     try {
-      setDeletingTicketId(ticketId)
+      setResolvingTicketId(ticketId)
       const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/tickets/${ticketId}`, {
-        method: 'DELETE',
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ status: 'resolved' }),
         credentials: 'include'
       })
       const data = await response.json()
 
       if (!response.ok || !data.success) {
-        throw new Error(data.message || 'Failed to delete ticket')
+        throw new Error(data.message || 'Failed to resolve ticket')
       }
 
-      setTickets(prev => prev.filter(ticket => ticket._id !== ticketId))
-      toast.success('Ticket deleted successfully')
+      setTickets(prev => prev.map(ticket => (
+        ticket._id === ticketId ? data.ticket : ticket
+      )))
+      toast.success('Ticket resolved successfully')
     } catch (error) {
-      console.error('Failed to delete ticket:', error)
-      toast.error(error.message || 'Failed to delete ticket')
+      console.error('Failed to resolve ticket:', error)
+      toast.error(error.message || 'Failed to resolve ticket')
     } finally {
-      setDeletingTicketId('')
+      setResolvingTicketId('')
+    }
+  }
+
+  const toggleTicketDetails = (ticketId) => {
+    setExpandedTicketId(prev => (prev === ticketId ? '' : ticketId))
+    if (ticketId === expandedTicketId) {
+      setReplyText('')
+    }
+  }
+
+  const handleReplySubmit = async (ticketId, resolve = false) => {
+    if (!replyText.trim()) {
+      toast.error('Please enter a reply before submitting')
+      return
+    }
+
+    try {
+      setResolvingTicketId(ticketId)
+      const payload = {
+        adminNote: replyText.trim(),
+      }
+      if (resolve) payload.status = 'resolved'
+
+      const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/tickets/${ticketId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include',
+        body: JSON.stringify(payload)
+      })
+      const data = await response.json()
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.message || 'Failed to update ticket')
+      }
+
+      setTickets(prev => prev.map(ticket => ticket._id === ticketId ? data.ticket : ticket))
+      setReplyText('')
+
+      if (resolve) {
+        toast.success('Ticket resolved with reply')
+      } else {
+        toast.success('Reply added to ticket')
+      }
+    } catch (error) {
+      console.error('Failed to update ticket:', error)
+      toast.error(error.message || 'Failed to update ticket')
+    } finally {
+      setResolvingTicketId('')
     }
   }
 
@@ -181,11 +305,6 @@ export default function Tickets() {
       return
     }
 
-    if (!formData.description.trim()) {
-      toast.error('Description is required')
-      return
-    }
-
     try {
       setIsSubmitting(true)
 
@@ -210,8 +329,14 @@ export default function Tickets() {
       }
 
       toast.success('Ticket raised successfully')
-      setFormData({ department: '', title: '', description: '' })
+      setFormData({
+        department: departments[0] || '',
+        title: '',
+        description: ''
+      })
       clearImages()
+      setShowAllTickets(true)
+      await fetchTickets()
     } catch (error) {
       console.error('Failed to raise ticket:', error)
       toast.error(error.message || 'Failed to raise ticket. Please try again.')
@@ -228,7 +353,7 @@ export default function Tickets() {
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Raise a Ticket</h1>
               <p className="text-sm text-gray-600 mt-1">
-                Share your issue details below. You can optionally attach one image.
+                Share your issue details below. You can optionally attach up to 5 images.
               </p>
             </div>
             <button
@@ -265,44 +390,137 @@ export default function Tickets() {
                       key={ticket._id}
                       className="rounded-xl border border-gray-200 bg-gray-50 p-4"
                     >
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <h3 className="text-sm font-semibold text-gray-900">{ticket.title}</h3>
-                          <p className="text-xs text-gray-500 mt-1">
-                            {ticket.department} • {ticket.status} • {formatDateTime(ticket.createdAt)}
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <h3 className="text-sm font-semibold text-gray-900">{ticket.title}</h3>
+                            <span className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold ${getStatusClasses(ticket.status)}`}>
+                              {formatStatusLabel(ticket.status)}
+                            </span>
+                          </div>
+                          <p className="mt-1 text-xs text-gray-500">
+                            {ticket.department} • Raised {formatDateTime(ticket.createdAt)}
                           </p>
+                          {ticket.resolvedAt && (
+                            <p className="mt-1 text-xs font-medium text-emerald-700">
+                              Resolved on {formatDateTime(ticket.resolvedAt)}
+                              {ticket.resolvedBy?.name ? ` by ${ticket.resolvedBy.name}` : ''}
+                            </p>
+                          )}
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteTicket(ticket._id)}
-                          disabled={deletingTicketId === ticket._id}
-                          className="rounded-lg border border-red-300 px-3 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50 disabled:opacity-60"
-                        >
-                          {deletingTicketId === ticket._id ? 'Deleting...' : 'Delete'}
-                        </button>
+
+                        <div className="flex flex-wrap items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => toggleTicketDetails(ticket._id)}
+                            className="rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-100"
+                          >
+                            {expandedTicketId === ticket._id ? 'Hide Details' : 'Open Ticket'}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleResolveTicket(ticket._id)}
+                            disabled={resolvingTicketId === ticket._id || ticket.status === 'resolved' || ticket.status === 'closed'}
+                            className="rounded-lg border border-emerald-300 px-3 py-1.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-60"
+                          >
+                            {resolvingTicketId === ticket._id ? 'Resolving...' : ticket.status === 'resolved' || ticket.status === 'closed' ? 'Resolved' : 'Resolve'}
+                          </button>
+                        </div>
                       </div>
 
-                      <p className="mt-3 text-sm text-gray-700 whitespace-pre-wrap">{ticket.description}</p>
+                      {expandedTicketId === ticket._id && (
+                        <div className="mt-4 rounded-xl border border-gray-200 bg-white p-4">
+                          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                            <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
+                              <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Title</p>
+                              <p className="mt-2 text-sm font-semibold text-gray-900">{ticket.title || '-'}</p>
+                            </div>
+                            <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
+                              <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Department</p>
+                              <p className="mt-2 text-sm font-semibold text-gray-900">{ticket.department || '-'}</p>
+                            </div>
+                            <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
+                              <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Status</p>
+                              <span className={`mt-2 inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold ${getStatusClasses(ticket.status)}`}>
+                                {formatStatusLabel(ticket.status)}
+                              </span>
+                            </div>
+                          </div>
 
-                      {getTicketImages(ticket).length > 0 && (
-                        <div className="mt-3 flex flex-wrap gap-2">
-                          {getTicketImages(ticket).map((image, index) => (
+                          <div className="mt-4 grid gap-3 text-sm text-gray-700 sm:grid-cols-2">
+                            <div>
+                              <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Raised By</p>
+                              <p className="mt-1 text-sm text-gray-900">{ticket.raisedBy?.name || '-'}</p>
+                              <p className="text-xs text-gray-500">{ticket.raisedBy?.email || '-'}</p>
+                            </div>
+                            <div>
+                              <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Timeline</p>
+                              <p className="mt-1 text-sm text-gray-900">Created: {formatDateTime(ticket.createdAt)}</p>
+                              <p className="mt-1 text-sm text-gray-900">Resolved: {formatDateTime(ticket.resolvedAt)}</p>
+                            </div>
+                          </div>
+
+                          <div className="mt-4">
+                            <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Description</p>
+                            <p className="mt-2 whitespace-pre-wrap text-sm text-gray-700">
+                              {ticket.description || 'No description provided.'}
+                            </p>
+                          </div>
+
+                          <div className="mt-4">
+                            <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Solutions Note</p>
+                            <p className="mt-2 text-sm text-gray-700">
+                              {ticket.adminNote || 'No reply yet.'}
+                            </p>
+                          </div>
+
+                          <div className="mt-4">
+                            <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Attachments</p>
+                            {getTicketImages(ticket).length > 0 ? (
+                              <div className="mt-2 flex flex-wrap gap-2">
+                                {getTicketImages(ticket).map((image, index) => (
+                                  <button
+                                    key={image.key || `${ticket._id}-${index}`}
+                                    type="button"
+                                    onClick={() => setSelectedTicketImage({
+                                      url: image.url,
+                                      title: ticket.title
+                                    })}
+                                    className="block"
+                                  >
+                                    <img
+                                      src={image.url}
+                                      alt={`${ticket.title} ${index + 1}`}
+                                      className="h-20 w-20 rounded-lg border border-gray-200 object-cover"
+                                    />
+                                  </button>
+                                ))}
+                              </div>
+                            ) : (
+                              <p className="mt-2 text-sm text-gray-500">No attachments provided.</p>
+                            )}
+                          </div>
+
+                          <div className="mt-5 rounded-xl border border-gray-200 bg-gray-50 p-4">
+                            <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Resolve Issue</p>
+                            <p className="text-xs text-gray-500">Add a note and mark the ticket resolved.</p>
+                            <textarea
+                              value={replyText}
+                              onChange={(e) => setReplyText(e.target.value)}
+                              rows={4}
+                              placeholder="Enter resolution comment"
+                              className="mt-2 w-full rounded-xl border border-gray-300 px-3 py-2 text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200"
+                            />
                             <button
-                              key={image.key || `${ticket._id}-${index}`}
                               type="button"
-                              onClick={() => setSelectedTicketImage({
-                                url: image.url,
-                                title: ticket.title
-                              })}
-                              className="block"
+                              onClick={() => handleReplySubmit(ticket._id, true)}
+                              disabled={resolvingTicketId === ticket._id || ticket.status === 'resolved' || ticket.status === 'closed' || !replyText.trim()}
+                              className="mt-3 rounded-lg bg-emerald-600 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
                             >
-                              <img
-                                src={image.url}
-                                alt={`${ticket.title} ${index + 1}`}
-                                className="h-20 w-20 rounded-lg border border-gray-200 object-cover"
-                              />
+                              Resolve Ticket
                             </button>
-                          ))}
+                          </div>
+
                         </div>
                       )}
                     </div>
@@ -323,11 +541,14 @@ export default function Tickets() {
                   onChange={handleInputChange}
                   className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white"
                   required
+                  disabled={departments.length === 0}
                 >
-                  <option value="">Select department</option>
-                  <option value="IT">IT</option>
-                  <option value="operations">Operations</option>
-                  <option value="finance">Finance</option>
+                  {departments.length === 0 && (
+                    <option value="">No departments available</option>
+                  )}
+                  {departments.map(dept => (
+                    <option key={dept} value={dept}>{dept}</option>
+                  ))}
                 </select>
               </div>
 
@@ -350,7 +571,7 @@ export default function Tickets() {
 
               <div>
                 <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
-                  Description
+                  Description <span className="text-gray-500">(optional)</span>
                 </label>
                 <textarea
                   id="description"
@@ -360,7 +581,6 @@ export default function Tickets() {
                   placeholder="Describe your issue in detail"
                   rows={6}
                   className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm outline-none resize-y focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                  required
                 />
               </div>
 
