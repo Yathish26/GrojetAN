@@ -297,7 +297,7 @@ export default function Tickets() {
       clearResolveImages()
 
       if (resolve) {
-        toast.success('Ticket resolved with reply')
+        toast.success('Ticket resolved with reply! The ticket raiser has been notified via email.')
       } else {
         toast.success('Reply added to ticket')
       }
@@ -445,7 +445,7 @@ export default function Tickets() {
         throw new Error(data.message || 'Failed to raise ticket')
       }
 
-      toast.success('Ticket raised successfully')
+      toast.success('Ticket raised successfully! Department members have been notified via email.')
       setFormData({
         department: departments[0] || '',
         title: '',
@@ -473,7 +473,7 @@ export default function Tickets() {
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Raise a Ticket</h1>
               <p className="text-sm text-gray-600 mt-1">
-                Share your issue details below. You can optionally attach the images.
+                Share your issue details below. You can optionally attach the images. Department members will be notified via email when you raise the ticket.
               </p>
             </div>
             <button
