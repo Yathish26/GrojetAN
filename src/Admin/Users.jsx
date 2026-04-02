@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { FiUsers, FiUser, FiSearch, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
+import { FiUsers, FiUser, FiSearch, FiChevronLeft, FiChevronRight, FiDownload } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import { Ban } from 'lucide-react';
@@ -265,6 +265,46 @@ export default function Users() {
 
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
+  const handleExport = async () => {
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_SERVER}/admin/users/export?hasEmail=${hasEmailFilter}`,
+        {
+          credentials: 'include',
+        }
+      );
+
+      if (response.status === 401) {
+        navigate('/login');
+        return;
+      }
+
+      if (!response.ok) {
+        throw new Error('Failed to export users');
+      }
+
+      // Create blob from response
+      const blob = await response.blob();
+      
+      // Create download link
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `users_export_${new Date().toISOString().split('T')[0]}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      
+      // Cleanup
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      toast.success('Users exported successfully!');
+    } catch (error) {
+      console.error('Error exporting users:', error);
+      toast.error('Failed to export users');
+    }
+  };
+
   return (
     <Layout title="Users">
       <div className="min-h-screen bg-gray-50">
@@ -277,6 +317,15 @@ export default function Users() {
                   <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Users</h1>
                   <p className="mt-1 text-sm text-gray-500">Manage and monitor all registered users</p>
                 </div>
+              </div>
+              <div className="flex items-center space-x-4">
+                <button
+                  onClick={handleExport}
+                  className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                >
+                  <FiDownload className="w-4 h-4 mr-2" />
+                  Export to Excel
+                </button>
               </div>
             </div>
           </div>
