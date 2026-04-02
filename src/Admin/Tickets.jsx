@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import toast from 'react-hot-toast'
 import Layout from '../Components/Layout'
+import { VERSION } from '../../version'
 
 export default function Tickets() {
   const [formData, setFormData] = useState({
@@ -20,6 +21,8 @@ export default function Tickets() {
   const [selectedDepartmentFilter, setSelectedDepartmentFilter] = useState('all')
   const [selectedTicketImage, setSelectedTicketImage] = useState(null)
   const [replyText, setReplyText] = useState('')
+  const [resolveImageFiles, setResolveImageFiles] = useState([])
+  const [resolvePreviewUrls, setResolvePreviewUrls] = useState([])
   const [departments, setDepartments] = useState([])
   const [currentAdminRole] = useState(() => {
     try {
@@ -218,10 +221,44 @@ export default function Tickets() {
     }
   }
 
+  const clearResolveImages = () => {
+    resolvePreviewUrls.forEach(url => URL.revokeObjectURL(url))
+    setResolveImageFiles([])
+    setResolvePreviewUrls([])
+  }
+
+  const handleResolveImageChange = (e) => {
+    const files = Array.from(e.target.files || [])
+    if (!files.length) return
+    const validFiles = []
+    const nextPreviews = []
+    files.forEach(file => {
+      if (!file.type.startsWith('image/') || file.size > 5 * 1024 * 1024) return
+      validFiles.push(file)
+      nextPreviews.push(URL.createObjectURL(file))
+    })
+    if (!validFiles.length) {
+      toast.error('Please select valid image files under 5MB')
+      e.target.value = ''
+      return
+    }
+    setResolveImageFiles(prev => [...prev, ...validFiles])
+    setResolvePreviewUrls(prev => [...prev, ...nextPreviews])
+    e.target.value = ''
+  }
+
+  const removeResolveImage = (index) => {
+    const url = resolvePreviewUrls[index]
+    if (url) URL.revokeObjectURL(url)
+    setResolveImageFiles(prev => prev.filter((_, i) => i !== index))
+    setResolvePreviewUrls(prev => prev.filter((_, i) => i !== index))
+  }
+
   const toggleTicketDetails = (ticketId) => {
     if (ticketId === expandedTicketId) {
       setExpandedTicketId('')
       setReplyText('')
+      clearResolveImages()
       return
     }
 
@@ -238,18 +275,16 @@ export default function Tickets() {
 
     try {
       setResolvingTicketId(ticketId)
-      const payload = {
-        adminNote: replyText.trim(),
-      }
-      if (resolve) payload.status = 'resolved'
+      const payload = new FormData()
+      payload.append('adminNote', replyText.trim())
+      if (resolve) payload.append('status', 'resolved')
+      resolveImageFiles.forEach(file => payload.append('images', file))
 
       const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/tickets/${ticketId}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers: { 'x-admin-version': VERSION },
         credentials: 'include',
-        body: JSON.stringify(payload)
+        body: payload
       })
       const data = await response.json()
 
@@ -259,6 +294,7 @@ export default function Tickets() {
 
       setTickets(prev => prev.map(ticket => ticket._id === ticketId ? data.ticket : ticket))
       setReplyText('')
+      clearResolveImages()
 
       if (resolve) {
         toast.success('Ticket resolved with reply')
@@ -389,13 +425,16 @@ export default function Tickets() {
       const payload = new FormData()
       payload.append('department', formData.department)
       payload.append('title', formData.title.trim())
-      payload.append('description', formData.description.trim())
+      if (formData.description.trim()) {
+        payload.append('description', formData.description.trim())
+      }
       imageFiles.forEach((file) => {
         payload.append('images', file)
       })
 
       const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/tickets`, {
         method: 'POST',
+        headers: { 'x-admin-version': VERSION },
         body: payload,
         credentials: 'include'
       })
@@ -528,14 +567,6 @@ export default function Tickets() {
                             className="rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-100"
                           >
                             View Ticket
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleResolveTicket(ticket._id)}
-                            disabled={resolvingTicketId === ticket._id || ticket.status === 'resolved' || ticket.status === 'closed'}
-                            className="rounded-lg border border-emerald-300 px-3 py-1.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-60"
-                          >
-                            {resolvingTicketId === ticket._id ? 'Resolving...' : ticket.status === 'resolved' || ticket.status === 'closed' ? 'Resolved' : 'Resolve'}
                           </button>
                           {currentAdminRole === 'super_admin' && (
                             <button
@@ -671,6 +702,7 @@ export default function Tickets() {
           onClick={() => {
             setExpandedTicketId('')
             setReplyText('')
+            clearResolveImages()
           }}
         >
           <div
@@ -682,6 +714,7 @@ export default function Tickets() {
               onClick={() => {
                 setExpandedTicketId('')
                 setReplyText('')
+                clearResolveImages()
               }}
               className="absolute right-4 top-4 rounded-lg bg-black/70 px-3 py-1 text-sm font-semibold text-white"
             >
@@ -738,7 +771,7 @@ export default function Tickets() {
             </div>
 
             <div className="mt-4">
-              <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Solutions Note</p>
+              <p className="text-xs font-bold uppercase tracking-wide text-emerald-600">Solutions Note</p>
               <p className="mt-2 text-sm text-gray-700">
                 {activeTicket.adminNote || 'No reply yet.'}
               </p>
@@ -778,23 +811,42 @@ export default function Tickets() {
                 placeholder="Enter resolution comment"
                 className="mt-2 w-full rounded-xl border border-gray-300 px-3 py-2 text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200"
               />
+              <div className="mt-3">
+                <p className="text-xs font-medium text-gray-600 mb-1">Attach Images <span className="text-gray-400">(optional)</span></p>
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handleResolveImageChange}
+                  className="block w-full text-xs text-gray-600 file:mr-3 file:rounded-lg file:border-0 file:bg-emerald-50 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-emerald-700 hover:file:bg-emerald-100"
+                />
+                <p className="mt-1 text-xs text-gray-400">Each image must be under 5MB.</p>
+                {resolvePreviewUrls.length > 0 && (
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {resolvePreviewUrls.map((url, index) => (
+                      <div key={`${url}-${index}`} className="relative">
+                        <img src={url} alt={`Resolution attachment ${index + 1}`} className="h-16 w-16 rounded-lg border border-gray-200 object-cover" />
+                        <button
+                          type="button"
+                          onClick={() => removeResolveImage(index)}
+                          className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
               <div className="mt-3 flex flex-wrap items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => handleReplySubmit(activeTicket._id, true)}
-                  disabled={resolvingTicketId === activeTicket._id || activeTicket.status === 'resolved' || activeTicket.status === 'closed' || !replyText.trim()}
-                  className="rounded-lg bg-emerald-600 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  Resolve Ticket
-                </button>
-                {currentAdminRole === 'super_admin' && (
+                {activeTicket.status !== 'resolved' && activeTicket.status !== 'closed' && (
                   <button
                     type="button"
-                    onClick={() => handleDeleteTicket(activeTicket._id)}
-                    disabled={deletingTicketId === activeTicket._id}
-                    className="rounded-lg border border-red-300 px-3 py-2 text-sm font-semibold text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
+                    onClick={() => handleReplySubmit(activeTicket._id, true)}
+                    disabled={resolvingTicketId === activeTicket._id || !replyText.trim()}
+                    className="rounded-lg bg-emerald-600 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
                   >
-                    {deletingTicketId === activeTicket._id ? 'Deleting...' : 'Delete Ticket'}
+                    Resolve Ticket
                   </button>
                 )}
               </div>
