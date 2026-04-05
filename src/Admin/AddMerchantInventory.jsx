@@ -252,6 +252,8 @@ const AddMerchantInventory = () => {
           body: JSON.stringify({
             productId: product._id,
             quantity: 5, // Default quantity
+            isFood: product.isFood || false,
+            foodType: product.foodType || '',
           }),
         })
       );

@@ -145,6 +145,7 @@ const EditMerchant = () => {
     homeStore: false,
     headStore: false,
     eateries: false,
+    restaurantType: '',
     darkStore: false,
     productCategories: [],
     storeType: '',    // Documents (Text inputs)
@@ -202,8 +203,8 @@ const EditMerchant = () => {
       if (response.ok) {
         const data = await response.json();
         if (data.tokenValid === false) {
-            navigate('/login', { replace: true });
-            return;
+          navigate('/login', { replace: true });
+          return;
         }
         if (data.success) {
           setMerchant(data.merchant);
@@ -251,6 +252,7 @@ const EditMerchant = () => {
             homeStore: merchant.operationalInfo?.homeStore || false,
             headStore: merchant.operationalInfo?.headStore || false,
             eateries: merchant.operationalInfo?.eateries || false,
+            restaurantType: merchant.operationalInfo?.restaurantType || '',
             darkStore: merchant.darkStore || false,
             storeType: merchant.operationalInfo?.storeType || '',
             productCategories: merchant.operationalInfo?.productCategories || [],
@@ -570,6 +572,7 @@ const EditMerchant = () => {
           homeStore: formData.homeStore,
           headStore: formData.headStore,
           eateries: formData.eateries,
+          restaurantType: formData.restaurantType,
           storeType: formData.storeType,
           productCategories: formData.productCategories
         },
@@ -820,10 +823,10 @@ const EditMerchant = () => {
                   className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   placeholder="2020"
                   onKeyDown={(e) => {
-                   if (['e', 'E', '+', '-'].includes(e.key)) {
-                   e.preventDefault();
+                    if (['e', 'E', '+', '-'].includes(e.key)) {
+                      e.preventDefault();
                     }
-                   }}
+                  }}
                 />
               </div>
             </div>
@@ -865,8 +868,8 @@ const EditMerchant = () => {
                   className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   placeholder="Enter mobile number"
                   onKeyDown={(e) => {
-                  if (['e', 'E', '+', '-'].includes(e.key)) {
-                  e.preventDefault();
+                    if (['e', 'E', '+', '-'].includes(e.key)) {
+                      e.preventDefault();
                     }
                   }}
                 />
@@ -880,8 +883,8 @@ const EditMerchant = () => {
                   maxLength={10}
                   name="alternateMobile"
                   onKeyDown={(e) => {
-                  if (['e', 'E', '+', '-'].includes(e.key)) {
-                  e.preventDefault();
+                    if (['e', 'E', '+', '-'].includes(e.key)) {
+                      e.preventDefault();
                     }
                   }}
                   value={formData.alternateMobile}
@@ -1249,6 +1252,71 @@ const EditMerchant = () => {
                     Eateries
                   </label>
                 </div>
+                {formData.eateries && (
+                  <div className="ml-7">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Restaurant Type
+                    </label>
+                    <select
+                      value={formData.restaurantType}
+                      onChange={(e) => setFormData(prev => ({ ...prev, restaurantType: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    >
+                      <option value="">Select Restaurant Type</option>
+
+                      {/* Dining Types */}
+                      <option value="Fine Dining">Fine Dining</option>
+                      <option value="Casual Dining">Casual Dining</option>
+                      <option value="Quick Service (QSR)">Quick Service (QSR)</option>
+                      <option value="Family Restaurant">Family Restaurant</option>
+
+                      {/* Cafe & Dessert */}
+                      <option value="Cafe">Cafe</option>
+                      <option value="Bakery">Bakery</option>
+                      <option value="Dessert Parlour">Dessert Parlour</option>
+                      <option value="Ice Cream Parlour">Ice Cream Parlour</option>
+
+                      {/* Delivery Models */}
+                      <option value="Cloud Kitchen">Cloud Kitchen</option>
+                      <option value="Delivery Only">Delivery Only</option>
+                      <option value="Takeaway Only">Takeaway Only</option>
+
+                      {/* Service Style */}
+                      <option value="Buffet">Buffet</option>
+                      <option value="Self Service">Self Service</option>
+
+                      {/* Local Indian Types */}
+                      <option value="Dhaba">Dhaba</option>
+                      <option value="Mess / Tiffin">Mess / Tiffin</option>
+                      <option value="Home Kitchen">Home Kitchen</option>
+                      <option value="Food Truck">Food Truck</option>
+                      <option value="Street Food Stall">Street Food Stall</option>
+
+                      {/* Specialty */}
+                      <option value="Biryani House">Biryani House</option>
+                      <option value="BBQ / Grill">BBQ / Grill</option>
+                      <option value="Seafood Restaurant">Seafood Restaurant</option>
+                      <option value="Kebab House">Kebab House</option>
+                      <option value="Pizza Store">Pizza Store</option>
+                      <option value="Burger Joint">Burger Joint</option>
+
+                      {/* Dietary */}
+                      <option value="Pure Veg Restaurant">Pure Veg Restaurant</option>
+                      <option value="Vegan Restaurant">Vegan Restaurant</option>
+                      <option value="Jain Food Restaurant">Jain Food Restaurant</option>
+
+                      {/* Experience */}
+                      <option value="Rooftop Dining">Rooftop Dining</option>
+                      <option value="Theme Restaurant">Theme Restaurant</option>
+                      <option value="Romantic Dining">Romantic Dining</option>
+
+                      {/* Others */}
+                      <option value="Bar / Pub">Bar / Pub</option>
+                      <option value="Lounge">Lounge</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+                )}
                 <div className="flex items-center space-x-3">
                   <input
                     type="checkbox"
@@ -1346,8 +1414,8 @@ const EditMerchant = () => {
                   className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   placeholder="10"
                   onKeyDown={(e) => {
-                  if (['e', 'E', '+', '-'].includes(e.key)) {
-                  e.preventDefault();
+                    if (['e', 'E', '+', '-'].includes(e.key)) {
+                      e.preventDefault();
                     }
                   }}
                 />
@@ -1515,8 +1583,8 @@ const EditMerchant = () => {
                               type="button"
                               onClick={() => setPrimaryImage(index)}
                               className={`p-1 rounded text-xs ${image.isPrimary
-                                  ? 'bg-green-500 text-white'
-                                  : 'bg-white/80 text-gray-600 hover:bg-white'
+                                ? 'bg-green-500 text-white'
+                                : 'bg-white/80 text-gray-600 hover:bg-white'
                                 }`}
                               title="Set as primary"
                             >

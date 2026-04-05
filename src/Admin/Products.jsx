@@ -75,6 +75,10 @@ export default function Products() {
   const [draggedImageId, setDraggedImageId] = useState(null);
   const [dragOverDropIndex, setDragOverDropIndex] = useState(null);
 
+  // Food categories for edit modal
+  const [foodCategories, setFoodCategories] = useState([]);
+  const [loadingFoodCategories, setLoadingFoodCategories] = useState(true);
+
   const navigate = useNavigate();
 
   // Current user / role guard
@@ -212,6 +216,33 @@ export default function Products() {
     }
   }, [navigate]);
 
+  // Fetch food categories
+  const fetchFoodCategories = useCallback(async () => {
+    try {
+      setLoadingFoodCategories(true);
+      const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/food-categories`, {
+        credentials: 'include',
+      });
+      if (response.status === 401) {
+        setRedirecting(true);
+        navigate('/login');
+        return;
+      }
+      if (!response.ok) throw new Error('Failed to fetch food categories');
+      const data = await response.json();
+      if (data.tokenValid === false) {
+        setRedirecting(true);
+        navigate('/login', { replace: true });
+        return;
+      }
+      setFoodCategories(data.categories || []);
+    } catch (error) {
+      toast.error('Failed to load food categories. Please refresh the page.');
+    } finally {
+      setLoadingFoodCategories(false);
+    }
+  }, [navigate]);
+
   // Fetch total available products count
   const fetchAvailableCount = useCallback(async () => {
     try {
@@ -257,8 +288,9 @@ export default function Products() {
   useEffect(() => {
     fetchCurrentUser();
     fetchCategories();
+    fetchFoodCategories();
     fetchAvailableCount();
-  }, [fetchCurrentUser, fetchCategories, fetchAvailableCount]);
+  }, [fetchCurrentUser, fetchCategories, fetchFoodCategories, fetchAvailableCount]);
 
   // Update request status
   const updateRequestStatus = async (requestId, status) => {
@@ -509,6 +541,9 @@ export default function Products() {
       if (name === 'category') {
         const selectedCategory = categorylist.find(cat => cat._id === value);
         updated.category = selectedCategory || null;
+      } else if (name === 'foodCategory') {
+        const selectedFoodCategory = foodCategories.find(cat => cat._id === value);
+        updated.foodCategory = selectedFoodCategory || null;
       } else if (name.includes('.')) {
         const keys = name.split('.');
         let obj = updated;
@@ -1595,6 +1630,88 @@ export default function Products() {
                     </div>
                   </div>
 
+                  {/* Food Classification Section */}
+                  <div className="bg-gray-50 p-4">
+                    <h3 className="text-lg font-medium text-gray-800 mb-4">Food Classification</h3>
+                    <div className="space-y-4">
+                      <div className="flex items-center">
+                        <input
+                          type="checkbox"
+                          id="isFood"
+                          name="isFood"
+                          checked={!!editProduct.isFood}
+                          onChange={handleEditChange}
+                          className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                          disabled={isSaving || currentUser?.role === 'inventory_manager'}
+                        />
+                        <label htmlFor="isFood" className="ml-2 text-sm text-gray-700">
+                          This is a food item
+                        </label>
+                      </div>
+
+                      {editProduct.isFood && (
+                        <div className="space-y-4">
+                          <div>
+                            <label className="block text-gray-700 text-sm font-medium mb-2">
+                              Food Type *
+                            </label>
+                            <div className="space-y-2">
+                              {[
+                                { value: 'veg', label: 'Vegetarian', icon: '🥬' },
+                                { value: 'non-veg', label: 'Non-Vegetarian', icon: '🍖' },
+                              ].map((option) => (
+                                <div key={option.value} className="flex items-center">
+                                  <input
+                                    type="radio"
+                                    id={`foodType-${option.value}`}
+                                    name="foodType"
+                                    value={option.value}
+                                    checked={editProduct.foodType === option.value}
+                                    onChange={handleEditChange}
+                                    className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300"
+                                    disabled={isSaving || currentUser?.role === 'inventory_manager'}
+                                    required={editProduct.isFood}
+                                  />
+                                  <label htmlFor={`foodType-${option.value}`} className="ml-2 text-sm text-gray-700 flex items-center">
+                                    <span className="mr-2">{option.icon}</span>
+                                    {option.label}
+                                  </label>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+
+                          <div>
+                            <label className="block text-gray-700 text-sm font-medium mb-2">
+                              Food Category
+                            </label>
+                            {loadingFoodCategories ? (
+                              <div className="flex items-center space-x-2 py-2.5">
+                                <div className="animate-spin h-4 w-4 border-2 border-green-200 border-t-green-600 rounded-full"></div>
+                                <span className="text-sm text-gray-500">Loading food categories...</span>
+                              </div>
+                            ) : (
+                              <select
+                                name="foodCategory"
+                                value={editProduct.foodCategory?._id || ''}
+                                onChange={handleEditChange}
+                                className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500"
+                                disabled={isSaving || currentUser?.role === 'inventory_manager'}
+                              >
+                                <option value="">Select Food Category</option>
+                                {foodCategories.map(category => (
+                                  <option key={category._id} value={category._id}>
+                                    {category.name}
+                                  </option>
+                                ))}
+                              </select>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
                   {/* Pricing Section */}
                   <div className="bg-gray-50 p-4 ">
                     <h3 className="text-lg font-medium text-gray-800 mb-4">Pricing</h3>
@@ -2152,6 +2269,11 @@ export default function Products() {
                     <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
                       <Package size={20} />
                       Basic Information
+                      {viewProduct.isFood && (
+                        <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-orange-100 text-orange-800">
+                          🍽️ Eateries
+                        </span>
+                      )}
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
@@ -2187,6 +2309,36 @@ export default function Products() {
                       </div>
                     </div>
                   </div>
+
+                  {/* Eateries Information */}
+                  {(viewProduct.isFood || viewProduct.foodType || viewProduct.foodCategory) && (
+                    <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
+                      <h3 className="text-lg font-semibold text-orange-800 mb-4 flex items-center gap-2">
+                        🍽️ Eateries Information
+                      </h3>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-orange-700">Is Food Item</label>
+                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full mt-1 ${viewProduct.isFood ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                            }`}>
+                            {viewProduct.isFood ? 'Yes' : 'No'}
+                          </span>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-orange-700">Food Type</label>
+                          <p className="text-sm text-gray-900 mt-1 capitalize">
+                            {viewProduct.foodType || 'Not specified'}
+                          </p>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-orange-700">Food Category</label>
+                          <p className="text-sm text-gray-900 mt-1">
+                            {viewProduct.foodCategory?.name || 'Not specified'}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Pricing Information */}
                   <div className="bg-gray-50 p-4 rounded-lg">

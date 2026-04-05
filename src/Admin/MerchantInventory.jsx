@@ -36,7 +36,8 @@ const InventoryItem = React.memo(({
   handleCancelEditWeight,
   handleCancelEditMarkupPrice,
   handleRemoveItem,
-  removing
+  removing,
+  merchant
 }) => {
   const stockStatus = getStockStatus(item.quantity, item.minStock);
   const StatusIcon = stockStatus.icon;
@@ -87,6 +88,24 @@ const InventoryItem = React.memo(({
           {item.category}
         </span>
       </td>
+      {merchant?.operationalInfo?.eateries && (
+        <td className="px-6 py-4 whitespace-nowrap">
+          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+            item.foodType === 'veg' ? 'bg-green-100 text-green-800' :
+            item.foodType === 'non-veg' ? 'bg-red-100 text-red-800' :
+            'bg-gray-100 text-gray-800'
+          }`}>
+            {item.foodType || 'N/A'}
+          </span>
+        </td>
+      )}
+      {merchant?.operationalInfo?.eateries && (
+        <td className="px-6 py-4 whitespace-nowrap">
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+            {item.foodCategory_string || 'N/A'}
+          </span>
+        </td>
+      )}
       <td className="px-6 py-4 whitespace-nowrap">
         {editingWeight === item._id ? (
           <div className="flex items-center space-x-2">
@@ -1904,6 +1923,16 @@ const MerchantInventory = () => {
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Category
                         </th>
+                        {merchant?.operationalInfo?.eateries && (
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Food Type
+                          </th>
+                        )}
+                        {merchant?.operationalInfo?.eateries && (
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Food Category
+                          </th>
+                        )}
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Weight
                         </th>
@@ -1964,6 +1993,7 @@ const MerchantInventory = () => {
                           handleCancelEditMarkupPrice={() => setEditingMarkupPrice(null)}
                           handleRemoveItem={handleRemoveItem}
                           removing={removing}
+                          merchant={merchant}
                         />
                       ))}
                     </tbody>
