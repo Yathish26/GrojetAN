@@ -230,7 +230,7 @@ const InventoryItem = React.memo(({
             </button>
             <button
               className="inline-flex items-center px-2.5 py-1.5 border border-gray-300 text-xs font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 transition-colors"
-              onClick={() => setEditingWeight(null)}
+              onClick={handleCancelEditWeight}
               disabled={updating}
             >
               <X size={14} className="mr-1" />
@@ -249,7 +249,7 @@ const InventoryItem = React.memo(({
             </button>
             <button
               className="inline-flex items-center px-2.5 py-1.5 border border-gray-300 text-xs font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 transition-colors"
-              onClick={() => setEditingMarkupPrice(null)}
+              onClick={handleCancelEditMarkupPrice}
               disabled={updating}
             >
               <X size={14} className="mr-1" />
@@ -325,6 +325,10 @@ const MerchantInventory = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [allCategories, setAllCategories] = useState([]);
+  const [foodCategoryFilter, setFoodCategoryFilter] = useState('all');
+  const [allFoodCategories, setAllFoodCategories] = useState([]);
+  const [foodTypeFilter, setFoodTypeFilter] = useState('all');
+  const [allFoodTypes, setAllFoodTypes] = useState([]);
   const [stockCounts, setStockCounts] = useState({ inStock: 0, lowStock: 0, outOfStock: 0 });
   const [editingWeight, setEditingWeight] = useState(null);
   const [editedWeightValue, setEditedWeightValue] = useState('');
@@ -360,6 +364,7 @@ const MerchantInventory = () => {
 
   // Debounce ref for search
   const searchTimeoutRef = useRef(null);
+  const isEateriesMerchant = merchant?.operationalInfo?.eateries === true;
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -405,6 +410,18 @@ const MerchantInventory = () => {
       } else if (categoryFilter !== 'all') {
         query.append('category', categoryFilter);
       }
+      if (isEateriesMerchant) {
+        if (params.foodCategory !== undefined && params.foodCategory !== 'all') {
+          query.append('foodCategory', params.foodCategory);
+        } else if (foodCategoryFilter !== 'all') {
+          query.append('foodCategory', foodCategoryFilter);
+        }
+        if (params.foodType !== undefined && params.foodType !== 'all') {
+          query.append('foodType', params.foodType);
+        } else if (foodTypeFilter !== 'all') {
+          query.append('foodType', foodTypeFilter);
+        }
+      }
       query.append('sortBy', params.sortBy || sortBy);
       query.append('sortOrder', params.sortOrder || sortOrder);
 
@@ -438,6 +455,16 @@ const MerchantInventory = () => {
           if (data.categories) {
             setAllCategories(data.categories);
           }
+          if (data.merchant?.operationalInfo?.eateries && data.foodCategories) {
+            setAllFoodCategories(data.foodCategories);
+          } else {
+            setAllFoodCategories([]);
+          }
+          if (data.merchant?.operationalInfo?.eateries && data.foodTypes) {
+            setAllFoodTypes(data.foodTypes);
+          } else {
+            setAllFoodTypes([]);
+          }
         } else {
           throw new Error(data.message || 'Failed to fetch merchant inventory');
         }
@@ -453,7 +480,7 @@ const MerchantInventory = () => {
         setLoading(false);
       }
     }
-  }, [id, navigate]); // Removed page, searchTerm, statusFilter, categoryFilter, sortBy, sortOrder from dependencies
+  }, [id, navigate, page, searchTerm, statusFilter, categoryFilter, foodCategoryFilter, foodTypeFilter, sortBy, sortOrder, isEateriesMerchant]);
 
   const fetchCurrentUser = async () => {
     try {
@@ -497,31 +524,50 @@ const MerchantInventory = () => {
     }
   }, [currentUser, id]); // Removed fetchAllCategories, fetchMerchantInventory from dependencies
 
+  useEffect(() => {
+    if (!isEateriesMerchant && (foodCategoryFilter !== 'all' || foodTypeFilter !== 'all')) {
+      setFoodCategoryFilter('all');
+      setFoodTypeFilter('all');
+    }
+  }, [isEateriesMerchant, foodCategoryFilter, foodTypeFilter]);
+
   // Separate effect for pagination changes
   useEffect(() => {
     if (currentUser && id) {
-      fetchMerchantInventory({ page, status: statusFilter, category: categoryFilter, search: searchTerm, sortBy, sortOrder });
+      fetchMerchantInventory({ page, status: statusFilter, category: categoryFilter, foodCategory: foodCategoryFilter, foodType: foodTypeFilter, search: searchTerm, sortBy, sortOrder });
     }
   }, [page, currentUser, id]);
 
   // Separate effect for filter changes
   useEffect(() => {
     if (currentUser && id) {
-      fetchMerchantInventory({ status: statusFilter, category: categoryFilter, search: searchTerm, sortBy, sortOrder, page });
+      fetchMerchantInventory({ status: statusFilter, category: categoryFilter, foodCategory: foodCategoryFilter, foodType: foodTypeFilter, search: searchTerm, sortBy, sortOrder, page });
     }
   }, [statusFilter, categoryFilter, currentUser, id]);
+
+  useEffect(() => {
+    if (currentUser && id && isEateriesMerchant) {
+      fetchMerchantInventory({ foodCategory: foodCategoryFilter, status: statusFilter, category: categoryFilter, foodType: foodTypeFilter, search: searchTerm, sortBy, sortOrder, page });
+    }
+  }, [foodCategoryFilter, currentUser, id, isEateriesMerchant]);
+
+  useEffect(() => {
+    if (currentUser && id && isEateriesMerchant) {
+      fetchMerchantInventory({ foodType: foodTypeFilter, status: statusFilter, category: categoryFilter, foodCategory: foodCategoryFilter, search: searchTerm, sortBy, sortOrder, page });
+    }
+  }, [foodTypeFilter, currentUser, id, isEateriesMerchant]);
 
   // Separate effect for search changes
   useEffect(() => {
     if (currentUser && id) {
-      fetchMerchantInventory({ search: searchTerm, status: statusFilter, category: categoryFilter, sortBy, sortOrder, page });
+      fetchMerchantInventory({ search: searchTerm, status: statusFilter, category: categoryFilter, foodCategory: foodCategoryFilter, foodType: foodTypeFilter, sortBy, sortOrder, page });
     }
   }, [searchTerm, currentUser, id]);
 
   // Separate effect for sorting changes
   useEffect(() => {
     if (currentUser && id) {
-      fetchMerchantInventory({ sortBy, sortOrder, status: statusFilter, category: categoryFilter, search: searchTerm, page });
+      fetchMerchantInventory({ sortBy, sortOrder, status: statusFilter, category: categoryFilter, foodCategory: foodCategoryFilter, foodType: foodTypeFilter, search: searchTerm, page });
     }
   }, [sortBy, sortOrder, currentUser, id]);
 
@@ -595,9 +641,29 @@ const MerchantInventory = () => {
     setSelectAll(false);
   };
 
+  const handleFoodCategoryFilter = (foodCategory) => {
+    setFoodCategoryFilter(foodCategory);
+    setSearchTerm('');
+    setPendingSearch('');
+    setPage(1);
+    setSelectedItems([]);
+    setSelectAll(false);
+  };
+
+  const handleFoodTypeFilter = (foodType) => {
+    setFoodTypeFilter(foodType);
+    setSearchTerm('');
+    setPendingSearch('');
+    setPage(1);
+    setSelectedItems([]);
+    setSelectAll(false);
+  };
+
   const clearFilters = () => {
     setStatusFilter('all');
     setCategoryFilter('all');
+    setFoodCategoryFilter('all');
+    setFoodTypeFilter('all');
     setSearchTerm('');
     setPendingSearch('');
     setSortBy('name');
@@ -666,6 +732,8 @@ const MerchantInventory = () => {
           search: searchTerm,
           status: statusFilter,
           category: categoryFilter,
+          foodCategory: foodCategoryFilter,
+          foodType: foodTypeFilter,
           sortBy,
           sortOrder,
           page,
@@ -721,7 +789,7 @@ const MerchantInventory = () => {
         if (data.success) {
           toast.success(`Successfully restocked ${data.restockedCount} items`);
           // Refetch inventory to show updated stock
-          fetchMerchantInventory({ page, search: searchTerm, status: statusFilter, category: categoryFilter, sortBy, sortOrder, silent: true });
+          fetchMerchantInventory({ page, search: searchTerm, status: statusFilter, category: categoryFilter, foodCategory: foodCategoryFilter, foodType: foodTypeFilter, sortBy, sortOrder, silent: true });
         } else {
           throw new Error(data.message || 'Failed to restock items');
         }
@@ -766,7 +834,7 @@ const MerchantInventory = () => {
         if (data.success) {
           toast.success(`Successfully made ${data.data.updatedCount} items out of stock`);
           // Refetch inventory to show updated stock
-          fetchMerchantInventory({ page, search: searchTerm, status: statusFilter, category: categoryFilter, sortBy, sortOrder, silent: true });
+          fetchMerchantInventory({ page, search: searchTerm, status: statusFilter, category: categoryFilter, foodCategory: foodCategoryFilter, foodType: foodTypeFilter, sortBy, sortOrder, silent: true });
         } else {
           throw new Error(data.message || 'Failed to make items out of stock');
         }
@@ -840,7 +908,7 @@ const MerchantInventory = () => {
           setEditingItem(null);
           setEditedPrice('');
           // Refetch the current page to ensure data consistency
-          fetchMerchantInventory({ page, search: searchTerm, status: statusFilter, category: categoryFilter, sortBy, sortOrder, silent: true });
+          fetchMerchantInventory({ page, search: searchTerm, status: statusFilter, category: categoryFilter, foodCategory: foodCategoryFilter, foodType: foodTypeFilter, sortBy, sortOrder, silent: true });
         } else {
           throw new Error(data.message || 'Failed to update price');
         }
@@ -907,7 +975,7 @@ const MerchantInventory = () => {
           setEditedWeightValue('');
           setEditedWeightUnit('');
           // Refetch the current page to ensure data consistency
-          fetchMerchantInventory({ page, search: searchTerm, status: statusFilter, category: categoryFilter, sortBy, sortOrder, silent: true });
+          fetchMerchantInventory({ page, search: searchTerm, status: statusFilter, category: categoryFilter, foodCategory: foodCategoryFilter, foodType: foodTypeFilter, sortBy, sortOrder, silent: true });
         } else {
           throw new Error(data.message || 'Failed to update weight dimension');
         }
@@ -955,7 +1023,7 @@ const MerchantInventory = () => {
       }
       if (data.success) {
         // Refresh inventory before clearing toast
-        await fetchMerchantInventory({ page, search: searchTerm, status: statusFilter, category: categoryFilter, sortBy, sortOrder, silent: true });
+        await fetchMerchantInventory({ page, search: searchTerm, status: statusFilter, category: categoryFilter, foodCategory: foodCategoryFilter, foodType: foodTypeFilter, sortBy, sortOrder, silent: true });
         if (selectedProduct) {
           const pid = selectedProduct.productId || selectedProduct._id;
           if (pid === productId) {
@@ -1008,7 +1076,7 @@ const MerchantInventory = () => {
           setEditingMarkupPrice(null);
           setEditedMarkupPrice('');
           // Refetch the current page to ensure data consistency
-          fetchMerchantInventory({ page, search: searchTerm, status: statusFilter, category: categoryFilter, sortBy, sortOrder, silent: true });
+          fetchMerchantInventory({ page, search: searchTerm, status: statusFilter, category: categoryFilter, foodCategory: foodCategoryFilter, foodType: foodTypeFilter, sortBy, sortOrder, silent: true });
         } else {
           throw new Error(data.message || 'Failed to update markup price');
         }
@@ -1054,7 +1122,7 @@ const MerchantInventory = () => {
           // Remove from local state
           setInventory(prev => prev.filter(inv => inv._id !== item._id));
           // Refetch to ensure data consistency
-          fetchMerchantInventory({ page, search: searchTerm, status: statusFilter, category: categoryFilter, sortBy, sortOrder, silent: true });
+          fetchMerchantInventory({ page, search: searchTerm, status: statusFilter, category: categoryFilter, foodCategory: foodCategoryFilter, foodType: foodTypeFilter, sortBy, sortOrder, silent: true });
         } else {
           throw new Error(data.message || 'Failed to remove item');
         }
@@ -1126,7 +1194,7 @@ const MerchantInventory = () => {
           toast.success(data.message || 'Items removed successfully');
           setSelectedItems([]);
           setSelectAll(false);
-          fetchMerchantInventory({ page, search: searchTerm, status: statusFilter, category: categoryFilter, sortBy, sortOrder, silent: true });
+          fetchMerchantInventory({ page, search: searchTerm, status: statusFilter, category: categoryFilter, foodCategory: foodCategoryFilter, foodType: foodTypeFilter, sortBy, sortOrder, silent: true });
         } else {
           throw new Error(data.message || 'Failed to remove items');
         }
@@ -1214,7 +1282,7 @@ const MerchantInventory = () => {
           setSelectedItems([]);
           setSelectAll(false);
           setShowSuperTagsModal(false);
-          fetchMerchantInventory({ page, search: searchTerm, status: statusFilter, category: categoryFilter, sortBy, sortOrder, silent: true });
+          fetchMerchantInventory({ page, search: searchTerm, status: statusFilter, category: categoryFilter, foodCategory: foodCategoryFilter, foodType: foodTypeFilter, sortBy, sortOrder, silent: true });
         } else {
           throw new Error(data.message || 'Failed to add super tags');
         }
@@ -1309,9 +1377,16 @@ const MerchantInventory = () => {
                   Back to Merchant
                 </button>
                 <div className="sm:border-l sm:border-gray-300 sm:pl-4">
-                  <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
-                    {merchant?.businessInfo?.displayName || 'Merchant'} Inventory
-                  </h1>
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                    <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
+                      {merchant?.businessInfo?.displayName || 'Merchant'} Inventory
+                    </h1>
+                    {merchant?.operationalInfo?.eateries && (
+                      <span className="inline-flex w-fit items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                        Eateries
+                      </span>
+                    )}
+                  </div>
                   <p className="mt-1 text-sm text-gray-500">
                     Merchant ID: <span className="font-mono text-gray-700">{merchant?.businessInfo?.merchantId || 'N/A'}</span>
                   </p>
@@ -1450,8 +1525,40 @@ const MerchantInventory = () => {
                 </div>
               </div>
 
+              {isEateriesMerchant && (
+                <div className="flex flex-col sm:flex-row sm:flex-wrap items-start sm:items-center gap-4 w-full">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full sm:w-auto">
+                    <span className="text-sm text-gray-600 hidden sm:inline">Food Categories:</span>
+                    <select
+                      value={foodCategoryFilter}
+                      onChange={(e) => handleFoodCategoryFilter(e.target.value)}
+                      className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-green-500 focus:border-green-500 w-full sm:w-auto"
+                    >
+                      <option value="all">All Food Categories</option>
+                      {allFoodCategories.map(foodCategory => (
+                        <option key={foodCategory} value={foodCategory}>{foodCategory}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full sm:w-auto">
+                    <span className="text-sm text-gray-600 hidden sm:inline">Food Type:</span>
+                    <select
+                      value={foodTypeFilter}
+                      onChange={(e) => handleFoodTypeFilter(e.target.value)}
+                      className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-green-500 focus:border-green-500 w-full sm:w-auto"
+                    >
+                      <option value="all">All Food Types</option>
+                      {allFoodTypes.map((foodType) => (
+                        <option key={foodType} value={foodType}>{foodType}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              )}
+
               {/* Clear Filters */}
-              {(statusFilter !== 'all' || categoryFilter !== 'all' || searchTerm || sortBy !== 'name' || sortOrder !== 'asc') && (
+              {(statusFilter !== 'all' || categoryFilter !== 'all' || (isEateriesMerchant && (foodCategoryFilter !== 'all' || foodTypeFilter !== 'all')) || searchTerm || sortBy !== 'name' || sortOrder !== 'asc') && (
                 <button
                   onClick={clearFilters}
                   className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors w-full sm:w-auto justify-center"

@@ -119,6 +119,7 @@ const AddMerchantInventory = () => {
   const fetchAvailableProducts = useCallback(async (pageNum = 1, search = '', category = '', isLoadMore = false) => {
     try {
       setProductLoading(true);
+      const isEateriesMerchant = merchant?.operationalInfo?.eateries === true;
       const params = new URLSearchParams({
         page: pageNum,
         limit: 20,
@@ -126,7 +127,12 @@ const AddMerchantInventory = () => {
       });
 
       if (search) params.append('search', search);
-      if (category && category !== 'all') params.append('category', category);
+      if (isEateriesMerchant) {
+        params.append('isFood', 'true');
+        if (category && category !== 'all') params.append('foodCategory', category);
+      } else if (category && category !== 'all') {
+        params.append('category', category);
+      }
 
       const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/products?${params}`, {
         credentials: 'include'
@@ -142,6 +148,8 @@ const AddMerchantInventory = () => {
         _id: product._id,
         name: product.name,
         category: product.category,
+        foodCategory: product.foodCategory,
+        foodCategory_string: product.foodCategory?.name || product.foodCategory_string || '',
         price: product.pricing?.mrp || 0,
         image: product.thumbnail,
         weightDimension: product.weightDimension,
@@ -149,6 +157,8 @@ const AddMerchantInventory = () => {
         brand: product.brand,
         description: product.description,
         tags: product.tags || [],
+        isFood: product.isFood || false,
+        foodType: product.foodType || '',
       }));
 
       if (isLoadMore) {
@@ -166,12 +176,14 @@ const AddMerchantInventory = () => {
     } finally {
       setProductLoading(false);
     }
-  }, [id]);
+  }, [id, merchant]);
 
   // Fetch product categories
   const fetchProductCategories = useCallback(async () => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/categories`, {
+      const isEateriesMerchant = merchant?.operationalInfo?.eateries === true;
+      const endpoint = isEateriesMerchant ? 'food-categories' : 'categories';
+      const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/${endpoint}`, {
         credentials: 'include'
       });
 
@@ -184,14 +196,15 @@ const AddMerchantInventory = () => {
     } catch (error) {
       console.error('Error fetching categories:', error);
     }
-  }, []);
+  }, [merchant]);
 
   useEffect(() => {
-    if (currentUser) {
+    if (currentUser && merchant) {
+      setSelectedCategory('all');
       fetchProductCategories();
       fetchAvailableProducts(1, '', 'all');
     }
-  }, [currentUser, fetchProductCategories, fetchAvailableProducts]);
+  }, [currentUser, merchant, fetchProductCategories, fetchAvailableProducts]);
 
   // Infinite scroll effect
   useEffect(() => {
@@ -398,13 +411,15 @@ const AddMerchantInventory = () => {
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-sm text-gray-600 whitespace-nowrap">Category:</span>
+                    <span className="text-sm text-gray-600 whitespace-nowrap">
+                      {merchant?.operationalInfo?.eateries ? 'Food Category:' : 'Category:'}
+                    </span>
                     <select
                       value={selectedCategory}
                       onChange={(e) => handleCategoryChange(e.target.value)}
                       className="px-3 py-3 text-sm border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-green-500 focus:border-green-500"
                     >
-                      <option value="all">All Categories</option>
+                      <option value="all">{merchant?.operationalInfo?.eateries ? 'All Food Categories' : 'All Categories'}</option>
                       {productCategories.map(category => (
                         <option key={category._id} value={category._id}>{category.name}</option>
                       ))}

@@ -646,22 +646,29 @@ const MerchantDetails = () => {
             </div>
             <div className="p-6">
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {brandingInfo.logoUrl && (
+                {(brandingInfo.logoUrl || operationalInfo.eateries) && (
                   <div className="sm:col-span-2 lg:col-span-1">
                     <label className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Store Logo</label>
-                    <div className="mt-3">
-                      <img
-                        src={brandingInfo.logoUrl}
-                        alt="Store Logo"
-                        className="w-20 h-20 object-cover border-2 border-gray-200 rounded-lg shadow-sm"
-                        onError={(e) => {
-                          e.target.style.display = 'none';
-                        }}
-                      />
+                    <div className="mt-3 flex items-center gap-3">
+                      {brandingInfo.logoUrl && (
+                        <img
+                          src={brandingInfo.logoUrl}
+                          alt="Store Logo"
+                          className="w-20 h-20 object-cover border-2 border-gray-200 rounded-lg shadow-sm"
+                          onError={(e) => {
+                            e.target.style.display = 'none';
+                          }}
+                        />
+                      )}
+                      {operationalInfo.eateries && (
+                        <span className="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-bold bg-orange-100 text-orange-700 border border-orange-200 shadow-sm">
+                          Eateries
+                        </span>
+                      )}
                     </div>
                   </div>
                 )}
-                <div className={brandingInfo.logoUrl ? "" : "sm:col-span-2"}>
+                <div className={brandingInfo.logoUrl || operationalInfo.eateries ? "" : "sm:col-span-2"}>
                   <label className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Display Name</label>
                   <p className="mt-2 text-gray-900 text-base font-medium break-words">{businessInfo.displayName || merchant.displayName || 'N/A'}</p>
                 </div>
@@ -948,16 +955,6 @@ const MerchantDetails = () => {
                     </span>
                   </p>
                 </div>
-                {operationalInfo.eateries && (
-                  <div>
-                    <label className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Eateries</label>
-                    <p className="mt-2 text-gray-900 text-base font-medium break-words">
-                      <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
-                        Eateries
-                      </span>
-                    </p>
-                  </div>
-                )}
               </div>
             </div>
           </div>
