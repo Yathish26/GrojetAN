@@ -39,6 +39,7 @@ import AppControls from './Admin/AppControls.jsx'
 import Careers from './Admin/Careers.jsx'
 import RequestedProducts from './Admin/RequestedProducts.jsx'
 import Offers from './Admin/Offers.jsx'
+import InlineOffer from './Admin/InlineOffer.jsx'
 import MarketArea from './Admin/MarketArea.jsx'
 import UpdateNotesAdmin from './Admin/UpdateNotesAdmin.jsx'
 import HomeAds from './Admin/HomeAds.jsx'
@@ -154,6 +155,7 @@ function App() {
             <Route path="/market-area" element={<MarketArea />} />
             <Route path="/delivery-signup" element={<DeliveryAgentSignup />} />
             <Route path="/offers" element={<Offers />} />
+            <Route path="/inline-offers" element={<InlineOffer />} />
 
             {/* Home Ads Management */}
             <Route path="/home-ads" element={<HomeAds />} />
