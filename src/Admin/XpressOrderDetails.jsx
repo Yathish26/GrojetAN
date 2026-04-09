@@ -910,19 +910,23 @@ const XpressOrderDetails = () => {
       doc.text(`Phone: ${order.drop?.phone || 'N/A'}`, 110, y + 40);
       y += 50;
 
-      drawSection('Package & Pricing', y, 34);
+      drawSection('Package & Pricing', y, 40);
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(10);
       doc.text(`Category: ${order.packageDetails?.category || 'N/A'}`, 16, y + 15);
       doc.text(`Size: ${order.packageDetails?.size || 'N/A'}`, 16, y + 22);
       doc.text(`Distance: ${order.pricing?.distance?.toFixed(1) || 0} km`, 16, y + 29);
 
-      doc.text(`Estimated: ₹${order.pricing?.estimatedCost || 0}`, 110, y + 15);
+      const basePrice = Math.round((order.pricing?.finalCost || 0) / 1.18);
+      const gstAmount = Math.round((order.pricing?.finalCost || 0) - basePrice);
+
+      doc.text(`Base Price: ₹${basePrice}`, 110, y + 15);
+      doc.text(`GST (18%): ₹${gstAmount}`, 110, y + 22);
       doc.setFont('helvetica', 'bold');
-      doc.text(`Final: ₹${order.pricing?.finalCost || 0}`, 110, y + 22);
+      doc.text(`Final: ₹${order.pricing?.finalCost || 0}`, 110, y + 29);
       doc.setFont('helvetica', 'normal');
-      doc.text(`Payment: ${order.pricing?.paymentMethod || 'N/A'}`, 110, y + 29);
-      y += 40;
+      doc.text(`Payment: ${order.pricing?.paymentMethod || 'N/A'}`, 110, y + 36);
+      y += 46;
 
       drawSection('Order Timeline', y, 24);
       doc.setFont('helvetica', 'normal');
