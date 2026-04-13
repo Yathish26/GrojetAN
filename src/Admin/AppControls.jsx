@@ -29,6 +29,7 @@ export default function AppControls() {
   const [customerBulkNotificationResults, setCustomerBulkNotificationResults] = useState(null);
   const [customerBulkNotificationLoading, setCustomerBulkNotificationLoading] = useState(false);
   const [customerBulkNotificationProgress, setCustomerBulkNotificationProgress] = useState(null);
+  const [customerBulkNotificationScreen, setCustomerBulkNotificationScreen] = useState('Homescreen');
 
   // New states for app controls
   const [taxPercentageOnDeliveryFee, setTaxPercentageOnDeliveryFee] = useState(null);
@@ -723,6 +724,7 @@ export default function AppControls() {
         body: JSON.stringify({
           title: customerBulkNotificationTitle,
           message: customerBulkNotificationText,
+          screen: customerBulkNotificationScreen,
         }),
       });
 
@@ -1131,6 +1133,27 @@ export default function AppControls() {
                 rows="4"
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none text-sm"
               />
+            </div>
+
+            {/* Navigate to Screen */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Navigate to Screen (on click)
+              </label>
+              <select
+                value={customerBulkNotificationScreen}
+                onChange={(e) => setCustomerBulkNotificationScreen(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+              >
+                <option value="Homescreen">Homescreen</option>
+                <option value="Stores">Stores</option>
+                <option value="Xpress">Xpress Screen</option>
+                <option value="Orders">Orders</option>
+                <option value="Profile">Profile</option>
+                <option value="Search">Search</option>
+                <option value="Cart">Cart</option>
+                <option value="Wishlist">Wishlist</option>
+              </select>
             </div>
 
             {/* Send Button */}

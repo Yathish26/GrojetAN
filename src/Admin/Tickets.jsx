@@ -19,6 +19,7 @@ export default function Tickets() {
   const [deletingTicketId, setDeletingTicketId] = useState('')
   const [expandedTicketId, setExpandedTicketId] = useState('')
   const [selectedDepartmentFilter, setSelectedDepartmentFilter] = useState('all')
+  const [selectedStatusFilter, setSelectedStatusFilter] = useState('all')
   const [selectedTicketImage, setSelectedTicketImage] = useState(null)
   const [replyText, setReplyText] = useState('')
   const [resolveImageFiles, setResolveImageFiles] = useState([])
@@ -109,13 +110,17 @@ export default function Tickets() {
     }
   }
 
-  const fetchTickets = async (departmentFilter = selectedDepartmentFilter) => {
+  const fetchTickets = async (departmentFilter = selectedDepartmentFilter, statusFilter = selectedStatusFilter) => {
     try {
       setIsLoadingTickets(true)
       const query = new URLSearchParams()
 
       if (departmentFilter && departmentFilter !== 'all') {
         query.set('department', departmentFilter)
+      }
+
+      if (statusFilter && statusFilter !== 'all') {
+        query.set('status', statusFilter)
       }
 
       const requestUrl = query.toString()
@@ -153,7 +158,16 @@ export default function Tickets() {
     setSelectedDepartmentFilter(nextDepartment)
 
     if (showAllTickets) {
-      await fetchTickets(nextDepartment)
+      await fetchTickets(nextDepartment, selectedStatusFilter)
+    }
+  }
+
+  const handleStatusFilterChange = async (e) => {
+    const nextStatus = e.target.value
+    setSelectedStatusFilter(nextStatus)
+
+    if (showAllTickets) {
+      await fetchTickets(selectedDepartmentFilter, nextStatus)
     }
   }
 
@@ -500,9 +514,18 @@ export default function Tickets() {
                       <option key={dept} value={dept}>{dept}</option>
                     ))}
                   </select>
+                  <select
+                    value={selectedStatusFilter}
+                    onChange={handleStatusFilterChange}
+                    className="min-w-[140px] rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200"
+                  >
+                    <option value="all">All Status</option>
+                    <option value="open">Open</option>
+                    <option value="resolved">Resolved</option>
+                  </select>
                   <button
                     type="button"
-                    onClick={() => fetchTickets()}
+                    onClick={() => fetchTickets(selectedDepartmentFilter, selectedStatusFilter)}
                     disabled={isLoadingTickets}
                     className="rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-60"
                   >
@@ -801,45 +824,45 @@ export default function Tickets() {
               )}
             </div>
 
-            <div className="mt-5 rounded-xl border border-gray-200 bg-gray-50 p-4">
-              <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Resolve Issue</p>
-              <p className="text-xs text-gray-500">Add a note and mark the ticket resolved.</p>
-              <textarea
-                value={replyText}
-                onChange={(e) => setReplyText(e.target.value)}
-                rows={4}
-                placeholder="Enter resolution comment"
-                className="mt-2 w-full rounded-xl border border-gray-300 px-3 py-2 text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200"
-              />
-              <div className="mt-3">
-                <p className="text-xs font-medium text-gray-600 mb-1">Attach Images <span className="text-gray-400">(optional)</span></p>
-                <input
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  onChange={handleResolveImageChange}
-                  className="block w-full text-xs text-gray-600 file:mr-3 file:rounded-lg file:border-0 file:bg-emerald-50 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-emerald-700 hover:file:bg-emerald-100"
+            {activeTicket.status !== 'resolved' && activeTicket.status !== 'closed' && (
+              <div className="mt-5 rounded-xl border border-gray-200 bg-gray-50 p-4">
+                <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Resolve Issue</p>
+                <p className="text-xs text-gray-500">Add a note and mark the ticket resolved.</p>
+                <textarea
+                  value={replyText}
+                  onChange={(e) => setReplyText(e.target.value)}
+                  rows={4}
+                  placeholder="Enter resolution comment"
+                  className="mt-2 w-full rounded-xl border border-gray-300 px-3 py-2 text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200"
                 />
-                <p className="mt-1 text-xs text-gray-400">Each image must be under 5MB.</p>
-                {resolvePreviewUrls.length > 0 && (
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {resolvePreviewUrls.map((url, index) => (
-                      <div key={`${url}-${index}`} className="relative">
-                        <img src={url} alt={`Resolution attachment ${index + 1}`} className="h-16 w-16 rounded-lg border border-gray-200 object-cover" />
-                        <button
-                          type="button"
-                          onClick={() => removeResolveImage(index)}
-                          className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white"
-                        >
-                          ×
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-              <div className="mt-3 flex flex-wrap items-center gap-2">
-                {activeTicket.status !== 'resolved' && activeTicket.status !== 'closed' && (
+                <div className="mt-3">
+                  <p className="text-xs font-medium text-gray-600 mb-1">Attach Images <span className="text-gray-400">(optional)</span></p>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={handleResolveImageChange}
+                    className="block w-full text-xs text-gray-600 file:mr-3 file:rounded-lg file:border-0 file:bg-emerald-50 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-emerald-700 hover:file:bg-emerald-100"
+                  />
+                  <p className="mt-1 text-xs text-gray-400">Each image must be under 5MB.</p>
+                  {resolvePreviewUrls.length > 0 && (
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {resolvePreviewUrls.map((url, index) => (
+                        <div key={`${url}-${index}`} className="relative">
+                          <img src={url} alt={`Resolution attachment ${index + 1}`} className="h-16 w-16 rounded-lg border border-gray-200 object-cover" />
+                          <button
+                            type="button"
+                            onClick={() => removeResolveImage(index)}
+                            className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white"
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <div className="mt-3 flex flex-wrap items-center gap-2">
                   <button
                     type="button"
                     onClick={() => handleReplySubmit(activeTicket._id, true)}
@@ -848,9 +871,9 @@ export default function Tickets() {
                   >
                     Resolve Ticket
                   </button>
-                )}
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
       )}
