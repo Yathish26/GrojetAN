@@ -58,6 +58,7 @@ export default function UserData() {
   const [showNotificationModal, setShowNotificationModal] = useState(false);
   const [notificationTitle, setNotificationTitle] = useState('');
   const [notificationMessage, setNotificationMessage] = useState('');
+  const [notificationScreen, setNotificationScreen] = useState('Homescreen');
   const [sendingNotification, setSendingNotification] = useState(false);
   const [deletingToken, setDeletingToken] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
@@ -499,7 +500,7 @@ export default function UserData() {
             'Content-Type': 'application/json',
           },
           credentials: 'include',
-          body: JSON.stringify({ title: notificationTitle, message: notificationMessage }),
+          body: JSON.stringify({ title: notificationTitle, message: notificationMessage, screen: notificationScreen }),
         }
       );
 
@@ -1405,6 +1406,26 @@ export default function UserData() {
                 </p>
               </div>
 
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Navigate to Screen (on click)
+                </label>
+                <select
+                  value={notificationScreen}
+                  onChange={(e) => setNotificationScreen(e.target.value)}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  disabled={sendingNotification}
+                >
+                  <option value="Homescreen">Homescreen</option>
+                  <option value="Stores">Stores</option>
+                  <option value="Xpress">Xpress Screen</option>
+                  <option value="Orders">Orders</option>
+                  <option value="Profile">Profile</option>
+                  <option value="Search">Search</option>
+                  <option value="Cart">Cart</option>
+                  <option value="Wishlist">Wishlist</option>
+                </select>
+              </div>
               <div className="flex justify-end gap-3">
                 <button
                   onClick={() => {

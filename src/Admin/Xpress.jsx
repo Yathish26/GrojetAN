@@ -605,8 +605,8 @@ const Xpress = () => {
                       <p className="text-[11px] text-gray-500 mt-1">{getPaymentMeta(order)}</p>
                     </div>
                     <div>
-                      <p className="text-gray-500">Source</p>
-                      <p className="text-gray-800 mt-1">{order.source === 'website' ? 'Website' : 'Mobile App'}</p>
+                      <p className="text-gray-500">First Order</p>
+                      <p className="text-gray-800 mt-1">{order.isFirstOrder ? 'Yes' : 'No'}</p>
                     </div>
                   </div>
                 </div>
@@ -626,6 +626,7 @@ const Xpress = () => {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[100px]">Amount</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[100px]">Payment</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[120px]">Status</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[100px]">First Order</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[100px]">Source</th>
                 </tr>
               </thead>
@@ -704,11 +705,6 @@ const Xpress = () => {
                             <Phone size={14} className="mr-1" />
                             {order.assignment?.agent?.personalInfo?.phone || 'N/A'}
                           </div>
-                          {order.assignment?.assignedAt && (
-                            <div className="text-xs text-gray-400 mt-1">
-                              Assigned: {new Date(order.assignment.assignedAt).toLocaleDateString()}
-                            </div>
-                          )}
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -740,6 +736,15 @@ const Xpress = () => {
                             {order?.razorpayPaymentId ? `Payment ID: ${order.razorpayPaymentId}` : 'Awaiting payment reference'}
                           </div>
                         )}
+                      </td>
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          order.isFirstOrder
+                            ? 'bg-green-100 text-green-800 border border-green-200'
+                            : 'bg-gray-100 text-gray-800 border border-gray-200'
+                        }`}>
+                          {order.isFirstOrder ? 'Yes' : 'No'}
+                        </span>
                       </td>
                         <td className="px-6 py-4 whitespace-nowrap">
   <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${

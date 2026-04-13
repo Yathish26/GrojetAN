@@ -7,7 +7,7 @@ import {
   User, Calendar, Truck, CheckCircle, XCircle,
   AlertCircle, AlertTriangle, Navigation, IndianRupee, RefreshCw, Trash2, X,
   Download, FileText,
-  TriangleAlert
+  TriangleAlert, Star
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import io from 'socket.io-client';
@@ -1153,6 +1153,12 @@ const XpressOrderDetails = () => {
             <div>
               <div className='flex gap-2 items-center'>
                 <h1 className="text-3xl font-bold text-gray-900">Order #{order.orderNumber} </h1>
+                {order.isFirstOrder && (
+                  <div className='bg-blue-600 text-white rounded-full w-fit py-1 px-3 flex gap-2 items-center'>
+                    <Star size={20} className="text-white" />
+                    <h1 className='font-semibold'>First Order</h1>
+                  </div>
+                )}
                 {order.packageDetails?.fragile &&
                   (<div className='bg-red-700 text-white rounded-full w-fit py-1 px-3 flex gap-2 items-center'>
                     <TriangleAlert size={20} className="text-white" />
