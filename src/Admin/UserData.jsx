@@ -1023,6 +1023,50 @@ export default function UserData() {
                 </div>
               )}
 
+              {/* Last Known Location */}
+              {user.lastLocation && (
+                <div className="bg-white shadow-lg rounded-lg overflow-hidden">
+                  <div className="bg-green-600 px-6 py-4">
+                    <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                      <FiMapPin className="w-6 h-6" />
+                      Last Known Location
+                    </h3>
+                  </div>
+                  <div className="p-6">
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                        <span className="text-gray-600">Latitude</span>
+                        <span className="font-medium">{user.lastLocation.latitude?.toFixed(6) || 'N/A'}</span>
+                      </div>
+                      <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                        <span className="text-gray-600">Longitude</span>
+                        <span className="font-medium">{user.lastLocation.longitude?.toFixed(6) || 'N/A'}</span>
+                      </div>
+                      <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                        <span className="text-gray-600">Last Updated</span>
+                        <span className="font-medium">
+                          {user.lastLocation.updatedAt ? new Date(user.lastLocation.updatedAt).toLocaleString('en-IN') : 'N/A'}
+                        </span>
+                      </div>
+                    </div>
+                    {user.lastLocation.latitude && user.lastLocation.longitude && (
+                      <div className="mt-4">
+                        <button
+                          onClick={() => {
+                            const url = `https://www.google.com/maps?q=${user.lastLocation.latitude},${user.lastLocation.longitude}`;
+                            window.open(url, '_blank');
+                          }}
+                          className="w-full inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+                        >
+                          <FiMapPin className="mr-2" />
+                          View on Google Maps
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
               {/* Preferences & Notifications */}
               <div className="bg-white shadow-lg rounded-lg overflow-hidden">
                 <div className="bg-green-600 px-6 py-4">
