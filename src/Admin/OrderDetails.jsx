@@ -468,6 +468,7 @@ export default function OrderDetails() {
         ['Order Number', order.orderNumber || 'N/A'],
         ['Order Date', order.createdAt ? new Date(order.createdAt).toLocaleString('en-IN') : 'N/A'],
         ['Status', getStatusValue(order.status).replace('_', ' ').toUpperCase()],
+        ['Source', order.source === 'website' ? 'Website' : 'Mobile App'],
         [''],
         ['Customer Information'],
         ['Name', order.customer?.name || 'N/A'],
@@ -1634,6 +1635,22 @@ export default function OrderDetails() {
                     <p className="text-sm text-gray-600">
                       {order.deliveryAddress?.state} - {order.deliveryAddress?.zipCode}
                     </p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3 pt-4 border-t border-gray-100">
+                  <div className="w-5 h-5 text-gray-400 mt-0.5 flex items-center justify-center">
+                    {order.source === 'website' ? '🌐' : '📱'}
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Order Source</p>
+                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium mt-1 ${
+                      order.source === 'website'
+                        ? 'bg-blue-100 text-blue-800 border border-blue-200'
+                        : 'bg-purple-100 text-purple-800 border border-purple-200'
+                    }`}>
+                      {order.source === 'website' ? '🌐 Website' : '📱 Mobile App'}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -3035,6 +3052,9 @@ export default function OrderDetails() {
                 <p className="font-medium">{order?.customer?.name || 'N/A'}</p>
                 <p>{order?.customer?.phone || 'N/A'}</p>
                 <p>{order?.customer?.email || 'N/A'}</p>
+                <p className="pt-2 mt-2 border-t border-gray-300">
+                  <strong>Source:</strong> {order?.source === 'website' ? 'Website' : 'Mobile App'}
+                </p>
               </div>
             </div>
             <div>

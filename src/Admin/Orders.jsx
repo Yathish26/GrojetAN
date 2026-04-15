@@ -629,6 +629,9 @@ const Orders = () => {
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Delivery Agent
                       </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Source
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
@@ -698,6 +701,15 @@ const Orders = () => {
                             <span className="text-sm text-gray-400">Not assigned</span>
                           )}
                         </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                            order.source === 'website'
+                              ? 'bg-blue-100 text-blue-800 border border-blue-200'
+                              : 'bg-purple-100 text-purple-800 border border-purple-200'
+                          }`}>
+                            {order.source === 'website' ? '🌐 Website' : '📱 Mobile App'}
+                          </span>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -758,6 +770,19 @@ const Orders = () => {
                               <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-none text-xs font-medium ${getPaymentStatusColor(order.payment.method)}`}>
                                 {getPaymentStatusIcon(order.payment.method)}
                                 {order.payment.method ? (order.payment.method === 'cash' ? 'Cash on Delivery' : formatStatusText(order.payment.method)) : 'N/A'}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-3 mb-3">
+                            <div className="text-xs">
+                              <span className="text-gray-500">Source:</span>
+                              <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                                order.source === 'website'
+                                  ? 'bg-blue-100 text-blue-800 border border-blue-200'
+                                  : 'bg-purple-100 text-purple-800 border border-purple-200'
+                              }`}>
+                                {order.source === 'website' ? '🌐 Website' : '📱 Mobile App'}
                               </span>
                             </div>
                           </div>
