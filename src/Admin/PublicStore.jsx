@@ -5,6 +5,7 @@ import {
     DollarSign, Calendar, User, Eye, Search, Filter, ToggleLeft, ToggleRight
 } from 'lucide-react';
 import Layout from '../Components/Layout';
+import { VERSION } from '../../version';
 import toast from 'react-hot-toast';
 
 const PublicStore = () => {
@@ -62,6 +63,7 @@ const PublicStore = () => {
                 credentials: 'include',
                 headers: {
                     'Content-Type': 'application/json',
+                    'x-admin-version': VERSION,
                 },
             });
 
@@ -96,6 +98,7 @@ const PublicStore = () => {
                 credentials: 'include',
                 headers: {
                     'Content-Type': 'application/json',
+                    'x-admin-version': VERSION,
                 },
             });
 
@@ -119,6 +122,7 @@ const PublicStore = () => {
                 credentials: 'include',
                 headers: {
                     'Content-Type': 'application/json',
+                    'x-admin-version': VERSION,
                 },
                 body: JSON.stringify({ publicStoreEnabled: enabled }),
             });
