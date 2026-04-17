@@ -318,7 +318,8 @@ export default function DeliveryZones() {
     },
     isActive: true,
     supportsXpress: false,
-    supportsMerchant: false
+    supportsMerchant: false,
+    supportsSurge: false
   });
 
   // Initialize edit form when a zone is selected for editing
@@ -332,6 +333,7 @@ export default function DeliveryZones() {
         isActive: !!editingZone.isActive,
         supportsXpress: !!editingZone.supportsXpress,
         supportsMerchant: !!editingZone.supportsMerchant,
+        supportsSurge: !!editingZone.supportsSurge,
         boundaries: {
           type: 'Polygon',
           coordinates: editingZone.boundaries?.coordinates || []
@@ -394,6 +396,7 @@ export default function DeliveryZones() {
       description: createForm.description,
       isActive: createForm.isActive,
       supportsXpress: createForm.supportsXpress,
+      supportsSurge: createForm.supportsSurge,
       supportsMerchant: createForm.supportsMerchant,
       boundaries: {
         type: 'Polygon',
@@ -431,7 +434,8 @@ export default function DeliveryZones() {
         boundaries: { type: 'Polygon', coordinates: [] },
         isActive: true,
         supportsXpress: false,
-        supportsMerchant: false
+        supportsMerchant: false,
+        supportsSurge: false
       });
       toast.success('Delivery zone created successfully');
     } catch (err) {
@@ -523,6 +527,10 @@ export default function DeliveryZones() {
     if ('supportsMerchant' in updates && Boolean(oldZone.supportsMerchant) !== Boolean(updates.supportsMerchant)) {
       const action = Boolean(updates.supportsMerchant) ? 'checked' : 'unchecked';
       msgs.push(`${adminName} ${action} the support merchant in ${zoneName} zone.`);
+    }
+    if ('supportsSurge' in updates && Boolean(oldZone.supportsSurge) !== Boolean(updates.supportsSurge)) {
+      const action = Boolean(updates.supportsSurge) ? 'checked' : 'unchecked';
+      msgs.push(`${adminName} ${action} the surge activation in ${zoneName} zone.`);
     }
     if (updates.boundaries?.coordinates) {
       const prev = JSON.stringify(oldZone.boundaries?.coordinates || []);
@@ -834,6 +842,12 @@ export default function DeliveryZones() {
                       }`}>
                       {zone.supportsMerchant ? 'Merchant' : 'No Merchant'}
                     </div>
+                    <div className={`px-2 py-1 rounded-full text-xs font-medium ${zone.supportsSurge
+                      ? 'bg-red-100 text-red-800'
+                      : 'bg-gray-100 text-gray-800'
+                      }`}>
+                      {zone.supportsSurge ? 'Surge' : 'No Surge'}
+                    </div>
                   </div>
                 </div>
                 <div className="space-y-3">
@@ -1047,6 +1061,18 @@ export default function DeliveryZones() {
                       Supports Merchant
                     </label>
                   </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      id="supportsSurge"
+                      checked={createForm.supportsSurge}
+                      onChange={(e) => setCreateForm({ ...createForm, supportsSurge: e.target.checked })}
+                      className="text-red-600 focus:ring-red-500"
+                    />
+                    <label htmlFor="supportsSurge" className="text-sm text-gray-700">
+                      Activate Surge
+                    </label>
+                  </div>
                 </div>
               </div>
               <div className="flex justify-end gap-3 pt-4">
@@ -1233,6 +1259,7 @@ export default function DeliveryZones() {
                   description: editForm.description,
                   isActive: editForm.isActive,
                   supportsXpress: editForm.supportsXpress,
+                  supportsSurge: editForm.supportsSurge,
                   supportsMerchant: editForm.supportsMerchant,
                   boundaries: {
                     type: 'Polygon',
@@ -1331,6 +1358,16 @@ export default function DeliveryZones() {
                         className="text-purple-600 focus:ring-purple-500"
                       />
                       <label htmlFor="supportsMerchantEdit" className="text-sm text-gray-700">Supports Merchant</label>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        id="supportsSurgeEdit"
+                        checked={editForm.supportsSurge}
+                        onChange={(e) => setEditForm({ ...editForm, supportsSurge: e.target.checked })}
+                        className="text-red-600 focus:ring-red-500"
+                      />
+                      <label htmlFor="supportsSurgeEdit" className="text-sm text-gray-700">Activate Surge</label>
                     </div>
                   </div>
                 )}

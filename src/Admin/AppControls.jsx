@@ -69,6 +69,41 @@ export default function AppControls() {
     xpressPerKmRate: { updatedBy: null, updatedAt: null },
   });
 
+  // GIG controls states
+  const [gigGstPercentage, setGigGstPercentage] = useState(null);
+  const [gigCodEnabled, setGigCodEnabled] = useState(null);
+  const [gigUpiEnabled, setGigUpiEnabled] = useState(null);
+  const [gigMaxDistanceKm, setGigMaxDistanceKm] = useState(null);
+  const [gigBaseDistanceKm, setGigBaseDistanceKm] = useState(null);
+  const [gigBasePrice, setGigBasePrice] = useState(null);
+  const [gigPerKmRate, setGigPerKmRate] = useState(null);
+  // GIG surge pricing states
+  const [gigSurgeMultiplier, setGigSurgeMultiplier] = useState(null);
+  const [gigSurgeBonus, setGigSurgeBonus] = useState(null);
+  // GIG incentives states
+  const [gigOrdersRequired, setGigOrdersRequired] = useState(null);
+  const [gigRewardAmount, setGigRewardAmount] = useState(null);
+
+  // GIG editing states
+  const [isEditingGig, setIsEditingGig] = useState(false);
+  const [gigOriginalValues, setGigOriginalValues] = useState({});
+  const [gigLoading, setGigLoading] = useState(false);
+
+  // GIG update logs states
+  const [gigUpdateLogs, setGigUpdateLogs] = useState({
+    gigGstPercentage: { updatedBy: null, updatedAt: null },
+    gigCodEnabled: { updatedBy: null, updatedAt: null },
+    gigUpiEnabled: { updatedBy: null, updatedAt: null },
+    gigMaxDistanceKm: { updatedBy: null, updatedAt: null },
+    gigBaseDistanceKm: { updatedBy: null, updatedAt: null },
+    gigBasePrice: { updatedBy: null, updatedAt: null },
+    gigPerKmRate: { updatedBy: null, updatedAt: null },
+    gigSurgeMultiplier: { updatedBy: null, updatedAt: null },
+    gigSurgeBonus: { updatedBy: null, updatedAt: null },
+    gigOrdersRequired: { updatedBy: null, updatedAt: null },
+    gigRewardAmount: { updatedBy: null, updatedAt: null },
+  });
+
   // Update logs states
   const [updateLogs, setUpdateLogs] = useState({
     taxPercentageOnDeliveryFee: { updatedBy: null, updatedAt: null },
@@ -194,6 +229,69 @@ export default function AppControls() {
             updatedAt: data.xpressPerKmRate?.updatedAt
           },
         });
+        // Set GIG controls
+        setGigGstPercentage(data.gigGstPercentage?.value ?? 18);
+        setGigCodEnabled(data.gigCodEnabled?.value ?? true);
+        setGigUpiEnabled(data.gigUpiEnabled?.value ?? true);
+        setGigMaxDistanceKm(data.gigMaxDistanceKm?.value ?? 10);
+        setGigBaseDistanceKm(data.gigBaseDistanceKm?.value ?? 3);
+        setGigBasePrice(data.gigBasePrice?.value ?? 60);
+        setGigPerKmRate(data.gigPerKmRate?.value ?? 6);
+
+        // Set GIG surge pricing
+        setGigSurgeMultiplier(data.gigSurgeMultiplier?.value ?? 1);
+        setGigSurgeBonus(data.gigSurgeBonus?.value ?? 0);
+        // Set GIG incentives
+        setGigOrdersRequired(data.gigOrdersRequired?.value ?? 0);
+        setGigRewardAmount(data.gigRewardAmount?.value ?? 0);
+
+        // Set GIG update logs
+        setGigUpdateLogs({
+          gigGstPercentage: {
+            updatedBy: data.gigGstPercentage?.updatedBy,
+            updatedAt: data.gigGstPercentage?.updatedAt
+          },
+          gigCodEnabled: {
+            updatedBy: data.gigCodEnabled?.updatedBy,
+            updatedAt: data.gigCodEnabled?.updatedAt
+          },
+          gigUpiEnabled: {
+            updatedBy: data.gigUpiEnabled?.updatedBy,
+            updatedAt: data.gigUpiEnabled?.updatedAt
+          },
+          gigBaseDistanceKm: {
+            updatedBy: data.gigBaseDistanceKm?.updatedBy,
+            updatedAt: data.gigBaseDistanceKm?.updatedAt
+          },
+          gigMaxDistanceKm: {
+            updatedBy: data.gigMaxDistanceKm?.updatedBy,
+            updatedAt: data.gigMaxDistanceKm?.updatedAt
+          },
+          gigBasePrice: {
+            updatedBy: data.gigBasePrice?.updatedBy,
+            updatedAt: data.gigBasePrice?.updatedAt
+          },
+          gigPerKmRate: {
+            updatedBy: data.gigPerKmRate?.updatedBy,
+            updatedAt: data.gigPerKmRate?.updatedAt
+          },
+          gigSurgeMultiplier: {
+            updatedBy: data.gigSurgeMultiplier?.updatedBy,
+            updatedAt: data.gigSurgeMultiplier?.updatedAt
+          },
+          gigSurgeBonus: {
+            updatedBy: data.gigSurgeBonus?.updatedBy,
+            updatedAt: data.gigSurgeBonus?.updatedAt
+          },
+          gigOrdersRequired: {
+            updatedBy: data.gigOrdersRequired?.updatedBy,
+            updatedAt: data.gigOrdersRequired?.updatedAt
+          },
+          gigRewardAmount: {
+            updatedBy: data.gigRewardAmount?.updatedBy,
+            updatedAt: data.gigRewardAmount?.updatedAt
+          },
+        });
         
         // Set update logs for merchant controls
         setUpdateLogs({
@@ -234,10 +332,13 @@ export default function AppControls() {
           smallCartFee: data.smallCartFee?.value ?? 40,
           smallCartThreshold: data.smallCartThreshold?.value ?? 499,
           freeDeliveryThreshold: data.freeDeliveryThreshold?.value ?? 499,
-          cashOnDeliveryEnabled: data.cashOnDeliveryEnabled?.value ?? true,
-          groceryUpiEnabled: data.groceryUpiEnabled?.value ?? true,
+          gigPerKmRate: data.gigPerKmRate?.value ?? 6,
+          gigSurgeMultiplier: data.gigSurgeMultiplier?.value ?? 1,
+          gigSurgeBonus: data.gigSurgeBonus?.value ?? 0,
+          gigOrdersRequired: data.gigOrdersRequired?.value ?? 0,
+          gigRewardAmount: data.gigRewardAmount?.value ?? 0,
         });
-        
+
         // Store Xpress original values for cancel functionality
         setXpressOriginalValues({
           xpressGstPercentage: data.xpressGstPercentage?.value ?? 18,
@@ -246,6 +347,20 @@ export default function AppControls() {
           xpressBaseDistanceKm: data.xpressBaseDistanceKm?.value ?? 3,
           xpressBasePrice: data.xpressBasePrice?.value ?? 60,
           xpressPerKmRate: data.xpressPerKmRate?.value ?? 6,
+        });
+
+        // Set GIG original values for cancel functionality
+        setGigOriginalValues({
+          gigGstPercentage: data.gigGstPercentage?.value ?? 18,
+          gigCodEnabled: data.gigCodEnabled?.value ?? true,
+          gigMaxDistanceKm: data.gigMaxDistanceKm?.value ?? 10,
+          gigBaseDistanceKm: data.gigBaseDistanceKm?.value ?? 3,
+          gigBasePrice: data.gigBasePrice?.value ?? 60,
+          gigPerKmRate: data.gigPerKmRate?.value ?? 6,
+          gigSurgeMultiplier: data.gigSurgeMultiplier?.value ?? 1,
+          gigSurgeBonus: data.gigSurgeBonus?.value ?? 0,
+          gigOrdersRequired: data.gigOrdersRequired?.value ?? 0,
+          gigRewardAmount: data.gigRewardAmount?.value ?? 0,
         });
         
         setControlsLoaded(true);
@@ -352,6 +467,95 @@ export default function AppControls() {
     const success = await handleUpdateXpressControls();
     if (success) {
       setIsEditingXpress(false);
+    }
+  };
+
+  // GIG functions
+  const handleGigEdit = () => {
+    setGigOriginalValues({
+      gigGstPercentage,
+      gigCodEnabled,
+      gigUpiEnabled,
+      gigMaxDistanceKm,
+      gigBaseDistanceKm,
+      gigBasePrice,
+      gigPerKmRate,
+      gigSurgeMultiplier,
+      gigSurgeBonus,
+      gigOrdersRequired,
+      gigRewardAmount,
+    });
+    setIsEditingGig(true);
+  };
+
+  const handleGigCancel = () => {
+    setGigGstPercentage(gigOriginalValues.gigGstPercentage);
+    setGigCodEnabled(gigOriginalValues.gigCodEnabled);
+    setGigUpiEnabled(gigOriginalValues.gigUpiEnabled);
+    setGigMaxDistanceKm(gigOriginalValues.gigMaxDistanceKm);
+    setGigBaseDistanceKm(gigOriginalValues.gigBaseDistanceKm);
+    setGigBasePrice(gigOriginalValues.gigBasePrice);
+    setGigPerKmRate(gigOriginalValues.gigPerKmRate);
+    setGigSurgeMultiplier(gigOriginalValues.gigSurgeMultiplier);
+    setGigSurgeBonus(gigOriginalValues.gigSurgeBonus);
+    setGigOrdersRequired(gigOriginalValues.gigOrdersRequired);
+    setGigRewardAmount(gigOriginalValues.gigRewardAmount);
+    setIsEditingGig(false);
+  };
+
+  const handleGigSave = async () => {
+    const success = await handleUpdateGigControls();
+    if (success) {
+      setIsEditingGig(false);
+    }
+  };
+
+  const handleUpdateGigControls = async () => {
+    setGigLoading(true);
+    try {
+      const payload = {};
+      if (gigGstPercentage !== undefined && gigGstPercentage !== null && gigGstPercentage !== '') payload.gigGstPercentage = parseFloat(gigGstPercentage);
+      if (gigCodEnabled !== undefined) payload.gigCodEnabled = gigCodEnabled;
+      if (gigUpiEnabled !== undefined) payload.gigUpiEnabled = gigUpiEnabled;
+      if (gigMaxDistanceKm !== undefined && gigMaxDistanceKm !== null && gigMaxDistanceKm !== '') payload.gigMaxDistanceKm = parseFloat(gigMaxDistanceKm);
+      if (gigBaseDistanceKm !== undefined && gigBaseDistanceKm !== null && gigBaseDistanceKm !== '') payload.gigBaseDistanceKm = parseFloat(gigBaseDistanceKm);
+      if (gigBasePrice !== undefined && gigBasePrice !== null && gigBasePrice !== '') payload.gigBasePrice = parseFloat(gigBasePrice);
+      if (gigPerKmRate !== undefined && gigPerKmRate !== null && gigPerKmRate !== '') payload.gigPerKmRate = parseFloat(gigPerKmRate);
+      if (gigSurgeBonus !== undefined && gigSurgeBonus !== null && gigSurgeBonus !== '') payload.gigSurgeBonus = parseFloat(gigSurgeBonus);
+      if (gigSurgeMultiplier !== undefined && gigSurgeMultiplier !== null && gigSurgeMultiplier !== '') payload.gigSurgeMultiplier = parseFloat(gigSurgeMultiplier);
+      if (gigOrdersRequired !== undefined && gigOrdersRequired !== null && gigOrdersRequired !== '') payload.gigOrdersRequired = parseInt(gigOrdersRequired, 10);
+      if (gigRewardAmount !== undefined && gigRewardAmount !== null && gigRewardAmount !== '') payload.gigRewardAmount = parseFloat(gigRewardAmount);
+
+      const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/app-controls/gig-controls`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-version': VERSION,
+        },
+        credentials: 'include',
+        body: JSON.stringify(payload),
+      });
+
+      if (response.status === 401) {
+        navigate('/login', { replace: true });
+        return false;
+      }
+
+      const result = await response.json();
+      if (result.success) {
+        toast.success('GIG controls updated successfully');
+        await fetchAppControls();
+        return true;
+      } else {
+        toast.error(result.message || 'Failed to update GIG controls');
+        return false;
+      }
+    } catch (error) {
+      console.error('Error updating GIG controls:', error);
+      toast.error('Failed to update GIG controls');
+      return false;
+    } finally {
+      setGigLoading(false);
     }
   };
 
@@ -1700,6 +1904,190 @@ export default function AppControls() {
                   className="w-full sm:w-auto px-4 sm:px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-400 transition-colors text-sm font-medium"
                 >
                   {xpressLoading ? 'Saving...' : 'Save Changes'}
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+        {/* GIG Controls Panel */}
+        <div className="bg-white shadow-sm border border-gray-200 rounded-lg p-4 sm:p-6 mt-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+            <div>
+              <h2 className="text-lg sm:text-xl font-semibold text-gray-800">GIG Controls</h2>
+              <p className="text-gray-600 text-sm">Manage GIG delivery settings and earnings configuration</p>
+            </div>
+          </div>
+
+          <div className="mb-4">
+            <h3 className="text-md font-semibold text-gray-800">Earnings Configuration</h3>
+            <p className="text-gray-500 text-sm">Configure base pay and distance-based rates for GIG deliveries</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Base Pay */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Base Pay (₹)</label>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                value={gigBasePrice ?? ''}
+                onChange={(e) => setGigBasePrice(e.target.value)}
+                disabled={!isEditingGig}
+                className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm ${
+                  !isEditingGig ? 'bg-gray-50 cursor-not-allowed' : ''
+                }`}
+              />
+              <p className="text-xs text-gray-500 mt-1">Fixed base amount paid for the gig.</p>
+              <p className="text-xs text-blue-600 mt-1">{formatUpdateLog(gigUpdateLogs.gigBasePrice)}</p>
+            </div>
+
+            {/* Base Distance */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Base Distance (km)</label>
+              <input
+                type="number"
+                min="0"
+                step="0.1"
+                value={gigBaseDistanceKm ?? ''}
+                onChange={(e) => setGigBaseDistanceKm(e.target.value)}
+                disabled={!isEditingGig}
+                className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm ${
+                  !isEditingGig ? 'bg-gray-50 cursor-not-allowed' : ''
+                }`}
+              />
+              <p className="text-xs text-gray-500 mt-1">Distance covered by the base pay.</p>
+              <p className="text-xs text-blue-600 mt-1">{formatUpdateLog(gigUpdateLogs.gigBaseDistanceKm)}</p>
+            </div>
+
+            {/* Additional Rate per km */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Additional Rate per km (₹)</label>
+              <input
+                type="number"
+                min="0"
+                step="0.5"
+                value={gigPerKmRate ?? ''}
+                onChange={(e) => setGigPerKmRate(e.target.value)}
+                disabled={!isEditingGig}
+                className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm ${
+                  !isEditingGig ? 'bg-gray-50 cursor-not-allowed' : ''
+                }`}
+              />
+              <p className="text-xs text-gray-500 mt-1">Rate applied per km beyond the base distance.</p>
+              <p className="text-xs text-blue-600 mt-1">{formatUpdateLog(gigUpdateLogs.gigPerKmRate)}</p>
+            </div>
+          </div>
+
+          <div className="mb-4 mt-6">
+            <h3 className="text-md font-semibold text-gray-800">Surge Pricing</h3>
+            <p className="text-gray-500 text-sm">Configure surge multiplier and active time window</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Surge Bonus */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Surge Bonus (₹)</label>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                value={gigSurgeBonus ?? ''}
+                onChange={(e) => setGigSurgeBonus(e.target.value)}
+                disabled={!isEditingGig}
+                className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm ${
+                  !isEditingGig ? 'bg-gray-50 cursor-not-allowed' : ''
+                }`}
+              />
+              <p className="text-xs text-gray-500 mt-1">Flat bonus added to gig earnings during surge.</p>
+              <p className="text-xs text-blue-600 mt-1">{formatUpdateLog(gigUpdateLogs.gigSurgeBonus)}</p>
+            </div>
+
+            {/* Surge Multiplier */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Surge Multiplier</label>
+              <input
+                type="number"
+                min="0"
+                step="0.1"
+                value={gigSurgeMultiplier ?? ''}
+                onChange={(e) => setGigSurgeMultiplier(e.target.value)}
+                disabled={!isEditingGig}
+                className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm ${
+                  !isEditingGig ? 'bg-gray-50 cursor-not-allowed' : ''
+                }`}
+              />
+              <p className="text-xs text-gray-500 mt-1">Multiplier applied to gig earnings during surge.</p>
+              <p className="text-xs text-blue-600 mt-1">{formatUpdateLog(gigUpdateLogs.gigSurgeMultiplier)}</p>
+            </div>
+          </div>
+
+          <div className="mb-4 mt-6">
+            <h3 className="text-md font-semibold text-gray-800">Incentives</h3>
+            <p className="text-gray-500 text-sm">Configure completion criteria and reward amount</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Orders Required */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Orders Required</label>
+              <input
+                type="number"
+                min="0"
+                step="1"
+                value={gigOrdersRequired ?? ''}
+                onChange={(e) => setGigOrdersRequired(e.target.value)}
+                disabled={!isEditingGig}
+                className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm ${
+                  !isEditingGig ? 'bg-gray-50 cursor-not-allowed' : ''
+                }`}
+              />
+              <p className="text-xs text-gray-500 mt-1">Number of orders required to earn the reward.</p>
+              <p className="text-xs text-blue-600 mt-1">{formatUpdateLog(gigUpdateLogs.gigOrdersRequired)}</p>
+            </div>
+
+            {/* Reward Amount */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Reward Amount (₹)</label>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                value={gigRewardAmount ?? ''}
+                onChange={(e) => setGigRewardAmount(e.target.value)}
+                disabled={!isEditingGig}
+                className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm ${
+                  !isEditingGig ? 'bg-gray-50 cursor-not-allowed' : ''
+                }`}
+              />
+              <p className="text-xs text-gray-500 mt-1">Flat reward amount paid when criteria is met.</p>
+              <p className="text-xs text-blue-600 mt-1">{formatUpdateLog(gigUpdateLogs.gigRewardAmount)}</p>
+            </div>
+          </div>
+
+          {/* GIG Action Buttons */}
+          <div className="flex justify-end gap-3 pt-6">
+            {!isEditingGig ? (
+              <button
+                onClick={handleGigEdit}
+                className="w-full sm:w-auto px-4 sm:px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+              >
+                Edit GIG Controls
+              </button>
+            ) : (
+              <>
+                <button
+                  onClick={handleGigCancel}
+                  className="w-full sm:w-auto px-4 sm:px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors text-sm font-medium"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleGigSave}
+                  disabled={gigLoading}
+                  className="w-full sm:w-auto px-4 sm:px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-400 transition-colors text-sm font-medium"
+                >
+                  {gigLoading ? 'Saving...' : 'Save Changes'}
                 </button>
               </>
             )}
