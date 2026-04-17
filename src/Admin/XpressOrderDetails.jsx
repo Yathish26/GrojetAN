@@ -24,7 +24,7 @@ const XpressOrderDetails = () => {
   const [checkingUser, setCheckingUser] = useState(true);
   const [redirecting, setRedirecting] = useState(false);
   const [agents, setAgents] = useState([]);
-  const [assigningAgent, setAssigningAgent] = useState(false);
+  const [assigningAgent, setAssigningAgent] = useState({});
   const [showAgentsList, setShowAgentsList] = useState(false);
   const [directions, setDirections] = useState(null);
   const [agentToPickupDirections, setAgentToPickupDirections] = useState(null);
@@ -408,7 +408,8 @@ const XpressOrderDetails = () => {
     }
 
     try {
-      setAssigningAgent(true);
+      // mark this specific agent as assigning
+      setAssigningAgent(prev => ({ ...prev, [agentId]: true }));
       const response = await fetch(
         `${import.meta.env.VITE_SERVER}/admin/xpress/${id}/assign-agent`,
         {
@@ -438,7 +439,12 @@ const XpressOrderDetails = () => {
       console.error('Error assigning agent:', error);
       toast.error('Failed to assign agent');
     } finally {
-      setAssigningAgent(false);
+      // clear only this agent's assigning flag
+      setAssigningAgent(prev => {
+        const copy = { ...prev };
+        delete copy[agentId];
+        return copy;
+      });
     }
   };
 
@@ -1499,7 +1505,7 @@ const XpressOrderDetails = () => {
                           <div className="flex gap-2">
                             <button
                               onClick={fetchAgents}
-                              disabled={assigningAgent}
+                              disabled={Object.values(assigningAgent).some(Boolean)}
                               className="px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 disabled:opacity-50"
                             >
                               Refresh
@@ -1557,10 +1563,10 @@ const XpressOrderDetails = () => {
                                 </div>
                                 <button
                                   onClick={() => assignAgent(agent._id)}
-                                  disabled={assigningAgent}
+                                  disabled={Boolean(assigningAgent[agent._id])}
                                   className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
-                                  {assigningAgent ? 'Assigning...' : 'Assign'}
+                                  {assigningAgent[agent._id] ? 'Assigning...' : 'Assign'}
                                 </button>
                               </div>
                             ))}
