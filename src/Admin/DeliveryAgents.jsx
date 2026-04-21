@@ -190,7 +190,28 @@ const DeliveryAgents = () => {
           ? new Date(agent.authentication.deviceInfo.lastAppUpdate).toLocaleString('en-GB')
           : 'Not updated',
         'Last Location Update': agent.status?.currentLocation?.lastUpdated
-          ? new Date(agent.status.currentLocation.lastUpdated).toLocaleString('en-GB')
+          ? (() => {
+              let date;
+              const dateValue = agent.status.currentLocation.lastUpdated;
+              if (typeof dateValue === 'string' && dateValue.includes('+05:30')) {
+                date = new Date(dateValue.replace('+05:30', 'Z'));
+              } else {
+                date = new Date(dateValue);
+              }
+              return date.toLocaleString('en-GB');
+            })()
+          : 'Never',
+        'Last Online': agent.status?.lastOnline
+          ? (() => {
+              let date;
+              const dateValue = agent.status.lastOnline;
+              if (typeof dateValue === 'string' && dateValue.includes('+05:30')) {
+                date = new Date(dateValue.replace('+05:30', 'Z'));
+              } else {
+                date = new Date(dateValue);
+              }
+              return date.toLocaleString('en-GB');
+            })()
           : 'Never'
       }));
 
@@ -212,8 +233,7 @@ const DeliveryAgents = () => {
         { wch: 14 },
         { wch: 16 },
         { wch: 14 },
-        { wch: 22 },
-        { wch: 22 }
+        { wch: 22 },        { wch: 22 },        { wch: 22 }
       ];
 
       const workbook = XLSX.utils.book_new();
@@ -306,14 +326,25 @@ const DeliveryAgents = () => {
   const formatDateTimeWithAmPm = (dateValue) => {
     if (!dateValue) return 'Never';
 
-    return new Date(dateValue).toLocaleString('en-GB', {
+    // Handle IST ISO strings (e.g., "2026-04-16T22:32:48.203+05:30")
+    // or regular date objects from database
+    let date;
+    if (typeof dateValue === 'string' && dateValue.includes('+05:30')) {
+      // Parse IST ISO string by removing the +05:30 and treating as UTC
+      date = new Date(dateValue.replace('+05:30', 'Z'));
+    } else {
+      date = new Date(dateValue);
+    }
+
+    return date.toLocaleString('en-GB', {
       day: '2-digit',
       month: '2-digit',
       year: 'numeric',
       hour: '2-digit',
       minute: '2-digit',
       second: '2-digit',
-      hour12: true
+      hour12: true,
+      timeZone: 'Asia/Kolkata'
     });
   };
 
@@ -689,7 +720,7 @@ const DeliveryAgents = () => {
                           App Version
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Last Updated
+                          Last Online
                         </th>
                       </tr>
                     </thead>
@@ -775,8 +806,8 @@ const DeliveryAgents = () => {
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="text-sm text-gray-900">
-                              {agent.status.currentLocation?.lastUpdated ?
-                                formatDateTimeWithAmPm(agent.status.currentLocation.lastUpdated) :
+                              {agent.status.lastOnline ?
+                                formatDateTimeWithAmPm(agent.status.lastOnline) :
                                 'Never'
                               }
                             </div>
@@ -869,10 +900,10 @@ const DeliveryAgents = () => {
 
                             <div className="mb-3">
                               <div className="text-xs">
-                                <span className="text-gray-500">Last Updated:</span>
+                                <span className="text-gray-500">Last Online:</span>
                                 <div className="font-medium text-gray-900">
-                                  {agent.status.currentLocation?.lastUpdated ?
-                                    formatDateTimeWithAmPm(agent.status.currentLocation.lastUpdated) :
+                                  {agent.status.lastOnline ?
+                                    formatDateTimeWithAmPm(agent.status.lastOnline) :
                                     'Never'
                                   }
                                 </div>

@@ -207,6 +207,7 @@ const Layout = ({ children, title }) => {
     { name: 'Home Ads', icon: Smartphone, path: '/home-ads', roles: ['super_admin', 'admin'] },
     { name: 'Analytics', icon: BarChart3, path: '/analytics', roles: ['super_admin', 'admin'] },
     { name: 'Finance', icon: IndianRupeeIcon, path: '/finance', roles: ['super_admin', 'admin'] },
+    { name: 'Gig Wallet', icon: DollarSign, path: '/gig-wallet', roles: ['super_admin', 'admin'] },
     { name: 'App Controls', icon: TabletSmartphone, path: '/app-controls', roles: ['super_admin', 'admin'] },
     { name: 'Bug Reports', icon: Bug, path: '/bug-reports', roles: ['super_admin'] },
     { name: 'S3 Media Manager', icon: Package, path: '/s3-store', roles: ['super_admin'] },

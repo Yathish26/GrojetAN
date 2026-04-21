@@ -83,6 +83,8 @@ export default function AppControls() {
   // GIG incentives states
   const [gigOrdersRequired, setGigOrdersRequired] = useState(null);
   const [gigRewardAmount, setGigRewardAmount] = useState(null);
+  // GIG withdrawals states
+  const [gigMinWithdrawalAmount, setGigMinWithdrawalAmount] = useState(null);
 
   // GIG editing states
   const [isEditingGig, setIsEditingGig] = useState(false);
@@ -102,6 +104,7 @@ export default function AppControls() {
     gigSurgeBonus: { updatedBy: null, updatedAt: null },
     gigOrdersRequired: { updatedBy: null, updatedAt: null },
     gigRewardAmount: { updatedBy: null, updatedAt: null },
+    gigMinWithdrawalAmount: { updatedBy: null, updatedAt: null },
   });
 
   // Update logs states
@@ -244,6 +247,8 @@ export default function AppControls() {
         // Set GIG incentives
         setGigOrdersRequired(data.gigOrdersRequired?.value ?? 0);
         setGigRewardAmount(data.gigRewardAmount?.value ?? 0);
+        // Set GIG withdrawals
+        setGigMinWithdrawalAmount(data.gigMinWithdrawalAmount?.value ?? 100);
 
         // Set GIG update logs
         setGigUpdateLogs({
@@ -290,6 +295,10 @@ export default function AppControls() {
           gigRewardAmount: {
             updatedBy: data.gigRewardAmount?.updatedBy,
             updatedAt: data.gigRewardAmount?.updatedAt
+          },
+          gigMinWithdrawalAmount: {
+            updatedBy: data.gigMinWithdrawalAmount?.updatedBy,
+            updatedAt: data.gigMinWithdrawalAmount?.updatedAt
           },
         });
         
@@ -484,6 +493,7 @@ export default function AppControls() {
       gigSurgeBonus,
       gigOrdersRequired,
       gigRewardAmount,
+      gigMinWithdrawalAmount,
     });
     setIsEditingGig(true);
   };
@@ -500,6 +510,7 @@ export default function AppControls() {
     setGigSurgeBonus(gigOriginalValues.gigSurgeBonus);
     setGigOrdersRequired(gigOriginalValues.gigOrdersRequired);
     setGigRewardAmount(gigOriginalValues.gigRewardAmount);
+    setGigMinWithdrawalAmount(gigOriginalValues.gigMinWithdrawalAmount);
     setIsEditingGig(false);
   };
 
@@ -525,6 +536,7 @@ export default function AppControls() {
       if (gigSurgeMultiplier !== undefined && gigSurgeMultiplier !== null && gigSurgeMultiplier !== '') payload.gigSurgeMultiplier = parseFloat(gigSurgeMultiplier);
       if (gigOrdersRequired !== undefined && gigOrdersRequired !== null && gigOrdersRequired !== '') payload.gigOrdersRequired = parseInt(gigOrdersRequired, 10);
       if (gigRewardAmount !== undefined && gigRewardAmount !== null && gigRewardAmount !== '') payload.gigRewardAmount = parseFloat(gigRewardAmount);
+      if (gigMinWithdrawalAmount !== undefined && gigMinWithdrawalAmount !== null && gigMinWithdrawalAmount !== '') payload.gigMinWithdrawalAmount = parseFloat(gigMinWithdrawalAmount);
 
       const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/app-controls/gig-controls`, {
         method: 'PUT',
@@ -1350,6 +1362,7 @@ export default function AppControls() {
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
               >
                 <option value="Homescreen">Homescreen</option>
+                <option value="Homescreen/Market">Homescreen/Market</option>
                 <option value="Stores">Stores</option>
                 <option value="Xpress">Xpress Screen</option>
                 <option value="Orders">Orders</option>
@@ -2027,7 +2040,7 @@ export default function AppControls() {
             <p className="text-gray-500 text-sm">Configure completion criteria and reward amount</p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Orders Required */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Orders Required</label>
@@ -2065,12 +2078,35 @@ export default function AppControls() {
             </div>
           </div>
 
+          <div className="mb-4 mt-6">
+            <h3 className="text-md font-semibold text-gray-800">Withdrawals</h3>
+            <p className="text-gray-500 text-sm">Configure minimum withdrawal amount for GIG workers</p>
+          </div>
+
+          {/* Minimum Withdrawal Amount */}
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">Minimum Withdrawal Amount (₹)</label>
+            <input
+              type="number"
+              min="0"
+              step="1"
+              value={gigMinWithdrawalAmount ?? ''}
+              onChange={(e) => setGigMinWithdrawalAmount(e.target.value)}
+              disabled={!isEditingGig}
+              className={`w-full max-w-xs px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm ${
+                !isEditingGig ? 'bg-gray-50 cursor-not-allowed' : ''
+              }`}
+            />
+            <p className="text-xs text-gray-500 mt-1">Minimum amount required for withdrawal requests.</p>
+            <p className="text-xs text-blue-600 mt-1">{formatUpdateLog(gigUpdateLogs.gigMinWithdrawalAmount)}</p>
+          </div>
+
           {/* GIG Action Buttons */}
           <div className="flex justify-end gap-3 pt-6">
             {!isEditingGig ? (
               <button
                 onClick={handleGigEdit}
-                className="w-full sm:w-auto px-4 sm:px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
               >
                 Edit GIG Controls
               </button>
@@ -2078,14 +2114,14 @@ export default function AppControls() {
               <>
                 <button
                   onClick={handleGigCancel}
-                  className="w-full sm:w-auto px-4 sm:px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors text-sm font-medium"
+                  className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors text-sm font-medium"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleGigSave}
                   disabled={gigLoading}
-                  className="w-full sm:w-auto px-4 sm:px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-400 transition-colors text-sm font-medium"
+                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-400 transition-colors text-sm font-medium"
                 >
                   {gigLoading ? 'Saving...' : 'Save Changes'}
                 </button>

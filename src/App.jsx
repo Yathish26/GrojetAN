@@ -19,6 +19,7 @@ import RidersZone from './Admin/RidersZone.jsx'
 import DeliveryZones from './Admin/DeliveryZones.jsx'
 import Analytics from './Admin/Analytics.jsx'
 import Finance from './Admin/Finance.jsx'
+import GigWallet from './Admin/GigWallet.jsx'
 import AdminManagement from './Admin/AdminManagement.jsx'
 import Profile from './Admin/Profile.jsx'
 import Settings from './Admin/Settings.jsx'
@@ -168,6 +169,7 @@ function App() {
             {/* Analytics & Reports */}
             <Route path="/analytics" element={<Analytics />} />
             <Route path="/finance" element={<Finance />} />
+            <Route path="/gig-wallet" element={<GigWallet />} />
 
             {/* Admin Management (Super Admin only) */}
             <Route path="/admin-management" element={<AdminManagement />} />

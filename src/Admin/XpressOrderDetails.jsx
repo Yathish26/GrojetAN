@@ -29,7 +29,6 @@ const XpressOrderDetails = () => {
   const [directions, setDirections] = useState(null);
   const [agentToPickupDirections, setAgentToPickupDirections] = useState(null);
   const [agentToDropDirections, setAgentToDropDirections] = useState(null);
-  const [agentEarnings, setAgentEarnings] = useState('');
   const [refreshingStatus, setRefreshingStatus] = useState(false);
   const [refreshingOrder, setRefreshingOrder] = useState(false);
   const [verifyingPayment, setVerifyingPayment] = useState(false);
@@ -42,6 +41,9 @@ const XpressOrderDetails = () => {
   const [cancelReason, setCancelReason] = useState('');
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteConfirmationText, setDeleteConfirmationText] = useState('');
+  const [appControls, setAppControls] = useState(null);
+  const [calculatedEarnings, setCalculatedEarnings] = useState(0);
+  const [distance, setDistance] = useState(5); // default 5km
   const searchInputRef = useRef(null);
   const autocompleteRef = useRef(null);
   const socketRef = useRef(null);
@@ -396,16 +398,12 @@ const XpressOrderDetails = () => {
   };
 
   const assignAgent = async (agentId) => {
-    if (!agentEarnings || agentEarnings.trim() === '') {
-      toast.error('Please enter earnings amount for the delivery agent');
+    if (calculatedEarnings <= 0) {
+      toast.error('Earnings amount could not be calculated. Please check app controls.');
       return;
     }
 
-    const earningsAmount = parseFloat(agentEarnings);
-    if (isNaN(earningsAmount) || earningsAmount <= 0) {
-      toast.error('Please enter a valid earnings amount');
-      return;
-    }
+    const earningsAmount = calculatedEarnings;
 
     try {
       // mark this specific agent as assigning
@@ -429,7 +427,6 @@ const XpressOrderDetails = () => {
         const data = await response.json();
         setOrder(data.order);
         setShowAgentsList(false);
-        setAgentEarnings('');
         toast.success('Agent assigned successfully');
       } else {
         const data = await response.json();
@@ -464,6 +461,38 @@ const XpressOrderDetails = () => {
       });
     } catch (err) {
       console.error('Failed to create log:', err);
+    }
+  };
+
+  const fetchAppControls = async () => {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/app-controls/gig-controls`, {
+        credentials: 'include'
+      });
+      const data = await response.json();
+      if (data.success) {
+        // Calculate earnings based on distance
+        const gigBasePrice = data.data?.gigBasePrice || 60;
+        const gigPerKmRate = data.data?.gigPerKmRate || 6;
+        const calculated = gigBasePrice + (gigPerKmRate * distance);
+        setCalculatedEarnings(calculated);
+        // Store the values for display
+        setAppControls({
+          gigBasePrice: { value: gigBasePrice },
+          gigPerKmRate: { value: gigPerKmRate }
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching app controls:', error);
+      // Fallback to default values
+      const gigBasePrice = 60;
+      const gigPerKmRate = 6;
+      const calculated = gigBasePrice + (gigPerKmRate * distance);
+      setCalculatedEarnings(calculated);
+      setAppControls({
+        gigBasePrice: { value: gigBasePrice },
+        gigPerKmRate: { value: gigPerKmRate }
+      });
     }
   };
 
@@ -511,8 +540,21 @@ const XpressOrderDetails = () => {
   useEffect(() => {
     if (currentUser && id) {
       fetchOrderDetails();
+      fetchAppControls();
     }
   }, [currentUser, id]);
+
+  useEffect(() => {
+    if (order?.pricing?.distance) {
+      setDistance(order.pricing.distance);
+    }
+  }, [order?.pricing?.distance]);
+
+  useEffect(() => {
+    if (distance > 0) {
+      fetchAppControls();
+    }
+  }, [distance]);
 
   // Seed agent location once on load (REST) so marker appears even before socket events arrive
   const seedAgentLocation = useCallback(async () => {
@@ -1519,20 +1561,19 @@ const XpressOrderDetails = () => {
                           </div>
                         </div>
 
-                        {/* Delivery Agent Earnings Input */}
+                        {/* Delivery Agent Earnings Display */}
                         <div className="mb-4">
                           <label className="block text-sm font-medium text-gray-700 mb-2">
                             Delivery Agent Earnings (₹)
                           </label>
-                          <input
-                            type="number"
-                            value={agentEarnings}
-                            onChange={(e) => setAgentEarnings(e.target.value)}
-                            placeholder="Enter earnings amount"
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            min="0"
-                            step="0.01"
-                          />
+                          <div className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50">
+                            <span className="text-lg font-semibold text-green-600">
+                              ₹{calculatedEarnings.toFixed(2)}
+                            </span>
+                            <span className="text-sm text-gray-500 ml-2">
+                              (Auto-calculated: Base ₹{appControls?.gigBasePrice?.value || 60} + ₹{appControls?.gigPerKmRate?.value || 6} × {(order?.pricing?.distance || 5).toFixed(1)}km)
+                            </span>
+                          </div>
                         </div>
 
                         {agents.length === 0 ? (
@@ -1823,6 +1864,7 @@ const XpressOrderDetails = () => {
                 Order Timeline
               </h2>
               <div className="space-y-4">
+                {/* Order Placed */}
                 <div className="flex items-center">
                   <div className={`w-3 h-3 rounded-full mr-3 ${order.status === 'pending' ? 'bg-yellow-500' : 'bg-green-500'}`}></div>
                   <div>
@@ -1831,6 +1873,78 @@ const XpressOrderDetails = () => {
                   </div>
                 </div>
 
+                {/* Assignment History */}
+                {order.assignmentHistory && order.assignmentHistory.length > 0 && (
+                  <>
+                    {order.assignmentHistory
+                      .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp))
+                      .map((event, index) => (
+                        <div key={index} className="flex items-start">
+                          <div className={`w-3 h-3 rounded-full mr-3 mt-1 ${
+                            event.status === 'assigned' ? 'bg-blue-500' :
+                            event.status === 'accepted' ? 'bg-green-500' :
+                            event.status === 'rejected' ? 'bg-red-500' :
+                            'bg-gray-500'
+                          }`}></div>
+                          <div className="flex-1">
+                            <p className="text-sm font-medium text-gray-900">
+                              {event.status === 'assigned' && `Agent Assigned: ${event.agent?.personalInfo?.firstName || event.agentName || 'Unknown Agent'} ${event.agent?.personalInfo?.lastName || ''}`.trim()}
+                              {event.status === 'accepted' && `Assignment Accepted by ${event.agent?.personalInfo?.firstName || event.agentName || 'Unknown Agent'} ${event.agent?.personalInfo?.lastName || ''}`.trim()}
+                              {event.status === 'rejected' && `Assignment Rejected by ${event.agent?.personalInfo?.firstName || event.agentName || 'Unknown Agent'} ${event.agent?.personalInfo?.lastName || ''}`.trim()}
+                              {event.status === 'cancelled' && `Assignment Cancelled for ${event.agent?.personalInfo?.firstName || event.agentName || 'Unknown Agent'} ${event.agent?.personalInfo?.lastName || ''}`.trim()}
+                              {event.status === 'expired' && `Assignment Expired for ${event.agent?.personalInfo?.firstName || event.agentName || 'Unknown Agent'} ${event.agent?.personalInfo?.lastName || ''}`.trim()}
+                            </p>
+                            <p className="text-xs text-gray-500 mb-1">{formatDateTime(event.timestamp)}</p>
+                            {event.assignedBy?.name && event.status === 'assigned' && (
+                              <p className="text-xs text-gray-600">
+                                <span className="font-medium">Assigned by:</span> {event.assignedBy.name}
+                              </p>
+                            )}
+                            {event.rejectionReason && event.status === 'rejected' && (
+                              <p className="text-xs text-red-600">
+                                <span className="font-medium">Reason:</span> {event.rejectionReason}
+                              </p>
+                            )}
+                            {event.notes && (
+                              <p className="text-xs text-gray-600 italic">{event.notes}</p>
+                            )}
+                          </div>
+                        </div>  
+                      ))}
+                  </>
+                )}
+
+                {/* Current Assignment Status */}
+                {order.assignment?.agent && !order.assignmentHistory?.some(h => h.status === 'accepted') && (
+                  <div className="flex items-start">
+                    <div className={`w-3 h-3 rounded-full mr-3 mt-1 ${
+                      order.assignment.status === 'pending' ? 'bg-yellow-500' :
+                      order.assignment.status === 'accepted' ? 'bg-green-500' :
+                      order.assignment.status === 'rejected' ? 'bg-red-500' :
+                      'bg-gray-500'
+                    }`}></div>
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-gray-900">
+                        Agent Assigned: {order.assignment.agent.personalInfo?.firstName} {order.assignment.agent.personalInfo?.lastName || ''}
+                      </p>
+                      <p className="text-xs text-gray-500 mb-1">
+                        {order.assignment.assignedAt ? formatDateTime(order.assignment.assignedAt) : 'Recently assigned'}
+                      </p>
+                      <p className="text-xs text-gray-600">
+                        Status: {order.assignment.status === 'pending' ? 'Waiting for acceptance' :
+                                order.assignment.status === 'accepted' ? 'Accepted' :
+                                order.assignment.status === 'rejected' ? 'Rejected' : order.assignment.status}
+                      </p>
+                      {order.assignment.status === 'rejected' && order.assignment.rejectionReason && (
+                        <p className="text-xs text-red-600 mt-1">
+                          <span className="font-medium">Reason:</span> {order.assignment.rejectionReason}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Status-based Timeline Events */}
                 {['picked_up', 'in_transit', 'delivered'].includes(order.status) && (
                   <div className="flex items-center">
                     <div className={`w-3 h-3 rounded-full mr-3 ${order.status === 'picked_up' ? 'bg-blue-500' : 'bg-green-500'}`}></div>
@@ -1882,7 +1996,7 @@ const XpressOrderDetails = () => {
                         </p>
                       )}
                       {order.cancellation?.reason && (
-                        <p className="text-xs text-gray -600">
+                        <p className="text-xs text-gray-600">
                           <span className="font-medium">Reason:</span> {order.cancellation.reason}
                         </p>
                       )}

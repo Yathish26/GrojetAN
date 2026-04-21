@@ -1461,6 +1461,7 @@ export default function UserData() {
                   disabled={sendingNotification}
                 >
                   <option value="Homescreen">Homescreen</option>
+                  <option value="Homescreen/Market">Homescreen/Market</option>
                   <option value="Stores">Stores</option>
                   <option value="Xpress">Xpress Screen</option>
                   <option value="Orders">Orders</option>

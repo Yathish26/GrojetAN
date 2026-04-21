@@ -112,7 +112,9 @@ export default function OrderDetails() {
   const [assigningAgentId, setAssigningAgentId] = useState(null);
   const [showAgentAssignment, setShowAgentAssignment] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [agentEarnings, setAgentEarnings] = useState('');
+  const [calculatedEarnings, setCalculatedEarnings] = useState(0);
+  const [appControls, setAppControls] = useState(null);
+  const [distance, setDistance] = useState(5); // default 5km
   const [directions, setDirections] = useState(null);
   const [verifyingPayment, setVerifyingPayment] = useState(false);
   const [paymentVerificationMeta, setPaymentVerificationMeta] = useState(null);
@@ -165,19 +167,38 @@ export default function OrderDetails() {
         },
         travelMode: window.google.maps.TravelMode.DRIVING,
       },
-      (result, status) => {
-        if (status === window.google.maps.DirectionsStatus.OK) {
-          setDirections(result);
-        } else {
-          console.error('Directions request failed:', status);
+        (result, status) => {
+          if (status === window.google.maps.DirectionsStatus.OK) {
+            setDirections(result);
+
+            const routeDistanceKm = result?.routes?.[0]?.legs?.[0]?.distance?.value;
+            if (typeof routeDistanceKm === 'number' && !Number.isNaN(routeDistanceKm)) {
+              setDistance(routeDistanceKm / 1000);
+            }
+          } else {
+            console.error('Directions request failed:', status);
+          }
         }
-      }
     );
   };
 
   useEffect(() => {
     checkUser();
   }, []);
+
+    useEffect(() => {
+      const orderDistance = order?.pricing?.distance ?? order?.deliveryInfo?.distance;
+
+      if (typeof orderDistance === 'number' && !Number.isNaN(orderDistance) && orderDistance > 0) {
+        setDistance(orderDistance);
+      }
+    }, [order?.pricing?.distance, order?.deliveryInfo?.distance]);
+
+  useEffect(() => {
+    if (currentUser) {
+      fetchAppControls();
+    }
+  }, [currentUser, distance]);
 
   useEffect(() => {
     fetchOrderDetails();
@@ -234,6 +255,11 @@ export default function OrderDetails() {
 
       setOrder(data.order);
 
+      const orderDistance = data.order?.pricing?.distance ?? data.order?.deliveryInfo?.distance;
+      if (typeof orderDistance === 'number' && !Number.isNaN(orderDistance) && orderDistance > 0) {
+        setDistance(orderDistance);
+      }
+
       // Calculate directions after order is loaded
       if (data.order?.merchantLandmark?.address?.coordinates && data.order?.deliveryAddress?.coordinates) {
         calculateDirections(data.order.merchantLandmark.address.coordinates, data.order.deliveryAddress.coordinates);
@@ -250,6 +276,38 @@ export default function OrderDetails() {
     setIsRefreshing(true);
     await fetchOrderDetails();
     setIsRefreshing(false);
+  };
+
+  const fetchAppControls = async () => {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/app-controls/gig-controls`, {
+        credentials: 'include'
+      });
+      const data = await response.json();
+      if (data.success) {
+        // Calculate earnings based on distance
+        const gigBasePrice = data.data?.gigBasePrice || 60;
+        const gigPerKmRate = data.data?.gigPerKmRate || 6;
+        const calculated = gigBasePrice + (gigPerKmRate * distance);
+        setCalculatedEarnings(calculated);
+        // Store the values for display
+        setAppControls({
+          gigBasePrice: { value: gigBasePrice },
+          gigPerKmRate: { value: gigPerKmRate }
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching app controls:', error);
+      // Fallback to default values
+      const gigBasePrice = 60;
+      const gigPerKmRate = 6;
+      const calculated = gigBasePrice + (gigPerKmRate * distance);
+      setCalculatedEarnings(calculated);
+      setAppControls({
+        gigBasePrice: { value: gigBasePrice },
+        gigPerKmRate: { value: gigPerKmRate }
+      });
+    }
   };
 
   const verifyPaymentStatus = async () => {
@@ -333,16 +391,12 @@ export default function OrderDetails() {
   };
 
   const assignDeliveryAgent = async (agentId) => {
-    if (!agentEarnings || agentEarnings.trim() === '') {
-      toast.error('Please enter earnings amount for the delivery agent');
+    if (calculatedEarnings <= 0) {
+      toast.error('Earnings amount could not be calculated. Please check app controls.');
       return;
     }
 
-    const earningsAmount = parseFloat(agentEarnings);
-    if (isNaN(earningsAmount) || earningsAmount <= 0) {
-      toast.error('Please enter a valid earnings amount');
-      return;
-    }
+    const earningsAmount = calculatedEarnings;
 
     setAssigningAgentId(agentId);
     try {
@@ -370,7 +424,6 @@ export default function OrderDetails() {
 
       setOrder(data.order);
       setShowAgentAssignment(false);
-      setAgentEarnings('');
       toast.success('Delivery agent assigned successfully');
     } catch (err) {
       toast.error(err.message);
@@ -1419,9 +1472,6 @@ export default function OrderDetails() {
                           if (!showAgentAssignment && deliveryAgents.length === 0) {
                             fetchDeliveryAgents();
                           }
-                          if (!showAgentAssignment) {
-                            setAgentEarnings('');
-                          }
                         }}
                         className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-none hover:bg-blue-700 transition-colors"
                       >
@@ -1487,15 +1537,14 @@ export default function OrderDetails() {
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Delivery Agent Earnings (₹)
                     </label>
-                    <input
-                      type="number"
-                      value={agentEarnings}
-                      onChange={(e) => setAgentEarnings(e.target.value)}
-                      placeholder="Enter earnings amount"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      min="0"
-                      step="0.01"
-                    />
+                    <div className="w-full px-3 py-2 border border-gray-300 rounded-none bg-gray-50">
+                      <span className="text-lg font-semibold text-green-600">
+                        ₹{calculatedEarnings.toFixed(2)}
+                      </span>
+                      <span className="text-sm text-gray-500 ml-2">
+                        (Auto-calculated: Base ₹{appControls?.gigBasePrice?.value || 60} + ₹{appControls?.gigPerKmRate?.value || 6} × {distance.toFixed(1)}km)
+                      </span>
+                    </div>
                   </div>
                   {loadingAgents ? (
                     <div className="text-center py-8">

@@ -30,7 +30,10 @@ import {
   LogOut,
   Download,
   Smartphone,
-  Copy
+  Copy,
+  CreditCard,
+  CheckCircle,
+  Wallet,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { GoogleMap, Marker } from '../Components/GoogleMapComponents';
@@ -70,6 +73,16 @@ export default function DeliveryAgentDetails() {
   const [ratings, setRatings] = useState([]);
   const [ratingsLoading, setRatingsLoading] = useState(false);
   const [ratingsPagination, setRatingsPagination] = useState({
+    page: 1,
+    limit: 10,
+    total: 0,
+    totalPages: 1
+  });
+  const [earningsHistory, setEarningsHistory] = useState([]);
+  const [earningsLoading, setEarningsLoading] = useState(false);
+  const [withdrawalsHistory, setWithdrawalsHistory] = useState([]);
+  const [withdrawalsLoading, setWithdrawalsLoading] = useState(false);
+  const [withdrawalsPagination, setWithdrawalsPagination] = useState({
     page: 1,
     limit: 10,
     total: 0,
@@ -182,6 +195,8 @@ export default function DeliveryAgentDetails() {
     fetchAgentStats();
     fetchDeliveryZones();
     fetchAgentRatings();
+    fetchEarningsHistory();
+    fetchWithdrawalsHistory();
   }, []);
 
   const fetchAgentDetails = async () => {
@@ -312,6 +327,54 @@ export default function DeliveryAgentDetails() {
       console.error('Failed to fetch agent ratings:', err);
     } finally {
       setRatingsLoading(false);
+    }
+  };
+
+  const fetchEarningsHistory = async () => {
+    setEarningsLoading(true);
+    try {
+      const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/delivery-agents/${id}/earnings-history`, {
+        credentials: 'include'
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.tokenValid === false) {
+          navigate('/login', { replace: true });
+          return;
+        }
+        setEarningsHistory(data.earningsHistory || []);
+      }
+    } catch (err) {
+      console.error('Failed to fetch earnings history:', err);
+    } finally {
+      setEarningsLoading(false);
+    }
+  };
+
+  const fetchWithdrawalsHistory = async (page = 1) => {
+    setWithdrawalsLoading(true);
+    try {
+      const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/analytics/gigwithdrawals/agent/${id}?page=${page}&limit=${withdrawalsPagination.limit}`, {
+        credentials: 'include'
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          setWithdrawalsHistory(data.withdrawals || []);
+          setWithdrawalsPagination({
+            ...withdrawalsPagination,
+            page: data.pagination.currentPage,
+            total: data.pagination.totalWithdrawals,
+            totalPages: data.pagination.totalPages
+          });
+        }
+      }
+    } catch (err) {
+      console.error('Failed to fetch withdrawals history:', err);
+    } finally {
+      setWithdrawalsLoading(false);
     }
   };
 
@@ -1094,6 +1157,7 @@ export default function DeliveryAgentDetails() {
       { Field: 'Push Token', Value: agent.authentication?.deviceInfo?.pushToken || 'N/A' },
       { Field: 'Device Last Activity', Value: agent.authentication?.deviceInfo?.lastActivity ? formatISTTime(agent.authentication.deviceInfo.lastActivity) : 'N/A' },
       { Field: 'Last Login', Value: agent.authentication?.lastLogin ? formatISTTime(agent.authentication.lastLogin) : 'N/A' },
+      { Field: 'Last Logout', Value: agent.authentication?.lastLogout ? formatISTTime(agent.authentication.lastLogout) : 'N/A' },
       { Field: 'Created At', Value: agent.createdAt ? formatISTTime(agent.createdAt) : 'N/A' },
       { Field: 'Last Updated', Value: agent.updatedAt ? formatISTTime(agent.updatedAt) : 'N/A' },
       { Field: 'Current Latitude', Value: agentLocations[id]?.latitude || agent.status?.currentLocation?.latitude || 'N/A' },
@@ -1582,6 +1646,12 @@ export default function DeliveryAgentDetails() {
                     {formatISTTime(agent.createdAt).split(',')[0]}
                   </p>
                 </div>
+                <div>
+                  <label className="text-sm text-gray-500">Last Online</label>
+                  <p className="font-medium text-gray-800">
+                    {agent.status.lastOnline ? formatISTTime(agent.status.lastOnline) : 'N/A'}
+                  </p>
+                </div>
               </div>
             </div>
           </div>
@@ -1646,6 +1716,14 @@ export default function DeliveryAgentDetails() {
                   <p className="font-medium text-gray-800">
                     {agent.authentication?.lastLogin ? 
                       formatISTTime(agent.authentication.lastLogin) : 
+                      'N/A'}
+                  </p>
+                </div>
+                <div>
+                  <label className="text-sm text-gray-500">Last Logout</label>
+                  <p className="font-medium text-gray-800">
+                    {agent.authentication?.lastLogout ? 
+                      formatISTTime(agent.authentication.lastLogout) : 
                       'N/A'}
                   </p>
                 </div>
@@ -1756,7 +1834,186 @@ export default function DeliveryAgentDetails() {
             </div>
           </div>
 
-          {/* Current Location - Always visible for monitoring */}
+          {/* Earnings History */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+            <div className="p-6 border-b border-gray-200">
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                  <DollarSign className="w-5 h-5" />
+                  Earnings History
+                </h2>
+                <button
+                  onClick={fetchEarningsHistory}
+                  disabled={earningsLoading}
+                  className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-lg transition-colors disabled:opacity-50"
+                  title="Refresh earnings"
+                >
+                  <RefreshCw className={`w-4 h-4 ${earningsLoading ? 'animate-spin' : ''}`} />
+                </button>
+              </div>
+            </div>
+            <div className="p-6">
+              {earningsLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
+                  <span className="ml-3 text-gray-600">Loading earnings...</span>
+                </div>
+              ) : earningsHistory.length > 0 ? (
+                <div className="space-y-4">
+                  {earningsHistory.map((earning, index) => (
+                    <div key={index} className="border border-gray-200 rounded-lg p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                          <div className={`w-3 h-3 rounded-full ${
+                            earning.type === 'delivery' ? 'bg-blue-500' : 'bg-green-500'
+                          }`}></div>
+                          <span className="text-sm font-medium text-gray-900 capitalize">
+                            {earning.type} Order
+                          </span>
+                        </div>
+                        <span className="text-sm font-semibold text-green-600">
+                          ₹{earning.amount}
+                        </span>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <Package className="w-4 h-4 text-gray-400" />
+                          <span className="text-sm text-gray-700">
+                            Order #{earning.orderNumber || earning.orderId}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Clock className="w-4 h-4 text-gray-400" />
+                          <span className="text-sm text-gray-700">
+                            {formatISTTime(earning.timestamp)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <DollarSign className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                  <p className="text-sm text-gray-500">No earnings yet</p>
+                  <p className="text-xs text-gray-400 mt-1">Earnings will appear here once the agent completes deliveries</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Withdrawal History */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+            <div className="p-6 border-b border-gray-200">
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                  <Wallet className="w-5 h-5" />
+                  Withdrawal History
+                </h2>
+                <button
+                  onClick={() => fetchWithdrawalsHistory(1)}
+                  disabled={withdrawalsLoading}
+                  className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-lg transition-colors disabled:opacity-50"
+                  title="Refresh withdrawals"
+                >
+                  <RefreshCw className={`w-4 h-4 ${withdrawalsLoading ? 'animate-spin' : ''}`} />
+                </button>
+              </div>
+            </div>
+            <div className="p-6">
+              {withdrawalsLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
+                  <span className="ml-3 text-gray-600">Loading withdrawals...</span>
+                </div>
+              ) : withdrawalsHistory.length > 0 ? (
+                <div className="space-y-4">
+                  {withdrawalsHistory.map((withdrawal) => (
+                    <div key={withdrawal._id} className="border border-gray-200 rounded-lg p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                          <div className={`w-3 h-3 rounded-full ${
+                            withdrawal.status === 'completed' ? 'bg-green-500' :
+                            withdrawal.status === 'pending' ? 'bg-yellow-500' :
+                            withdrawal.status === 'processing' ? 'bg-blue-500' : 'bg-red-500'
+                          }`}></div>
+                          <span className="text-sm font-medium text-gray-900 capitalize">
+                            {withdrawal.status}
+                          </span>
+                        </div>
+                        <span className="text-sm font-semibold text-red-600">
+                          -₹{withdrawal.withdrawalAmount.toLocaleString()}
+                        </span>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <CreditCard className="w-4 h-4 text-gray-400" />
+                          <span className="text-sm text-gray-700">
+                            Transaction ID: {withdrawal.transactionId || 'N/A'}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Clock className="w-4 h-4 text-gray-400" />
+                          <span className="text-sm text-gray-700">
+                            {formatISTTime(withdrawal.createdAt)}
+                          </span>
+                        </div>
+                        {withdrawal.processedAt && (
+                          <div className="flex items-center gap-2">
+                            <CheckCircle className="w-4 h-4 text-gray-400" />
+                            <span className="text-sm text-gray-700">
+                              Processed: {formatISTTime(withdrawal.processedAt)}
+                            </span>
+                          </div>
+                        )}
+                        {withdrawal.notes && (
+                          <div className="flex items-center gap-2">
+                            <FileText className="w-4 h-4 text-gray-400" />
+                            <span className="text-sm text-gray-700">
+                              Notes: {withdrawal.notes}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                  {/* Pagination */}
+                  {withdrawalsPagination.totalPages > 1 && (
+                    <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-200">
+                      <div className="text-sm text-gray-700">
+                        Showing {((withdrawalsPagination.page - 1) * withdrawalsPagination.limit) + 1} to {Math.min(withdrawalsPagination.page * withdrawalsPagination.limit, withdrawalsPagination.total)} of {withdrawalsPagination.total} withdrawals
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <button
+                          onClick={() => fetchWithdrawalsHistory(withdrawalsPagination.page - 1)}
+                          disabled={!withdrawalsPagination.hasPrev || withdrawalsLoading}
+                          className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          Previous
+                        </button>
+                        <span className="text-sm text-gray-700">
+                          Page {withdrawalsPagination.page} of {withdrawalsPagination.totalPages}
+                        </span>
+                        <button
+                          onClick={() => fetchWithdrawalsHistory(withdrawalsPagination.page + 1)}
+                          disabled={!withdrawalsPagination.hasNext || withdrawalsLoading}
+                          className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          Next
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <Wallet className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                  <p className="text-sm text-gray-500">No withdrawals yet</p>
+                  <p className="text-xs text-gray-400 mt-1">Withdrawal requests will appear here</p>
+                </div>
+              )}
+            </div>
+          </div>
           <div className="bg-white rounded-xl shadow-sm border border-gray-200">
             <div className="p-6 border-b border-gray-200">
               <div className="flex items-center justify-between">
@@ -2597,7 +2854,7 @@ export default function DeliveryAgentDetails() {
 
               <div className="flex items-center justify-between">
                 <span className="text-gray-600">Total Earnings</span>
-                <span className="font-medium">₹{agent.status?.earnings?.total || 0}</span>
+                <span className="font-medium">₹{parseFloat(agent.status?.earnings?.total || 0).toFixed(2)}</span>
               </div>
             </div>
           </div>
