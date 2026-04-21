@@ -11,6 +11,7 @@ export default function Tickets() {
   })
   const [imageFiles, setImageFiles] = useState([])
   const [previewUrls, setPreviewUrls] = useState([])
+  const [draggedImageIndex, setDraggedImageIndex] = useState(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [showAllTickets, setShowAllTickets] = useState(true)
   const [tickets, setTickets] = useState([])
@@ -24,6 +25,7 @@ export default function Tickets() {
   const [replyText, setReplyText] = useState('')
   const [resolveImageFiles, setResolveImageFiles] = useState([])
   const [resolvePreviewUrls, setResolvePreviewUrls] = useState([])
+  const [draggedResolveImageIndex, setDraggedResolveImageIndex] = useState(null)
   const [departments, setDepartments] = useState([])
   const [currentAdminRole] = useState(() => {
     try {
@@ -268,6 +270,33 @@ export default function Tickets() {
     setResolvePreviewUrls(prev => prev.filter((_, i) => i !== index))
   }
 
+  const reorderResolveImages = (fromIndex, toIndex) => {
+    if (fromIndex === toIndex || fromIndex == null || toIndex == null) return
+
+    setResolveImageFiles(prev => {
+      const newFiles = [...prev]
+      const [movedFile] = newFiles.splice(fromIndex, 1)
+      newFiles.splice(toIndex, 0, movedFile)
+      return newFiles
+    })
+
+    setResolvePreviewUrls(prev => {
+      const newUrls = [...prev]
+      const [movedUrl] = newUrls.splice(fromIndex, 1)
+      newUrls.splice(toIndex, 0, movedUrl)
+      return newUrls
+    })
+  }
+
+  const handleResolveImageDragStart = (index) => {
+    setDraggedResolveImageIndex(index)
+  }
+
+  const handleResolveImageDrop = (targetIndex) => {
+    reorderResolveImages(draggedResolveImageIndex, targetIndex)
+    setDraggedResolveImageIndex(null)
+  }
+
   const toggleTicketDetails = (ticketId) => {
     if (ticketId === expandedTicketId) {
       setExpandedTicketId('')
@@ -377,6 +406,34 @@ export default function Tickets() {
     previewUrls.forEach((url) => URL.revokeObjectURL(url))
     setImageFiles([])
     setPreviewUrls([])
+    setDraggedImageIndex(null)
+  }
+
+  const reorderImages = (fromIndex, toIndex) => {
+    if (fromIndex === toIndex || fromIndex == null || toIndex == null) return
+
+    setImageFiles(prev => {
+      const newFiles = [...prev]
+      const [movedFile] = newFiles.splice(fromIndex, 1)
+      newFiles.splice(toIndex, 0, movedFile)
+      return newFiles
+    })
+
+    setPreviewUrls(prev => {
+      const newUrls = [...prev]
+      const [movedUrl] = newUrls.splice(fromIndex, 1)
+      newUrls.splice(toIndex, 0, movedUrl)
+      return newUrls
+    })
+  }
+
+  const handleImageDragStart = (index) => {
+    setDraggedImageIndex(index)
+  }
+
+  const handleImageDrop = (targetIndex) => {
+    reorderImages(draggedImageIndex, targetIndex)
+    setDraggedImageIndex(null)
   }
 
   const getTicketImages = (ticket) => {
@@ -678,18 +735,31 @@ export default function Tickets() {
                   onChange={handleImageChange}
                   className="block w-full text-sm text-gray-600 file:mr-4 file:rounded-lg file:border-0 file:bg-gray-100 file:px-4 file:py-2 file:text-sm file:font-medium file:text-gray-700 hover:file:bg-gray-200"
                 />
-                <p className="mt-2 text-xs text-gray-500">You can upload multiple images. Each image must be under 5MB.</p>
+                <p className="mt-2 text-xs text-gray-500">You can upload multiple images. Each image must be under 5MB. Drag and drop attached images to shuffle their order.</p>
 
                 {previewUrls.length > 0 && (
                   <div className="mt-4 rounded-xl border border-gray-200 p-3 bg-gray-50">
                     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                       {previewUrls.map((previewUrl, index) => (
-                        <div key={`${previewUrl}-${index}`} className="rounded-lg border border-gray-200 bg-white p-2">
+                        <div
+                          key={`${previewUrl}-${index}`}
+                          draggable={previewUrls.length > 1}
+                          onDragStart={() => handleImageDragStart(index)}
+                          onDragOver={(e) => e.preventDefault()}
+                          onDrop={() => handleImageDrop(index)}
+                          onDragEnd={() => setDraggedImageIndex(null)}
+                          className={`rounded-lg border bg-white p-2 ${draggedImageIndex === index ? 'border-emerald-400 opacity-60' : 'border-gray-200'}`}
+                        >
                           <img
                             src={previewUrl}
                             alt={`Ticket attachment preview ${index + 1}`}
                             className="h-28 w-full rounded-lg object-cover"
                           />
+                          {previewUrls.length > 1 && (
+                            <p className="mt-2 text-center text-[10px] font-medium uppercase tracking-wide text-emerald-600">
+                              Drag to reorder
+                            </p>
+                          )}
                           <div className="mt-2 flex items-center justify-between gap-2">
                             <p className="truncate text-xs text-gray-500">{imageFiles[index]?.name}</p>
                             <button
@@ -844,19 +914,38 @@ export default function Tickets() {
                     onChange={handleResolveImageChange}
                     className="block w-full text-xs text-gray-600 file:mr-3 file:rounded-lg file:border-0 file:bg-emerald-50 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-emerald-700 hover:file:bg-emerald-100"
                   />
-                  <p className="mt-1 text-xs text-gray-400">Each image must be under 5MB.</p>
+                  <p className="mt-1 text-xs text-gray-400">Each image must be under 5MB. Drag and drop attached images to shuffle their order.</p>
                   {resolvePreviewUrls.length > 0 && (
-                    <div className="mt-2 flex flex-wrap gap-2">
+                    <div className="mt-3 flex flex-wrap gap-3">
                       {resolvePreviewUrls.map((url, index) => (
-                        <div key={`${url}-${index}`} className="relative">
-                          <img src={url} alt={`Resolution attachment ${index + 1}`} className="h-16 w-16 rounded-lg border border-gray-200 object-cover" />
-                          <button
-                            type="button"
-                            onClick={() => removeResolveImage(index)}
-                            className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white"
-                          >
-                            ×
-                          </button>
+                        <div
+                          key={`${url}-${index}`}
+                          draggable={resolvePreviewUrls.length > 1}
+                          onDragStart={() => handleResolveImageDragStart(index)}
+                          onDragOver={(e) => e.preventDefault()}
+                          onDrop={() => handleResolveImageDrop(index)}
+                          onDragEnd={() => setDraggedResolveImageIndex(null)}
+                          className={`w-28 rounded-xl border bg-white p-2 shadow-sm ${draggedResolveImageIndex === index ? 'border-emerald-400 opacity-60' : 'border-gray-200'}`}
+                        >
+                          <div className="relative">
+                            <img src={url} alt={`Resolution attachment ${index + 1}`} className="h-20 w-full rounded-lg border border-gray-200 object-cover" />
+                            <button
+                              type="button"
+                              onClick={() => removeResolveImage(index)}
+                              className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs font-bold text-white"
+                              aria-label={`Remove image ${index + 1}`}
+                            >
+                              ×
+                            </button>
+                          </div>
+                          <p className="mt-2 text-center text-[11px] font-medium text-gray-500">
+                            Image {index + 1}
+                          </p>
+                          {resolvePreviewUrls.length > 1 && (
+                            <p className="mt-1 text-center text-[10px] font-medium uppercase tracking-wide text-emerald-600">
+                              Drag to reorder
+                            </p>
+                          )}
                         </div>
                       ))}
                     </div>
