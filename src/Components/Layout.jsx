@@ -17,7 +17,8 @@ import {
   Tag,
   Target,
   TicketsPlane,
-  Boxes
+  Boxes,
+  Wallet
 } from 'lucide-react';
 import { MdAdminPanelSettings } from 'react-icons/md';
 import toast from 'react-hot-toast';
@@ -189,7 +190,7 @@ const Layout = ({ children, title }) => {
     { name: 'Eateries', icon: ChefHat, path: '/eateries', roles: ['super_admin', 'admin'] },
     { name: 'Requested Products', icon: Shield, path: '/products/requests', roles: ['super_admin', 'admin'] },
     { name: 'Categories', icon: ChartBarStacked, path: '/categories', roles: ['super_admin', 'admin'] },
-    { name: 'Food Categories', icon: ChefHat, path: '/food-categories', roles: ['super_admin', 'admin'] },
+    // { name: 'Food Categories', icon: ChefHat, path: '/food-categories', roles: ['super_admin', 'admin'] },
     { name: 'Xpress', icon: Zap, path: '/xpress', roles: ['super_admin', 'admin'] },
     { name: 'Careers', icon: Briefcase, path: '/careers', roles: ['super_admin', 'admin'] },
     { name: 'Users', icon: Users, path: '/users', roles: ['super_admin', 'admin'] },
@@ -207,7 +208,7 @@ const Layout = ({ children, title }) => {
     { name: 'Home Ads', icon: Smartphone, path: '/home-ads', roles: ['super_admin', 'admin'] },
     { name: 'Analytics', icon: BarChart3, path: '/analytics', roles: ['super_admin', 'admin'] },
     { name: 'Finance', icon: IndianRupeeIcon, path: '/finance', roles: ['super_admin', 'admin'] },
-    { name: 'Gig Wallet', icon: DollarSign, path: '/gig-wallet', roles: ['super_admin', 'admin'] },
+    { name: 'Gig Wallet', icon: Wallet, path: '/gig-wallet', roles: ['super_admin', 'admin'] },
     { name: 'App Controls', icon: TabletSmartphone, path: '/app-controls', roles: ['super_admin', 'admin'] },
     { name: 'Bug Reports', icon: Bug, path: '/bug-reports', roles: ['super_admin'] },
     { name: 'S3 Media Manager', icon: Package, path: '/s3-store', roles: ['super_admin'] },

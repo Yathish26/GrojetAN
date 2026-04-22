@@ -447,7 +447,7 @@ const Xpress = () => {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 mb-6">
           <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm border">
             <div className="flex items-center justify-between">
               <div>
@@ -455,15 +455,6 @@ const Xpress = () => {
                 <p className="text-2xl font-bold text-gray-900">{stats.totalOrders || 0}</p>
               </div>
               <Truck className="h-8 w-8 text-blue-500" />
-            </div>
-          </div>
-          <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm border">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Total Revenue</p>
-                <p className="text-2xl font-bold text-gray-900">₹{stats.totalRevenue || 0}</p>
-              </div>
-              <IndianRupee className="h-8 w-8 text-green-500" />
             </div>
           </div>
           <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm border">
@@ -621,11 +612,11 @@ const Xpress = () => {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[140px]">Order</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[120px]">Customer</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell min-w-[100px]">Distance</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell min-w-[100px]">Package</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[140px]">Assigned To</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[100px]">Amount</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[100px]">Payment</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[120px]">Status</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell min-w-[100px]">Package</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[100px]">First Order</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[100px]">Source</th>
                 </tr>
@@ -633,7 +624,7 @@ const Xpress = () => {
               <tbody className="bg-white divide-y divide-gray-200">
                 {loading ? (
                   <tr>
-                    <td colSpan="9" className="px-6 py-4 text-center">
+                    <td colSpan="10" className="px-6 py-4 text-center">
                       <div className="flex items-center justify-center">
                         <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
                         <span className="ml-2 text-gray-500">Loading orders...</span>
@@ -642,7 +633,7 @@ const Xpress = () => {
                   </tr>
                 ) : orders.length === 0 ? (
                   <tr>
-                    <td colSpan="9" className="px-6 py-4 text-center text-gray-500">
+                    <td colSpan="10" className="px-6 py-4 text-center text-gray-500">
                       No orders found
                     </td>
                   </tr>
@@ -688,14 +679,6 @@ const Xpress = () => {
                           {order.pricing?.eta ? `${order.pricing.eta} mins` : 'N/A'}
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap hidden md:table-cell">
-                        <div className="text-sm text-gray-900">
-                          {order.packageDetails?.category || 'N/A'}
-                        </div>
-                        <div className="text-sm text-gray-500">
-                          {order.packageDetails?.size || 'N/A'}
-                        </div>
-                      </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div>
                           <div className="text-sm font-medium text-gray-900">
@@ -737,7 +720,15 @@ const Xpress = () => {
                           </div>
                         )}
                       </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-6 py-4 whitespace-nowrap hidden md:table-cell">
+                        <div className="text-sm text-gray-900">
+                          {order.packageDetails?.category || 'N/A'}
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          {order.packageDetails?.size || 'N/A'}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                           order.isFirstOrder
                             ? 'bg-green-100 text-green-800 border border-green-200'
@@ -746,7 +737,7 @@ const Xpress = () => {
                           {order.isFirstOrder ? 'Yes' : 'No'}
                         </span>
                       </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-6 py-4 whitespace-nowrap">
   <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
     order.source === 'website'
       ? 'bg-blue-100 text-blue-800 border border-blue-200'

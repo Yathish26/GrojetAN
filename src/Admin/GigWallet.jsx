@@ -11,10 +11,12 @@ import {
   Users,
   Clock,
   CheckCircle,
-  XCircle
+  XCircle,
+  Download
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Layout from '../Components/Layout';
+import * as XLSX from 'xlsx';
 
 export default function GigWallet() {
   const navigate = useNavigate();
@@ -95,6 +97,65 @@ export default function GigWallet() {
     toast.success('Data refreshed');
   };
 
+  const exportToExcel = () => {
+    if (!gigWorkers || gigWorkers.length === 0) {
+      toast.error('No data to export');
+      return;
+    }
+
+    const data = gigWorkers.map((worker, index) => ({
+      'S.No': index + 1,
+      'Agent ID': worker.agentId || 'N/A',
+      'Name': worker.name || 'N/A',
+      'Phone': worker.phone || 'N/A',
+      'Balance (₹)': worker.balance || 0,
+      'Total Earnings (₹)': worker.earnings || 0,
+      'Total Withdrawals (₹)': worker.withdrawals || 0,
+      'Status': worker.status || 'N/A',
+      'Is Gig Worker': worker.isGig ? 'Yes' : 'No',
+      'Last Online': worker.lastOnline ? new Date(worker.lastOnline).toLocaleString('en-IN', {
+        timeZone: 'Asia/Kolkata',
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: true
+      }) : 'N/A'
+    }));
+
+    // Create workbook and worksheet
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.json_to_sheet(data);
+
+    // Set column widths
+    ws['!cols'] = [
+      { wch: 8 },  // S.No
+      { wch: 12 }, // Agent ID
+      { wch: 20 }, // Name
+      { wch: 15 }, // Phone
+      { wch: 15 }, // Balance
+      { wch: 18 }, // Total Earnings
+      { wch: 18 }, // Total Withdrawals
+      { wch: 10 }, // Status
+      { wch: 15 }, // Is Gig Worker
+      { wch: 20 }  // Last Online
+    ];
+
+    // Add worksheet to workbook
+    XLSX.utils.book_append_sheet(wb, ws, 'Gig Workers');
+
+    // Generate filename with current date
+    const currentDate = new Date().toISOString().split('T')[0];
+    const fileName = `Gig_Workers_${currentDate}.xlsx`;
+
+    // Save file
+    XLSX.writeFile(wb, fileName);
+
+    toast.success('Excel file exported successfully!');
+  };
+
   if (loading) {
     return (
       <Layout title="Gig Wallet">
@@ -127,13 +188,22 @@ export default function GigWallet() {
             <h1 className="text-2xl font-bold text-neutral-900">Gig Wallet Management</h1>
             <p className="text-neutral-600">Manage gig worker earnings and withdrawals</p>
           </div>
-          <button
-            onClick={handleRefresh}
-            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-          >
-            <RefreshCw size={16} />
-            Refresh
-          </button>
+          <div className="flex gap-3">
+            <button
+              onClick={exportToExcel}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              <Download className="w-4 h-4" />
+              Export to Excel
+            </button>
+            <button
+              onClick={handleRefresh}
+              className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+            >
+              <RefreshCw size={16} />
+              Refresh
+            </button>
+          </div>
         </div>
 
         {/* Stats Cards */}
@@ -145,16 +215,6 @@ export default function GigWallet() {
                 <p className="text-2xl font-bold text-neutral-900">₹{walletStats.totalBalance.toLocaleString()}</p>
               </div>
               <Wallet className="h-8 w-8 text-green-600" />
-            </div>
-          </div>
-
-          <div className="bg-white p-6 rounded-lg shadow-sm border border-neutral-200">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-neutral-600">Total Earnings</p>
-                <p className="text-2xl font-bold text-neutral-900">₹{walletStats.totalEarnings.toLocaleString()}</p>
-              </div>
-              <TrendingUp className="h-8 w-8 text-blue-600" />
             </div>
           </div>
 
@@ -190,10 +250,9 @@ export default function GigWallet() {
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Worker</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Balance</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Earnings</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Withdrawals</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Status</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Last Activity</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Last Online</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-neutral-200">
@@ -206,7 +265,6 @@ export default function GigWallet() {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">₹{worker.balance}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">₹{worker.earnings}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">₹{worker.withdrawals}</td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
@@ -217,7 +275,19 @@ export default function GigWallet() {
                         {worker.status}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-500">{worker.lastActivity}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-500">
+                      {worker.lastOnline ? (() => {
+                        const date = new Date(worker.lastOnline);
+                        const day = String(date.getDate()).padStart(2, '0');
+                        const month = String(date.getMonth() + 1).padStart(2, '0');
+                        const year = String(date.getFullYear()).slice(-2);
+                        const hours = date.getHours();
+                        const minutes = String(date.getMinutes()).padStart(2, '0');
+                        const ampm = hours >= 12 ? 'PM' : 'AM';
+                        const displayHours = hours % 12 || 12;
+                        return `${day}/${month}/${year} ${displayHours}:${minutes} ${ampm}`;
+                      })() : 'N/A'}
+                    </td>
                   </tr>
                 ))}
               </tbody>
