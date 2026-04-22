@@ -27,8 +27,8 @@ const XpressOrderDetails = () => {
   const [assigningAgent, setAssigningAgent] = useState({});
   const [showAgentsList, setShowAgentsList] = useState(false);
   const [directions, setDirections] = useState(null);
-  const [agentToPickupDirections, setAgentToPickupDirections] = useState(null);
-  const [agentToDropDirections, setAgentToDropDirections] = useState(null);
+  // const [agentToPickupDirections, setAgentToPickupDirections] = useState(null);
+  // const [agentToDropDirections, setAgentToDropDirections] = useState(null);
   const [refreshingStatus, setRefreshingStatus] = useState(false);
   const [refreshingOrder, setRefreshingOrder] = useState(false);
   const [verifyingPayment, setVerifyingPayment] = useState(false);
@@ -726,82 +726,82 @@ const XpressOrderDetails = () => {
   }, [id, order?.assignment?.agent, order?.status]);
 
   // Request roadway route from agent to pickup (pre-pickup)
-  useEffect(() => {
-    if (!window.google || !window.google.maps || !window.google.maps.DirectionsService) return;
+  // useEffect(() => {
+  //   if (!window.google || !window.google.maps || !window.google.maps.DirectionsService) return;
 
-    const pickupLat = parseFloat(order?.pickup?.coordinates?.latitude);
-    const pickupLng = parseFloat(order?.pickup?.coordinates?.longitude);
-    const agentLat = parseFloat(agentLocation?.latitude);
-    const agentLng = parseFloat(agentLocation?.longitude);
+  //   const pickupLat = parseFloat(order?.pickup?.coordinates?.latitude);
+  //   const pickupLng = parseFloat(order?.pickup?.coordinates?.longitude);
+  //   const agentLat = parseFloat(agentLocation?.latitude);
+  //   const agentLng = parseFloat(agentLocation?.longitude);
 
-    const canRoute =
-      agentLocation && order?.assignment?.agent &&
-      order?.status !== 'in_transit' &&
-      !['delivered', 'cancelled'].includes(order?.status || '') &&
-      !isNaN(pickupLat) && !isNaN(pickupLng) &&
-      !isNaN(agentLat) && !isNaN(agentLng);
+  //   const canRoute =
+  //     agentLocation && order?.assignment?.agent &&
+  //     order?.status !== 'in_transit' &&
+  //     !['delivered', 'cancelled'].includes(order?.status || '') &&
+  //     !isNaN(pickupLat) && !isNaN(pickupLng) &&
+  //     !isNaN(agentLat) && !isNaN(agentLng);
 
-    if (!canRoute) {
-      setAgentToPickupDirections(null);
-      return;
-    }
+  //   if (!canRoute) {
+  //     setAgentToPickupDirections(null);
+  //     return;
+  //   }
 
-    const directionsService = new window.google.maps.DirectionsService();
-    directionsService.route(
-      {
-        origin: { lat: agentLat, lng: agentLng },
-        destination: { lat: pickupLat, lng: pickupLng },
-        travelMode: window.google.maps.TravelMode.DRIVING
-      },
-      (result, status) => {
-        if (status === window.google.maps.DirectionsStatus.OK) {
-          setAgentToPickupDirections(result);
-        } else {
-          console.warn('Agent→Pickup directions failed:', status);
-          setAgentToPickupDirections(null);
-        }
-      }
-    );
-  }, [agentLocation, order?.assignment?.agent, order?.status, order?.pickup?.coordinates?.latitude, order?.pickup?.coordinates?.longitude]);
+  //   const directionsService = new window.google.maps.DirectionsService();
+  //   directionsService.route(
+  //     {
+  //       origin: { lat: agentLat, lng: agentLng },
+  //       destination: { lat: pickupLat, lng: pickupLng },
+  //       travelMode: window.google.maps.TravelMode.DRIVING
+  //     },
+  //     (result, status) => {
+  //       if (status === window.google.maps.DirectionsStatus.OK) {
+  //         setAgentToPickupDirections(result);
+  //       } else {
+  //         console.warn('Agent→Pickup directions failed:', status);
+  //         setAgentToPickupDirections(null);
+  //       }
+  //     }
+  //   );
+  // }, [agentLocation, order?.assignment?.agent, order?.status, order?.pickup?.coordinates?.latitude, order?.pickup?.coordinates?.longitude]);
 
   // Request roadway route from agent to drop (after pickup, i.e., in transit)
-  useEffect(() => {
-    if (!window.google || !window.google.maps || !window.google.maps.DirectionsService) return;
+  // useEffect(() => {
+  //   if (!window.google || !window.google.maps || !window.google.maps.DirectionsService) return;
 
-    const dropLat = parseFloat(order?.drop?.coordinates?.latitude);
-    const dropLng = parseFloat(order?.drop?.coordinates?.longitude);
-    const agentLat = parseFloat(agentLocation?.latitude);
-    const agentLng = parseFloat(agentLocation?.longitude);
+  //   const dropLat = parseFloat(order?.drop?.coordinates?.latitude);
+  //   const dropLng = parseFloat(order?.drop?.coordinates?.longitude);
+  //   const agentLat = parseFloat(agentLocation?.latitude);
+  //   const agentLng = parseFloat(agentLocation?.longitude);
 
-    const canRoute =
-      agentLocation && order?.assignment?.agent &&
-      order?.status === 'in_transit' &&
-      !['delivered', 'cancelled'].includes(order?.status || '') &&
-      !isNaN(dropLat) && !isNaN(dropLng) &&
-      !isNaN(agentLat) && !isNaN(agentLng);
+  //   const canRoute =
+  //     agentLocation && order?.assignment?.agent &&
+  //     order?.status === 'in_transit' &&
+  //     !['delivered', 'cancelled'].includes(order?.status || '') &&
+  //     !isNaN(dropLat) && !isNaN(dropLng) &&
+  //     !isNaN(agentLat) && !isNaN(agentLng);
 
-    if (!canRoute) {
-      setAgentToDropDirections(null);
-      return;
-    }
+  //   if (!canRoute) {
+  //     setAgentToDropDirections(null);
+  //     return;
+  //   }
 
-    const directionsService = new window.google.maps.DirectionsService();
-    directionsService.route(
-      {
-        origin: { lat: agentLat, lng: agentLng },
-        destination: { lat: dropLat, lng: dropLng },
-        travelMode: window.google.maps.TravelMode.DRIVING
-      },
-      (result, status) => {
-        if (status === window.google.maps.DirectionsStatus.OK) {
-          setAgentToDropDirections(result);
-        } else {
-          console.warn('Agent→Drop directions failed:', status);
-          setAgentToDropDirections(null);
-        }
-      }
-    );
-  }, [agentLocation, order?.assignment?.agent, order?.status, order?.drop?.coordinates?.latitude, order?.drop?.coordinates?.longitude]);
+  //   const directionsService = new window.google.maps.DirectionsService();
+  //   directionsService.route(
+  //     {
+  //       origin: { lat: agentLat, lng: agentLng },
+  //       destination: { lat: dropLat, lng: dropLng },
+  //       travelMode: window.google.maps.TravelMode.DRIVING
+  //     },
+  //     (result, status) => {
+  //       if (status === window.google.maps.DirectionsStatus.OK) {
+  //         setAgentToDropDirections(result);
+  //       } else {
+  //         console.warn('Agent→Drop directions failed:', status);
+  //         setAgentToDropDirections(null);
+  //       }
+  //     }
+  //   );
+  // }, [agentLocation, order?.assignment?.agent, order?.status, order?.drop?.coordinates?.latitude, order?.drop?.coordinates?.longitude]);
 
   // Initialize Google Places Autocomplete when modal opens
   useEffect(() => {
