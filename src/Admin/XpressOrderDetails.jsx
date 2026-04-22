@@ -1321,7 +1321,7 @@ const XpressOrderDetails = () => {
                       zoom={12}
                       style={{ height: '400px', width: '100%', border: 'none' }}
                     >
-                      {agentToPickupDirections && (
+                      {/* {agentToPickupDirections && (
                         <DirectionsRenderer
                           directions={agentToPickupDirections}
                           options={{
@@ -1333,8 +1333,8 @@ const XpressOrderDetails = () => {
                             }
                           }}
                         />
-                      )}
-                      {agentToDropDirections && (
+                      )} */}
+                      {/* {agentToDropDirections && (
                         <DirectionsRenderer
                           directions={agentToDropDirections}
                           options={{
@@ -1346,7 +1346,7 @@ const XpressOrderDetails = () => {
                             }
                           }}
                         />
-                      )}
+                      )} */}
                       <Marker
                         position={{
                           lat: parseFloat(order.pickup.coordinates.latitude),
