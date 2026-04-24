@@ -186,6 +186,8 @@ const Xpress = () => {
 
   const exportOrders = async () => {
     try {
+      toast.loading('Exporting orders to Excel...', { id: 'export' });
+
       const queryParams = new URLSearchParams({
         ...filters
       });
@@ -195,23 +197,34 @@ const Xpress = () => {
         { credentials: 'include' }
       );
 
-      if (response.ok) {
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'xpress-orders.xlsx';
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
-        toast.success('Orders exported successfully');
-      } else {
-        toast.error('Failed to export orders');
+      if (!response.ok) {
+        throw new Error('Failed to export orders');
       }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+
+      const contentDisposition = response.headers.get('Content-Disposition');
+      let filename = 'xpress-orders.xlsx';
+      if (contentDisposition) {
+        const filenameMatch = contentDisposition.match(/filename="(.+)"/);
+        if (filenameMatch) {
+          filename = filenameMatch[1];
+        }
+      }
+
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+
+      toast.success('Orders exported successfully', { id: 'export' });
     } catch (error) {
       console.error('Error exporting orders:', error);
-      toast.error('Failed to export orders');
+      toast.error('Failed to export orders', { id: 'export' });
     }
   };
 

@@ -30,6 +30,11 @@ export default function UpdateNotesAdmin() {
   const [selectedNote, setSelectedNote] = useState(null);
   const [filterApp, setFilterApp] = useState('all');
   const [submitting, setSubmitting] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
+
+  // Drag and drop state
+  const [draggedIndex, setDraggedIndex] = useState(null);
+  const [dragOverIndex, setDragOverIndex] = useState(null);
 
   // Helper function to format date as DD/MM/YYYY
   const formatDate = (dateString) => {
@@ -45,6 +50,8 @@ export default function UpdateNotesAdmin() {
     app: '',
     version: '',
     features: [''],
+    imageUrl: '',
+    images: [],
     releaseDate: '',
     isActive: true
   });
@@ -255,17 +262,27 @@ export default function UpdateNotesAdmin() {
       app: '',
       version: '',
       features: [''],
+      imageUrl: '',
+      images: [],
       releaseDate: '',
       isActive: true
     });
   };
 
   const openEditModal = (note) => {
+    const noteImages = Array.isArray(note.images) && note.images.length > 0
+      ? note.images
+      : note.imageUrl
+        ? [note.imageUrl]
+        : [];
+
     setSelectedNote(note);
     setFormData({
       app: note.app,
       version: note.version,
       features: note.features.length > 0 ? note.features : [''],
+      imageUrl: noteImages[0] || '',
+      images: noteImages,
       releaseDate: note.releaseDate ? new Date(note.releaseDate).toISOString().split('T')[0] : '',
       isActive: note.isActive
     });
@@ -296,6 +313,122 @@ export default function UpdateNotesAdmin() {
       ...prev,
       features: prev.features.map((feature, i) => i === index ? value : feature)
     }));
+  };
+
+  const getNoteImages = (note) => {
+    if (Array.isArray(note.images) && note.images.length > 0) {
+      return note.images;
+    }
+
+    return note.imageUrl ? [note.imageUrl] : [];
+  };
+
+  const handleImageUpload = async (files) => {
+    if (!files || files.length === 0) return;
+
+    setUploadingImage(true);
+
+    try {
+      const uploadedUrls = [];
+
+      for (const file of files) {
+        const uploadData = new FormData();
+        uploadData.append('image', file);
+
+        const response = await fetch(`${import.meta.env.VITE_SERVER}/image/upload`, {
+          method: 'POST',
+          body: uploadData,
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to upload image');
+        }
+
+        const data = await response.json();
+        if (!data?.url) {
+          throw new Error('Image upload response missing URL');
+        }
+
+        uploadedUrls.push(data.url);
+      }
+
+      setFormData(prev => {
+        const nextImages = [...prev.images, ...uploadedUrls];
+        return {
+          ...prev,
+          imageUrl: nextImages[0] || '',
+          images: nextImages
+        };
+      });
+      toast.success(`${uploadedUrls.length} image${uploadedUrls.length > 1 ? 's' : ''} uploaded successfully`);
+    } catch (error) {
+      console.error('Image upload error:', error);
+      toast.error(error.message || 'Failed to upload image');
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
+  const handleFileChange = (event) => {
+    const files = Array.from(event.target.files || []);
+    if (files.length > 0) {
+      handleImageUpload(files);
+    }
+    event.target.value = '';
+  };
+
+  const removeImage = (imageIndex) => {
+    setFormData(prev => {
+      const nextImages = prev.images.filter((_, index) => index !== imageIndex);
+      return {
+        ...prev,
+        imageUrl: nextImages[0] || '',
+        images: nextImages
+      };
+    });
+  };
+
+  // Drag and drop handlers
+  const handleDragStart = (e, index) => {
+    setDraggedIndex(index);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (e, index) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    setDragOverIndex(index);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+  };
+
+  const handleDrop = (e, dropIndex) => {
+    e.preventDefault();
+    const dragIndex = draggedIndex;
+
+    if (dragIndex === null || dragIndex === dropIndex) {
+      setDraggedIndex(null);
+      setDragOverIndex(null);
+      return;
+    }
+
+    setFormData(prev => {
+      const newImages = [...prev.images];
+      const [draggedItem] = newImages.splice(dragIndex, 1);
+      newImages.splice(dropIndex, 0, draggedItem);
+
+      return {
+        ...prev,
+        images: newImages,
+        imageUrl: newImages[0] || ''
+      };
+    });
+
+    setDraggedIndex(null);
+    setDragOverIndex(null);
   };
 
   const getAppIcon = (app) => {
@@ -474,6 +607,19 @@ export default function UpdateNotesAdmin() {
                     </div>
 
                     <div className="p-6 space-y-4">
+                      {getNoteImages(note).length > 0 && (
+                        <div className="grid grid-cols-2 gap-2">
+                          {getNoteImages(note).slice(0, 4).map((image, index) => (
+                            <img
+                              key={`${note._id}-image-${index}`}
+                              src={image}
+                              alt={`${getAppName(note.app)} ${note.version} ${index + 1}`}
+                              className="w-full h-32 object-cover rounded-lg border border-gray-200"
+                            />
+                          ))}
+                        </div>
+                      )}
+
                       <div className="flex items-center gap-2 text-sm text-gray-600">
                         <FiCalendar className="text-gray-400" />
                         <span>Released: {formatDate(note.releaseDate)}</span>
@@ -617,6 +763,61 @@ export default function UpdateNotesAdmin() {
                 </button>
               </div>
 
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Attach Images
+                </label>
+                <div className="space-y-3">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={handleFileChange}
+                    disabled={submitting || uploadingImage}
+                    className="w-full p-3 border border-gray-300 rounded-lg"
+                  />
+                  {uploadingImage && (
+                    <div className="text-sm text-gray-600">Uploading images...</div>
+                  )}
+                  {formData.images.length > 0 && (
+                    <div className="grid grid-cols-2 gap-3">
+                      {formData.images.map((image, index) => (
+                        <div
+                          key={`create-image-${index}`}
+                          className={`relative cursor-move transition-all duration-200 ${
+                            draggedIndex === index ? 'opacity-50 scale-95' : ''
+                          } ${
+                            dragOverIndex === index ? 'ring-2 ring-blue-400 ring-offset-2' : ''
+                          }`}
+                          draggable
+                          onDragStart={(e) => handleDragStart(e, index)}
+                          onDragOver={(e) => handleDragOver(e, index)}
+                          onDragEnd={handleDragEnd}
+                          onDrop={(e) => handleDrop(e, index)}
+                        >
+                          <img
+                            src={image}
+                            alt={`Update note preview ${index + 1}`}
+                            className="w-full h-40 object-cover rounded-lg border border-gray-200"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => removeImage(index)}
+                            className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition z-10"
+                            disabled={submitting || uploadingImage}
+                          >
+                            <FiX size={16} />
+                          </button>
+                          <div className="absolute bottom-2 left-2 bg-black bg-opacity-50 text-white text-xs px-2 py-1 rounded">
+                            {index + 1}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
               <div className="flex items-center gap-2">
                 <input
                   type="checkbox"
@@ -752,6 +953,61 @@ export default function UpdateNotesAdmin() {
                   <FiPlus className="text-sm" />
                   Add Feature
                 </button>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Attach Images
+                </label>
+                <div className="space-y-3">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={handleFileChange}
+                    disabled={submitting || uploadingImage}
+                    className="w-full p-3 border border-gray-300 rounded-lg"
+                  />
+                  {uploadingImage && (
+                    <div className="text-sm text-gray-600">Uploading images...</div>
+                  )}
+                  {formData.images.length > 0 && (
+                    <div className="grid grid-cols-2 gap-3">
+                      {formData.images.map((image, index) => (
+                        <div
+                          key={`edit-image-${index}`}
+                          className={`relative cursor-move transition-all duration-200 ${
+                            draggedIndex === index ? 'opacity-50 scale-95' : ''
+                          } ${
+                            dragOverIndex === index ? 'ring-2 ring-blue-400 ring-offset-2' : ''
+                          }`}
+                          draggable
+                          onDragStart={(e) => handleDragStart(e, index)}
+                          onDragOver={(e) => handleDragOver(e, index)}
+                          onDragEnd={handleDragEnd}
+                          onDrop={(e) => handleDrop(e, index)}
+                        >
+                          <img
+                            src={image}
+                            alt={`Update note preview ${index + 1}`}
+                            className="w-full h-40 object-cover rounded-lg border border-gray-200"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => removeImage(index)}
+                            className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition z-10"
+                            disabled={submitting || uploadingImage}
+                          >
+                            <FiX size={16} />
+                          </button>
+                          <div className="absolute bottom-2 left-2 bg-black bg-opacity-50 text-white text-xs px-2 py-1 rounded">
+                            {index + 1}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div className="flex items-center gap-2">
