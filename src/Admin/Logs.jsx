@@ -65,9 +65,9 @@ const Logs = () => {
       timestampTime: formattedTimestamp.time,
       level: log.level,
       message: log.message,
-      user: log.user || 'system',
+      user: log.platform === 'mobile' ? `${log.user} (customer)` : (log.user || 'system'),
       platform: log.platform || 'web',
-      version: extractVersion(log),
+      version: log.platform === 'mobile' ? log.version : 'v2423',
     };
   };
 
