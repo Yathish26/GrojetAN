@@ -63,7 +63,7 @@ import Tags from './Admin/Tags.jsx'
 import Brands from './Admin/Brands.jsx'
 import Tickets from './Admin/Tickets.jsx'
 import TicketGroups from './Admin/TicketGroups.jsx'
-import Gcoins from './Admin/GCoins.jsx'
+import Gcoins from './Admin/Gcoins.jsx'
 
 function App() {
   return (
