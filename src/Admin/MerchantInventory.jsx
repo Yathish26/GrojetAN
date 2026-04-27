@@ -31,6 +31,12 @@ const InventoryItem = React.memo(({
   handleEditWeight,
   handleEditMarkupPrice,
   handleEditPrice,
+  editingCostPrice,
+  editedCostPrice,
+  setEditedCostPrice,
+  handleSaveCostPrice,
+  handleEditCostPrice,
+  handleCancelEditCostPrice,
   openProductModal,
   getStockStatus,
   handleCancelEditWeight,
@@ -156,6 +162,26 @@ const InventoryItem = React.memo(({
           Min: {item.minStock}
         </div>
       </td>
+      {merchant?.operationalInfo?.homeStore && (
+        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+          {editingCostPrice === item._id ? (
+            <div className="flex items-center space-x-2">
+              <span className="text-gray-500">₹</span>
+              <input
+                type="number"
+                value={editedCostPrice}
+                onChange={(e) => setEditedCostPrice(e.target.value)}
+                className="w-24 px-3 py-1 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm"
+                min="0"
+                step="0.01"
+                disabled={updating}
+              />
+            </div>
+          ) : (
+            <span className="text-lg">₹{item.costPrice?.toFixed(2) || '0.00'}</span>
+          )}
+        </td>
+      )}
       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
         {editingItem === item._id ? (
           <div className="flex items-center space-x-2">
@@ -218,6 +244,25 @@ const InventoryItem = React.memo(({
               Cancel
             </button>
           </div>
+        ) : editingCostPrice === item._id ? (
+          <div className="flex items-center space-x-2">
+            <button
+              className="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 transition-colors"
+              onClick={() => handleSaveCostPrice(item)}
+              disabled={updating}
+            >
+              <Save size={14} className="mr-1" />
+              Save
+            </button>
+            <button
+              className="inline-flex items-center px-2.5 py-1.5 border border-gray-300 text-xs font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 transition-colors"
+              onClick={handleCancelEditCostPrice}
+              disabled={updating}
+            >
+              <X size={14} className="mr-1" />
+              Cancel
+            </button>
+          </div>
         ) : editingWeight === item._id ? (
           <div className="flex items-center space-x-2">
             <button
@@ -258,6 +303,15 @@ const InventoryItem = React.memo(({
           </div>
         ) : (
           <div className="flex space-x-2">
+            {merchant?.operationalInfo?.homeStore && (
+              <button
+                className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-orange-700 bg-orange-100 hover:bg-orange-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-colors"
+                onClick={() => handleEditCostPrice(item)}
+              >
+                <Edit size={14} className="mr-1.5" />
+                Edit Cost Price
+              </button>
+            )}
             <button
               className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-green-700 bg-green-100 hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
               onClick={() => handleEditPrice(item)}
@@ -335,6 +389,8 @@ const MerchantInventory = () => {
   const [editedWeightUnit, setEditedWeightUnit] = useState('');
   const [editingMarkupPrice, setEditingMarkupPrice] = useState(null);
   const [editedMarkupPrice, setEditedMarkupPrice] = useState('');
+  const [editingCostPrice, setEditingCostPrice] = useState(null);
+  const [editedCostPrice, setEditedCostPrice] = useState('');
 
   // Sorting states
   const [sortBy, setSortBy] = useState('name');
@@ -446,6 +502,9 @@ const MerchantInventory = () => {
         }
         if (data.success) {
           setMerchant(data.merchant);
+          if (data.merchant.operationalInfo?.homeStore) {
+            console.log('homeStore is true for merchant:', data.merchant.businessInfo?.displayName || data.merchant._id);
+          }
           setInventory(data.merchant.inventory || []);
           setTotalPages(data.pagination?.totalPages || 1);
           setTotalItems(data.pagination?.totalItems || 0);
@@ -875,21 +934,28 @@ const MerchantInventory = () => {
   };
 
   const handleSavePrice = async (item) => {
-    const newPrice = parseFloat(editedPrice);
-    if (isNaN(newPrice) || newPrice < 0) {
+    const inputValue = parseFloat(editedPrice);
+    if (isNaN(inputValue) || inputValue < 0) {
       toast.error('Please enter a valid price');
       return;
     }
 
     setUpdating(true);
     try {
+      let requestBody;
+      let successMessage;
+
+      // For all merchants, "Edit Price" edits the selling price
+      requestBody = { price: inputValue };
+      successMessage = 'Price updated successfully';
+
       const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/merchant-stores/${id}/inventory/${item._id}/price`, {
         method: 'PUT',
         credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ price: newPrice }),
+        body: JSON.stringify(requestBody),
       });
 
       if (response.status === 401) {
@@ -904,7 +970,7 @@ const MerchantInventory = () => {
           return;
         }
         if (data.success) {
-          toast.success('Price updated successfully');
+          toast.success(successMessage);
           setEditingItem(null);
           setEditedPrice('');
           // Refetch the current page to ensure data consistency
@@ -1086,6 +1152,67 @@ const MerchantInventory = () => {
     } catch (error) {
       console.error('Error updating markup price:', error);
       toast.error(error.message || 'Failed to update markup price');
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const handleEditCostPrice = (item) => {
+    setEditingCostPrice(item._id);
+    setEditedCostPrice((item.costPrice || 0).toString());
+  };
+
+  const handleCancelEditCostPrice = () => {
+    setEditingCostPrice(null);
+    setEditedCostPrice('');
+  };
+
+  const handleSaveCostPrice = async (item) => {
+    const costPrice = parseFloat(editedCostPrice);
+    if (isNaN(costPrice) || costPrice < 0) {
+      toast.error('Please enter a valid cost price');
+      return;
+    }
+
+    setUpdating(true);
+    try {
+      const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/merchant-stores/${id}/inventory/${item._id}/price`, {
+        method: 'PUT',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          costPrice: costPrice
+        }),
+      });
+
+      if (response.status === 401) {
+        navigate('/login');
+        return;
+      }
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.tokenValid === false) {
+          navigate('/login', { replace: true });
+          return;
+        }
+        if (data.success) {
+          toast.success('Cost price updated successfully');
+          setEditingCostPrice(null);
+          setEditedCostPrice('');
+          // Refetch the current page to ensure data consistency
+          fetchMerchantInventory({ page, search: searchTerm, status: statusFilter, category: categoryFilter, foodCategory: foodCategoryFilter, foodType: foodTypeFilter, sortBy, sortOrder, silent: true });
+        } else {
+          throw new Error(data.message || 'Failed to update cost price');
+        }
+      } else {
+        throw new Error('Failed to update cost price');
+      }
+    } catch (error) {
+      console.error('Error updating cost price:', error);
+      toast.error(error.message || 'Failed to update cost price');
     } finally {
       setUpdating(false);
     }
@@ -1828,6 +1955,27 @@ const MerchantInventory = () => {
                                 <span className="text-gray-500">Stock:</span>
                                 <span className="ml-1 text-gray-900">{item.quantity} / {item.maxStock}</span>
                               </div>
+                              {merchant?.operationalInfo?.homeStore && (
+                                <div>
+                                  <span className="text-gray-500">Cost Price:</span>
+                                  {editingCostPrice === item._id ? (
+                                    <div className="inline-flex items-center ml-1">
+                                      <span className="text-gray-500">₹</span>
+                                      <input
+                                        type="number"
+                                        value={editedCostPrice}
+                                        onChange={(e) => setEditedCostPrice(e.target.value)}
+                                        className="w-16 px-1 py-0.5 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-green-500 focus:border-green-500"
+                                        min="0"
+                                        step="0.01"
+                                        disabled={updating}
+                                      />
+                                    </div>
+                                  ) : (
+                                    <span className="ml-1 text-gray-900">₹{item.costPrice?.toFixed(2) || '0.00'}</span>
+                                  )}
+                                </div>
+                              )}
                               <div>
                                 <span className="text-gray-500">Price:</span>
                                 <span className="ml-1 text-gray-900">₹{item.price}</span>
@@ -1845,6 +1993,15 @@ const MerchantInventory = () => {
                               </span>
                               </div>
                               <div className="flex flex-wrap gap-2 justify-end">
+                                {merchant?.operationalInfo?.homeStore && (
+                                  <button
+                                    className="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded text-orange-700 bg-orange-100 hover:bg-orange-200"
+                                    onClick={() => handleEditCostPrice(item)}
+                                  >
+                                    <Edit size={12} className="mr-1" />
+                                    Cost Price
+                                  </button>
+                                )}
                                 <button
                                   className="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded text-green-700 bg-green-100 hover:bg-green-200"
                                   onClick={() => handleEditPrice(item)}
@@ -1906,6 +2063,40 @@ const MerchantInventory = () => {
                                   <button
                                     className="flex-1 inline-flex items-center justify-center px-3 py-1 border border-gray-300 text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50"
                                     onClick={handleCancelEdit}
+                                    disabled={updating}
+                                  >
+                                    <X size={12} className="mr-1" />
+                                    Cancel
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+                            {editingCostPrice === item._id && (
+                              <div className="mt-3 p-3 bg-gray-50 rounded-lg">
+                                <div className="flex items-center space-x-2">
+                                  <span className="text-gray-500">₹</span>
+                                  <input
+                                    type="number"
+                                    value={editedCostPrice}
+                                    onChange={(e) => setEditedCostPrice(e.target.value)}
+                                    className="flex-1 px-2 py-1 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                                    min="0"
+                                    step="0.01"
+                                    disabled={updating}
+                                  />
+                                </div>
+                                <div className="mt-2 flex space-x-2">
+                                  <button
+                                    className="flex-1 inline-flex items-center justify-center px-3 py-1 border border-transparent text-xs font-medium rounded text-white bg-green-600 hover:bg-green-700"
+                                    onClick={() => handleSaveCostPrice(item)}
+                                    disabled={updating}
+                                  >
+                                    <Save size={12} className="mr-1" />
+                                    Save
+                                  </button>
+                                  <button
+                                    className="flex-1 inline-flex items-center justify-center px-3 py-1 border border-gray-300 text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50"
+                                    onClick={handleCancelEditCostPrice}
                                     disabled={updating}
                                   >
                                     <X size={12} className="mr-1" />
@@ -2046,6 +2237,11 @@ const MerchantInventory = () => {
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Stock
                         </th>
+                        {merchant?.operationalInfo?.homeStore && (
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Cost Price
+                          </th>
+                        )}
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors" onClick={() => handleSort('price')}>
                           <div className="flex items-center gap-1">
                             Price
@@ -2094,6 +2290,12 @@ const MerchantInventory = () => {
                           handleEditWeight={handleEditWeight}
                           handleEditMarkupPrice={handleEditMarkupPrice}
                           handleEditPrice={handleEditPrice}
+                          editingCostPrice={editingCostPrice}
+                          editedCostPrice={editedCostPrice}
+                          setEditedCostPrice={setEditedCostPrice}
+                          handleSaveCostPrice={handleSaveCostPrice}
+                          handleEditCostPrice={handleEditCostPrice}
+                          handleCancelEditCostPrice={handleCancelEditCostPrice}
                           openProductModal={openProductModal}
                           getStockStatus={getStockStatus}
                           handleCancelEditWeight={() => setEditingWeight(null)}
