@@ -20,7 +20,6 @@ import DeliveryZones from './Admin/DeliveryZones.jsx'
 import Analytics from './Admin/Analytics.jsx'
 import Finance from './Admin/Finance.jsx'
 import GigWallet from './Admin/GigWallet.jsx'
-import GCoins from './Admin/GCoins.jsx'
 import AdminManagement from './Admin/AdminManagement.jsx'
 import Profile from './Admin/Profile.jsx'
 import Settings from './Admin/Settings.jsx'
@@ -64,6 +63,7 @@ import Tags from './Admin/Tags.jsx'
 import Brands from './Admin/Brands.jsx'
 import Tickets from './Admin/Tickets.jsx'
 import TicketGroups from './Admin/TicketGroups.jsx'
+import Gcoins from './Admin/GCoins.jsx'
 
 function App() {
   return (
@@ -133,7 +133,7 @@ function App() {
             <Route path="/eateries/:id" element={<EateryDetails />} />
             <Route path="/darkstore" element={<Darkstore />} />
             <Route path="/darkstore/add" element={<Darkstore />} />
-            <Route path="/gcoins" element={<GCoins />} />
+            <Route path="/gcoins" element={<Gcoins />} />
 
             {/* Support Management */}
             <Route path="/support" element={<Support />} />
