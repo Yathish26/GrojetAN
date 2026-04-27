@@ -20,6 +20,7 @@ import DeliveryZones from './Admin/DeliveryZones.jsx'
 import Analytics from './Admin/Analytics.jsx'
 import Finance from './Admin/Finance.jsx'
 import GigWallet from './Admin/GigWallet.jsx'
+import GCoins from './Admin/GCoins.jsx'
 import AdminManagement from './Admin/AdminManagement.jsx'
 import Profile from './Admin/Profile.jsx'
 import Settings from './Admin/Settings.jsx'
@@ -132,6 +133,7 @@ function App() {
             <Route path="/eateries/:id" element={<EateryDetails />} />
             <Route path="/darkstore" element={<Darkstore />} />
             <Route path="/darkstore/add" element={<Darkstore />} />
+            <Route path="/gcoins" element={<GCoins />} />
 
             {/* Support Management */}
             <Route path="/support" element={<Support />} />

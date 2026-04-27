@@ -325,7 +325,19 @@ export default function GigWallet() {
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">₹{transaction.amount}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-500">{transaction.date}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-500">
+                      {transaction.createdAt ? (() => {
+                        const date = new Date(transaction.createdAt);
+                        const day = String(date.getDate()).padStart(2, '0');
+                        const month = String(date.getMonth() + 1).padStart(2, '0');
+                        const year = String(date.getFullYear()).slice(-2);
+                        const hours = date.getHours();
+                        const minutes = String(date.getMinutes()).padStart(2, '0');
+                        const ampm = hours >= 12 ? 'PM' : 'AM';
+                        const displayHours = hours % 12 || 12;
+                        return `${day}/${month}/${year} ${displayHours}:${minutes} ${ampm}`;
+                      })() : 'N/A'}
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
                         {transaction.status}

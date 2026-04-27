@@ -67,7 +67,7 @@ const Logs = () => {
       message: log.message,
       user: log.platform === 'mobile' ? `${log.user} (customer)` : (log.user || 'system'),
       platform: log.platform || 'web',
-      version: log.platform === 'mobile' ? log.version : 'v2423',
+      version: extractVersion(log),
     };
   };
 

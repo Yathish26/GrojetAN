@@ -18,7 +18,8 @@ import {
   Target,
   TicketsPlane,
   Boxes,
-  Wallet
+  Wallet,
+  Coins
 } from 'lucide-react';
 import { MdAdminPanelSettings } from 'react-icons/md';
 import toast from 'react-hot-toast';
@@ -183,7 +184,7 @@ const Layout = ({ children, title }) => {
 
   const menuItems = [
     { name: 'Dashboard', icon: Home, path: '/', roles: ['super_admin', 'admin'] },
-    { name: 'Public Store', icon: Castle, path: '/public-store', roles: ['super_admin', 'admin']},
+    { name: 'Public Store', icon: Castle, path: '/public-store', roles: ['super_admin', 'admin'] },
     { name: 'Orders', icon: ShoppingCart, path: '/orders', roles: ['super_admin', 'admin'] },
     { name: 'Products', icon: Package, path: '/products', roles: ['super_admin', 'admin'] },
     { name: 'Add Product', icon: Plus, path: '/products/add', roles: ['super_admin', 'admin'] },
@@ -209,6 +210,7 @@ const Layout = ({ children, title }) => {
     { name: 'Analytics', icon: BarChart3, path: '/analytics', roles: ['super_admin', 'admin'] },
     { name: 'Finance', icon: IndianRupeeIcon, path: '/finance', roles: ['super_admin', 'admin'] },
     { name: 'Gig Wallet', icon: Wallet, path: '/gig-wallet', roles: ['super_admin', 'admin'] },
+    { name: 'G-Coins', icon: Coins, path: '/gcoins', roles: ['super_admin', 'admin'] },
     { name: 'App Controls', icon: TabletSmartphone, path: '/app-controls', roles: ['super_admin', 'admin'] },
     { name: 'Bug Reports', icon: Bug, path: '/bug-reports', roles: ['super_admin'] },
     { name: 'S3 Media Manager', icon: Package, path: '/s3-store', roles: ['super_admin'] },
@@ -347,7 +349,7 @@ const Layout = ({ children, title }) => {
 
           <div className="flex items-center gap-4">
             <div className="relative" ref={notificationsRef}>
-              <button 
+              <button
                 onClick={handleNotificationClick}
                 className="p-2 hover:bg-neutral-100 cursor-pointer relative"
               >
