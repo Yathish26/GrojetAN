@@ -32,10 +32,6 @@ export default function UpdateNotesAdmin() {
   const [submitting, setSubmitting] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
 
-  // Drag and drop state
-  const [draggedIndex, setDraggedIndex] = useState(null);
-  const [dragOverIndex, setDragOverIndex] = useState(null);
-
   // Helper function to format date as DD/MM/YYYY
   const formatDate = (dateString) => {
     const date = new Date(dateString);
@@ -49,9 +45,7 @@ export default function UpdateNotesAdmin() {
   const [formData, setFormData] = useState({
     app: '',
     version: '',
-    features: [''],
-    imageUrl: '',
-    images: [],
+    features: [{ image: '', text: '' }],
     releaseDate: '',
     isActive: true
   });
@@ -145,8 +139,8 @@ export default function UpdateNotesAdmin() {
       return;
     }
 
-    if (formData.features.length === 0 || formData.features[0].trim() === '') {
-      toast.error('Please add at least one feature');
+    if (formData.features.length === 0 || !formData.features.some(f => f.text.trim() !== '')) {
+      toast.error('Please add at least one feature with text');
       return;
     }
 
@@ -161,8 +155,11 @@ export default function UpdateNotesAdmin() {
           },
           credentials: 'include',
           body: JSON.stringify({
-            ...formData,
-            features: formData.features.filter(f => f.trim() !== '')
+            app: formData.app,
+            version: formData.version,
+            features: formData.features.filter(f => f.text.trim() !== ''),
+            releaseDate: formData.releaseDate,
+            isActive: formData.isActive
           }),
         }
       );
@@ -190,8 +187,8 @@ export default function UpdateNotesAdmin() {
       return;
     }
 
-    if (formData.features.length === 0 || formData.features[0].trim() === '') {
-      toast.error('Please add at least one feature');
+    if (formData.features.length === 0 || !formData.features.some(f => f.text.trim() !== '')) {
+      toast.error('Please add at least one feature with text');
       return;
     }
 
@@ -206,8 +203,11 @@ export default function UpdateNotesAdmin() {
           },
           credentials: 'include',
           body: JSON.stringify({
-            ...formData,
-            features: formData.features.filter(f => f.trim() !== '')
+            app: formData.app,
+            version: formData.version,
+            features: formData.features.filter(f => f.text.trim() !== ''),
+            releaseDate: formData.releaseDate,
+            isActive: formData.isActive
           }),
         }
       );
@@ -261,28 +261,26 @@ export default function UpdateNotesAdmin() {
     setFormData({
       app: '',
       version: '',
-      features: [''],
-      imageUrl: '',
-      images: [],
+      features: [{ image: '', text: '' }],
       releaseDate: '',
       isActive: true
     });
   };
 
   const openEditModal = (note) => {
-    const noteImages = Array.isArray(note.images) && note.images.length > 0
-      ? note.images
-      : note.imageUrl
-        ? [note.imageUrl]
-        : [];
+    // Convert features to the new format if they're still strings
+    const convertedFeatures = note.features.map(feature => {
+      if (typeof feature === 'string') {
+        return { image: '', text: feature };
+      }
+      return feature;
+    });
 
     setSelectedNote(note);
     setFormData({
       app: note.app,
       version: note.version,
-      features: note.features.length > 0 ? note.features : [''],
-      imageUrl: noteImages[0] || '',
-      images: noteImages,
+      features: convertedFeatures.length > 0 ? convertedFeatures : [{ image: '', text: '' }],
       releaseDate: note.releaseDate ? new Date(note.releaseDate).toISOString().split('T')[0] : '',
       isActive: note.isActive
     });
@@ -297,7 +295,7 @@ export default function UpdateNotesAdmin() {
   const addFeature = () => {
     setFormData(prev => ({
       ...prev,
-      features: [...prev.features, '']
+      features: [...prev.features, { image: '', text: '' }]
     }));
   };
 
@@ -308,22 +306,36 @@ export default function UpdateNotesAdmin() {
     }));
   };
 
-  const updateFeature = (index, value) => {
+  const updateFeature = (index, field, value) => {
     setFormData(prev => ({
       ...prev,
-      features: prev.features.map((feature, i) => i === index ? value : feature)
+      features: prev.features.map((feature, i) =>
+        i === index ? { ...feature, [field]: value } : feature
+      )
     }));
   };
 
-  const getNoteImages = (note) => {
-    if (Array.isArray(note.images) && note.images.length > 0) {
-      return note.images;
+  const getAppIcon = (app) => {
+    switch (app) {
+      case 'admin_panel': return <FiMonitor className="text-blue-600" />;
+      case 'customer_app': return <FiSmartphone className="text-green-600" />;
+      case 'merchant_app': return <FiShoppingCart className="text-purple-600" />;
+      case 'delivery_agent_app': return <FiTruck className="text-orange-600" />;
+      default: return <FiTag className="text-gray-600" />;
     }
-
-    return note.imageUrl ? [note.imageUrl] : [];
   };
 
-  const handleImageUpload = async (files) => {
+  const getAppName = (app) => {
+    switch (app) {
+      case 'admin_panel': return 'Admin Panel';
+      case 'customer_app': return 'Customer App';
+      case 'merchant_app': return 'Merchant App';
+      case 'delivery_agent_app': return 'Delivery Agent App';
+      default: return app;
+    }
+  };
+
+  const handleImageUpload = async (files, featureIndex) => {
     if (!files || files.length === 0) return;
 
     setUploadingImage(true);
@@ -353,14 +365,17 @@ export default function UpdateNotesAdmin() {
       }
 
       setFormData(prev => {
-        const nextImages = [...prev.images, ...uploadedUrls];
+        const newFeatures = [...prev.features];
+        newFeatures[featureIndex] = {
+          ...newFeatures[featureIndex],
+          image: uploadedUrls[0] // Use the first uploaded image
+        };
         return {
           ...prev,
-          imageUrl: nextImages[0] || '',
-          images: nextImages
+          features: newFeatures
         };
       });
-      toast.success(`${uploadedUrls.length} image${uploadedUrls.length > 1 ? 's' : ''} uploaded successfully`);
+      toast.success('Image uploaded successfully');
     } catch (error) {
       console.error('Image upload error:', error);
       toast.error(error.message || 'Failed to upload image');
@@ -369,86 +384,26 @@ export default function UpdateNotesAdmin() {
     }
   };
 
-  const handleFileChange = (event) => {
+  const handleFileChange = (event, featureIndex) => {
     const files = Array.from(event.target.files || []);
     if (files.length > 0) {
-      handleImageUpload(files);
+      handleImageUpload(files, featureIndex);
     }
     event.target.value = '';
   };
 
-  const removeImage = (imageIndex) => {
+  const removeFeatureImage = (featureIndex) => {
     setFormData(prev => {
-      const nextImages = prev.images.filter((_, index) => index !== imageIndex);
+      const newFeatures = [...prev.features];
+      newFeatures[featureIndex] = {
+        ...newFeatures[featureIndex],
+        image: ''
+      };
       return {
         ...prev,
-        imageUrl: nextImages[0] || '',
-        images: nextImages
+        features: newFeatures
       };
     });
-  };
-
-  // Drag and drop handlers
-  const handleDragStart = (e, index) => {
-    setDraggedIndex(index);
-    e.dataTransfer.effectAllowed = 'move';
-  };
-
-  const handleDragOver = (e, index) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-    setDragOverIndex(index);
-  };
-
-  const handleDragEnd = () => {
-    setDraggedIndex(null);
-    setDragOverIndex(null);
-  };
-
-  const handleDrop = (e, dropIndex) => {
-    e.preventDefault();
-    const dragIndex = draggedIndex;
-
-    if (dragIndex === null || dragIndex === dropIndex) {
-      setDraggedIndex(null);
-      setDragOverIndex(null);
-      return;
-    }
-
-    setFormData(prev => {
-      const newImages = [...prev.images];
-      const [draggedItem] = newImages.splice(dragIndex, 1);
-      newImages.splice(dropIndex, 0, draggedItem);
-
-      return {
-        ...prev,
-        images: newImages,
-        imageUrl: newImages[0] || ''
-      };
-    });
-
-    setDraggedIndex(null);
-    setDragOverIndex(null);
-  };
-
-  const getAppIcon = (app) => {
-    switch (app) {
-      case 'admin_panel': return <FiMonitor className="text-blue-600" />;
-      case 'customer_app': return <FiSmartphone className="text-green-600" />;
-      case 'merchant_app': return <FiShoppingCart className="text-purple-600" />;
-      case 'delivery_agent_app': return <FiTruck className="text-orange-600" />;
-      default: return <FiTag className="text-gray-600" />;
-    }
-  };
-
-  const getAppName = (app) => {
-    switch (app) {
-      case 'admin_panel': return 'Admin Panel';
-      case 'customer_app': return 'Customer App';
-      case 'merchant_app': return 'Merchant App';
-      case 'delivery_agent_app': return 'Delivery Agent App';
-      default: return app;
-    }
   };
 
   const filteredNotes = filterApp === 'all'
@@ -607,39 +562,43 @@ export default function UpdateNotesAdmin() {
                     </div>
 
                     <div className="p-6 space-y-4">
-                      {getNoteImages(note).length > 0 && (
-                        <div className="grid grid-cols-2 gap-2">
-                          {getNoteImages(note).slice(0, 4).map((image, index) => (
-                            <img
-                              key={`${note._id}-image-${index}`}
-                              src={image}
-                              alt={`${getAppName(note.app)} ${note.version} ${index + 1}`}
-                              className="w-full h-32 object-cover rounded-lg border border-gray-200"
-                            />
-                          ))}
-                        </div>
-                      )}
-
                       <div className="flex items-center gap-2 text-sm text-gray-600">
                         <FiCalendar className="text-gray-400" />
                         <span>Released: {formatDate(note.releaseDate)}</span>
                       </div>
 
                       <div>
-                        <h4 className="font-medium text-gray-800 mb-2">Features ({note.features.length})</h4>
-                        <ul className="space-y-1">
-                          {note.features.slice(0, 3).map((feature, index) => (
-                            <li key={index} className="text-sm text-gray-600 flex items-start gap-2">
-                              <span className="text-green-500 mt-1">•</span>
-                              <span className="flex-1">{feature}</span>
-                            </li>
-                          ))}
+                        <h4 className="font-medium text-gray-800 mb-3">Features ({note.features.length})</h4>
+                        <div className="space-y-3">
+                          {note.features.slice(0, 3).map((feature, index) => {
+                            // Handle both old string format and new object format
+                            const featureObj = typeof feature === 'string'
+                              ? { image: '', text: feature }
+                              : feature;
+
+                            return (
+                              <div key={index} className="border border-gray-100 rounded-lg p-3 bg-gray-50">
+                                {featureObj.image && (
+                                  <div className="mb-2">
+                                    <img
+                                      src={featureObj.image}
+                                      alt={`Feature ${index + 1}`}
+                                      className="w-full h-32 object-cover rounded-lg border border-gray-200"
+                                    />
+                                  </div>
+                                )}
+                                <p className="text-sm text-gray-700 leading-relaxed">
+                                  {featureObj.text}
+                                </p>
+                              </div>
+                            );
+                          })}
                           {note.features.length > 3 && (
-                            <li className="text-sm text-gray-500">
+                            <div className="text-sm text-gray-500 text-center py-2">
                               +{note.features.length - 3} more features
-                            </li>
+                            </div>
                           )}
-                        </ul>
+                        </div>
                       </div>
 
                       <div className="text-xs text-gray-500 pt-2 border-t">
@@ -732,25 +691,69 @@ export default function UpdateNotesAdmin() {
                   Features *
                 </label>
                 {formData.features.map((feature, index) => (
-                  <div key={index} className="flex gap-2 mb-2">
-                    <input
-                      type="text"
-                      maxLength={200}
-                      value={feature}
-                      onChange={(e) => updateFeature(index, e.target.value)}
-                      placeholder="Enter feature description"
-                      className="flex-1 p-3 border focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                      disabled={submitting}
-                    />
-                    {formData.features.length > 1 && (
-                      <button
-                        onClick={() => removeFeature(index)}
-                        className="px-3 py-3 bg-red-100 text-red-600 hover:bg-red-200 transition"
-                        disabled={submitting}
-                      >
-                        <FiX />
-                      </button>
-                    )}
+                  <div key={index} className="border border-gray-200 rounded-lg p-4 mb-4">
+                    <div className="space-y-3">
+                      {/* Image Upload */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-600 mb-2">
+                          Feature Image (optional)
+                        </label>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => handleFileChange(e, index)}
+                          disabled={submitting || uploadingImage}
+                          className="w-full p-2 border border-gray-300 rounded-lg text-sm"
+                        />
+                        {uploadingImage && (
+                          <div className="text-sm text-gray-600 mt-1">Uploading image...</div>
+                        )}
+                        {feature.image && (
+                          <div className="relative mt-2 inline-block">
+                            <img
+                              src={feature.image}
+                              alt={`Feature ${index + 1} preview`}
+                              className="w-32 h-32 object-cover rounded-lg border border-gray-200"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => removeFeatureImage(index)}
+                              className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition"
+                              disabled={submitting || uploadingImage}
+                            >
+                              <FiX size={12} />
+                            </button>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Feature Text */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-600 mb-2">
+                          Feature Description *
+                        </label>
+                        <div className="flex gap-2">
+                          <textarea
+                            value={feature.text}
+                            onChange={(e) => updateFeature(index, 'text', e.target.value)}
+                            placeholder="Enter feature description"
+                            rows="3"
+                            maxLength={500}
+                            className="flex-1 p-3 border focus:ring-2 focus:ring-green-500 focus:border-green-500 resize-none"
+                            disabled={submitting}
+                          />
+                          {formData.features.length > 1 && (
+                            <button
+                              onClick={() => removeFeature(index)}
+                              className="px-3 py-3 bg-red-100 text-red-600 hover:bg-red-200 transition self-start"
+                              disabled={submitting}
+                            >
+                              <FiX />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 ))}
                 <button
@@ -761,61 +764,6 @@ export default function UpdateNotesAdmin() {
                   <FiPlus className="text-sm" />
                   Add Feature
                 </button>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Attach Images
-                </label>
-                <div className="space-y-3">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    onChange={handleFileChange}
-                    disabled={submitting || uploadingImage}
-                    className="w-full p-3 border border-gray-300 rounded-lg"
-                  />
-                  {uploadingImage && (
-                    <div className="text-sm text-gray-600">Uploading images...</div>
-                  )}
-                  {formData.images.length > 0 && (
-                    <div className="grid grid-cols-2 gap-3">
-                      {formData.images.map((image, index) => (
-                        <div
-                          key={`create-image-${index}`}
-                          className={`relative cursor-move transition-all duration-200 ${
-                            draggedIndex === index ? 'opacity-50 scale-95' : ''
-                          } ${
-                            dragOverIndex === index ? 'ring-2 ring-blue-400 ring-offset-2' : ''
-                          }`}
-                          draggable
-                          onDragStart={(e) => handleDragStart(e, index)}
-                          onDragOver={(e) => handleDragOver(e, index)}
-                          onDragEnd={handleDragEnd}
-                          onDrop={(e) => handleDrop(e, index)}
-                        >
-                          <img
-                            src={image}
-                            alt={`Update note preview ${index + 1}`}
-                            className="w-full h-40 object-cover rounded-lg border border-gray-200"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => removeImage(index)}
-                            className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition z-10"
-                            disabled={submitting || uploadingImage}
-                          >
-                            <FiX size={16} />
-                          </button>
-                          <div className="absolute bottom-2 left-2 bg-black bg-opacity-50 text-white text-xs px-2 py-1 rounded">
-                            {index + 1}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
               </div>
 
               <div className="flex items-center gap-2">
@@ -925,24 +873,69 @@ export default function UpdateNotesAdmin() {
                   Features *
                 </label>
                 {formData.features.map((feature, index) => (
-                  <div key={index} className="flex gap-2 mb-2">
-                    <input
-                      type="text"
-                      value={feature}
-                      onChange={(e) => updateFeature(index, e.target.value)}
-                      placeholder="Enter feature description"
-                      className="flex-1 p-3 border focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                      disabled={submitting}
-                    />
-                    {formData.features.length > 1 && (
-                      <button
-                        onClick={() => removeFeature(index)}
-                        className="px-3 py-3 bg-red-100 text-red-600 hover:bg-red-200 transition"
-                        disabled={submitting}
-                      >
-                        <FiX />
-                      </button>
-                    )}
+                  <div key={index} className="border border-gray-200 rounded-lg p-4 mb-4">
+                    <div className="space-y-3">
+                      {/* Image Upload */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-600 mb-2">
+                          Feature Image (optional)
+                        </label>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => handleFileChange(e, index)}
+                          disabled={submitting || uploadingImage}
+                          className="w-full p-2 border border-gray-300 rounded-lg text-sm"
+                        />
+                        {uploadingImage && (
+                          <div className="text-sm text-gray-600 mt-1">Uploading image...</div>
+                        )}
+                        {feature.image && (
+                          <div className="relative mt-2 inline-block">
+                            <img
+                              src={feature.image}
+                              alt={`Feature ${index + 1} preview`}
+                              className="w-32 h-32 object-cover rounded-lg border border-gray-200"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => removeFeatureImage(index)}
+                              className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition"
+                              disabled={submitting || uploadingImage}
+                            >
+                              <FiX size={12} />
+                            </button>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Feature Text */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-600 mb-2">
+                          Feature Description *
+                        </label>
+                        <div className="flex gap-2">
+                          <textarea
+                            value={feature.text}
+                            onChange={(e) => updateFeature(index, 'text', e.target.value)}
+                            placeholder="Enter feature description"
+                            rows="3"
+                            maxLength={500}
+                            className="flex-1 p-3 border focus:ring-2 focus:ring-green-500 focus:border-green-500 resize-none"
+                            disabled={submitting}
+                          />
+                          {formData.features.length > 1 && (
+                            <button
+                              onClick={() => removeFeature(index)}
+                              className="px-3 py-3 bg-red-100 text-red-600 hover:bg-red-200 transition self-start"
+                              disabled={submitting}
+                            >
+                              <FiX />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 ))}
                 <button
@@ -953,61 +946,6 @@ export default function UpdateNotesAdmin() {
                   <FiPlus className="text-sm" />
                   Add Feature
                 </button>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Attach Images
-                </label>
-                <div className="space-y-3">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    onChange={handleFileChange}
-                    disabled={submitting || uploadingImage}
-                    className="w-full p-3 border border-gray-300 rounded-lg"
-                  />
-                  {uploadingImage && (
-                    <div className="text-sm text-gray-600">Uploading images...</div>
-                  )}
-                  {formData.images.length > 0 && (
-                    <div className="grid grid-cols-2 gap-3">
-                      {formData.images.map((image, index) => (
-                        <div
-                          key={`edit-image-${index}`}
-                          className={`relative cursor-move transition-all duration-200 ${
-                            draggedIndex === index ? 'opacity-50 scale-95' : ''
-                          } ${
-                            dragOverIndex === index ? 'ring-2 ring-blue-400 ring-offset-2' : ''
-                          }`}
-                          draggable
-                          onDragStart={(e) => handleDragStart(e, index)}
-                          onDragOver={(e) => handleDragOver(e, index)}
-                          onDragEnd={handleDragEnd}
-                          onDrop={(e) => handleDrop(e, index)}
-                        >
-                          <img
-                            src={image}
-                            alt={`Update note preview ${index + 1}`}
-                            className="w-full h-40 object-cover rounded-lg border border-gray-200"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => removeImage(index)}
-                            className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition z-10"
-                            disabled={submitting || uploadingImage}
-                          >
-                            <FiX size={16} />
-                          </button>
-                          <div className="absolute bottom-2 left-2 bg-black bg-opacity-50 text-white text-xs px-2 py-1 rounded">
-                            {index + 1}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
               </div>
 
               <div className="flex items-center gap-2">

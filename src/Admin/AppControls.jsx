@@ -31,6 +31,13 @@ export default function AppControls() {
   const [customerBulkNotificationProgress, setCustomerBulkNotificationProgress] = useState(null);
   const [customerBulkNotificationScreen, setCustomerBulkNotificationScreen] = useState('Homescreen');
 
+  // Cart bulk notifications states
+  const [cartBulkNotificationText, setCartBulkNotificationText] = useState('');
+  const [cartBulkNotificationTitle, setCartBulkNotificationTitle] = useState('');
+  const [cartBulkPushTokens, setCartBulkPushTokens] = useState('');
+  const [cartBulkNotificationResults, setCartBulkNotificationResults] = useState(null);
+  const [cartBulkNotificationLoading, setCartBulkNotificationLoading] = useState(false);
+
   // New states for app controls
   const [taxPercentageOnDeliveryFee, setTaxPercentageOnDeliveryFee] = useState(null);
   const [deliveryFee, setDeliveryFee] = useState(null);
@@ -999,6 +1006,70 @@ export default function AppControls() {
     setCustomerBulkNotificationTitle('');
   };
 
+  const handleSendCartBulkNotification = async () => {
+    if (!cartBulkNotificationText.trim()) {
+      toast.error('Please enter notification text');
+      return;
+    }
+
+    const tokens = cartBulkPushTokens.split(/[\n,]/).map(token => token.trim()).filter(token => token);
+    if (tokens.length === 0) {
+      toast.error('Please enter at least one push token');
+      return;
+    }
+
+    setCartBulkNotificationLoading(true);
+    setCartBulkNotificationResults(null);
+
+    try {
+      if (cartBulkNotificationTitle && cartBulkNotificationTitle.length > 150) {
+        toast.error('Title cannot exceed 150 characters');
+        setCartBulkNotificationLoading(false);
+        return;
+      }
+
+      const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/notifications/send-cart-bulk-notification`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-version': VERSION,
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          title: cartBulkNotificationTitle,
+          message: cartBulkNotificationText,
+          pushTokens: tokens,
+        }),
+      });
+
+      if (response.status === 401) {
+        navigate('/login', { replace: true });
+        return;
+      }
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setCartBulkNotificationResults(data);
+        toast.success(`Bulk notification sent! ${data.data?.totalSent || 0} delivered`);
+      } else {
+        toast.error(data.message || 'Failed to send bulk notification');
+      }
+    } catch (error) {
+      console.error('Error sending cart bulk notification:', error);
+      toast.error('Failed to send bulk notification');
+    } finally {
+      setCartBulkNotificationLoading(false);
+    }
+  };
+
+  const clearCartBulkResults = () => {
+    setCartBulkNotificationResults(null);
+    setCartBulkNotificationTitle('');
+    setCartBulkNotificationText('');
+    setCartBulkPushTokens('');
+  };
+
   return (
     <Layout title="App Controls">
       <div className="max-w-4xl mx-auto p-4 sm:p-6 space-y-4 sm:space-y-6">
@@ -1410,6 +1481,69 @@ export default function AppControls() {
                 </div>
               </div>
             )}
+          </div>
+        </div>
+
+        {/* Cart Push Tokens Bulk Notifications Panel */}
+        <div className="bg-white shadow-sm border border-gray-200 rounded-lg p-4 sm:p-6">
+          <h2 className="text-lg sm:text-xl font-semibold text-gray-800 mb-4">Bulk Notification with push tokens(Cart)</h2>
+          <div className="space-y-4">
+            {/* Notification Title (optional) */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Notification Title (optional)
+              </label>
+              <input
+                maxLength={150}
+                value={cartBulkNotificationTitle}
+                onChange={(e) => setCartBulkNotificationTitle(e.target.value)}
+                placeholder="Short title for the notification"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+              />
+            </div>
+
+            {/* Notification Text */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Notification Text
+              </label>
+              <textarea
+                maxLength={500}
+                value={cartBulkNotificationText}
+                onChange={(e) => setCartBulkNotificationText(e.target.value)}
+                placeholder="Enter the notification message..."
+                rows="4"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none text-sm"
+              />
+            </div>
+
+            {/* Push Tokens */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Push Tokens
+              </label>
+              <textarea
+                value={cartBulkPushTokens}
+                onChange={(e) => setCartBulkPushTokens(e.target.value)}
+                placeholder="Enter push tokens, one per line or comma-separated (e.g., ExponentPushToken[abc123], FCM:xyz789)"
+                rows="6"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none text-sm font-mono"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Enter Expo push tokens (starting with "ExponentPushToken[") or FCM registration tokens. Separate with commas or new lines.
+              </p>
+            </div>
+
+            {/* Send Button */}
+            <div className="flex justify-end pt-2">
+              <button
+                onClick={handleSendCartBulkNotification}
+                disabled={cartBulkNotificationLoading}
+                className="w-full sm:w-auto px-4 sm:px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed transition-colors text-sm font-medium"
+              >
+                {cartBulkNotificationLoading ? 'Sending...' : 'Send Bulk Notification'}
+              </button>
+            </div>
           </div>
         </div>
 
