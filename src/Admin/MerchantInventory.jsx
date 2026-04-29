@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Package, Search, AlertTriangle, CheckCircle, XCircle, Edit, Save, X, ChevronLeft, ChevronRight, Filter, SlidersHorizontal, Trash2, Plus, Check, FileSpreadsheet, ArrowUp, ArrowDown, ArrowUpDown, ChevronDown, Flag, Tag } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Layout from '../Components/Layout';
+import { VERSION } from '../../version.js';
 
 // Memoized inventory item component to prevent unnecessary re-renders
 const InventoryItem = React.memo(({
@@ -1167,6 +1168,25 @@ const MerchantInventory = () => {
     setEditedCostPrice('');
   };
 
+  const createLog = async (message) => {
+    try {
+      await fetch(`${import.meta.env.VITE_SERVER}/admin/logs`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          level: 'INFO',
+          message,
+          user: currentUser?.name || currentUser?.email || 'Admin',
+          platform: 'Admin',
+          version: VERSION
+        }),
+      });
+    } catch (error) {
+      console.error('Error creating log:', error);
+    }
+  };
+
   const handleSaveCostPrice = async (item) => {
     const costPrice = parseFloat(editedCostPrice);
     if (isNaN(costPrice) || costPrice < 0) {
@@ -1200,6 +1220,10 @@ const MerchantInventory = () => {
         }
         if (data.success) {
           toast.success('Cost price updated successfully');
+          // Log the cost price change
+          const adminName = currentUser?.name || currentUser?.email || 'Admin';
+          const oldPrice = item.costPrice || 0;
+          await createLog(`${adminName} changed the cost price of "${item.name}" from ₹${oldPrice.toFixed(2)} to ₹${costPrice.toFixed(2)}`);
           setEditingCostPrice(null);
           setEditedCostPrice('');
           // Refetch the current page to ensure data consistency
