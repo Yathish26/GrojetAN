@@ -1950,7 +1950,7 @@ const XpressOrderDetails = () => {
                     <div className={`w-3 h-3 rounded-full mr-3 ${order.status === 'picked_up' ? 'bg-blue-500' : 'bg-green-500'}`}></div>
                     <div>
                       <p className="text-sm font-medium text-gray-900">Package Picked Up</p>
-                      <p className="text-xs text-gray-500">Status updated</p>
+                      <p className="text-xs text-gray-500">{order.pickedUpAt ? formatDateTime(order.pickedUpAt) : 'Status updated'}</p>
                     </div>
                   </div>
                 )}
@@ -1960,7 +1960,7 @@ const XpressOrderDetails = () => {
                     <div className={`w-3 h-3 rounded-full mr-3 ${order.status === 'in_transit' ? 'bg-purple-500' : 'bg-green-500'}`}></div>
                     <div>
                       <p className="text-sm font-medium text-gray-900">In Transit</p>
-                      <p className="text-xs text-gray-500">Package is on the way</p>
+                      <p className="text-xs text-gray-500">{order.inTransitAt ? formatDateTime(order.inTransitAt) : 'Package is on the way'}</p>
                     </div>
                   </div>
                 )}
