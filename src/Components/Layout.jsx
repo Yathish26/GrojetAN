@@ -216,7 +216,7 @@ const Layout = ({ children, title }) => {
     { name: 'S3 Media Manager', icon: Package, path: '/s3-store', roles: ['super_admin'] },
     { name: 'Admin Management', icon: Shield, path: '/admin-management', roles: ['super_admin'] },
     { name: 'Security', icon: ShieldPlus, path: '/security', roles: ['super_admin'] },
-    { name: 'Logs', icon: FileText, path: '/logs', roles: ['super_admin'] },
+    { name: 'Logs', icon: FileText, path: '/logs', roles: ['super_admin','admin'] },
     { name: 'Update Notes', icon: FileText, path: '/update-notes', roles: ['super_admin'] },
     { name: 'Super Tags', icon: Star, path: '/super-tags', roles: ['super_admin'] },
     { name: 'Tags', icon: Tag, path: '/tags', roles: ['super_admin'] },
