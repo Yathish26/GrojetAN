@@ -84,6 +84,19 @@ const XpressOrderDetails = () => {
     return `${displayHours}:${minutes} ${ampm}`;
   };
 
+  const formatDateTime12Hour = (dateString) => {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    const hours = date.getHours();
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    const displayHours = hours % 12 || 12;
+    return `${day}/${month}/${year} ${displayHours}:${minutes} ${ampm}`;
+  };
+
   const calculateTimeTaken = (createdAt, deliveredAt) => {
     if (!createdAt || !deliveredAt) return null;
 
@@ -1869,7 +1882,7 @@ const XpressOrderDetails = () => {
                   <div className={`w-3 h-3 rounded-full mr-3 ${order.status === 'pending' ? 'bg-yellow-500' : 'bg-green-500'}`}></div>
                   <div>
                     <p className="text-sm font-medium text-gray-900">Order Placed</p>
-                    <p className="text-xs text-gray-500">{formatDateTime(order.createdAt)}</p>
+                    <p className="text-xs text-gray-500">{formatDateTime12Hour(order.createdAt)}</p>
                   </div>
                 </div>
 
@@ -1894,7 +1907,7 @@ const XpressOrderDetails = () => {
                               {event.status === 'cancelled' && `Assignment Cancelled for ${event.agent?.personalInfo?.firstName || event.agentName || 'Unknown Agent'} ${event.agent?.personalInfo?.lastName || ''}`.trim()}
                               {event.status === 'expired' && `Assignment Expired for ${event.agent?.personalInfo?.firstName || event.agentName || 'Unknown Agent'} ${event.agent?.personalInfo?.lastName || ''}`.trim()}
                             </p>
-                            <p className="text-xs text-gray-500 mb-1">{formatDateTime(event.timestamp)}</p>
+                            <p className="text-xs text-gray-500 mb-1">{formatDateTime12Hour(event.timestamp)}</p>
                             {event.assignedBy?.name && event.status === 'assigned' && (
                               <p className="text-xs text-gray-600">
                                 <span className="font-medium">Assigned by:</span> {event.assignedBy.name}
@@ -1928,7 +1941,7 @@ const XpressOrderDetails = () => {
                         Agent Assigned: {order.assignment.agent.personalInfo?.firstName} {order.assignment.agent.personalInfo?.lastName || ''}
                       </p>
                       <p className="text-xs text-gray-500 mb-1">
-                        {order.assignment.assignedAt ? formatDateTime(order.assignment.assignedAt) : 'Recently assigned'}
+                        {order.assignment.assignedAt ? formatDateTime12Hour(order.assignment.assignedAt) : 'Recently assigned'}
                       </p>
                       <p className="text-xs text-gray-600">
                         Status: {order.assignment.status === 'pending' ? 'Waiting for acceptance' :
@@ -1950,7 +1963,7 @@ const XpressOrderDetails = () => {
                     <div className={`w-3 h-3 rounded-full mr-3 ${order.status === 'picked_up' ? 'bg-blue-500' : 'bg-green-500'}`}></div>
                     <div>
                       <p className="text-sm font-medium text-gray-900">Package Picked Up</p>
-                      <p className="text-xs text-gray-500">{order.pickedUpAt ? formatDateTime(order.pickedUpAt) : 'Status updated'}</p>
+                      <p className="text-xs text-gray-500">{order.pickedUpAt ? formatDateTime12Hour(order.pickedUpAt) : 'Status updated'}</p>
                     </div>
                   </div>
                 )}
@@ -1960,7 +1973,7 @@ const XpressOrderDetails = () => {
                     <div className={`w-3 h-3 rounded-full mr-3 ${order.status === 'in_transit' ? 'bg-purple-500' : 'bg-green-500'}`}></div>
                     <div>
                       <p className="text-sm font-medium text-gray-900">In Transit</p>
-                      <p className="text-xs text-gray-500">{order.inTransitAt ? formatDateTime(order.inTransitAt) : 'Package is on the way'}</p>
+                      <p className="text-xs text-gray-500">{order.inTransitAt ? formatDateTime12Hour(order.inTransitAt) : 'Package is on the way'}</p>
                     </div>
                   </div>
                 )}
@@ -1971,8 +1984,8 @@ const XpressOrderDetails = () => {
                     <div>
                       <p className="text-sm font-medium text-gray-900">Delivered</p>
                       <p className="text-xs text-gray-500">
-                        {order.deliveredAt ? formatDateTime(order.deliveredAt) :
-                          order.dropOtp?.verifiedAt ? formatDateTime(order.dropOtp.verifiedAt) :
+                        {order.deliveredAt ? formatDateTime12Hour(order.deliveredAt) :
+                          order.dropOtp?.verifiedAt ? formatDateTime12Hour(order.dropOtp.verifiedAt) :
                             'Package delivered successfully'}
                       </p>
                       <p className="text-xs text-blue-600 mt-1">
@@ -1988,7 +2001,7 @@ const XpressOrderDetails = () => {
                     <div className="flex-1">
                       <p className="text-sm font-medium text-gray-900">Order Cancelled</p>
                       <p className="text-xs text-gray-500 mb-2">
-                        {order.cancellation?.cancelledAt ? formatDateTime(order.cancellation.cancelledAt) : 'Cancelled'}
+                        {order.cancellation?.cancelledAt ? formatDateTime12Hour(order.cancellation.cancelledAt) : 'Cancelled'}
                       </p>
                       {order.cancellation?.cancelledByName && (
                         <p className="text-xs text-gray-600 mb-1">
