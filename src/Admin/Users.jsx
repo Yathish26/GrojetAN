@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { FiUsers, FiUser, FiSearch, FiChevronLeft, FiChevronRight, FiDownload } from 'react-icons/fi';
+import { FiUsers, FiUser, FiSearch, FiChevronLeft, FiChevronRight, FiDownload, FiBriefcase } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import { Ban } from 'lucide-react';
@@ -19,6 +19,7 @@ export default function Users() {
   const [searchLoading, setSearchLoading] = useState(false);
   const [stats, setStats] = useState({});
   const [hasEmailFilter, setHasEmailFilter] = useState(false);
+  const [showBusinessOnly, setShowBusinessOnly] = useState(false);
 
   const navigate = useNavigate();
   const [currentUser, setCurrentUser] = useState(null);
@@ -95,13 +96,13 @@ export default function Users() {
       fetchTotalUsers();
       fetchStats();
     }
-  }, [currentPage, isAuthorized, hasEmailFilter]);
+  }, [currentPage, isAuthorized, hasEmailFilter, showBusinessOnly]);
 
   const fetchUsers = async () => {
     try {
       setLoading(true);
       const response = await fetch(
-        `${import.meta.env.VITE_SERVER}/admin/users?page=${currentPage}&hasEmail=${hasEmailFilter}`,
+        `${import.meta.env.VITE_SERVER}/admin/users?page=${currentPage}&hasEmail=${hasEmailFilter}&businessOnly=${showBusinessOnly}`,
         {
           credentials: 'include', // <-- send cookie for auth
         }
@@ -134,7 +135,7 @@ export default function Users() {
   const fetchTotalUsers = async () => {
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_SERVER}/admin/users/count?hasEmail=${hasEmailFilter}`,
+        `${import.meta.env.VITE_SERVER}/admin/users/count?hasEmail=${hasEmailFilter}&businessOnly=${showBusinessOnly}`,
         {
           credentials: 'include', // <-- send cookie for auth
         }
@@ -256,12 +257,12 @@ export default function Users() {
   };
 
   // Pagination logic
-  const currentUsers = searching ? users : users;
+  const currentUsers = users;
   const totalPages = searching ? 1 : Math.ceil(totalUsers / usersPerPage);
 
   // Calculate display indices for pagination info
   const displayStartIndex = searching ? 1 : (currentPage - 1) * usersPerPage + 1;
-  const displayEndIndex = searching ? users.length : (currentPage - 1) * usersPerPage + currentUsers.length;
+  const displayEndIndex = searching ? filteredUsers.length : (currentPage - 1) * usersPerPage + currentUsers.length;
 
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
@@ -387,6 +388,12 @@ export default function Users() {
                       className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                     />
                     <span className="ml-2 text-sm text-gray-700">Has Email</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer select-none" onClick={() => { setShowBusinessOnly(v => !v); setCurrentPage(1); }}>
+                    <div className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${showBusinessOnly ? 'bg-indigo-600' : 'bg-gray-300'}`}>
+                      <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${showBusinessOnly ? 'translate-x-6' : 'translate-x-1'}`} />
+                    </div>
+                    <span className="text-sm text-gray-700">Business Users Only</span>
                   </label>
                   <button
                     type="submit"

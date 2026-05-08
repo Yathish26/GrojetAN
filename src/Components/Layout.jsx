@@ -208,6 +208,7 @@ const Layout = ({ children, title }) => {
     { name: 'Inline Offer', icon: Gift, path: '/inline-offers', roles: ['super_admin', 'admin'] },
     { name: 'Home Ads', icon: Smartphone, path: '/home-ads', roles: ['super_admin', 'admin'] },
     { name: 'Analytics', icon: BarChart3, path: '/analytics', roles: ['super_admin', 'admin'] },
+    { name: 'PostHog Analytics', icon: BarChart3, path: '/posthog-analytics', roles: ['super_admin', 'admin'] },
     { name: 'Finance', icon: IndianRupeeIcon, path: '/finance', roles: ['super_admin', 'admin'] },
     { name: 'Gig Wallet', icon: Wallet, path: '/gig-wallet', roles: ['super_admin', 'admin'] },
     { name: 'G-Coins', icon: Coins, path: '/gcoins', roles: ['super_admin', 'admin'] },

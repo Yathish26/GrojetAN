@@ -64,6 +64,7 @@ export default function UserData() {
   const [currentUser, setCurrentUser] = useState(null);
   const [checkingUser, setCheckingUser] = useState(true);
   const [redirecting, setRedirecting] = useState(false);
+  const [updatingBusinessUser, setUpdatingBusinessUser] = useState(false);
 
   useEffect(() => {
     fetchCurrentUser();
@@ -281,6 +282,34 @@ export default function UserData() {
       }
     } catch (error) {
       console.error('Error fetching last xpress order date:', error);
+    }
+  };
+
+  const handleToggleBusinessUser = async () => {
+    const newValue = !user.isBusinessUser;
+    try {
+      setUpdatingBusinessUser(true);
+      const response = await fetch(
+        `${import.meta.env.VITE_SERVER}/admin/users/${id}/business-user`,
+        {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ isBusinessUser: newValue }),
+        }
+      );
+      if (response.ok) {
+        toast.success(newValue ? 'User marked as business user. Xpress is now free.' : 'Business user status removed.');
+        fetchUserDetails();
+      } else {
+        const data = await response.json();
+        toast.error(data.message || 'Failed to update business user status');
+      }
+    } catch (error) {
+      console.error('Error updating business user status:', error);
+      toast.error('Failed to update business user status');
+    } finally {
+      setUpdatingBusinessUser(false);
     }
   };
 
@@ -656,6 +685,12 @@ export default function UserData() {
                     }`}>
                     {user.status?.accountStatus ? user.status.accountStatus.charAt(0).toUpperCase() + user.status.accountStatus.slice(1) : 'Unknown'}
                   </span>
+                  {user.isBusinessUser && (
+                    <span className="inline-flex items-center gap-1 px-3 py-1 text-xs font-semibold bg-indigo-100 text-indigo-800 rounded-full">
+                      <FiBriefcase className="w-3 h-3" />
+                      Business User
+                    </span>
+                  )}
                   <span className="text-green-100 text-sm">
                     Joined {new Date(user.createdAt).toLocaleDateString('en-IN')}
                   </span>
@@ -702,6 +737,21 @@ export default function UserData() {
                     <FiUserCheck className="mr-2" />
                     {updatingStatus ? 'Processing...' : 'Activate User'}
                   </button>
+                )}
+
+                {adminRole === 'super_admin' && (
+                <button
+                  onClick={handleToggleBusinessUser}
+                  className={`inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-lg text-white ${
+                    user.isBusinessUser
+                      ? 'bg-yellow-600 hover:bg-yellow-700 focus:ring-yellow-500'
+                      : 'bg-indigo-600 hover:bg-indigo-700 focus:ring-indigo-500'
+                  } focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed`}
+                  disabled={updatingBusinessUser}
+                >
+                  <FiBriefcase className="mr-2" />
+                  {updatingBusinessUser ? 'Updating...' : user.isBusinessUser ? 'Remove Business User' : 'Mark as Business User'}
+                </button>
                 )}
 
                 {adminRole === 'super_admin' && (
