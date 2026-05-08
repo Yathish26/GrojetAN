@@ -19,7 +19,8 @@ import {
   TicketsPlane,
   Boxes,
   Wallet,
-  Coins
+  Coins,
+  Handshake
 } from 'lucide-react';
 import { MdAdminPanelSettings } from 'react-icons/md';
 import toast from 'react-hot-toast';
@@ -184,11 +185,12 @@ const Layout = ({ children, title }) => {
 
   const menuItems = [
     { name: 'Dashboard', icon: Home, path: '/', roles: ['super_admin', 'admin'] },
+    { name: 'B2B Xpress', icon: Handshake, path: '/b2bxpress', roles: ['super_admin', 'admin'] },
     { name: 'Public Store', icon: Castle, path: '/public-store', roles: ['super_admin', 'admin'] },
     { name: 'Orders', icon: ShoppingCart, path: '/orders', roles: ['super_admin', 'admin'] },
     { name: 'Products', icon: Package, path: '/products', roles: ['super_admin', 'admin'] },
     { name: 'Add Product', icon: Plus, path: '/products/add', roles: ['super_admin', 'admin'] },
-    { name: 'Eateries', icon: ChefHat, path: '/eateries', roles: ['super_admin', 'admin'] },
+    // { name: 'Eateries', icon: ChefHat, path: '/eateries', roles: ['super_admin', 'admin'] },
     { name: 'Requested Products', icon: Shield, path: '/products/requests', roles: ['super_admin', 'admin'] },
     { name: 'Categories', icon: ChartBarStacked, path: '/categories', roles: ['super_admin', 'admin'] },
     // { name: 'Food Categories', icon: ChefHat, path: '/food-categories', roles: ['super_admin', 'admin'] },

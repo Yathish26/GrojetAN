@@ -64,6 +64,8 @@ import Brands from './Admin/Brands.jsx'
 import Tickets from './Admin/Tickets.jsx'
 import TicketGroups from './Admin/TicketGroups.jsx'
 import Gcoins from './Admin/Gcoins.jsx'
+import B2bxpress from './Admin/B2bxpress.jsx'
+
 
 function App() {
   return (
@@ -145,6 +147,7 @@ function App() {
             {/* Xpress */}
             <Route path="/xpress" element={<Xpress />} />
             <Route path="/xpress/:id" element={<XpressOrderDetails />} />
+            <Route path="/b2bxpress" element={<B2bxpress />} />
 
             {/* Careers Management */}
             <Route path="/careers" element={<Careers />} />

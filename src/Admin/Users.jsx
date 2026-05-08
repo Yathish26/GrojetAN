@@ -262,7 +262,7 @@ export default function Users() {
 
   // Calculate display indices for pagination info
   const displayStartIndex = searching ? 1 : (currentPage - 1) * usersPerPage + 1;
-  const displayEndIndex = searching ? filteredUsers.length : (currentPage - 1) * usersPerPage + currentUsers.length;
+  const displayEndIndex = searching ? users.length : (currentPage - 1) * usersPerPage + currentUsers.length;
 
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
 

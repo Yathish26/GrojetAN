@@ -122,7 +122,9 @@ export const GoogleMap = ({
 
         // Add click listener if provided
         if (onMapClick) {
-          newMap.addListener('click', onMapClick);
+          newMap.addListener('click', (event) => {
+            onMapClick(event, newMap);
+          });
         }
 
       } catch (error) {
