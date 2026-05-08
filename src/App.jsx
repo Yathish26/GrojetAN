@@ -64,7 +64,6 @@ import Brands from './Admin/Brands.jsx'
 import Tickets from './Admin/Tickets.jsx'
 import TicketGroups from './Admin/TicketGroups.jsx'
 import Gcoins from './Admin/Gcoins.jsx'
-import PostHogAnalytics from './Admin/PostHogAnalytics.jsx'
 
 function App() {
   return (
@@ -173,7 +172,6 @@ function App() {
             <Route path="/analytics" element={<Analytics />} />
             <Route path="/finance" element={<Finance />} />
             <Route path="/gig-wallet" element={<GigWallet />} />
-            <Route path="/posthog-analytics" element={<PostHogAnalytics />} />
 
             {/* Admin Management (Super Admin only) */}
             <Route path="/admin-management" element={<AdminManagement />} />
