@@ -739,7 +739,6 @@ export default function UserData() {
                   </button>
                 )}
 
-                {adminRole === 'super_admin' && (
                 <button
                   onClick={handleToggleBusinessUser}
                   className={`inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-lg text-white ${
@@ -752,7 +751,6 @@ export default function UserData() {
                   <FiBriefcase className="mr-2" />
                   {updatingBusinessUser ? 'Updating...' : user.isBusinessUser ? 'Remove Business User' : 'Mark as Business User'}
                 </button>
-                )}
 
                 {adminRole === 'super_admin' && (
                   <button
