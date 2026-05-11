@@ -19,11 +19,54 @@ import Layout from '../Components/Layout.jsx';
 
 export default function UpdateNotesAdmin() {
   const navigate = useNavigate();
-  const [currentUser, setCurrentUser] = useState(null);
-  const [checkingUser, setCheckingUser] = useState(true);
+  const createEmptyFeature = () => ({ image: '', images: [], text: '' });
+  const normalizeFeature = (feature) => {
+    if (typeof feature === 'string') {
+      return { ...createEmptyFeature(), text: feature };
+    }
+
+    const normalizedImages = Array.isArray(feature?.images)
+      ? feature.images.filter((image) => typeof image === 'string' && image.trim() !== '')
+      : [];
+    const fallbackImage = typeof feature?.image === 'string' ? feature.image.trim() : '';
+    const images = normalizedImages.length > 0
+      ? normalizedImages
+      : (fallbackImage ? [fallbackImage] : []);
+
+    return {
+      image: images[0] || '',
+      images,
+      text: typeof feature?.text === 'string' ? feature.text : ''
+    };
+  };
+  const cachedUpdateNotes = (() => {
+    try {
+      const cached = localStorage.getItem('adminUpdateNotes');
+      return cached ? JSON.parse(cached) : [];
+    } catch {
+      return [];
+    }
+  })();
+  const [currentUser, setCurrentUser] = useState(() => {
+    try {
+      const cached = localStorage.getItem('adminUser');
+      return cached ? JSON.parse(cached) : null;
+    } catch {
+      return null;
+    }
+  });
+  const [checkingUser, setCheckingUser] = useState(() => {
+    try {
+      const cached = localStorage.getItem('adminUser');
+      return !cached;
+    } catch {
+      return true;
+    }
+  });
   const [redirecting, setRedirecting] = useState(false);
-  const [updateNotes, setUpdateNotes] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [updateNotes, setUpdateNotes] = useState(cachedUpdateNotes);
+  const [loading, setLoading] = useState(cachedUpdateNotes.length === 0);
+  const [refreshing, setRefreshing] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -45,7 +88,7 @@ export default function UpdateNotesAdmin() {
   const [formData, setFormData] = useState({
     app: '',
     version: '',
-    features: [{ image: '', text: '' }],
+    features: [createEmptyFeature()],
     releaseDate: '',
     isActive: true
   });
@@ -57,6 +100,7 @@ export default function UpdateNotesAdmin() {
       setCheckingUser(true);
       const res = await fetch(`${import.meta.env.VITE_SERVER}/admin/auth/profile`, { credentials: 'include' });
       if (res.status === 401) {
+        localStorage.removeItem('adminUser');
         setRedirecting(true);
         navigate('/login', { replace: true });
         return;
@@ -64,13 +108,16 @@ export default function UpdateNotesAdmin() {
       if (!res.ok) throw new Error('Failed to fetch user profile');
       const data = await res.json();
       if (data.tokenValid === false) {
+        localStorage.removeItem('adminUser');
         setRedirecting(true);
         navigate('/login', { replace: true });
         return;
       }
       setCurrentUser(data.admin);
+      localStorage.setItem('adminUser', JSON.stringify(data.admin));
     } catch (err) {
       console.error('Error fetching current user:', err);
+      localStorage.removeItem('adminUser');
       setRedirecting(true);
       navigate('/login', { replace: true });
     } finally {
@@ -96,7 +143,12 @@ export default function UpdateNotesAdmin() {
 
   const fetchUpdateNotes = async () => {
     try {
-      setLoading(true);
+      if (updateNotes.length === 0) {
+        setLoading(true);
+      } else {
+        setRefreshing(true);
+      }
+
       const response = await fetch(
         `${import.meta.env.VITE_SERVER}/admin/update-notes`,
         {
@@ -124,12 +176,15 @@ export default function UpdateNotesAdmin() {
         navigate('/login');
         return;
       }
-      setUpdateNotes(data.updateNotes || []);
+      const nextNotes = data.updateNotes || [];
+      setUpdateNotes(nextNotes);
+      localStorage.setItem('adminUpdateNotes', JSON.stringify(nextNotes));
     } catch (error) {
       console.error('Error fetching update notes:', error);
       toast.error(error.message);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
 
@@ -157,7 +212,13 @@ export default function UpdateNotesAdmin() {
           body: JSON.stringify({
             app: formData.app,
             version: formData.version,
-            features: formData.features.filter(f => f.text.trim() !== ''),
+            features: formData.features
+              .filter(f => f.text.trim() !== '')
+              .map((feature) => ({
+                image: feature.images[0] || '',
+                images: feature.images,
+                text: feature.text
+              })),
             releaseDate: formData.releaseDate,
             isActive: formData.isActive
           }),
@@ -205,7 +266,13 @@ export default function UpdateNotesAdmin() {
           body: JSON.stringify({
             app: formData.app,
             version: formData.version,
-            features: formData.features.filter(f => f.text.trim() !== ''),
+            features: formData.features
+              .filter(f => f.text.trim() !== '')
+              .map((feature) => ({
+                image: feature.images[0] || '',
+                images: feature.images,
+                text: feature.text
+              })),
             releaseDate: formData.releaseDate,
             isActive: formData.isActive
           }),
@@ -261,26 +328,20 @@ export default function UpdateNotesAdmin() {
     setFormData({
       app: '',
       version: '',
-      features: [{ image: '', text: '' }],
+      features: [createEmptyFeature()],
       releaseDate: '',
       isActive: true
     });
   };
 
   const openEditModal = (note) => {
-    // Convert features to the new format if they're still strings
-    const convertedFeatures = note.features.map(feature => {
-      if (typeof feature === 'string') {
-        return { image: '', text: feature };
-      }
-      return feature;
-    });
+    const convertedFeatures = note.features.map(normalizeFeature);
 
     setSelectedNote(note);
     setFormData({
       app: note.app,
       version: note.version,
-      features: convertedFeatures.length > 0 ? convertedFeatures : [{ image: '', text: '' }],
+      features: convertedFeatures.length > 0 ? convertedFeatures : [createEmptyFeature()],
       releaseDate: note.releaseDate ? new Date(note.releaseDate).toISOString().split('T')[0] : '',
       isActive: note.isActive
     });
@@ -295,7 +356,7 @@ export default function UpdateNotesAdmin() {
   const addFeature = () => {
     setFormData(prev => ({
       ...prev,
-      features: [...prev.features, { image: '', text: '' }]
+      features: [...prev.features, createEmptyFeature()]
     }));
   };
 
@@ -366,16 +427,21 @@ export default function UpdateNotesAdmin() {
 
       setFormData(prev => {
         const newFeatures = [...prev.features];
+        const currentImages = Array.isArray(newFeatures[featureIndex].images)
+          ? newFeatures[featureIndex].images
+          : (newFeatures[featureIndex].image ? [newFeatures[featureIndex].image] : []);
+        const images = [...currentImages, ...uploadedUrls];
         newFeatures[featureIndex] = {
           ...newFeatures[featureIndex],
-          image: uploadedUrls[0] // Use the first uploaded image
+          image: images[0] || '',
+          images
         };
         return {
           ...prev,
           features: newFeatures
         };
       });
-      toast.success('Image uploaded successfully');
+      toast.success(uploadedUrls.length > 1 ? 'Images uploaded successfully' : 'Image uploaded successfully');
     } catch (error) {
       console.error('Image upload error:', error);
       toast.error(error.message || 'Failed to upload image');
@@ -397,7 +463,24 @@ export default function UpdateNotesAdmin() {
       const newFeatures = [...prev.features];
       newFeatures[featureIndex] = {
         ...newFeatures[featureIndex],
-        image: ''
+        image: '',
+        images: []
+      };
+      return {
+        ...prev,
+        features: newFeatures
+      };
+    });
+  };
+
+  const removeFeatureImageAtIndex = (featureIndex, imageIndex) => {
+    setFormData(prev => {
+      const newFeatures = [...prev.features];
+      const remainingImages = (newFeatures[featureIndex].images || []).filter((_, index) => index !== imageIndex);
+      newFeatures[featureIndex] = {
+        ...newFeatures[featureIndex],
+        image: remainingImages[0] || '',
+        images: remainingImages
       };
       return {
         ...prev,
@@ -448,21 +531,6 @@ export default function UpdateNotesAdmin() {
     );
   }
 
-  if (loading) {
-    return (
-      <Layout title="Update Notes">
-        <div className="min-h-screen bg-gray-50">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <div className="flex items-center justify-center py-12">
-              <div className="animate-spin h-12 w-12 border-4 border-green-200 border-t-green-600 rounded-full"></div>
-              <span className="ml-3 text-gray-600 font-medium">Loading update notes...</span>
-            </div>
-          </div>
-        </div>
-      </Layout>
-    );
-  }
-
   return (
     <Layout title="Update Notes">
       <div className="min-h-screen bg-gray-50">
@@ -477,6 +545,11 @@ export default function UpdateNotesAdmin() {
                 </div>
               </div>
               <div className="flex flex-wrap gap-2">
+                {refreshing && (
+                  <div className="inline-flex items-center rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-sm font-medium text-green-700">
+                    Refreshing...
+                  </div>
+                )}
                 <button
                   onClick={() => setShowCreateModal(true)}
                   className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
@@ -523,8 +596,14 @@ export default function UpdateNotesAdmin() {
               </h2>
             </div>
             <div className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredNotes.map((note) => (
+              {loading && filteredNotes.length === 0 ? (
+                <div className="flex items-center justify-center py-12">
+                  <div className="animate-spin h-10 w-10 border-4 border-green-200 border-t-green-600 rounded-full"></div>
+                  <span className="ml-3 text-gray-600 font-medium">Loading update notes...</span>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {filteredNotes.map((note) => (
                   <div key={note._id} className="bg-white shadow-lg overflow-hidden border border-gray-200 rounded-lg">
                     <div className="px-6 py-4 border-b bg-gradient-to-r from-gray-50 to-slate-50">
                       <div className="flex items-center justify-between">
@@ -571,20 +650,27 @@ export default function UpdateNotesAdmin() {
                         <h4 className="font-medium text-gray-800 mb-3">Features ({note.features.length})</h4>
                         <div className="space-y-3">
                           {note.features.slice(0, 3).map((feature, index) => {
-                            // Handle both old string format and new object format
-                            const featureObj = typeof feature === 'string'
-                              ? { image: '', text: feature }
-                              : feature;
+                            const featureObj = normalizeFeature(feature);
 
                             return (
                               <div key={index} className="border border-gray-100 rounded-lg p-3 bg-gray-50">
-                                {featureObj.image && (
-                                  <div className="mb-2">
-                                    <img
-                                      src={featureObj.image}
-                                      alt={`Feature ${index + 1}`}
-                                      className="w-full h-32 object-cover rounded-lg border border-gray-200"
-                                    />
+                                {featureObj.images.length > 0 && (
+                                  <div className="mb-2 space-y-2">
+                                    <div className="grid grid-cols-2 gap-2">
+                                      {featureObj.images.slice(0, 4).map((image, imageIndex) => (
+                                        <img
+                                          key={`${image}-${imageIndex}`}
+                                          src={image}
+                                          alt={`Feature ${index + 1} image ${imageIndex + 1}`}
+                                          className="w-full h-24 object-cover rounded-lg border border-gray-200"
+                                        />
+                                      ))}
+                                    </div>
+                                    {featureObj.images.length > 4 && (
+                                      <div className="text-xs text-gray-500">
+                                        +{featureObj.images.length - 4} more images
+                                      </div>
+                                    )}
                                   </div>
                                 )}
                                 <p className="text-sm text-gray-700 leading-relaxed">
@@ -606,10 +692,11 @@ export default function UpdateNotesAdmin() {
                       </div>
                     </div>
                   </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
 
-              {filteredNotes.length === 0 && (
+              {!loading && filteredNotes.length === 0 && (
                 <div className="text-center py-12">
                   <FiTag className="w-12 h-12 text-gray-300 mx-auto mb-4" />
                   <h3 className="text-lg font-medium text-gray-800 mb-2">No Update Notes Found</h3>
@@ -701,6 +788,7 @@ export default function UpdateNotesAdmin() {
                         <input
                           type="file"
                           accept="image/*"
+                          multiple
                           onChange={(e) => handleFileChange(e, index)}
                           disabled={submitting || uploadingImage}
                           className="w-full p-2 border border-gray-300 rounded-lg text-sm"
@@ -708,21 +796,25 @@ export default function UpdateNotesAdmin() {
                         {uploadingImage && (
                           <div className="text-sm text-gray-600 mt-1">Uploading image...</div>
                         )}
-                        {feature.image && (
-                          <div className="relative mt-2 inline-block">
-                            <img
-                              src={feature.image}
-                              alt={`Feature ${index + 1} preview`}
-                              className="w-32 h-32 object-cover rounded-lg border border-gray-200"
-                            />
-                            <button
-                              type="button"
-                              onClick={() => removeFeatureImage(index)}
-                              className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition"
-                              disabled={submitting || uploadingImage}
-                            >
-                              <FiX size={12} />
-                            </button>
+                        {feature.images.length > 0 && (
+                          <div className="mt-2 grid grid-cols-2 sm:grid-cols-3 gap-3">
+                            {feature.images.map((image, imageIndex) => (
+                              <div key={`${image}-${imageIndex}`} className="relative inline-block">
+                                <img
+                                  src={image}
+                                  alt={`Feature ${index + 1} preview ${imageIndex + 1}`}
+                                  className="w-full h-32 object-cover rounded-lg border border-gray-200"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => removeFeatureImageAtIndex(index, imageIndex)}
+                                  className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition"
+                                  disabled={submitting || uploadingImage}
+                                >
+                                  <FiX size={12} />
+                                </button>
+                              </div>
+                            ))}
                           </div>
                         )}
                       </div>
@@ -738,7 +830,6 @@ export default function UpdateNotesAdmin() {
                             onChange={(e) => updateFeature(index, 'text', e.target.value)}
                             placeholder="Enter feature description"
                             rows="3"
-                            maxLength={500}
                             className="flex-1 p-3 border focus:ring-2 focus:ring-green-500 focus:border-green-500 resize-none"
                             disabled={submitting}
                           />
@@ -883,6 +974,7 @@ export default function UpdateNotesAdmin() {
                         <input
                           type="file"
                           accept="image/*"
+                          multiple
                           onChange={(e) => handleFileChange(e, index)}
                           disabled={submitting || uploadingImage}
                           className="w-full p-2 border border-gray-300 rounded-lg text-sm"
@@ -890,21 +982,25 @@ export default function UpdateNotesAdmin() {
                         {uploadingImage && (
                           <div className="text-sm text-gray-600 mt-1">Uploading image...</div>
                         )}
-                        {feature.image && (
-                          <div className="relative mt-2 inline-block">
-                            <img
-                              src={feature.image}
-                              alt={`Feature ${index + 1} preview`}
-                              className="w-32 h-32 object-cover rounded-lg border border-gray-200"
-                            />
-                            <button
-                              type="button"
-                              onClick={() => removeFeatureImage(index)}
-                              className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition"
-                              disabled={submitting || uploadingImage}
-                            >
-                              <FiX size={12} />
-                            </button>
+                        {feature.images.length > 0 && (
+                          <div className="mt-2 grid grid-cols-2 sm:grid-cols-3 gap-3">
+                            {feature.images.map((image, imageIndex) => (
+                              <div key={`${image}-${imageIndex}`} className="relative inline-block">
+                                <img
+                                  src={image}
+                                  alt={`Feature ${index + 1} preview ${imageIndex + 1}`}
+                                  className="w-full h-32 object-cover rounded-lg border border-gray-200"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => removeFeatureImageAtIndex(index, imageIndex)}
+                                  className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition"
+                                  disabled={submitting || uploadingImage}
+                                >
+                                  <FiX size={12} />
+                                </button>
+                              </div>
+                            ))}
                           </div>
                         )}
                       </div>
@@ -920,7 +1016,6 @@ export default function UpdateNotesAdmin() {
                             onChange={(e) => updateFeature(index, 'text', e.target.value)}
                             placeholder="Enter feature description"
                             rows="3"
-                            maxLength={500}
                             className="flex-1 p-3 border focus:ring-2 focus:ring-green-500 focus:border-green-500 resize-none"
                             disabled={submitting}
                           />

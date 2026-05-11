@@ -490,6 +490,20 @@ export default function UserAnalytics() {
     }
   ];
 
+  const formatShortDate = (value) => {
+    const date = new Date(value);
+
+    if (Number.isNaN(date.getTime())) {
+      return 'N/A';
+    }
+
+    return date.toLocaleDateString('en-GB', {
+      day: '2-digit',
+      month: '2-digit',
+      year: '2-digit'
+    });
+  };
+
   return (
     <Layout title="User Analytics">
       <div className="space-y-6">
@@ -704,7 +718,7 @@ export default function UserAnalytics() {
                               </span>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                              {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}
+                              {user.createdAt ? formatShortDate(user.createdAt) : 'N/A'}
                             </td>
                           </tr>
                         ))}

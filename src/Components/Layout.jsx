@@ -158,11 +158,11 @@ const Layout = ({ children, title }) => {
   }, [notificationsOpen]);
 
   const handleNotificationClick = () => {
-    setNotificationsOpen(!notificationsOpen);
-    if (!notificationsOpen && unreadCount > 0) {
-      // Mark as read when opening
+    setNotificationsOpen(false);
+    if (unreadCount > 0) {
       setUnreadCount(0);
     }
+    navigate('/update-notes');
   };
 
   const handleLogout = async () => {

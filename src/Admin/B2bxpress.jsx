@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import Layout from '../Components/Layout'
 import { GoogleMap, AddressSearch } from '../Components/GoogleMapComponents'
 
@@ -45,11 +45,49 @@ export default function B2bxpress() {
   const [estimation, setEstimation] = useState(null)
   const [isEstimating, setIsEstimating] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [savePickupAddress, setSavePickupAddress] = useState(false)
+  const [isSavingPickupAddress, setIsSavingPickupAddress] = useState(false)
+  const [pickupAddressSaveMessage, setPickupAddressSaveMessage] = useState('')
+  const [saveDropAddress, setSaveDropAddress] = useState(false)
+  const [isSavingDropAddress, setIsSavingDropAddress] = useState(false)
+  const [dropAddressSaveMessage, setDropAddressSaveMessage] = useState('')
+  const [savedAddresses, setSavedAddresses] = useState([])
+  const [isLoadingSavedAddresses, setIsLoadingSavedAddresses] = useState(false)
+  const [deletingAddressId, setDeletingAddressId] = useState('')
+  const pickupSectionRef = useRef(null)
+  const dropSectionRef = useRef(null)
 
   const sanitizePhoneNumber = (value) => value.replace(/\D/g, '').slice(0, 10)
   const sanitizeSenderName = (value) => value.replace(/[^A-Za-z.\s]/g, '')
 
   const selectedBusinessUser = businessUsers.find((user) => user._id === selectedId)
+
+  const loadSavedAddresses = async (userId) => {
+    if (!userId) {
+      setSavedAddresses([])
+      return
+    }
+
+    setIsLoadingSavedAddresses(true)
+    try {
+      const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/users/${userId}`, {
+        credentials: 'include'
+      })
+
+      const data = await response.json()
+      if (!response.ok || !data.success) {
+        setSavedAddresses([])
+        return
+      }
+
+      setSavedAddresses(data.user?.addresses || [])
+    } catch (error) {
+      console.error('Load saved addresses error:', error)
+      setSavedAddresses([])
+    } finally {
+      setIsLoadingSavedAddresses(false)
+    }
+  }
 
   const buildPayload = () => ({
     userId: selectedId,
@@ -110,6 +148,211 @@ export default function B2bxpress() {
     return ''
   }
 
+  const validatePickupSaveInputs = () => {
+    if (!selectedId) return 'Please select a business user before saving the pickup address'
+    if (!latitude || !longitude) return 'Please select a pickup location on the map before saving the address'
+    if (!pickupAddress.trim()) return 'Please enter the pickup address before saving'
+    return ''
+  }
+
+  const validateDropSaveInputs = () => {
+    if (!selectedId) return 'Please select a business user before saving the drop address'
+    if (!dropLatitude || !dropLongitude) return 'Please select a drop location on the map before saving the address'
+    if (!dropAddress.trim()) return 'Please enter the drop address before saving'
+    return ''
+  }
+
+  const handleSavePickupAddressChange = async (event) => {
+    if (!event.target.checked) {
+      setSavePickupAddress(false)
+      setPickupAddressSaveMessage('')
+      return
+    }
+
+    const validationMessage = validatePickupSaveInputs()
+    if (validationMessage) {
+      alert(validationMessage)
+      return
+    }
+
+    setIsSavingPickupAddress(true)
+    setPickupAddressSaveMessage('')
+
+    try {
+      const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/xpress/users/${selectedId}/pickup-address`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          pickup: {
+            address: pickupAddress.trim(),
+            landmark: landmark.trim(),
+            phone: phoneNo,
+            coordinates: {
+              latitude: parseFloat(latitude),
+              longitude: parseFloat(longitude)
+            }
+          }
+        })
+      })
+
+      const data = await response.json()
+      if (!response.ok || !data.success) {
+        alert(data.message || 'Failed to save pickup address')
+        setSavePickupAddress(false)
+        return
+      }
+
+      setSavePickupAddress(true)
+      setPickupAddressSaveMessage('Pickup address saved to this business user')
+      loadSavedAddresses(selectedId)
+    } catch (error) {
+      console.error('Save pickup address error:', error)
+      alert('Failed to save pickup address. Please try again.')
+      setSavePickupAddress(false)
+    } finally {
+      setIsSavingPickupAddress(false)
+    }
+  }
+
+  const handleSaveDropAddressChange = async (event) => {
+    if (!event.target.checked) {
+      setSaveDropAddress(false)
+      setDropAddressSaveMessage('')
+      return
+    }
+
+    const validationMessage = validateDropSaveInputs()
+    if (validationMessage) {
+      alert(validationMessage)
+      return
+    }
+
+    setIsSavingDropAddress(true)
+    setDropAddressSaveMessage('')
+
+    try {
+      const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/xpress/users/${selectedId}/drop-address`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          drop: {
+            address: dropAddress.trim(),
+            landmark: dropLandmark.trim(),
+            phone: dropPhoneNo,
+            coordinates: {
+              latitude: parseFloat(dropLatitude),
+              longitude: parseFloat(dropLongitude)
+            }
+          }
+        })
+      })
+
+      const data = await response.json()
+      if (!response.ok || !data.success) {
+        alert(data.message || 'Failed to save drop address')
+        setSaveDropAddress(false)
+        return
+      }
+
+      setSaveDropAddress(true)
+      setDropAddressSaveMessage('Drop address saved to this business user')
+      loadSavedAddresses(selectedId)
+    } catch (error) {
+      console.error('Save drop address error:', error)
+      alert('Failed to save drop address. Please try again.')
+      setSaveDropAddress(false)
+    } finally {
+      setIsSavingDropAddress(false)
+    }
+  }
+
+  const handleDeleteSavedAddress = async (addressId) => {
+    if (!selectedId || !addressId) {
+      return
+    }
+
+    const shouldDelete = window.confirm('Delete this saved address?')
+    if (!shouldDelete) {
+      return
+    }
+
+    setDeletingAddressId(addressId)
+    try {
+      const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/xpress/users/${selectedId}/addresses/${addressId}`, {
+        method: 'DELETE',
+        credentials: 'include'
+      })
+
+      const data = await response.json()
+      if (!response.ok || !data.success) {
+        alert(data.message || 'Failed to delete saved address')
+        return
+      }
+
+      setSavedAddresses((currentAddresses) =>
+        currentAddresses.filter((address) => address._id !== addressId)
+      )
+    } catch (error) {
+      console.error('Delete saved address error:', error)
+      alert('Failed to delete saved address. Please try again.')
+    } finally {
+      setDeletingAddressId('')
+    }
+  }
+
+  const applySavedAddressToForm = (address, target = 'pickup') => {
+    if (!address) {
+      return
+    }
+
+    const nextLatitude = address.coordinates?.latitude != null ? Number(address.coordinates.latitude).toFixed(6) : ''
+    const nextLongitude = address.coordinates?.longitude != null ? Number(address.coordinates.longitude).toFixed(6) : ''
+
+    if (target === 'pickup') {
+      setPickupAddress(address.street || '')
+      setLandmark(address.landmark || '')
+      setPhoneNo(address.alternateNumber || '')
+      setLatitude(nextLatitude)
+      setLongitude(nextLongitude)
+      pickupSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+
+      if (pickupMap && nextLatitude && nextLongitude) {
+        replaceMarker(
+          pickupMarker,
+          setPickupMarker,
+          { lat: Number(nextLatitude), lng: Number(nextLongitude) },
+          pickupMap,
+          'Pickup Location'
+        )
+      }
+
+      return
+    }
+
+    setDropAddress(address.street || '')
+    setDropLandmark(address.landmark || '')
+    setDropPhoneNo(address.alternateNumber || '')
+    setDropLatitude(nextLatitude)
+    setDropLongitude(nextLongitude)
+    dropSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+
+    if (dropMap && nextLatitude && nextLongitude) {
+      replaceMarker(
+        dropMarker,
+        setDropMarker,
+        { lat: Number(nextLatitude), lng: Number(nextLongitude) },
+        dropMap,
+        'Drop Location'
+      )
+    }
+  }
+
   const resetForm = () => {
     setSelectedId('')
     setLatitude('')
@@ -130,6 +373,11 @@ export default function B2bxpress() {
     setPickupNotes('')
     setDropNotes('')
     setEstimation(null)
+    setSavePickupAddress(false)
+    setPickupAddressSaveMessage('')
+    setSaveDropAddress(false)
+    setDropAddressSaveMessage('')
+    setSavedAddresses([])
   }
 
   const getEstimation = async () => {
@@ -214,6 +462,10 @@ export default function B2bxpress() {
   }, [])
 
   useEffect(() => {
+    loadSavedAddresses(selectedId)
+  }, [selectedId])
+
+  useEffect(() => {
     setEstimation(null)
   }, [
     selectedId,
@@ -235,6 +487,16 @@ export default function B2bxpress() {
     pickupNotes,
     dropNotes
   ])
+
+  useEffect(() => {
+    setSavePickupAddress(false)
+    setPickupAddressSaveMessage('')
+  }, [selectedId, latitude, longitude, pickupAddress, landmark])
+
+  useEffect(() => {
+    setSaveDropAddress(false)
+    setDropAddressSaveMessage('')
+  }, [selectedId, dropLatitude, dropLongitude, dropAddress, dropLandmark])
 
   const replaceMarker = (existingMarker, setMarker, position, map, title) => {
     if (!window.google || !window.google.maps || !map) {
@@ -301,7 +563,100 @@ export default function B2bxpress() {
               Selected User: <span className="font-semibold text-gray-900">{selectedBusinessUser?.name || 'None'}</span>
             </div>
 
-            <div>
+            {selectedId && (
+              <div className="rounded-2xl border border-gray-200 bg-gray-50 px-5 py-5">
+                <div className="mb-4 flex items-center justify-between gap-3">
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900">Saved Addresses</h3>
+                    <p className="text-sm text-gray-600">
+                      Saved for {selectedBusinessUser?.name || 'selected business user'}
+                    </p>
+                  </div>
+                  <span className="rounded-full bg-white px-3 py-1 text-xs font-medium text-gray-600 shadow-sm">
+                    {savedAddresses.length} saved
+                  </span>
+                </div>
+
+                {isLoadingSavedAddresses ? (
+                  <p className="text-sm text-gray-500">Loading saved addresses...</p>
+                ) : savedAddresses.length === 0 ? (
+                  <p className="text-sm text-gray-500">No saved addresses yet for this business user.</p>
+                ) : (
+                  <div className="grid gap-3">
+                    {savedAddresses.map((address, index) => (
+                      <div
+                        key={`${address.street}-${address.coordinates?.latitude || index}-${address.coordinates?.longitude || index}`}
+                        onClick={() => applySavedAddressToForm(address, 'pickup')}
+                        className="rounded-xl border border-gray-200 bg-white px-4 py-4 shadow-sm transition hover:border-green-300 hover:shadow-md cursor-pointer"
+                      >
+                        <div className="mb-2 flex items-start justify-between gap-3">
+                          <div className="flex items-center gap-2">
+                            <span className="rounded-full bg-green-100 px-2.5 py-1 text-xs font-semibold uppercase tracking-wide text-green-700">
+                              {address.type || 'address'}
+                            </span>
+                            {address.isDefault && (
+                              <span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-700">
+                                Default
+                              </span>
+                            )}
+                          </div>
+                          <button
+                            type="button"
+                            onClick={(event) => {
+                              event.stopPropagation()
+                              handleDeleteSavedAddress(address._id)
+                            }}
+                            disabled={deletingAddressId === address._id}
+                            className="rounded-lg border border-red-200 px-3 py-1.5 text-xs font-medium text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            {deletingAddressId === address._id ? 'Deleting...' : 'Delete'}
+                          </button>
+                        </div>
+                        <p className="text-sm font-medium text-gray-900">{address.street}</p>
+                        {address.landmark && (
+                          <p className="mt-1 text-sm text-gray-600">Landmark: {address.landmark}</p>
+                        )}
+                        <p className="mt-1 text-sm text-gray-600">
+                          {address.city}, {address.state} {address.zipCode}
+                        </p>
+                        {address.alternateNumber && (
+                          <p className="mt-1 text-sm text-gray-600">Phone: {address.alternateNumber}</p>
+                        )}
+                        {address.coordinates && (
+                          <p className="mt-2 text-xs text-gray-500">
+                            {Number(address.coordinates.latitude).toFixed(6)}, {Number(address.coordinates.longitude).toFixed(6)}
+                          </p>
+                        )}
+                        <div className="mt-3 flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={(event) => {
+                              event.stopPropagation()
+                              applySavedAddressToForm(address, 'pickup')
+                            }}
+                            className="rounded-lg bg-green-500 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-green-600"
+                          >
+                            Use for Pickup
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(event) => {
+                              event.stopPropagation()
+                              applySavedAddressToForm(address, 'drop')
+                            }}
+                            className="rounded-lg bg-red-500 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-red-600"
+                          >
+                            Use for Drop
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            <div ref={pickupSectionRef}>
               <label className="mb-2 block text-sm font-medium text-gray-700">
                 Pickup Location
               </label>
@@ -451,10 +806,24 @@ export default function B2bxpress() {
                     className="flex-1 rounded-xl border border-gray-300 bg-white px-4 py-2 text-sm text-gray-900 outline-none transition focus:border-green-500 focus:ring-2 focus:ring-green-100"
                   />
                 </div>
+                <label className="flex items-center gap-3 text-sm text-gray-700">
+                  <input
+                    type="radio"
+                    name="save-pickup-address"
+                    checked={savePickupAddress}
+                    onChange={handleSavePickupAddressChange}
+                    disabled={isSavingPickupAddress}
+                    className="h-4 w-4 border-gray-300 text-green-600 focus:ring-green-500 disabled:cursor-not-allowed"
+                  />
+                  <span>{isSavingPickupAddress ? 'Saving address...' : 'Save this address'}</span>
+                </label>
+                {pickupAddressSaveMessage && (
+                  <p className="text-sm text-green-600">{pickupAddressSaveMessage}</p>
+                )}
               </div>
             </div>
 
-            <div>
+            <div ref={dropSectionRef}>
               <label className="mb-2 block text-sm font-medium text-gray-700">
                 Drop Location
               </label>
@@ -567,14 +936,14 @@ export default function B2bxpress() {
               <div className="mt-4 grid gap-4">
                 <div className="flex items-center gap-4">
                   <label className="w-32 text-sm font-medium text-gray-700 whitespace-nowrap">
-                    Sender name :
+                    Receiver name :
                   </label>
                   <input
                     type="text"
                     pattern="[A-Za-z.\s]+"
                     value={dropSenderName}
                     onChange={(e) => setDropSenderName(sanitizeSenderName(e.target.value))}
-                    placeholder="Enter sender name"
+                    placeholder="Enter Receiver name"
                     className="flex-1 rounded-xl border border-gray-300 bg-white px-4 py-2 text-sm text-gray-900 outline-none transition focus:border-green-500 focus:ring-2 focus:ring-green-100"
                   />
                 </div>
@@ -604,6 +973,20 @@ export default function B2bxpress() {
                     className="flex-1 rounded-xl border border-gray-300 bg-white px-4 py-2 text-sm text-gray-900 outline-none transition focus:border-green-500 focus:ring-2 focus:ring-green-100"
                   />
                 </div>
+                <label className="flex items-center gap-3 text-sm text-gray-700">
+                  <input
+                    type="radio"
+                    name="save-drop-address"
+                    checked={saveDropAddress}
+                    onChange={handleSaveDropAddressChange}
+                    disabled={isSavingDropAddress}
+                    className="h-4 w-4 border-gray-300 text-green-600 focus:ring-green-500 disabled:cursor-not-allowed"
+                  />
+                  <span>{isSavingDropAddress ? 'Saving address...' : 'Save this address'}</span>
+                </label>
+                {dropAddressSaveMessage && (
+                  <p className="text-sm text-green-600">{dropAddressSaveMessage}</p>
+                )}
               </div>
             </div>
 
@@ -755,6 +1138,7 @@ export default function B2bxpress() {
                 {isSubmitting ? 'Creating...' : 'Create Order'}
               </button>
             </div>
+
           </div>
         </div>
       </div>
