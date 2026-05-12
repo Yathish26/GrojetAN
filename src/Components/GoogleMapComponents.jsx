@@ -463,110 +463,127 @@ export const DrawingManager = ({
 // Utility component for address search using Places Autocomplete
 export const AddressSearch = ({ onPlaceSelect, placeholder = "Search for a location...", className = "" }) => {
   const inputRef = useRef();
-  const [isLoading, setIsLoading] = useState(true);
-  const [autocomplete, setAutocomplete] = useState(null);
-  const autocompleteListenersRef = useRef([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [searchText, setSearchText] = useState("");
+  const [suggestions, setSuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const debounceRef = useRef(null);
+  const autocompleteServiceRef = useRef(null);
 
   useEffect(() => {
-    if (window.googleMapsLoaded && window.google && window.google.maps && window.google.maps.places && inputRef.current) {
-      try {
-        // Create Autocomplete instead of SearchBox
-        const autocompleteInstance = new window.google.maps.places.Autocomplete(inputRef.current, {
-          fields: ['formatted_address', 'geometry', 'place_id'],
-          types: ['establishment', 'geocode']
-        });
+    if (window.googleMapsLoaded && window.google && window.google.maps && window.google.maps.places) {
+      autocompleteServiceRef.current = new window.google.maps.places.AutocompleteService();
+    }
+  }, []);
 
-        const listener = autocompleteInstance.addListener('place_changed', () => {
-          try {
-            const place = autocompleteInstance.getPlace();
-            if (place.geometry && place.geometry.location) {
-              if (onPlaceSelect) {
-                onPlaceSelect({
-                  lat: place.geometry.location.lat(),
-                  lng: place.geometry.location.lng(),
-                  address: place.formatted_address,
-                  placeId: place.place_id
-                });
-              }
-            } else {
-              console.warn('Place has no geometry');
-            }
-          } catch (error) {
-            console.error('Error handling place_changed event:', error);
-          }
-        });
-
-        setAutocomplete(autocompleteInstance);
-        autocompleteListenersRef.current.push(listener);
-        setIsLoading(false);
-      } catch (error) {
-        console.error('Error initializing Autocomplete:', error);
-        setIsLoading(false);
-      }
-    } else if (!window.googleMapsLoaded) {
-      // Wait for Google Maps to load
-      const checkInterval = setInterval(() => {
-        if (window.googleMapsLoaded && window.google && window.google.maps && window.google.maps.places && inputRef.current) {
-          clearInterval(checkInterval);
-          try {
-            const autocompleteInstance = new window.google.maps.places.Autocomplete(inputRef.current, {
-              fields: ['formatted_address', 'geometry', 'place_id'],
-              types: ['establishment', 'geocode']
-            });
-
-            const listener = autocompleteInstance.addListener('place_changed', () => {
-              try {
-                const place = autocompleteInstance.getPlace();
-                if (place.geometry && place.geometry.location) {
-                  if (onPlaceSelect) {
-                    onPlaceSelect({
-                      lat: place.geometry.location.lat(),
-                      lng: place.geometry.location.lng(),
-                      address: place.formatted_address,
-                      placeId: place.place_id
-                    });
-                  }
-                } else {
-                  console.warn('Place has no geometry');
-                }
-              } catch (error) {
-                console.error('Error handling place_changed event:', error);
-              }
-            });
-
-            setAutocomplete(autocompleteInstance);
-            autocompleteListenersRef.current.push(listener);
-            setIsLoading(false);
-          } catch (error) {
-            console.error('Error initializing Autocomplete:', error);
-            setIsLoading(false);
-          }
-        }
-      }, 100);
-
-      return () => clearInterval(checkInterval);
-    } else {
-      setIsLoading(false);
+  const fetchSuggestions = async (query) => {
+    if (!autocompleteServiceRef.current || !query.trim()) {
+      setSuggestions([]);
+      return;
     }
 
-    return () => {
-      try {
-        autocompleteListenersRef.current.forEach(l => window.google?.maps?.event?.removeListener(l));
-      } catch {}
-      autocompleteListenersRef.current = [];
-    };
-  }, [onPlaceSelect]);
+    try {
+      setIsLoading(true);
+      const request = {
+        input: query,
+        types: ['establishment', 'geocode'],
+        componentRestrictions: { country: 'in' } // Assuming India, adjust if needed
+      };
+
+      autocompleteServiceRef.current.getPlacePredictions(request, (predictions, status) => {
+        if (status === window.google.maps.places.PlacesServiceStatus.OK && predictions) {
+          setSuggestions(predictions);
+        } else {
+          setSuggestions([]);
+        }
+        setIsLoading(false);
+      });
+    } catch (error) {
+      console.error('Error fetching suggestions:', error);
+      setSuggestions([]);
+      setIsLoading(false);
+    }
+  };
+
+  const handleInputChange = (text) => {
+    setSearchText(text);
+    setShowSuggestions(true);
+
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+    }
+
+    if (text.trim().length >= 1) {
+      debounceRef.current = setTimeout(() => {
+        fetchSuggestions(text);
+      }, 1000); // 1 second debounce
+    } else {
+      setSuggestions([]);
+    }
+  };
+
+  const handleSuggestionSelect = async (suggestion) => {
+    setSearchText(suggestion.description);
+    setShowSuggestions(false);
+    setSuggestions([]);
+
+    // Get place details
+    const placesService = new window.google.maps.places.PlacesService(document.createElement('div'));
+    placesService.getDetails({ placeId: suggestion.place_id }, (place, status) => {
+      if (status === window.google.maps.places.PlacesServiceStatus.OK && place.geometry) {
+        if (onPlaceSelect) {
+          onPlaceSelect({
+            lat: place.geometry.location.lat(),
+            lng: place.geometry.location.lng(),
+            address: place.formatted_address,
+            placeId: place.place_id
+          });
+        }
+      }
+    });
+  };
+
+  const handleInputFocus = () => {
+    if (suggestions.length > 0) {
+      setShowSuggestions(true);
+    }
+  };
+
+  const handleInputBlur = () => {
+    // Delay hiding suggestions to allow click on suggestion
+    setTimeout(() => setShowSuggestions(false), 200);
+  };
 
   return (
-    <input
-      ref={inputRef}
-      type="text"
-      placeholder={isLoading ? "Loading search..." : placeholder}
-      disabled={isLoading}
-      className={`${className || 'w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm'} ${
-        isLoading ? 'bg-gray-100 cursor-not-allowed' : ''
-      }`}
-    />
+    <div className="relative">
+      <input
+        ref={inputRef}
+        type="text"
+        value={searchText}
+        onChange={(e) => handleInputChange(e.target.value)}
+        onFocus={handleInputFocus}
+        onBlur={handleInputBlur}
+        placeholder={placeholder}
+        className={`${className || 'w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm'}`}
+      />
+      {showSuggestions && (suggestions.length > 0 || isLoading) && (
+        <div className="absolute top-full left-0 right-0 bg-white border border-gray-300 rounded-md shadow-lg z-50 max-h-60 overflow-y-auto">
+          {isLoading ? (
+            <div className="px-3 py-2 text-gray-500 text-sm">Loading...</div>
+          ) : (
+            suggestions.map((suggestion) => (
+              <div
+                key={suggestion.place_id}
+                onClick={() => handleSuggestionSelect(suggestion)}
+                className="px-3 py-2 hover:bg-gray-100 cursor-pointer text-sm border-b border-gray-100 last:border-b-0"
+              >
+                {suggestion.description}
+              </div>
+            ))
+          )}
+        </div>
+      )}
+    </div>
   );
 };
 
