@@ -84,6 +84,12 @@ export default function UpdateNotesAdmin() {
     return `${day}/${month}/${year}`;
   };
 
+  const normalizeVersion = (version) => (version || '').toString().trim().replace(/^v+/i, '');
+  const formatVersion = (version) => {
+    const normalizedVersion = normalizeVersion(version);
+    return normalizedVersion ? `v${normalizedVersion}` : '';
+  };
+
   // Form states
   const [formData, setFormData] = useState({
     app: '',
@@ -211,7 +217,7 @@ export default function UpdateNotesAdmin() {
           credentials: 'include',
           body: JSON.stringify({
             app: formData.app,
-            version: formData.version,
+            version: normalizeVersion(formData.version),
             features: formData.features
               .filter(f => f.text.trim() !== '')
               .map((feature) => ({
@@ -265,7 +271,7 @@ export default function UpdateNotesAdmin() {
           credentials: 'include',
           body: JSON.stringify({
             app: formData.app,
-            version: formData.version,
+            version: normalizeVersion(formData.version),
             features: formData.features
               .filter(f => f.text.trim() !== '')
               .map((feature) => ({
@@ -340,7 +346,7 @@ export default function UpdateNotesAdmin() {
     setSelectedNote(note);
     setFormData({
       app: note.app,
-      version: note.version,
+      version: normalizeVersion(note.version),
       features: convertedFeatures.length > 0 ? convertedFeatures : [createEmptyFeature()],
       releaseDate: note.releaseDate ? new Date(note.releaseDate).toISOString().split('T')[0] : '',
       isActive: note.isActive
@@ -611,7 +617,7 @@ export default function UpdateNotesAdmin() {
                           {getAppIcon(note.app)}
                           <div>
                             <h3 className="font-semibold text-gray-800">{getAppName(note.app)}</h3>
-                            <p className="text-sm text-gray-600">v{note.version}</p>
+                            <p className="text-sm text-gray-600">{formatVersion(note.version)}</p>
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
@@ -1089,7 +1095,7 @@ export default function UpdateNotesAdmin() {
             </div>
             <div className="p-6">
               <p className="text-gray-600 mb-4">
-                Are you sure you want to delete the update note for <strong>{getAppName(selectedNote.app)} v{selectedNote.version}</strong>?
+                Are you sure you want to delete the update note for <strong>{getAppName(selectedNote.app)} {formatVersion(selectedNote.version)}</strong>?
               </p>
               <p className="text-sm text-gray-500">
                 This action cannot be undone.

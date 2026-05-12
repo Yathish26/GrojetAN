@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
 import Layout from '../Components/Layout'
 import { GoogleMap, AddressSearch } from '../Components/GoogleMapComponents'
+import { VERSION } from '../../version.js'
 
 const PACKAGE_TYPE_OPTIONS = ['Documents', 'Food', 'Clothes', 'Electronics', 'Others']
 const PACKAGE_TYPE_VALUE_MAP = {
@@ -20,6 +21,8 @@ const PACKAGE_SIZE_VALUE_MAP = {
 
 export default function B2bxpress() {
   const [businessUsers, setBusinessUsers] = useState([])
+  const [currentUser, setCurrentUser] = useState(null)
+  const [selectedUserName, setSelectedUserName] = useState('')
   const [selectedId, setSelectedId] = useState('')
   const [latitude, setLatitude] = useState('')
   const [longitude, setLongitude] = useState('')
@@ -62,8 +65,45 @@ export default function B2bxpress() {
 
   const selectedBusinessUser = businessUsers.find((user) => user._id === selectedId)
 
+  const getAdminDisplayName = useCallback(() => {
+    return currentUser?.name || currentUser?.email || 'Admin'
+  }, [currentUser])
+
+  const createLog = useCallback(async (message) => {
+    try {
+      await fetch(`${import.meta.env.VITE_SERVER}/admin/logs`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          level: 'INFO',
+          message,
+          user: getAdminDisplayName(),
+          platform: 'Admin',
+          version: VERSION
+        })
+      })
+    } catch (error) {
+      console.error('Failed to create log:', error)
+    }
+  }, [getAdminDisplayName])
+
+  const logLocationSearchSelection = useCallback((target, place) => {
+    const placeLabel = (place?.address || '').trim()
+    if (!placeLabel) {
+      return
+    }
+
+    const actorName = selectedUserName.trim() || getAdminDisplayName()
+    const locationType = target === 'pickup' ? 'pickup' : 'drop'
+    createLog(`${currentUser?.name} searched the ${placeLabel} for ${locationType}`)
+  }, [createLog, getAdminDisplayName, selectedBusinessUser, selectedUserName])
+
   const loadSavedAddresses = async (userId) => {
     if (!userId) {
+      setSelectedUserName('')
       setSavedAddresses([])
       return
     }
@@ -76,13 +116,16 @@ export default function B2bxpress() {
 
       const data = await response.json()
       if (!response.ok || !data.success) {
+        setSelectedUserName('')
         setSavedAddresses([])
         return
       }
 
+      setSelectedUserName(data.user?.personalInfo?.name?.trim() || '')
       setSavedAddresses(data.user?.addresses || [])
     } catch (error) {
       console.error('Load saved addresses error:', error)
+      setSelectedUserName('')
       setSavedAddresses([])
     } finally {
       setIsLoadingSavedAddresses(false)
@@ -355,6 +398,7 @@ export default function B2bxpress() {
 
   const resetForm = () => {
     setSelectedId('')
+    setSelectedUserName('')
     setLatitude('')
     setLongitude('')
     setDropLatitude('')
@@ -462,6 +506,29 @@ export default function B2bxpress() {
   }, [])
 
   useEffect(() => {
+    const fetchCurrentUser = async () => {
+      try {
+        const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/auth/profile`, {
+          credentials: 'include'
+        })
+
+        if (!response.ok) {
+          return
+        }
+
+        const data = await response.json()
+        if (data.admin) {
+          setCurrentUser(data.admin)
+        }
+      } catch (error) {
+        console.error('Error fetching admin profile:', error)
+      }
+    }
+
+    fetchCurrentUser()
+  }, [])
+
+  useEffect(() => {
     loadSavedAddresses(selectedId)
   }, [selectedId])
 
@@ -560,7 +627,7 @@ export default function B2bxpress() {
             </div>
 
             <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600">
-              Selected User: <span className="font-semibold text-gray-900">{selectedBusinessUser?.name || 'None'}</span>
+              Selected User: <span className="font-semibold text-gray-900">{selectedUserName || selectedBusinessUser?.name || 'None'}</span>
             </div>
 
             {selectedId && (
@@ -569,7 +636,7 @@ export default function B2bxpress() {
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900">Saved Addresses</h3>
                     <p className="text-sm text-gray-600">
-                      Saved for {selectedBusinessUser?.name || 'selected business user'}
+                      Saved for {selectedUserName || selectedBusinessUser?.name || 'selected business user'}
                     </p>
                   </div>
                   <span className="rounded-full bg-white px-3 py-1 text-xs font-medium text-gray-600 shadow-sm">
@@ -680,6 +747,7 @@ export default function B2bxpress() {
                       setLatitude(place.lat.toFixed(6))
                       setLongitude(place.lng.toFixed(6))
                       setPickupAddress(place.address || '')
+                      logLocationSearchSelection('pickup', place)
 
                       if (pickupMap) {
                         replaceMarker(
@@ -847,6 +915,7 @@ export default function B2bxpress() {
                       setDropLatitude(place.lat.toFixed(6))
                       setDropLongitude(place.lng.toFixed(6))
                       setDropAddress(place.address || '')
+                      logLocationSearchSelection('drop', place)
 
                       if (dropMap) {
                         replaceMarker(
