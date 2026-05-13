@@ -40,18 +40,6 @@ export default function Gcoins() {
               </div>
             </div>
           </div>
-
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <div className="flex items-center">
-              <div className="p-3 bg-green-100 rounded-full">
-                <FiCalendar className="w-6 h-6 text-green-600" />
-              </div>
-              <div className="ml-4">
-                <h3 className="text-lg font-semibold text-gray-900">Today's Coins Issued</h3>
-                <p className="text-2xl font-bold text-green-600">{todayIssued.toLocaleString()}</p>
-              </div>
-            </div>
-          </div>
         </div>
 
         {/* History Section */}

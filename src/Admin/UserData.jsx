@@ -21,7 +21,8 @@ import {
   FiUsers,
   FiGlobe,
   FiBriefcase,
-  FiTruck
+  FiTruck,
+  FiStar
 } from 'react-icons/fi';
 import { BiRupee } from 'react-icons/bi';
 import toast, { Toaster } from 'react-hot-toast';
@@ -966,7 +967,7 @@ export default function UserData() {
                   </h3>
                 </div>
                 <div className="p-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4 mb-6">
                     <div className="text-center p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg shadow cursor-pointer hover:shadow-lg transition-shadow" onClick={() => navigate(`/users/${id}/orders`)}>
                       <FiShoppingBag className="text-2xl text-blue-600 mx-auto mb-2" />
                       <p className="text-2xl font-bold text-gray-800">
@@ -1001,6 +1002,13 @@ export default function UserData() {
                         ₹{xpressSpend.toLocaleString()}
                       </p>
                       <p className="text-sm text-gray-600">Xpress Spend</p>
+                    </div>
+                    <div className="text-center p-4 bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-lg shadow">
+                      <FiStar className="text-2xl text-yellow-600 mx-auto mb-2" />
+                      <p className="text-2xl font-bold text-gray-800">
+                        {user.orderHistory?.gcoins || 0}
+                      </p>
+                      <p className="text-sm text-gray-600">G-Coins</p>
                     </div>
                   </div>
 
