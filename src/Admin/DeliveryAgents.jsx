@@ -481,7 +481,7 @@ const DeliveryAgents = () => {
           </div>
 
           {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6 mb-8">
             <div className="bg-white shadow-lg rounded-lg overflow-hidden">
               <div className="bg-green-600 px-6 py-4">
                 <div className="flex items-center justify-between">
@@ -499,37 +499,11 @@ const DeliveryAgents = () => {
               <div className="bg-green-600 px-6 py-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-blue-100 uppercase tracking-wide">Active Agents</p>
-                    <p className="text-3xl font-bold text-white">{stats.active || 0}</p>
-                  </div>
-                  <div className="w-8 h-8 bg-blue-200 flex items-center justify-center rounded-lg">
-                    <CircleCheck className="w-5 h-5 text-blue-700" />
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div className="bg-white shadow-lg rounded-lg overflow-hidden">
-              <div className="bg-green-600 px-6 py-4">
-                <div className="flex items-center justify-between">
-                  <div>
                     <p className="text-sm font-medium text-blue-100 uppercase tracking-wide">Online Now</p>
                     <p className="text-3xl font-bold text-white">{stats.online || 0}</p>
                   </div>
                   <div className="w-8 h-8 bg-blue-200 flex items-center justify-center rounded-lg">
                     <MapPin className="w-5 h-5 text-blue-700" />
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div className="bg-white shadow-lg rounded-lg overflow-hidden">
-              <div className="bg-green-600 px-6 py-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-blue-100 uppercase tracking-wide">Total Deliveries</p>
-                    <p className="text-3xl font-bold text-white">{stats.totalDeliveries || 0}</p>
-                  </div>
-                  <div className="w-8 h-8 bg-blue-200 flex items-center justify-center rounded-lg">
-                    <Star className="w-5 h-5 text-blue-700" />
                   </div>
                 </div>
               </div>

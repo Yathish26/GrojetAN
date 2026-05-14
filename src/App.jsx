@@ -64,6 +64,7 @@ import Brands from './Admin/Brands.jsx'
 import Tickets from './Admin/Tickets.jsx'
 import TicketGroups from './Admin/TicketGroups.jsx'
 import Gcoins from './Admin/Gcoins.jsx'
+import GcoinsHistory from './Admin/GcoinsHistory.jsx'
 import B2bxpress from './Admin/B2bxpress.jsx'
 
 
@@ -136,6 +137,7 @@ function App() {
             <Route path="/darkstore" element={<Darkstore />} />
             <Route path="/darkstore/add" element={<Darkstore />} />
             <Route path="/gcoins" element={<Gcoins />} />
+            <Route path="/gcoins/history" element={<GcoinsHistory />} />
 
             {/* Support Management */}
             <Route path="/support" element={<Support />} />

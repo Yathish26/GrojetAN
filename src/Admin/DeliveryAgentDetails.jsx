@@ -78,6 +78,14 @@ export default function DeliveryAgentDetails() {
     total: 0,
     totalPages: 1
   });
+  const [earningsPagination, setEarningsPagination] = useState({
+    page: 1,
+    limit: 10,
+    total: 0,
+    totalPages: 1,
+    hasPrevPage: false,
+    hasNextPage: false
+  });
   const [earningsHistory, setEarningsHistory] = useState([]);
   const [earningsLoading, setEarningsLoading] = useState(false);
   const [withdrawalsHistory, setWithdrawalsHistory] = useState([]);
@@ -195,7 +203,7 @@ export default function DeliveryAgentDetails() {
     fetchAgentStats();
     fetchDeliveryZones();
     fetchAgentRatings();
-    fetchEarningsHistory();
+    fetchEarningsHistory(1);
     fetchWithdrawalsHistory();
   }, []);
 
@@ -330,10 +338,10 @@ export default function DeliveryAgentDetails() {
     }
   };
 
-  const fetchEarningsHistory = async () => {
+  const fetchEarningsHistory = async (page = 1) => {
     setEarningsLoading(true);
     try {
-      const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/delivery-agents/${id}/earnings-history`, {
+      const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/delivery-agents/${id}/earnings-history?page=${page}&limit=${earningsPagination.limit}`, {
         credentials: 'include'
       });
 
@@ -344,6 +352,15 @@ export default function DeliveryAgentDetails() {
           return;
         }
         setEarningsHistory(data.earningsHistory || []);
+        setEarningsPagination(prev => ({
+          ...prev,
+          page: data.pagination?.page || page,
+          limit: data.pagination?.limit || prev.limit,
+          total: data.pagination?.total || 0,
+          totalPages: data.pagination?.totalPages || 1,
+          hasPrevPage: Boolean(data.pagination?.hasPrevPage),
+          hasNextPage: Boolean(data.pagination?.hasNextPage)
+        }));
       }
     } catch (err) {
       console.error('Failed to fetch earnings history:', err);
@@ -1018,6 +1035,11 @@ export default function DeliveryAgentDetails() {
       console.error('Error formatting date:', error, dateString);
       return 'Invalid date';
     }
+  };
+
+  const formatAmount = (value) => {
+    const amount = Number(value);
+    return Number.isFinite(amount) ? amount.toFixed(2) : '0.00';
   };
 
   const getDirectionFromHeading = (heading) => {
@@ -1843,7 +1865,7 @@ export default function DeliveryAgentDetails() {
                   Earnings History
                 </h2>
                 <button
-                  onClick={fetchEarningsHistory}
+                  onClick={() => fetchEarningsHistory(1)}
                   disabled={earningsLoading}
                   className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-lg transition-colors disabled:opacity-50"
                   title="Refresh earnings"
@@ -1872,7 +1894,7 @@ export default function DeliveryAgentDetails() {
                           </span>
                         </div>
                         <span className="text-sm font-semibold text-green-600">
-                          ₹{earning.amount}
+                          ₹{formatAmount(earning.amount)}
                         </span>
                       </div>
                       <div className="space-y-2">
@@ -1891,6 +1913,32 @@ export default function DeliveryAgentDetails() {
                       </div>
                     </div>
                   ))}
+                  {earningsPagination.totalPages > 1 && (
+                    <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-200">
+                      <div className="text-sm text-gray-700">
+                        Showing {((earningsPagination.page - 1) * earningsPagination.limit) + 1} to {Math.min(earningsPagination.page * earningsPagination.limit, earningsPagination.total)} of {earningsPagination.total} earnings
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <button
+                          onClick={() => fetchEarningsHistory(earningsPagination.page - 1)}
+                          disabled={!earningsPagination.hasPrevPage || earningsLoading}
+                          className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          Previous
+                        </button>
+                        <span className="text-sm text-gray-700">
+                          Page {earningsPagination.page} of {earningsPagination.totalPages}
+                        </span>
+                        <button
+                          onClick={() => fetchEarningsHistory(earningsPagination.page + 1)}
+                          disabled={!earningsPagination.hasNextPage || earningsLoading}
+                          className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          Next
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="text-center py-8">
@@ -1942,7 +1990,7 @@ export default function DeliveryAgentDetails() {
                           </span>
                         </div>
                         <span className="text-sm font-semibold text-red-600">
-                          -₹{withdrawal.withdrawalAmount.toLocaleString()}
+                          -₹{formatAmount(withdrawal.withdrawalAmount)}
                         </span>
                       </div>
                       <div className="space-y-2">
@@ -2791,7 +2839,7 @@ export default function DeliveryAgentDetails() {
                         <p className="text-sm text-gray-600">{order.customer?.name}</p>
                       </div>
                       <div className="text-right">
-                        <p className="font-medium text-gray-800">₹{order.totalAmount}</p>
+                        <p className="font-medium text-gray-800">₹{formatAmount(order.totalAmount)}</p>
                         <p className={`text-sm capitalize ${order.status === 'delivered' ? 'text-green-600' :
                           order.status === 'cancelled' ? 'text-red-600' : 'text-yellow-600'
                           }`}>
@@ -2854,7 +2902,7 @@ export default function DeliveryAgentDetails() {
 
               <div className="flex items-center justify-between">
                 <span className="text-gray-600">Total Earnings</span>
-                <span className="font-medium">₹{parseFloat(agent.status?.earnings?.total || 0).toFixed(2)}</span>
+                <span className="font-medium">₹{formatAmount(agent.status?.earnings?.total)}</span>
               </div>
             </div>
           </div>

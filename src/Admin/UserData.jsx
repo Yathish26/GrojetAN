@@ -66,6 +66,9 @@ export default function UserData() {
   const [checkingUser, setCheckingUser] = useState(true);
   const [redirecting, setRedirecting] = useState(false);
   const [updatingBusinessUser, setUpdatingBusinessUser] = useState(false);
+  const [showAddGcoinsForm, setShowAddGcoinsForm] = useState(false);
+  const [gcoinsAmount, setGcoinsAmount] = useState('');
+  const [addingGcoins, setAddingGcoins] = useState(false);
 
   useEffect(() => {
     fetchCurrentUser();
@@ -581,6 +584,60 @@ export default function UserData() {
     }
   };
 
+  const handleAddGcoins = async () => {
+    if (!gcoinsAmount) {
+      toast.error('Please enter the amount');
+      return;
+    }
+
+    const amount = parseInt(gcoinsAmount);
+    if (isNaN(amount) || amount <= 0) {
+      toast.error('Please enter a valid positive amount');
+      return;
+    }
+
+    try {
+      setAddingGcoins(true);
+      const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/users/${id}/add-gcoins`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          amount: amount,
+          addedBy: currentUser?.name || currentUser?.email || 'Admin'
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.tokenValid === false) {
+          navigate('/login', { replace: true });
+          return;
+        }
+        setUser(prev => ({
+          ...prev,
+          orderHistory: {
+            ...prev.orderHistory,
+            gcoins: (prev.orderHistory?.gcoins || 0) + amount
+          }
+        }));
+        toast.success(`Successfully added ${amount} G-Coins to user`);
+        setShowAddGcoinsForm(false);
+        setGcoinsAmount('');
+      } else {
+        const errorData = await response.json();
+        toast.error(errorData.message || 'Failed to add G-Coins');
+      }
+    } catch (error) {
+      console.error('Error adding G-Coins:', error);
+      toast.error('Failed to add G-Coins');
+    } finally {
+      setAddingGcoins(false);
+    }
+  };
+
   if (loading) {
     return (
       <Layout title="User Details">
@@ -754,14 +811,58 @@ export default function UserData() {
                 </button>
 
                 {adminRole === 'super_admin' && (
-                  <button
-                    onClick={handleDeleteUser}
-                    className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-red-800 hover:bg-red-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    disabled={updatingStatus}
-                  >
-                    <FiTrash2 className="mr-2" />
-                    {updatingStatus ? 'Deleting...' : 'Delete User'}
-                  </button>
+                  <>
+                    <button
+                      onClick={() => setShowAddGcoinsForm(!showAddGcoinsForm)}
+                      className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-purple-800 hover:bg-purple-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      disabled={updatingStatus}
+                    >
+                      <FiStar className="mr-2" />
+                      Add G-Coins
+                    </button>
+                    <button
+                      onClick={handleDeleteUser}
+                      className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-red-800 hover:bg-red-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      disabled={updatingStatus}
+                    >
+                      <FiTrash2 className="mr-2" />
+                      {updatingStatus ? 'Deleting...' : 'Delete User'}
+                    </button>
+                  </>
+                )}
+
+                {/* Add G-Coins Inline Input */}
+                {showAddGcoinsForm && (
+                  <div className="mt-4 flex items-center space-x-2 p-3 bg-purple-50 border border-purple-200 rounded-lg">
+                    <FiStar className="w-4 h-4 text-purple-600" />
+                    <input
+                      type="number"
+                      value={gcoinsAmount}
+                      onChange={(e) => setGcoinsAmount(e.target.value.replace(/[^0-9]/g, ''))}
+                      placeholder="Enter G-Coins amount"
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-purple-800 focus:border-purple-800"
+                      disabled={addingGcoins}
+                      min="1"
+                      autoFocus
+                    />
+                    <button
+                      onClick={handleAddGcoins}
+                      disabled={addingGcoins || !gcoinsAmount}
+                      className="px-3 py-2 bg-purple-800 text-white text-sm rounded hover:bg-purple-900 disabled:opacity-50 transition-colors"
+                    >
+                      {addingGcoins ? '...' : '✓'}
+                    </button>
+                    <button
+                      onClick={() => {
+                        setShowAddGcoinsForm(false);
+                        setGcoinsAmount('');
+                      }}
+                      className="px-3 py-2 bg-gray-500 text-white text-sm rounded hover:bg-gray-600 transition-colors"
+                      disabled={addingGcoins}
+                    >
+                      ✕
+                    </button>
+                  </div>
                 )}
               </div>
             </div>
@@ -1552,6 +1653,7 @@ export default function UserData() {
         </div>
       )}
     </div>
+
     </Layout >
   );
 }
