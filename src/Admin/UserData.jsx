@@ -69,6 +69,9 @@ export default function UserData() {
   const [showAddGcoinsForm, setShowAddGcoinsForm] = useState(false);
   const [gcoinsAmount, setGcoinsAmount] = useState('');
   const [addingGcoins, setAddingGcoins] = useState(false);
+  const [updatingSubscription, setUpdatingSubscription] = useState(false);
+  const [showSubscriptionForm, setShowSubscriptionForm] = useState(false);
+  const [subscriptionEndDate, setSubscriptionEndDate] = useState('');
 
   useEffect(() => {
     fetchCurrentUser();
@@ -314,6 +317,80 @@ export default function UserData() {
       toast.error('Failed to update business user status');
     } finally {
       setUpdatingBusinessUser(false);
+    }
+  };
+
+  const handleToggleSubscription = () => {
+    if (!user.isSubscribed) {
+      setShowSubscriptionForm((prev) => !prev);
+    } else {
+      handleUnsubscribe();
+    }
+  };
+
+  const handleUnsubscribe = async () => {
+    try {
+      setUpdatingSubscription(true);
+      const response = await fetch(
+        `${import.meta.env.VITE_SERVER}/admin/users/${id}/subscription`,
+        {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ isSubscribed: false }),
+        }
+      );
+      if (response.ok) {
+        toast.success('User unsubscribed successfully.');
+        setShowSubscriptionForm(false);
+        setSubscriptionEndDate('');
+        fetchUserDetails();
+      } else {
+        const data = await response.json();
+        toast.error(data.message || 'Failed to update subscription status');
+      }
+    } catch (error) {
+      console.error('Error updating subscription status:', error);
+      toast.error('Failed to update subscription status');
+    } finally {
+      setUpdatingSubscription(false);
+    }
+  };
+
+  const handleSubscribeWithEndDate = async () => {
+    if (!subscriptionEndDate) {
+      toast.error('Please select an end date for the subscription.');
+      return;
+    }
+
+    try {
+      setUpdatingSubscription(true);
+      const response = await fetch(
+        `${import.meta.env.VITE_SERVER}/admin/users/${id}/subscription`,
+        {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            isSubscribed: true,
+            dayTo: subscriptionEndDate
+          }),
+        }
+      );
+      if (response.ok) {
+        toast.success('User subscribed successfully.');
+        setShowSubscriptionForm(false);
+        setSubscriptionEndDate('');
+        fetchUserDetails();
+      } else {
+        const data = await response.json();
+        toast.error(data.message || 'Failed to update subscription status');
+      }
+    } catch (error) {
+      console.error('Error updating subscription status:', error);
+      toast.error('Failed to update subscription status');
+    } finally {
+      setUpdatingSubscription(false);
     }
   };
 
@@ -749,6 +826,12 @@ export default function UserData() {
                       Business User
                     </span>
                   )}
+                  {user.isSubscribed && (
+                    <span className="inline-flex items-center gap-1 px-3 py-1 text-xs font-semibold bg-purple-100 text-purple-800 rounded-full">
+                      <FiStar className="w-3 h-3" />
+                      Subscribed User
+                    </span>
+                  )}
                   <span className="text-green-100 text-sm">
                     Joined {new Date(user.createdAt).toLocaleDateString('en-IN')}
                   </span>
@@ -809,6 +892,52 @@ export default function UserData() {
                   <FiBriefcase className="mr-2" />
                   {updatingBusinessUser ? 'Updating...' : user.isBusinessUser ? 'Remove Business User' : 'Mark as Business User'}
                 </button>
+
+                <div className="relative">
+                  <button
+                    onClick={handleToggleSubscription}
+                    className={`inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-lg text-white ${
+                      user.isSubscribed
+                        ? 'bg-purple-600 hover:bg-purple-700 focus:ring-purple-500'
+                        : 'bg-pink-600 hover:bg-pink-700 focus:ring-pink-500'
+                    } focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed`}
+                    disabled={updatingSubscription}
+                  >
+                    <FiStar className="mr-2" />
+                    {updatingSubscription ? 'Updating...' : user.isSubscribed ? 'Remove Subscription' : 'Mark as Subscribed'}
+                  </button>
+
+                  {showSubscriptionForm && !user.isSubscribed && (
+                    <div className="absolute left-0 top-full z-20 mt-2 flex items-center space-x-2 rounded-lg border border-purple-200 bg-purple-50 p-3 shadow-lg">
+                      <input
+                        type="date"
+                        value={subscriptionEndDate}
+                        onChange={(e) => setSubscriptionEndDate(e.target.value)}
+                        min={new Date().toISOString().split('T')[0]}
+                        className="px-3 py-2 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-purple-800 focus:border-purple-800"
+                        disabled={updatingSubscription}
+                        autoFocus
+                      />
+                      <button
+                        onClick={handleSubscribeWithEndDate}
+                        disabled={updatingSubscription || !subscriptionEndDate}
+                        className="px-3 py-2 bg-purple-800 text-white text-sm rounded hover:bg-purple-900 disabled:opacity-50 transition-colors"
+                      >
+                        {updatingSubscription ? '...' : '✓'}
+                      </button>
+                      <button
+                        onClick={() => {
+                          setShowSubscriptionForm(false);
+                          setSubscriptionEndDate('');
+                        }}
+                        className="px-3 py-2 bg-gray-500 text-white text-sm rounded hover:bg-gray-600 transition-colors"
+                        disabled={updatingSubscription}
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  )}
+                </div>
 
                 {adminRole === 'super_admin' && (
                   <>
@@ -1022,6 +1151,65 @@ export default function UserData() {
                   )}
                 </div>
               </div>
+
+              {/* Subscription Details */}
+              {user.isSubscribed && (
+                <div className="bg-white shadow-lg rounded-lg overflow-hidden">
+                  <div className="bg-purple-600 px-6 py-4">
+                    <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                      <FiStar className="w-6 h-6" />
+                      Subscription Details
+                    </h3>
+                  </div>
+                  <div className="p-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                        <FiCalendar className="text-gray-400" />
+                        <div>
+                          <p className="text-sm text-gray-600">Subscription Date</p>
+                          <p className="font-medium">
+                            {user.subscriptionDate
+                              ? new Date(user.subscriptionDate).toLocaleDateString('en-IN')
+                              : 'Not set'
+                            }
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                        <FiTruck className="text-gray-400" />
+                        <div>
+                          <p className="text-sm text-gray-600">Rides</p>
+                          <p className="font-medium">{user.rides || 0}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                        <FiCalendar className="text-gray-400" />
+                        <div>
+                          <p className="text-sm text-gray-600">Day From</p>
+                          <p className="font-medium">
+                            {(user.dayFrom || user.subscriptionDate)
+                              ? new Date(user.dayFrom || user.subscriptionDate).toLocaleDateString('en-IN')
+                              : 'Not set'
+                            }
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                        <FiCalendar className="text-gray-400" />
+                        <div>
+                          <p className="text-sm text-gray-600">Day To</p>
+                          <p className="font-medium">
+                            {user.dayTo
+                              ? new Date(user.dayTo).toLocaleDateString('en-IN')
+                              : 'Not set'
+                            }
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Authentication & Security */}
               <div className="bg-white shadow-lg rounded-lg overflow-hidden">

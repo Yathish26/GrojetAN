@@ -20,7 +20,8 @@ import {
   Boxes,
   Wallet,
   Coins,
-  Handshake
+  Handshake,
+  CalendarHeart
 } from 'lucide-react';
 import { MdAdminPanelSettings } from 'react-icons/md';
 import toast from 'react-hot-toast';
@@ -196,6 +197,8 @@ const Layout = ({ children, title }) => {
     // { name: 'Food Categories', icon: ChefHat, path: '/food-categories', roles: ['super_admin', 'admin'] },
     { name: 'Xpress', icon: Zap, path: '/xpress', roles: ['super_admin', 'admin'] },
     { name: 'Careers', icon: Briefcase, path: '/careers', roles: ['super_admin', 'admin'] },
+    { name: 'Subscription', icon: CalendarHeart, path: '/subscription', roles: ['super_admin', 'admin'] },
+
     { name: 'Users', icon: Users, path: '/users', roles: ['super_admin', 'admin'] },
     { name: 'User Analytics', icon: BarChart3, path: '/user-analytics', roles: ['super_admin'] },
     { name: 'Merchant Enquiries', icon: Store, path: '/merchant-enquiries', roles: ['super_admin', 'admin'] },
@@ -207,6 +210,7 @@ const Layout = ({ children, title }) => {
     { name: 'Delivery Zones', icon: MapPin, path: '/delivery-zones', roles: ['super_admin', 'admin', 'delivery_manager'] },
     { name: 'Market Area', icon: MapPin, path: '/market-area', roles: ['super_admin', 'admin'] },
     { name: 'Offers', icon: Gift, path: '/offers', roles: ['super_admin', 'admin'] },
+    { name: ' Xpress Offers', icon: Gift, path: '/xpressoffers', roles: ['super_admin', 'admin'] },
     { name: 'Inline Offer', icon: Gift, path: '/inline-offers', roles: ['super_admin', 'admin'] },
     { name: 'Home Ads', icon: Smartphone, path: '/home-ads', roles: ['super_admin', 'admin'] },
     { name: 'Analytics', icon: BarChart3, path: '/analytics', roles: ['super_admin', 'admin'] },
