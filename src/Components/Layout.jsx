@@ -21,7 +21,11 @@ import {
   Wallet,
   Coins,
   Handshake,
+<<<<<<< Updated upstream
   CalendarHeart
+=======
+  CheckSquare
+>>>>>>> Stashed changes
 } from 'lucide-react';
 import { MdAdminPanelSettings } from 'react-icons/md';
 import toast from 'react-hot-toast';
@@ -206,6 +210,7 @@ const Layout = ({ children, title }) => {
     { name: 'Darkstore', icon: Warehouse, path: '/darkstore', roles: ['super_admin', 'admin'] },
     { name: 'Support', icon: Headphones, path: '/support', roles: ['super_admin', 'admin'] },
     { name: 'Delivery Agents', icon: Truck, path: '/delivery-agents', roles: ['super_admin', 'admin', 'delivery_manager'] },
+    { name: 'Auto Assign', icon: CheckSquare, path: '/auto-assign', roles: ['super_admin', 'admin', 'delivery_manager'] },
     { name: 'Delivery Ratings', icon: Star, path: '/delivery-ratings', roles: ['super_admin', 'admin', 'delivery_manager'] },
     { name: 'Delivery Zones', icon: MapPin, path: '/delivery-zones', roles: ['super_admin', 'admin', 'delivery_manager'] },
     { name: 'Market Area', icon: MapPin, path: '/market-area', roles: ['super_admin', 'admin'] },

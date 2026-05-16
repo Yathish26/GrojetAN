@@ -168,6 +168,9 @@ export default function DeliveryAgentDetails() {
   // Status change dropdown state
   const [showStatusDropdown, setShowStatusDropdown] = useState(false);
 
+  // Auto-assign toggle state
+  const [updatingAutoAssign, setUpdatingAutoAssign] = useState(false);
+
   // Handle keyboard events for editing
   useEffect(() => {
     const handleKeyPress = (e) => {
@@ -485,6 +488,54 @@ export default function DeliveryAgentDetails() {
       toast.error(err.message);
     } finally {
       toast.dismiss(loadingToast);
+    }
+  };
+
+  const toggleAutoAssign = async () => {
+    if (!isAuthorized) return;
+    setUpdatingAutoAssign(true);
+    const newAutoAssignValue = !agent.status?.autoAssign;
+    const loadingToast = toast.loading(`${newAutoAssignValue ? 'Enabling' : 'Disabling'} auto-assign...`);
+    
+    try {
+      const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/delivery-agents/${id}/auto-assign`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include',
+        body: JSON.stringify({ autoAssign: newAutoAssignValue })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update auto-assign setting');
+      }
+
+      const data = await response.json();
+      if (data.tokenValid === false) {
+        navigate('/login', { replace: true });
+        return;
+      }
+      
+      // Update the agent state
+      setAgent(prevAgent => ({
+        ...prevAgent,
+        status: {
+          ...prevAgent.status,
+          autoAssign: newAutoAssignValue
+        }
+      }));
+      
+      toast.success(`Auto-assign ${newAutoAssignValue ? 'enabled' : 'disabled'} successfully`);
+      
+      const agentName = `${agent?.personalInfo?.firstName || ''} ${agent?.personalInfo?.lastName || ''}`.trim();
+      const adminName = currentUser?.name || currentUser?.email || 'Admin';
+      await createLog(`${adminName} ${newAutoAssignValue ? 'enabled' : 'disabled'} auto-assign for delivery agent ${agentName}`);
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      toast.dismiss(loadingToast);
+      setUpdatingAutoAssign(false);
     }
   };
 
@@ -1273,6 +1324,25 @@ export default function DeliveryAgentDetails() {
                 </div>
               </div>
             )}
+          </div>
+
+          {/* Auto Assign Toggle */}
+          <div className="flex items-center gap-2 px-3 py-2 bg-gray-100 rounded-lg">
+            <CheckSquare className={`w-4 h-4 ${agent.status?.autoAssign ? 'text-green-600' : 'text-gray-400'}`} />
+            <span className="text-sm font-medium text-gray-700">Auto Assign</span>
+            <button
+              onClick={toggleAutoAssign}
+              disabled={updatingAutoAssign}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 ${
+                agent.status?.autoAssign ? 'bg-green-600' : 'bg-gray-200'
+              } ${updatingAutoAssign ? 'opacity-50 cursor-not-allowed' : ''}`}
+            >
+              <span
+                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                  agent.status?.autoAssign ? 'translate-x-6' : 'translate-x-1'
+                }`}
+              />
+            </button>
           </div>
 
           {/* Edit Button */}
