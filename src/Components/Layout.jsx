@@ -21,11 +21,8 @@ import {
   Wallet,
   Coins,
   Handshake,
-<<<<<<< Updated upstream
-  CalendarHeart
-=======
-  CheckSquare
->>>>>>> Stashed changes
+  CalendarHeart,
+  CheckSquare,
 } from 'lucide-react';
 import { MdAdminPanelSettings } from 'react-icons/md';
 import toast from 'react-hot-toast';
