@@ -204,7 +204,7 @@ const Layout = ({ children, title }) => {
     { name: 'User Analytics', icon: BarChart3, path: '/user-analytics', roles: ['super_admin'] },
     { name: 'Merchant Enquiries', icon: Store, path: '/merchant-enquiries', roles: ['super_admin', 'admin'] },
     { name: 'Merchants', icon: Store, path: '/merchants', roles: ['super_admin', 'admin'] },
-    { name: 'Darkstore', icon: Warehouse, path: '/darkstore', roles: ['super_admin', 'admin'] },
+    // { name: 'Darkstore', icon: Warehouse, path: '/darkstore', roles: ['super_admin', 'admin'] },
     { name: 'Support', icon: Headphones, path: '/support', roles: ['super_admin', 'admin'] },
     { name: 'Delivery Agents', icon: Truck, path: '/delivery-agents', roles: ['super_admin', 'admin', 'delivery_manager'] },
     { name: 'Auto Assign', icon: CheckSquare, path: '/auto-assign', roles: ['super_admin', 'admin', 'delivery_manager'] },

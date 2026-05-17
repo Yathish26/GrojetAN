@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Layout from '../Components/Layout.jsx';
 import { Users, Calendar, Phone, Search, Pencil, Check, X, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export default function Subscription() {
+  const navigate = useNavigate();
   const [subscribedUsers, setSubscribedUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -286,7 +288,11 @@ export default function Subscription() {
                     const isEditing = editingUserId === userId;
 
                     return (
-                    <tr key={userId} className="hover:bg-gray-50">
+                    <tr
+                      key={userId}
+                      className="cursor-pointer hover:bg-gray-50"
+                      onClick={() => navigate(`/users/${userId}`)}
+                    >
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
                           <div className="flex-shrink-0 h-10 w-10">
@@ -320,7 +326,7 @@ export default function Subscription() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         {isEditing ? (
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                             <input
                               type="date"
                               value={editingDayTo}
@@ -348,7 +354,7 @@ export default function Subscription() {
                             </button>
                           </div>
                         ) : (
-                          <div className="flex items-center gap-3">
+                          <div className="flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
                             <span>{user.dayTo ? formatDate(user.dayTo) : '-'}</span>
                             {adminRole === 'super_admin' && (
                               <button

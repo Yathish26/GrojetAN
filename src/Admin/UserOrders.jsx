@@ -294,7 +294,7 @@ export default function UserOrders() {
                 <p className="text-blue-100">{user.personalInfo?.email || user.personalInfo?.phone || 'N/A'}</p>
                 <div className="flex items-center gap-4 mt-2">
                   <span className="text-blue-100 text-sm">
-                    Total Orders: {pagination?.total || 0}
+                    Total Orders: {(pagination?.total || 0) + (xpressPagination?.total || 0)}
                   </span>
                 </div>
               </div>

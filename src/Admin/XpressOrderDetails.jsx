@@ -1907,6 +1907,23 @@ const XpressOrderDetails = () => {
                               {event.status === 'cancelled' && `Assignment Cancelled for ${event.agent?.personalInfo?.firstName || event.agentName || 'Unknown Agent'} ${event.agent?.personalInfo?.lastName || ''}`.trim()}
                               {event.status === 'expired' && `Assignment Expired for ${event.agent?.personalInfo?.firstName || event.agentName || 'Unknown Agent'} ${event.agent?.personalInfo?.lastName || ''}`.trim()}
                             </p>
+                            {event.status === 'accepted' && (
+                          <button
+                            className="mt-2 px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600"
+                            onClick={() => {
+                              const lat = order.assignment?.acceptedLocation?.latitude;
+                              const lng = order.assignment?.acceptedLocation?.longitude;
+
+                            window.open(
+        `https://www.google.com/maps?q=${lat},${lng}`,
+        '_blank'
+      );
+    }}
+  >
+    Open Location
+  </button>
+
+)}
                             <p className="text-xs text-gray-500 mb-1">{formatDateTime12Hour(event.timestamp)}</p>
                             {event.assignedBy?.name && event.status === 'assigned' && (
                               <p className="text-xs text-gray-600">
