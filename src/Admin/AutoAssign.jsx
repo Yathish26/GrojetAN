@@ -12,6 +12,7 @@ export default function AutoAssign() {
   const [lastUpdatedAt, setLastUpdatedAt] = useState(null);
   const [agents, setAgents] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
+  const [activityLogs, setActivityLogs] = useState([]);
 
   // Reusable fetch functions
   const fetchAutoAssignStatus = async () => {
@@ -64,16 +65,38 @@ export default function AutoAssign() {
     }
   };
 
+  const fetchAssignmentLogs = async () => {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/app-controls/auto-assign/logs`, {
+        method: 'GET',
+        headers: {
+          'x-admin-version': VERSION,
+        },
+        credentials: 'include',
+      });
+      const data = await response.json();
+      if (data.success && Array.isArray(data.data)) {
+        setActivityLogs(data.data);
+      } else {
+        toast.error('Failed to fetch auto-assign logs');
+      }
+    } catch (error) {
+      console.error('Error fetching auto-assign logs:', error);
+      toast.error('Failed to fetch auto-assign logs');
+    }
+  };
+
   // Combined initial fetch
   useEffect(() => {
     fetchAutoAssignStatus();
     fetchAgents();
+    fetchAssignmentLogs();
   }, []);
 
   const handleRefresh = async () => {
     setRefreshing(true);
     try {
-      await Promise.all([fetchAutoAssignStatus(), fetchAgents()]);
+      await Promise.all([fetchAutoAssignStatus(), fetchAgents(), fetchAssignmentLogs()]);
       toast.success('Refreshed');
     } catch (err) {
       // errors handled in individual functions
@@ -110,6 +133,8 @@ export default function AutoAssign() {
             setLastUpdatedAt(new Date(data.data.autoAssignEnabled.updatedAt));
           }
         }
+
+        await fetchAssignmentLogs();
       } else {
         toast.error(data.message || 'Failed to update auto-assign settings');
       }
@@ -210,6 +235,31 @@ export default function AutoAssign() {
                       <span className={`w-1.5 h-1.5 rounded-full ${agent.status?.isOnline ? 'bg-green-500' : 'bg-gray-400'}`} />
                       {agent.status?.isOnline ? 'Online' : 'Offline'}
                     </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          <div className="mt-8 rounded-lg border border-gray-200 bg-gray-50 p-4">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="font-semibold text-gray-900">Auto-Assign Activity</h3>
+              <span className="text-xs text-gray-500">Latest {activityLogs.length} entries</span>
+            </div>
+            {activityLogs.length === 0 ? (
+              <p className="text-sm text-gray-500">No backend auto-assign logs yet. Place an Xpress order and refresh this page.</p>
+            ) : (
+              <ul className="space-y-2 max-h-72 overflow-y-auto">
+                {activityLogs.map(log => (
+                  <li key={log._id || `${log.createdAt}-${log.message}`} className="rounded-md bg-white border border-gray-200 px-3 py-2">
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-sm font-medium text-gray-800">{log.message}</span>
+                      <span className="text-xs text-gray-400">{new Date(log.createdAt || log.timestamp).toLocaleTimeString()}</span>
+                    </div>
+                    <div className="mt-1 flex items-center justify-between gap-3 text-xs text-gray-500">
+                      <span>{log.level}</span>
+                      <span>{log.user || 'system'}</span>
+                    </div>
                   </li>
                 ))}
               </ul>
