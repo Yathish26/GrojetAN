@@ -59,6 +59,8 @@ export default function AppControls() {
   const [xpressBaseDistanceKm, setXpressBaseDistanceKm] = useState(null);
   const [xpressBasePrice, setXpressBasePrice] = useState(null);
   const [xpressPerKmRate, setXpressPerKmRate] = useState(null);
+  // Redeeming Gcoins amount for Xpress (number of Gcoins allowed to redeem)
+  const [xpressRedeemingGcoinsAmount, setXpressRedeemingGcoinsAmount] = useState('');
 
   // Xpress editing states
   const [isEditingXpress, setIsEditingXpress] = useState(false);
@@ -74,6 +76,7 @@ export default function AppControls() {
     xpressBaseDistanceKm: { updatedBy: null, updatedAt: null },
     xpressBasePrice: { updatedBy: null, updatedAt: null },
     xpressPerKmRate: { updatedBy: null, updatedAt: null },
+    xpressRedeemingGcoinsAmount: { updatedBy: null, updatedAt: null },
   });
 
   // GIG controls states
@@ -207,6 +210,8 @@ export default function AppControls() {
         setXpressBaseDistanceKm(data.xpressBaseDistanceKm?.value ?? 3);
         setXpressBasePrice(data.xpressBasePrice?.value ?? 60);
         setXpressPerKmRate(data.xpressPerKmRate?.value ?? 6);
+        // Set redeeming Gcoins amount
+        setXpressRedeemingGcoinsAmount(data.xpressRedeemingGcoinsAmount?.value ?? '');
         
         // Set Xpress update logs
         setXpressUpdateLogs({
@@ -237,6 +242,10 @@ export default function AppControls() {
           xpressPerKmRate: {
             updatedBy: data.xpressPerKmRate?.updatedBy,
             updatedAt: data.xpressPerKmRate?.updatedAt
+          },
+          xpressRedeemingGcoinsAmount: {
+            updatedBy: data.xpressRedeemingGcoinsAmount?.updatedBy,
+            updatedAt: data.xpressRedeemingGcoinsAmount?.updatedAt
           },
         });
         // Set GIG controls
@@ -363,6 +372,7 @@ export default function AppControls() {
           xpressBaseDistanceKm: data.xpressBaseDistanceKm?.value ?? 3,
           xpressBasePrice: data.xpressBasePrice?.value ?? 60,
           xpressPerKmRate: data.xpressPerKmRate?.value ?? 6,
+          xpressRedeemingGcoinsAmount: data.xpressRedeemingGcoinsAmount?.value ?? ''
         });
 
         // Set GIG original values for cancel functionality
@@ -596,6 +606,7 @@ export default function AppControls() {
           xpressBaseDistanceKm: parseFloat(xpressBaseDistanceKm),
           xpressBasePrice: parseFloat(xpressBasePrice),
           xpressPerKmRate: parseFloat(xpressPerKmRate),
+          xpressRedeemingGcoinsAmount: xpressRedeemingGcoinsAmount === '' ? null : parseInt(xpressRedeemingGcoinsAmount, 10),
         }),
       });
 
@@ -616,6 +627,7 @@ export default function AppControls() {
           xpressBaseDistanceKm: parseFloat(xpressBaseDistanceKm),
           xpressBasePrice: parseFloat(xpressBasePrice),
           xpressPerKmRate: parseFloat(xpressPerKmRate),
+          xpressRedeemingGcoinsAmount: xpressRedeemingGcoinsAmount === '' ? null : parseInt(xpressRedeemingGcoinsAmount, 10),
         });
         // Update update logs with the returned data
         const data = result.data;
@@ -647,6 +659,10 @@ export default function AppControls() {
           xpressPerKmRate: {
             updatedBy: data.xpressPerKmRate?.updatedBy,
             updatedAt: data.xpressPerKmRate?.updatedAt
+          },
+          xpressRedeemingGcoinsAmount: {
+            updatedBy: data.xpressRedeemingGcoinsAmount?.updatedBy,
+            updatedAt: data.xpressRedeemingGcoinsAmount?.updatedAt
           },
         });
         // Refetch to ensure state reflects server values
@@ -1896,6 +1912,28 @@ export default function AppControls() {
                 {formatUpdateLog(xpressUpdateLogs.xpressCodEnabled)}
               </p>
             </div>
+              {/* Redeeming Gcoins amount */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Redeeming Gcoins
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  value={xpressRedeemingGcoinsAmount}
+                  onChange={(e) => setXpressRedeemingGcoinsAmount(e.target.value ? parseInt(e.target.value, 10) : '')}
+                  disabled={!isEditingXpress}
+                  className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm ${
+                    !isEditingXpress ? 'bg-gray-50 cursor-not-allowed' : ''
+                  }`}
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Maximum number of Gcoins a customer may redeem for Xpress delivery. Leave empty to disable.
+                </p>
+                <p className="text-xs text-blue-600 mt-1">
+                  {formatUpdateLog(xpressUpdateLogs.xpressRedeemingGcoinsAmount)}
+                </p>
+              </div>
 
             {/* Xpress UPI Enabled */}
             <div>

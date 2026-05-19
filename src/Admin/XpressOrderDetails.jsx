@@ -978,16 +978,26 @@ const XpressOrderDetails = () => {
       doc.text(`Size: ${order.packageDetails?.size || 'N/A'}`, 16, y + 22);
       doc.text(`Distance: ${order.pricing?.distance?.toFixed(1) || 0} km`, 16, y + 29);
 
-      const basePrice = Math.round((order.pricing?.finalCost || 0) / 1.18);
-      const gstAmount = Math.round((order.pricing?.finalCost || 0) - basePrice);
+      const pricingBeforeGcoins = order.pricing?.gcoinsRedemption?.amountBeforeRedemption || order.pricing?.finalCost || 0;
+      const basePrice = order.pricing?.estimatedCost || Math.round(pricingBeforeGcoins / 1.18);
+      const gstAmount = order.pricing?.gstAmount ?? Math.max(Math.round(pricingBeforeGcoins - basePrice), 0);
 
       doc.text(`Base Price: ₹${basePrice}`, 110, y + 15);
       doc.text(`GST (18%): ₹${gstAmount}`, 110, y + 22);
-      doc.setFont('helvetica', 'bold');
-      doc.text(`Final: ₹${order.pricing?.finalCost || 0}`, 110, y + 29);
-      doc.setFont('helvetica', 'normal');
-      doc.text(`Payment: ${order.pricing?.paymentMethod || 'N/A'}`, 110, y + 36);
-      y += 46;
+      if (order.pricing?.gcoinsRedemption?.redeemed) {
+        doc.text(`Redeemed Gcoins: -₹${order.pricing.gcoinsRedemption.redeemedAmount || 0}`, 110, y + 29);
+        doc.setFont('helvetica', 'bold');
+        doc.text(`Final: ₹${order.pricing?.finalCost || 0}`, 110, y + 36);
+        doc.setFont('helvetica', 'normal');
+        doc.text(`Payment: Gcoins Redemption`, 110, y + 43);
+        y += 46;
+      } else {
+        doc.setFont('helvetica', 'bold');
+        doc.text(`Final: ₹${order.pricing?.finalCost || 0}`, 110, y + 29);
+        doc.setFont('helvetica', 'normal');
+        doc.text(`Payment: ${order.pricing?.paymentMethod || 'N/A'}`, 110, y + 36);
+        y += 46;
+      }
 
       drawSection('Order Timeline', y, 24);
       doc.setFont('helvetica', 'normal');
@@ -1303,6 +1313,14 @@ const XpressOrderDetails = () => {
                   <p className="text-sm text-gray-900 hover:text-blue-600 transition-colors">
                     {order.userId?.personalInfo?.phone || 'N/A'}
                   </p>
+                </div>
+                <div className="flex items-center">
+                  {order.userId?.isSubscribed && (
+                    <span className="inline-flex items-center gap-1 px-3 py-1 text-xs font-semibold bg-purple-100 text-purple-800 rounded-full">
+                      <Star size={12} />
+                      Subscribed User
+                    </span>
+                  )}
                 </div>
               </div>
               {order.userId?._id && (
@@ -1842,6 +1860,18 @@ const XpressOrderDetails = () => {
                     </div>
                   </>
                 )}
+                {order.pricing?.gcoinsRedemption?.redeemed && (
+                  <>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Redeemed Gcoins</span>
+                      <span className="text-gray-900">{order.pricing.gcoinsRedemption.redeemedGcoins || 0} Gcoins</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600 font-bold">Points Redeemed Value</span>
+                      <span className="text-green-700 font-medium">-₹{order.pricing.gcoinsRedemption.redeemedAmount || 0}</span>
+                    </div>
+                  </>
+                )}
                 <div className="border-t pt-3">
                   <div className="flex justify-between font-semibold">
                     <span className="text-gray-900">Final Cost</span>
@@ -1850,12 +1880,14 @@ const XpressOrderDetails = () => {
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600">Payment Method</span>
-                  <span className="text-gray-900 capitalize">{order.pricing?.paymentMethod || 'N/A'}</span>
+                  <span className="text-gray-900 capitalize">{order.pricing?.gcoinsRedemption?.redeemed ? 'gcoins redemption' : (order.pricing?.paymentMethod || 'N/A')}</span>
                 </div>
                 <div className="flex justify-between items-center text-sm gap-3">
                   <span className="text-gray-600">Payment Status</span>
                   <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${getPaymentStatusColor(order.pricing?.paymentStatus)}`}>
-                    {order.pricing?.paymentMethod === 'cod'
+                    {order.pricing?.gcoinsRedemption?.redeemed
+                      ? 'Gcoins Redeemed'
+                      : order.pricing?.paymentMethod === 'cod'
                       ? 'Cash on Delivery'
                       : `Razorpay ${getReadablePaymentStatus(order.pricing?.paymentStatus)}`}
                   </span>

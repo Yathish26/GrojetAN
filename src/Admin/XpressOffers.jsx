@@ -59,7 +59,7 @@ export default function XpressOffers() {
     const { name, value } = event.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: name === 'code' ? String(value || '').toUpperCase().slice(0, 10) : value
     }));
   };
 
@@ -267,7 +267,7 @@ export default function XpressOffers() {
                     name="code"
                     value={formData.code}
                     onChange={handleInputChange}
-                    maxLength={20}
+                    maxLength={10}
                     required
                     className="w-full border border-gray-300 px-4 py-3 text-sm uppercase text-gray-700 outline-none transition focus:border-green-500"
                     placeholder="Enter offer code"
