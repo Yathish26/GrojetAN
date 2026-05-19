@@ -1800,6 +1800,48 @@ const XpressOrderDetails = () => {
                   <span className="text-sm text-gray-600">Estimated Cost</span>
                   <span className="text-sm text-gray-900">₹{order.pricing?.estimatedCost || 0}</span>
                 </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">GST{order.pricing?.gstPercentage ? ` (${order.pricing.gstPercentage}%)` : ''}</span>
+                  <span className="text-gray-900">₹{order.pricing?.gstAmount || 0}</span>
+                </div>
+                {order.pricing?.couponCode && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600">Coupon Code</span>
+                    <span className="text-gray-900 uppercase">{order.pricing.couponCode}</span>
+                  </div>
+                )}
+                {(order.pricing?.discount?.amount || 0) > 0 && (
+                  <>
+                    {(order.pricing?.discount?.firstOrderAmount || 0) > 0 && (order.pricing?.discount?.couponAmount || 0) > 0 && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">First Order Discount</span>
+                        <span className="text-green-700 font-medium">-₹{order.pricing.discount.firstOrderAmount}</span>
+                      </div>
+                    )}
+                    {(order.pricing?.discount?.couponAmount || 0) > 0 && (order.pricing?.discount?.firstOrderAmount || 0) > 0 && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">Coupon Discount</span>
+                        <span className="text-green-700 font-medium">-₹{order.pricing.discount.couponAmount}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600 font-bold">Total Discount</span>
+                      <span className="text-green-700 font-medium">-₹{order.pricing.discount.amount}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Discount Type</span>
+                      <span className="text-gray-900 capitalize">
+                        {(order.pricing?.discount?.firstOrderAmount || 0) > 0 && (order.pricing?.discount?.couponAmount || 0) > 0
+                          ? `First Order + Coupon (${order.pricing?.discount?.percentage || 0}%)`
+                          : order.pricing?.discount?.type === 'first_order'
+                          ? `First Order (${order.pricing?.discount?.percentage || 0}%)`
+                          : order.pricing?.discount?.type === 'coupon'
+                            ? `Coupon${order.pricing?.couponCode ? ` (${order.pricing.couponCode})` : ''} (${order.pricing?.discount?.percentage || 0}%)`
+                            : `${String(order.pricing?.discount?.type || 'discount').replace(/_/g, ' ')} (${order.pricing?.discount?.percentage || 0}%)`}
+                      </span>
+                    </div>
+                  </>
+                )}
                 <div className="border-t pt-3">
                   <div className="flex justify-between font-semibold">
                     <span className="text-gray-900">Final Cost</span>
