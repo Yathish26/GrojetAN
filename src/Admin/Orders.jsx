@@ -36,15 +36,45 @@ const Orders = () => {
   const allowedRoles = ['super_admin', 'admin'];
   const navigate = useNavigate();
 
+  const buildQueryParams = ({ includePagination = false, includeSearch = false } = {}) => {
+    const queryParams = new URLSearchParams();
+
+    if (includePagination) {
+      queryParams.set('page', pagination.page.toString());
+      queryParams.set('limit', pagination.limit.toString());
+    }
+
+    if (includeSearch && searchTerm.trim()) {
+      queryParams.set('search', searchTerm.trim());
+    }
+
+    if (filters.status) {
+      queryParams.set('status', filters.status);
+    }
+
+    if (filters.paymentMethod) {
+      queryParams.set('paymentMethod', filters.paymentMethod);
+    }
+
+    if (filters.deliveryType) {
+      queryParams.set('deliveryType', filters.deliveryType);
+    }
+
+    if (filters.startDate) {
+      queryParams.set('startDate', filters.startDate);
+    }
+
+    if (filters.endDate) {
+      queryParams.set('endDate', filters.endDate);
+    }
+
+    return queryParams;
+  };
+
   const fetchOrders = async () => {
     try {
       setLoading(true);
-      const queryParams = new URLSearchParams({
-        page: pagination.page,
-        limit: pagination.limit,
-        search: searchTerm,
-        ...filters
-      });
+      const queryParams = buildQueryParams({ includePagination: true, includeSearch: true });
 
       const response = await fetch(
         `${import.meta.env.VITE_SERVER}/admin/orders?${queryParams}`,
@@ -79,9 +109,7 @@ const Orders = () => {
 
   const fetchStats = async () => {
     try {
-      const queryParams = new URLSearchParams({
-        ...filters
-      });
+      const queryParams = buildQueryParams({ includeSearch: true });
 
       const response = await fetch(
         `${import.meta.env.VITE_SERVER}/admin/orders/stats/overview?${queryParams}`,
@@ -246,10 +274,7 @@ const Orders = () => {
   const exportToExcel = async () => {
     try {
       toast.loading('Exporting orders to Excel...', { id: 'export' });
-      
-      const queryParams = new URLSearchParams({
-        ...filters
-      });
+      const queryParams = buildQueryParams({ includeSearch: true });
 
       const response = await fetch(
         `${import.meta.env.VITE_SERVER}/admin/orders/export?${queryParams}`,
@@ -486,28 +511,26 @@ const Orders = () => {
                 </select>
               </div>
 
-              {filters.dateRange === 'custom' && (
-                <>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-gray-600">Start Date:</span>
-                    <input
-                      type="date"
-                      value={filters.startDate}
-                      onChange={(e) => handleFilterChange('startDate', e.target.value)}
-                      className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    />
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-gray-600">End Date:</span>
-                    <input
-                      type="date"
-                      value={filters.endDate}
-                      onChange={(e) => handleFilterChange('endDate', e.target.value)}
-                      className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    />
-                  </div>
-                </>
-              )}
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-600">From Date:</span>
+                <input
+                  type="date"
+                  value={filters.startDate}
+                  max={filters.endDate || undefined}
+                  onChange={(e) => handleFilterChange('startDate', e.target.value)}
+                  className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-600">To Date:</span>
+                <input
+                  type="date"
+                  value={filters.endDate}
+                  min={filters.startDate || undefined}
+                  onChange={(e) => handleFilterChange('endDate', e.target.value)}
+                  className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
 
               {/* Status Filter */}
               <div className="flex items-center gap-2">
@@ -557,7 +580,7 @@ const Orders = () => {
               </div>
 
               {/* Clear Filters */}
-              {(filters.dateRange || filters.status || filters.paymentMethod || filters.deliveryType || searchTerm) && (
+              {(filters.dateRange || filters.status || filters.paymentMethod || filters.deliveryType || filters.startDate || filters.endDate || searchTerm) && (
                 <button
                   onClick={() => {
                     setFilters({

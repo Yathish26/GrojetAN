@@ -18,7 +18,9 @@ const Xpress = () => {
   const [currentSearch, setCurrentSearch] = useState('');
   const [filters, setFilters] = useState({
     status: '',
-    paymentMethod: ''
+    paymentMethod: '',
+    fromDate: '',
+    toDate: ''
   });
   const [pagination, setPagination] = useState({
     page: 1,
@@ -36,15 +38,41 @@ const Xpress = () => {
   const allowedRoles = ['super_admin', 'admin'];
   const navigate = useNavigate();
 
+  const buildQueryParams = ({ includePagination = false, includeSearch = false } = {}) => {
+    const queryParams = new URLSearchParams();
+
+    if (includePagination) {
+      queryParams.set('page', pagination.page.toString());
+      queryParams.set('limit', pagination.limit.toString());
+    }
+
+    if (includeSearch && currentSearch.trim()) {
+      queryParams.set('search', currentSearch.trim());
+    }
+
+    if (filters.status) {
+      queryParams.set('status', filters.status);
+    }
+
+    if (filters.paymentMethod) {
+      queryParams.set('paymentMethod', filters.paymentMethod);
+    }
+
+    if (filters.fromDate) {
+      queryParams.set('startDate', filters.fromDate);
+    }
+
+    if (filters.toDate) {
+      queryParams.set('endDate', filters.toDate);
+    }
+
+    return queryParams;
+  };
+
   const fetchOrders = async () => {
     try {
       setLoading(true);
-      const queryParams = new URLSearchParams({
-        page: pagination.page,
-        limit: pagination.limit,
-        search: currentSearch,
-        ...filters
-      });
+      const queryParams = buildQueryParams({ includePagination: true, includeSearch: true });
 
       const response = await fetch(
         `${import.meta.env.VITE_SERVER}/admin/xpress?${queryParams}`,
@@ -79,9 +107,7 @@ const Xpress = () => {
 
   const fetchStats = async () => {
     try {
-      const queryParams = new URLSearchParams({
-        ...filters
-      });
+      const queryParams = buildQueryParams();
 
       const response = await fetch(
         `${import.meta.env.VITE_SERVER}/admin/xpress/stats/overview?${queryParams}`,
@@ -187,10 +213,7 @@ const Xpress = () => {
   const exportOrders = async () => {
     try {
       toast.loading('Exporting orders to Excel...', { id: 'export' });
-
-      const queryParams = new URLSearchParams({
-        ...filters
-      });
+      const queryParams = buildQueryParams();
 
       const response = await fetch(
         `${import.meta.env.VITE_SERVER}/admin/xpress/export/excel?${queryParams}`,
@@ -264,11 +287,12 @@ const Xpress = () => {
   }, [checkUser]);
 
   const isAuthorized = allowedRoles.includes(currentUser?.role);
+  const hasDateFilter = Boolean(filters.fromDate || filters.toDate);
 
   // Reset page to 1 when search or filters change
   useEffect(() => {
     setPagination(prev => ({ ...prev, page: 1 }));
-  }, [currentSearch, filters.status, filters.paymentMethod]);
+  }, [currentSearch, filters.status, filters.paymentMethod, filters.fromDate, filters.toDate]);
 
   useEffect(() => {
     if (isAuthorized) {
@@ -492,7 +516,7 @@ const Xpress = () => {
 
         {/* Filters */}
         <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm border mb-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-6 gap-4">
             <div className="lg:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-2">Search</label>
               <div className="flex flex-col sm:flex-row gap-2 sm:gap-0">
@@ -542,6 +566,40 @@ const Xpress = () => {
                 <option value="online">Online</option>
               </select>
             </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">From Date</label>
+              <input
+                type="date"
+                value={filters.fromDate}
+                max={filters.toDate || undefined}
+                onChange={(e) => setFilters(prev => ({ ...prev, fromDate: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">To Date</label>
+              <input
+                type="date"
+                value={filters.toDate}
+                min={filters.fromDate || undefined}
+                onChange={(e) => setFilters(prev => ({ ...prev, toDate: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
+          </div>
+          <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm text-gray-500">
+              Use From Date and To Date to view and export a custom Xpress report range.
+            </p>
+            {hasDateFilter && (
+              <button
+                type="button"
+                onClick={() => setFilters(prev => ({ ...prev, fromDate: '', toDate: '' }))}
+                className="inline-flex items-center justify-center px-3 py-2 text-sm font-medium text-blue-600 border border-blue-200 rounded-lg hover:bg-blue-50 transition-colors"
+              >
+                Clear Dates
+              </button>
+            )}
           </div>
         </div>
 
