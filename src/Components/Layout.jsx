@@ -199,6 +199,7 @@ const Layout = ({ children, title }) => {
     { name: 'Categories', icon: ChartBarStacked, path: '/categories', roles: ['super_admin', 'admin'] },
     // { name: 'Food Categories', icon: ChefHat, path: '/food-categories', roles: ['super_admin', 'admin'] },
     { name: 'Xpress', icon: Zap, path: '/xpress', roles: ['super_admin', 'admin'] },
+    { name: 'Franchise Requests', icon: Briefcase, path: '/xpress-franchise-requests', roles: ['super_admin', 'admin'] },
     { name: 'Careers', icon: Briefcase, path: '/careers', roles: ['super_admin', 'admin'] },
     { name: 'Subscription', icon: CalendarHeart, path: '/subscription', roles: ['super_admin', 'admin'] },
 

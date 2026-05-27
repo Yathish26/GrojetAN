@@ -70,6 +70,7 @@ import B2bxpress from './Admin/B2bxpress.jsx'
 import XpressOffers from './Admin/XpressOffers.jsx'
 import Subscription from './Admin/Subscription.jsx'
 import Attendance from './Admin/Attendance.jsx'
+import XpressFranchiseRequests from './Admin/XpressFranchiseRequests.jsx'
 
 function App() {
   return (
@@ -152,6 +153,7 @@ function App() {
             {/* Xpress */}
             <Route path="/xpress" element={<Xpress />} />
             <Route path="/xpress/:id" element={<XpressOrderDetails />} />
+            <Route path="/xpress-franchise-requests" element={<XpressFranchiseRequests />} />
             <Route path="/b2bxpress" element={<B2bxpress />} />
 
             {/* Careers Management */}
