@@ -69,6 +69,7 @@ import GcoinsHistory from './Admin/GcoinsHistory.jsx'
 import B2bxpress from './Admin/B2bxpress.jsx'
 import XpressOffers from './Admin/XpressOffers.jsx'
 import Subscription from './Admin/Subscription.jsx'
+import Attendance from './Admin/Attendance.jsx'
 
 function App() {
   return (
@@ -196,6 +197,9 @@ function App() {
             <Route path="/brands" element={<Brands />} />
             <Route path="/tickets" element={<Tickets />} />
             <Route path="/ticket-groups" element={<TicketGroups />} />
+
+            {/*Attendance*/}
+            <Route path="/attendance" element={<Attendance />} />
 
             {/* Settings & Profile */}
             <Route path="/profile" element={<Profile />} />
