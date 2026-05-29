@@ -1470,10 +1470,27 @@ const XpressOrderDetails = () => {
 
                 {order.assignment?.agent ? (
                   <div className="space-y-4">
-                    <div className={`border rounded-lg p-4 ${order.assignment.status === 'accepted' ? 'bg-green-50 border-green-200' :
-                      order.assignment.status === 'rejected' ? 'bg-red-50 border-red-200' :
-                        'bg-yellow-50 border-yellow-200'
-                      }`}>
+                    <div
+                      className={`border rounded-lg p-4 transition-shadow duration-150 hover:shadow-md cursor-pointer ${order.assignment.status === 'accepted' ? 'bg-green-50 border-green-200' :
+                        order.assignment.status === 'rejected' ? 'bg-red-50 border-red-200' :
+                          'bg-yellow-50 border-yellow-200'
+                        }`}
+                      onClick={() => {
+                        if (order.assignment.agent._id) {
+                          navigate(`/delivery-agents/${order.assignment.agent._id}`);
+                        }
+                      }}
+                      tabIndex={0}
+                      role="button"
+                      aria-label="View delivery agent details"
+                      onKeyDown={e => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          if (order.assignment.agent._id) {
+                            navigate(`/delivery-agents/${order.assignment.agent._id}`);
+                          }
+                        }
+                      }}
+                    >
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center">
                           <div className={`w-10 h-10 rounded-full flex items-center justify-center mr-3 ${order.assignment.status === 'accepted' ? 'bg-green-100' :
@@ -1852,10 +1869,10 @@ const XpressOrderDetails = () => {
                         {(order.pricing?.discount?.firstOrderAmount || 0) > 0 && (order.pricing?.discount?.couponAmount || 0) > 0
                           ? `First Order + Coupon (${order.pricing?.discount?.percentage || 0}%)`
                           : order.pricing?.discount?.type === 'first_order'
-                          ? `First Order (${order.pricing?.discount?.percentage || 0}%)`
-                          : order.pricing?.discount?.type === 'coupon'
-                            ? `Coupon${order.pricing?.couponCode ? ` (${order.pricing.couponCode})` : ''} (${order.pricing?.discount?.percentage || 0}%)`
-                            : `${String(order.pricing?.discount?.type || 'discount').replace(/_/g, ' ')} (${order.pricing?.discount?.percentage || 0}%)`}
+                            ? `First Order (${order.pricing?.discount?.percentage || 0}%)`
+                            : order.pricing?.discount?.type === 'coupon'
+                              ? `Coupon${order.pricing?.couponCode ? ` (${order.pricing.couponCode})` : ''} (${order.pricing?.discount?.percentage || 0}%)`
+                              : `${String(order.pricing?.discount?.type || 'discount').replace(/_/g, ' ')} (${order.pricing?.discount?.percentage || 0}%)`}
                       </span>
                     </div>
                   </>
@@ -1888,8 +1905,8 @@ const XpressOrderDetails = () => {
                     {order.pricing?.gcoinsRedemption?.redeemed
                       ? 'Gcoins Redeemed'
                       : order.pricing?.paymentMethod === 'cod'
-                      ? 'Cash on Delivery'
-                      : `Razorpay ${getReadablePaymentStatus(order.pricing?.paymentStatus)}`}
+                        ? 'Cash on Delivery'
+                        : `Razorpay ${getReadablePaymentStatus(order.pricing?.paymentStatus)}`}
                   </span>
                 </div>
                 {paymentVerificationMeta?.gateway?.status && (
@@ -1967,12 +1984,11 @@ const XpressOrderDetails = () => {
                       .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp))
                       .map((event, index) => (
                         <div key={index} className="flex items-start">
-                          <div className={`w-3 h-3 rounded-full mr-3 mt-1 ${
-                            event.status === 'assigned' ? 'bg-blue-500' :
-                            event.status === 'accepted' ? 'bg-green-500' :
-                            event.status === 'rejected' ? 'bg-red-500' :
-                            'bg-gray-500'
-                          }`}></div>
+                          <div className={`w-3 h-3 rounded-full mr-3 mt-1 ${event.status === 'assigned' ? 'bg-blue-500' :
+                              event.status === 'accepted' ? 'bg-green-500' :
+                                event.status === 'rejected' ? 'bg-red-500' :
+                                  'bg-gray-500'
+                            }`}></div>
                           <div className="flex-1">
                             <p className="text-sm font-medium text-gray-900">
                               {event.status === 'assigned' && `Agent Assigned: ${event.agent?.personalInfo?.firstName || event.agentName || 'Unknown Agent'} ${event.agent?.personalInfo?.lastName || ''}`.trim()}
@@ -1982,22 +1998,22 @@ const XpressOrderDetails = () => {
                               {event.status === 'expired' && `Assignment Expired for ${event.agent?.personalInfo?.firstName || event.agentName || 'Unknown Agent'} ${event.agent?.personalInfo?.lastName || ''}`.trim()}
                             </p>
                             {event.status === 'accepted' && (
-                          <button
-                            className="mt-2 px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600"
-                            onClick={() => {
-                              const lat = order.assignment?.acceptedLocation?.latitude;
-                              const lng = order.assignment?.acceptedLocation?.longitude;
+                              <button
+                                className="mt-2 px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600"
+                                onClick={() => {
+                                  const lat = order.assignment?.acceptedLocation?.latitude;
+                                  const lng = order.assignment?.acceptedLocation?.longitude;
 
-                            window.open(
-        `https://www.google.com/maps?q=${lat},${lng}`,
-        '_blank'
-      );
-    }}
-  >
-    Open Location
-  </button>
+                                  window.open(
+                                    `https://www.google.com/maps?q=${lat},${lng}`,
+                                    '_blank'
+                                  );
+                                }}
+                              >
+                                Open Location
+                              </button>
 
-)}
+                            )}
                             <p className="text-xs text-gray-500 mb-1">{formatDateTime12Hour(event.timestamp)}</p>
                             {event.assignedBy?.name && event.status === 'assigned' && (
                               <p className="text-xs text-gray-600">
@@ -2013,7 +2029,7 @@ const XpressOrderDetails = () => {
                               <p className="text-xs text-gray-600 italic">{event.notes}</p>
                             )}
                           </div>
-                        </div>  
+                        </div>
                       ))}
                   </>
                 )}
@@ -2021,12 +2037,11 @@ const XpressOrderDetails = () => {
                 {/* Current Assignment Status */}
                 {order.assignment?.agent && !order.assignmentHistory?.some(h => h.status === 'accepted') && (
                   <div className="flex items-start">
-                    <div className={`w-3 h-3 rounded-full mr-3 mt-1 ${
-                      order.assignment.status === 'pending' ? 'bg-yellow-500' :
-                      order.assignment.status === 'accepted' ? 'bg-green-500' :
-                      order.assignment.status === 'rejected' ? 'bg-red-500' :
-                      'bg-gray-500'
-                    }`}></div>
+                    <div className={`w-3 h-3 rounded-full mr-3 mt-1 ${order.assignment.status === 'pending' ? 'bg-yellow-500' :
+                        order.assignment.status === 'accepted' ? 'bg-green-500' :
+                          order.assignment.status === 'rejected' ? 'bg-red-500' :
+                            'bg-gray-500'
+                      }`}></div>
                     <div className="flex-1">
                       <p className="text-sm font-medium text-gray-900">
                         Agent Assigned: {order.assignment.agent.personalInfo?.firstName} {order.assignment.agent.personalInfo?.lastName || ''}
@@ -2036,8 +2051,8 @@ const XpressOrderDetails = () => {
                       </p>
                       <p className="text-xs text-gray-600">
                         Status: {order.assignment.status === 'pending' ? 'Waiting for acceptance' :
-                                order.assignment.status === 'accepted' ? 'Accepted' :
-                                order.assignment.status === 'rejected' ? 'Rejected' : order.assignment.status}
+                          order.assignment.status === 'accepted' ? 'Accepted' :
+                            order.assignment.status === 'rejected' ? 'Rejected' : order.assignment.status}
                       </p>
                       {order.assignment.status === 'rejected' && order.assignment.rejectionReason && (
                         <p className="text-xs text-red-600 mt-1">
@@ -2054,6 +2069,23 @@ const XpressOrderDetails = () => {
                     <div className={`w-3 h-3 rounded-full mr-3 ${order.status === 'picked_up' ? 'bg-blue-500' : 'bg-green-500'}`}></div>
                     <div>
                       <p className="text-sm font-medium text-gray-900">Package Picked Up</p>
+                      <button
+                        className="text-xs text-white bg-blue-500 p-1 mt-1 rounded"
+                        onClick={() => {
+                          const acceptedLat = order.assignment?.acceptedLocation?.latitude;
+                          const acceptedLng = order.assignment?.acceptedLocation?.longitude;
+
+                          const pickupLat = order.pickup.coordinates.latitude;
+                          const pickupLng = order.pickup.coordinates.longitude;
+
+                          window.open(
+                            `https://www.google.com/maps/dir/${acceptedLat},${acceptedLng}/${pickupLat},${pickupLng}`,
+                            '_blank'
+                          );
+                        }}
+                      >
+                        Show Distance from  accepted to pickup
+                      </button>
                       <p className="text-xs text-gray-500">{order.pickedUpAt ? formatDateTime12Hour(order.pickedUpAt) : 'Status updated'}</p>
                     </div>
                   </div>

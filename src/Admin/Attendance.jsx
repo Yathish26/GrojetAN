@@ -47,16 +47,20 @@ const Attendance = () => {
     // eslint-disable-next-line
   }, [adminId]);
 
-  // Format date as dd/mm/yy hh:mm:ss
+  // Format date as dd/mm/yy hh:mm:ss AM/PM
   const formatDate = (dateObj) => {
     if (!dateObj) return '';
     const dd = String(dateObj.getDate()).padStart(2, '0');
     const mm = String(dateObj.getMonth() + 1).padStart(2, '0');
     const yy = String(dateObj.getFullYear()).slice(-2);
-    const hh = String(dateObj.getHours()).padStart(2, '0');
+    let hours = dateObj.getHours();
     const min = String(dateObj.getMinutes()).padStart(2, '0');
     const ss = String(dateObj.getSeconds()).padStart(2, '0');
-    return `${dd}/${mm}/${yy} ${hh}:${min}:${ss}`;
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12;
+    hours = hours ? hours : 12; // the hour '0' should be '12'
+    const hh = String(hours).padStart(2, '0');
+    return `${dd}/${mm}/${yy} ${hh}:${min}:${ss} ${ampm}`;
   };
 
   // Calculate working hours in HH:MM:SS
@@ -119,17 +123,12 @@ const Attendance = () => {
   return (
     <Layout title="Attendance">
       <div className="max-w-md mx-auto bg-white p-6 rounded-lg shadow border border-neutral-200 mt-8">
-        <div className="mb-4">
-          <label className="block text-sm font-medium text-neutral-700 mb-1" htmlFor="timestamp">Working Hours</label>
-          <input
-            type="text"
-            id="timestamp"
-            className="w-full px-3 py-2 border border-neutral-300 rounded focus:outline-none focus:ring-2 focus:ring-green-500"
-            placeholder="HH:MM:SS"
-            readOnly
-            value={getWorkingHours()}
-          />
-        </div>
+        {/* Working Hours Display */}
+        {(loginTime && logoutTime) && (
+          <div className="mb-4 text-blue-700 font-medium">
+            Working Hours: {getWorkingHours()}
+          </div>
+        )}
         <div className="flex gap-4 mb-4">
           <button
             className="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded focus:outline-none focus:ring-2 focus:ring-green-500"

@@ -24,6 +24,7 @@ import {
   CalendarHeart,
   CheckSquare,
   ScanFace,
+  Book,
 } from 'lucide-react';
 import { MdAdminPanelSettings } from 'react-icons/md';
 import toast from 'react-hot-toast';
@@ -189,6 +190,7 @@ const Layout = ({ children, title }) => {
   const menuItems = [
     { name: 'Dashboard', icon: Home, path: '/', roles: ['super_admin', 'admin'] },
     { name: 'Attendance', icon: ScanFace, path: '/attendance', roles: ['super_admin', 'admin'] },
+    { name: 'Attendance Report', icon: Book, path: '/attendancereport', roles: ['super_admin', 'admin'] },
     { name: 'B2B Xpress', icon: Handshake, path: '/b2bxpress', roles: ['super_admin', 'admin'] },
     { name: 'Public Store', icon: Castle, path: '/public-store', roles: ['super_admin', 'admin'] },
     { name: 'Orders', icon: ShoppingCart, path: '/orders', roles: ['super_admin', 'admin'] },

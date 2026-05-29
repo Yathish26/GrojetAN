@@ -70,6 +70,7 @@ import B2bxpress from './Admin/B2bxpress.jsx'
 import XpressOffers from './Admin/XpressOffers.jsx'
 import Subscription from './Admin/Subscription.jsx'
 import Attendance from './Admin/Attendance.jsx'
+import AttendanceReport from './Admin/AttendanceReport.jsx'
 import XpressFranchiseRequests from './Admin/XpressFranchiseRequests.jsx'
 
 function App() {
@@ -202,6 +203,7 @@ function App() {
 
             {/*Attendance*/}
             <Route path="/attendance" element={<Attendance />} />
+            <Route path="/attendancereport" element={<AttendanceReport />} />
 
             {/* Settings & Profile */}
             <Route path="/profile" element={<Profile />} />
