@@ -1475,21 +1475,7 @@ const XpressOrderDetails = () => {
                         order.assignment.status === 'rejected' ? 'bg-red-50 border-red-200' :
                           'bg-yellow-50 border-yellow-200'
                         }`}
-                      onClick={() => {
-                        if (order.assignment.agent._id) {
-                          navigate(`/delivery-agents/${order.assignment.agent._id}`);
-                        }
-                      }}
-                      tabIndex={0}
-                      role="button"
-                      aria-label="View delivery agent details"
-                      onKeyDown={e => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                          if (order.assignment.agent._id) {
-                            navigate(`/delivery-agents/${order.assignment.agent._id}`);
-                          }
-                        }
-                      }}
+                      aria-label="Delivery agent assignment"
                     >
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center">
@@ -1503,9 +1489,18 @@ const XpressOrderDetails = () => {
                               }`} />
                           </div>
                           <div className="flex-1">
-                            <h3 className="text-lg font-medium text-gray-900">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (order.assignment.agent._id) {
+                                  navigate(`/delivery-agents/${order.assignment.agent._id}`);
+                                }
+                              }}
+                              className="text-left text-lg font-medium text-gray-900 hover:text-blue-600"
+                              title="View delivery agent details"
+                            >
                               {order.assignment.agent.personalInfo.firstName} {order.assignment.agent.personalInfo.lastName || ''}
-                            </h3>
+                            </button>
                             <p className="text-sm text-gray-600">{order.assignment.agent.personalInfo.phone}</p>
                             <div className="flex items-center gap-2 mt-1">
                               <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${order.assignment.status === 'accepted' ? 'bg-green-100 text-green-800' :
@@ -2069,7 +2064,7 @@ const XpressOrderDetails = () => {
                     <div className={`w-3 h-3 rounded-full mr-3 ${order.status === 'picked_up' ? 'bg-blue-500' : 'bg-green-500'}`}></div>
                     <div>
                       <p className="text-sm font-medium text-gray-900">Package Picked Up</p>
-                      <button
+                      {/* <button
                         className="text-xs text-white bg-blue-500 p-1 mt-1 rounded"
                         onClick={() => {
                           const acceptedLat = order.assignment?.acceptedLocation?.latitude;
@@ -2085,7 +2080,8 @@ const XpressOrderDetails = () => {
                         }}
                       >
                         Show Distance from  accepted to pickup
-                      </button>
+                      </button> */}
+                      <p className="text-xs text-gray-500 mb-1">Distance from Accepted to Pickup : {order.assignment?.acceptedToPickup?.distanceText || 'N/A'}</p>
                       <p className="text-xs text-gray-500">{order.pickedUpAt ? formatDateTime12Hour(order.pickedUpAt) : 'Status updated'}</p>
                     </div>
                   </div>
