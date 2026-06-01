@@ -1199,6 +1199,7 @@ export default function DeliveryAgentDetails() {
       { Field: 'Phone', Value: agent.personalInfo?.phone || 'N/A' },
       { Field: 'Date of Birth', Value: agent.personalInfo?.dateOfBirth ? formatISTTime(agent.personalInfo.dateOfBirth).split(',')[0] : 'N/A' },
       { Field: 'Gender', Value: agent.personalInfo?.gender || 'N/A' },
+      { Field: 'App Version', Value: agent.authentication?.deviceInfo?.appVersion || 'N/A' },
       { Field: 'Street Address', Value: agent.personalInfo?.address?.street || 'N/A' },
       { Field: 'City', Value: agent.personalInfo?.address?.city || 'N/A' },
       { Field: 'State', Value: agent.personalInfo?.address?.state || 'N/A' },
@@ -1538,6 +1539,12 @@ export default function DeliveryAgentDetails() {
                   <label className="text-sm text-gray-500">Gender</label>
                   <p className="font-medium text-gray-800 capitalize">
                     {agent.personalInfo?.gender || 'Not specified'}
+                  </p>
+                </div>
+                <div>
+                  <label className="text-sm text-gray-500">App Version</label>
+                  <p className="font-medium text-gray-800">
+                    {agent.authentication?.deviceInfo?.appVersion || 'N/A'}
                   </p>
                 </div>
               </div>
