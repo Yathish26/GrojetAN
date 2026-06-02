@@ -10,17 +10,28 @@ export default function GcoinsHistory() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
+  const [searchInput, setSearchInput] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
 
   const navigate = useNavigate();
 
   useEffect(() => {
     fetchTransactionHistory();
-  }, [currentPage]);
+  }, [currentPage, searchQuery]);
 
   const fetchTransactionHistory = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/users/gcoins/history?page=${currentPage}&limit=20`, {
+      const queryParams = new URLSearchParams({
+        page: currentPage,
+        limit: 20,
+      });
+
+      if (searchQuery.trim()) {
+        queryParams.set('search', searchQuery.trim());
+      }
+
+      const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/users/gcoins/history?${queryParams.toString()}`, {
         credentials: 'include'
       });
 
@@ -45,6 +56,23 @@ export default function GcoinsHistory() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSearch = () => {
+    setCurrentPage(1);
+    setSearchQuery(searchInput.trim());
+  };
+
+  const handleSearchKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      handleSearch();
+    }
+  };
+
+  const handleClearSearch = () => {
+    setSearchInput('');
+    setSearchQuery('');
+    setCurrentPage(1);
   };
 
   const formatDate = (dateString) => {
@@ -120,6 +148,33 @@ export default function GcoinsHistory() {
           </div>
         </div>
 
+        <div className="bg-white rounded-lg shadow-md p-4 md:p-5">
+          <div className="flex flex-col md:flex-row gap-3 md:items-center">
+            <input
+              type="text"
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              onKeyDown={handleSearchKeyDown}
+              placeholder="Search by user name or phone number"
+              className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+            />
+            <button
+              onClick={handleSearch}
+              className="px-5 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+            >
+              Search
+            </button>
+            {searchQuery && (
+              <button
+                onClick={handleClearSearch}
+                className="px-5 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                Clear
+              </button>
+            )}
+          </div>
+        </div>
+
         {/* Transaction History Table */}
         <div className="bg-white rounded-lg shadow-md">
           <div className="px-6 py-4 border-b border-gray-200">
@@ -179,6 +234,7 @@ export default function GcoinsHistory() {
                         <div>
                           <div>{transaction.userId?.personalInfo?.name || 'N/A'}</div>
                           <div className="text-xs text-gray-500">{transaction.userId?.personalInfo?.email || ''}</div>
+                          <div className="text-xs text-gray-500">{transaction.userId?.personalInfo?.phone || ''}</div>
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">

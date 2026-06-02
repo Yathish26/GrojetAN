@@ -75,6 +75,16 @@ const Attendance = () => {
     return `${hours}:${minutes}:${seconds}`;
   };
 
+  const getTodayLabel = () => {
+    const now = new Date();
+    return now.toLocaleDateString('en-IN', {
+      weekday: 'long',
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric'
+    });
+  };
+
 
   const handleLogin = async () => {
     if (!adminId) return;
@@ -91,7 +101,6 @@ const Attendance = () => {
         const now = new Date(data.attendance.punchIn || data.attendance.loginTime);
         setLoginTime(now);
         setLogoutTime(null);
-        setPunchInTimes(prev => [now, ...prev]);
       }
     } catch (e) {
       // handle error
@@ -122,36 +131,70 @@ const Attendance = () => {
 
   return (
     <Layout title="Attendance">
-      <div className="max-w-md mx-auto bg-white p-6 rounded-lg shadow border border-neutral-200 mt-8">
-        {/* Working Hours Display */}
-        {(loginTime && logoutTime) && (
-          <div className="mb-4 text-blue-700 font-medium">
-            Working Hours: {getWorkingHours()}
+      <div className="max-w-2xl mx-auto bg-white p-6 md:p-8 rounded-xl shadow border border-neutral-200 mt-8">
+        <div className="flex items-start justify-between gap-4 border-b border-neutral-100 pb-4 mb-6">
+          <div>
+            <h2 className="text-xl font-semibold text-neutral-900">Today Attendance</h2>
+            <p className="text-sm text-neutral-500 mt-1">{getTodayLabel()}</p>
           </div>
-        )}
-        <div className="flex gap-4 mb-4">
+
+          <div className={`text-xs font-semibold px-3 py-1 rounded-full ${loginTime && logoutTime
+            ? 'bg-blue-100 text-blue-700'
+            : loginTime
+              ? 'bg-amber-100 text-amber-700'
+              : 'bg-neutral-100 text-neutral-600'
+            }`}>
+            {loginTime && logoutTime ? 'Completed' : loginTime ? 'In Progress' : 'Not Started'}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
           <button
-            className="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded focus:outline-none focus:ring-2 focus:ring-green-500"
+            className="w-full bg-green-600 hover:bg-green-700 disabled:bg-green-300 text-white font-semibold py-2.5 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
             type="button"
             onClick={handleLogin}
-            disabled={!!loginTime}
+            disabled={!!loginTime || loading}
           >
-            Punch In
+            {loading && !loginTime ? 'Please wait...' : 'Punch In'}
           </button>
           <button
-            className="flex-1 bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded focus:outline-none focus:ring-2 focus:ring-red-400"
+            className="w-full bg-red-500 hover:bg-red-600 disabled:bg-red-300 text-white font-semibold py-2.5 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-400"
             type="button"
             onClick={handleLogout}
-            disabled={!loginTime || !!logoutTime}
+            disabled={!loginTime || !!logoutTime || loading}
           >
-            Punch Out
+            {loading && loginTime && !logoutTime ? 'Please wait...' : 'Punch Out'}
           </button>
         </div>
-        {loginTime && (
-          <div className="mb-2 text-green-700 font-medium">Punch In Time: {formatDate(loginTime)}</div>
-        )}
-        {logoutTime && (
-          <div className="mb-2 text-red-600 font-medium">Punch Out Time: {formatDate(logoutTime)}</div>
+
+        <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-4">
+          <div className="relative pl-6">
+            <div className="absolute left-2 top-2 bottom-2 w-px bg-neutral-300" />
+
+            <div className="relative mb-5">
+              <span className="absolute -left-[1.05rem] top-1 h-3.5 w-3.5 rounded-full bg-green-500 border-2 border-white" />
+              <p className="text-sm font-semibold text-neutral-800">Punch In</p>
+              <p className="text-sm text-neutral-600 mt-1">
+                {loginTime ? formatDate(loginTime) : 'Not punched in yet'}
+              </p>
+            </div>
+
+            <div className="relative">
+              <span className="absolute -left-[1.05rem] top-1 h-3.5 w-3.5 rounded-full bg-red-500 border-2 border-white" />
+              <p className="text-sm font-semibold text-neutral-800">Punch Out</p>
+              <p className="text-sm text-neutral-600 mt-1">
+                {logoutTime ? formatDate(logoutTime) : 'Not punched out yet'}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {loginTime && logoutTime && (
+          <div className="mt-5 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3">
+            <p className="text-sm font-medium text-blue-800">
+              Total Working Hours: <span className="font-semibold">{getWorkingHours()}</span>
+            </p>
+          </div>
         )}
       </div>
     </Layout>
