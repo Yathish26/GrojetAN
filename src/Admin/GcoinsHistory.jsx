@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { FiArrowLeft, FiTrendingUp, FiTrendingDown, FiClock } from 'react-icons/fi';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../Components/Layout';
+import * as XLSX from 'xlsx';
 
 export default function GcoinsHistory() {
   const [transactions, setTransactions] = useState([]);
@@ -12,6 +13,7 @@ export default function GcoinsHistory() {
   const [totalItems, setTotalItems] = useState(0);
   const [searchInput, setSearchInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [isExporting, setIsExporting] = useState(false);
 
   const navigate = useNavigate();
 
@@ -73,6 +75,93 @@ export default function GcoinsHistory() {
     setSearchInput('');
     setSearchQuery('');
     setCurrentPage(1);
+  };
+
+  const formatDateTimeForExport = (dateString) => {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    return date.toLocaleString('en-IN', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: true,
+    });
+  };
+
+  const fetchAllTransactionsForExport = async () => {
+    const limit = 50;
+    let page = 1;
+    let totalPagesToFetch = 1;
+    const collected = [];
+
+    while (page <= totalPagesToFetch) {
+      const queryParams = new URLSearchParams({
+        page: String(page),
+        limit: String(limit),
+      });
+
+      if (searchQuery.trim()) {
+        queryParams.set('search', searchQuery.trim());
+      }
+
+      const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/users/gcoins/history?${queryParams.toString()}`, {
+        credentials: 'include'
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch transactions for export');
+      }
+
+      const data = await response.json();
+      if (data.tokenValid === false) {
+        throw new Error('Session expired. Please login again.');
+      }
+
+      const pageItems = Array.isArray(data.transactions) ? data.transactions : [];
+      collected.push(...pageItems);
+      totalPagesToFetch = Number(data.pagination?.totalPages) || 1;
+      page += 1;
+    }
+
+    return collected;
+  };
+
+  const handleExportExcel = async () => {
+    try {
+      setIsExporting(true);
+      const allTransactions = await fetchAllTransactionsForExport();
+
+      if (!allTransactions.length) {
+        alert('No transactions found to export');
+        return;
+      }
+
+      const exportRows = allTransactions.map((transaction) => ({
+        'Date Time': formatDateTimeForExport(transaction.createdAt),
+        'User Name': transaction.userId?.personalInfo?.name || 'N/A',
+        'User Email': transaction.userId?.personalInfo?.email || 'N/A',
+        'User Phone': transaction.userId?.personalInfo?.phone || 'N/A',
+        'Type': transaction.type === 'add' ? 'Added' : 'Removed',
+        'Amount': transaction.amount ?? 0,
+        'Reason': transaction.reason || 'N/A',
+        'Admin': transaction.adminId?.name || transaction.adminId?.email || 'System',
+      }));
+
+      const worksheet = XLSX.utils.json_to_sheet(exportRows);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Gcoins History');
+
+      const dateLabel = new Date().toISOString().slice(0, 10);
+      const searchLabel = searchQuery.trim() ? `-${searchQuery.trim().replace(/\s+/g, '-')}` : '';
+      XLSX.writeFile(workbook, `gcoins-history${searchLabel}-${dateLabel}.xlsx`);
+    } catch (err) {
+      alert(err.message || 'Failed to export Excel');
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   const formatDate = (dateString) => {
@@ -172,6 +261,13 @@ export default function GcoinsHistory() {
                 Clear
               </button>
             )}
+            <button
+              onClick={handleExportExcel}
+              disabled={isExporting || loading}
+              className="px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              {isExporting ? 'Exporting...' : 'Export'}
+            </button>
           </div>
         </div>
 

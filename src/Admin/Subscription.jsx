@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../Components/Layout.jsx';
-import { Users, Calendar, Phone, Search, Pencil, Check, X, Loader2 } from 'lucide-react';
+import { Users, Calendar, Phone, Search, Pencil, Check, X, Loader2, Download } from 'lucide-react';
 import toast from 'react-hot-toast';
+import * as XLSX from 'xlsx';
 
 export default function Subscription() {
   const navigate = useNavigate();
@@ -15,6 +16,7 @@ export default function Subscription() {
   const [editingUserId, setEditingUserId] = useState(null);
   const [editingDayTo, setEditingDayTo] = useState('');
   const [savingDayTo, setSavingDayTo] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
   const [adminRole] = useState(() => {
     try {
       const cachedAdmin = localStorage.getItem('adminUser');
@@ -172,6 +174,42 @@ export default function Subscription() {
     }
   };
 
+  const handleExportExcel = async () => {
+    try {
+      setIsExporting(true);
+
+      if (!subscribedUsers.length) {
+        toast.error('No subscribed users to export');
+        return;
+      }
+
+      const exportData = subscribedUsers.map((user, index) => ({
+        'S. No': index + 1,
+        'Name': user.name || 'N/A',
+        'Phone Number': user.phone || 'N/A',
+        'Subscription Date': user.subscriptionDate ? formatDate(user.subscriptionDate) : 'N/A',
+        'Day From': user.dayFrom ? formatDate(user.dayFrom) : user.subscriptionDate ? formatDate(user.subscriptionDate) : '-',
+        'Day To': user.dayTo ? formatDate(user.dayTo) : '-',
+        'G-Coins': user.gcoins || 0,
+      }));
+
+      const ws = XLSX.utils.json_to_sheet(exportData);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Subscribed Users');
+
+      const now = new Date();
+      const dateLabel = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+      const searchLabel = searchTerm?.trim() ? `-${searchTerm.trim().replace(/\s+/g, '-')}` : '';
+      XLSX.writeFile(wb, `subscribed-users${searchLabel}-${dateLabel}.xlsx`);
+
+      toast.success('Subscribed users exported successfully');
+    } catch (err) {
+      toast.error(err.message || 'Failed to export subscribed users');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   if (loading) {
     return (
       <Layout>
@@ -202,7 +240,7 @@ export default function Subscription() {
   }
 
   return (
-    <Layout>
+    <Layout title="Subscribed Users">
       <div className="p-6">
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-gray-900 flex items-center">
@@ -247,6 +285,15 @@ export default function Subscription() {
                   </div>
                 )}
               </div>
+              <button
+                onClick={handleExportExcel}
+                disabled={loading || searching || isExporting || subscribedUsers.length === 0}
+                className="inline-flex items-center px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                type="button"
+              >
+                <Download className="h-4 w-4 mr-2" />
+                {isExporting ? 'Exporting...' : 'Export Excel'}
+              </button>
             </div>
           </div>
 

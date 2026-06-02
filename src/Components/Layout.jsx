@@ -25,6 +25,7 @@ import {
   CheckSquare,
   ScanFace,
   Book,
+  BriefcaseBusiness,
 } from 'lucide-react';
 import { MdAdminPanelSettings } from 'react-icons/md';
 import toast from 'react-hot-toast';
@@ -204,8 +205,9 @@ const Layout = ({ children, title }) => {
     { name: 'Franchise Requests', icon: Briefcase, path: '/xpress-franchise-requests', roles: ['super_admin', 'admin'] },
     { name: 'Careers', icon: Briefcase, path: '/careers', roles: ['super_admin', 'admin'] },
     { name: 'Subscription', icon: CalendarHeart, path: '/subscription', roles: ['super_admin', 'admin'] },
+    { name: 'Business Users', icon: BriefcaseBusiness, path: '/businessusers', roles: ['super_admin', 'admin'] },
 
-    { name: 'Users', icon: Users, path: '/users', roles: ['super_admin', 'admin'] },
+  { name: 'Users', icon: Users, path: '/users', roles: ['super_admin', 'admin'] },
     { name: 'User Analytics', icon: BarChart3, path: '/user-analytics', roles: ['super_admin'] },
     { name: 'Merchant Enquiries', icon: Store, path: '/merchant-enquiries', roles: ['super_admin', 'admin'] },
     { name: 'Merchants', icon: Store, path: '/merchants', roles: ['super_admin', 'admin'] },

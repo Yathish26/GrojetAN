@@ -69,6 +69,7 @@ import GcoinsHistory from './Admin/GcoinsHistory.jsx'
 import B2bxpress from './Admin/B2bxpress.jsx'
 import XpressOffers from './Admin/XpressOffers.jsx'
 import Subscription from './Admin/Subscription.jsx'
+import BusinessUsers from './Admin/BusinessUsers.jsx'
 import Attendance from './Admin/Attendance.jsx'
 import AttendanceReport from './Admin/AttendanceReport.jsx'
 import XpressFranchiseRequests from './Admin/XpressFranchiseRequests.jsx'
@@ -173,6 +174,7 @@ function App() {
             <Route path="/inline-offers" element={<InlineOffer />} />
             <Route path="/xpressoffers" element={<XpressOffers />} />
             <Route path="/subscription" element={<Subscription />} />
+            <Route path="/businessusers" element={<BusinessUsers />} />
 
             {/* Home Ads Management */}
             <Route path="/home-ads" element={<HomeAds />} />
