@@ -30,6 +30,16 @@ export default function XpressOffers() {
     setSelectedOffer(null);
   }, []);
 
+  const formatDateDDMMYY = (value) => {
+    if (!value) return 'N/A';
+    const date = new Date(value);
+    if (!Number.isFinite(date.getTime())) return 'N/A';
+    const dd = String(date.getDate()).padStart(2, '0');
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const yy = String(date.getFullYear()).slice(-2);
+    return `${dd}/${mm}/${yy}`;
+  };
+
 
   const fetchXpressOffers = useCallback(async () => {
     try {
@@ -199,7 +209,7 @@ export default function XpressOffers() {
                     <div>
                       <h2 className="text-lg font-semibold text-gray-900 uppercase">{offer.code}</h2>
                       <p className="mt-1 text-sm text-gray-600">
-                        {new Date(offer.validFrom).toLocaleDateString()} to {new Date(offer.validTo).toLocaleDateString()}
+                        {formatDateDDMMYY(offer.validFrom)} to {formatDateDDMMYY(offer.validTo)}
                       </p>
                     </div>
                     <span className="bg-green-600 px-3 py-1 text-xs font-semibold text-white">
