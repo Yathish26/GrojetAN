@@ -12,6 +12,7 @@ export default function Gcoins() {
   const [totalItems, setTotalItems] = useState(0);
   const [editingUser, setEditingUser] = useState(null);
   const [addAmount, setAddAmount] = useState('');
+  const [addReason, setAddReason] = useState('');
   const [addingCoins, setAddingCoins] = useState(false);
   const [removeAmount, setRemoveAmount] = useState('');
   const [removeReason, setRemoveReason] = useState('');
@@ -61,6 +62,11 @@ export default function Gcoins() {
       return;
     }
 
+    if (!addReason.trim()) {
+      alert('Please enter a reason for adding G-Coins');
+      return;
+    }
+
     try {
       setAddingCoins(true);
       const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/users/${userId}/add-gcoins`, {
@@ -69,7 +75,10 @@ export default function Gcoins() {
           'Content-Type': 'application/json'
         },
         credentials: 'include',
-        body: JSON.stringify({ amount: parseInt(addAmount) })
+        body: JSON.stringify({
+          amount: parseInt(addAmount),
+          reason: addReason.trim()
+        })
       });
 
       if (!response.ok) {
@@ -86,6 +95,7 @@ export default function Gcoins() {
         ));
         setEditingUser(null);
         setAddAmount('');
+        setAddReason('');
         setActionType(null);
         alert('G-Coins added successfully!');
       }
@@ -250,33 +260,44 @@ export default function Gcoins() {
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {editingUser === user._id ? (
                           actionType === 'add' ? (
-                            <div className="flex items-center space-x-2">
+                            <div className="flex flex-col space-y-2">
+                              <div className="flex items-center space-x-2">
+                                <input
+                                  type="number"
+                                  value={addAmount}
+                                  onChange={(e) => setAddAmount(e.target.value)}
+                                  placeholder="Amount"
+                                  className="w-20 px-2 py-1 border border-gray-300 rounded text-sm"
+                                  min="1"
+                                  autoFocus
+                                />
+                                <button
+                                  onClick={() => handleAddCoins(user._id)}
+                                  disabled={addingCoins || !addAmount || !addReason.trim()}
+                                  className="px-2 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 disabled:opacity-50"
+                                >
+                                  {addingCoins ? '...' : '✓'}
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    setEditingUser(null);
+                                    setAddAmount('');
+                                    setAddReason('');
+                                    setActionType(null);
+                                  }}
+                                  className="px-2 py-1 bg-gray-500 text-white text-xs rounded hover:bg-gray-600"
+                                >
+                                  ✕
+                                </button>
+                              </div>
                               <input
-                                type="number"
-                                value={addAmount}
-                                onChange={(e) => setAddAmount(e.target.value)}
-                                placeholder="Enter G-Coins"
-                                className="w-24 px-2 py-1 border border-gray-300 rounded text-sm"
-                                min="1"
-                                autoFocus
+                                type="text"
+                                value={addReason}
+                                onChange={(e) => setAddReason(e.target.value)}
+                                placeholder="Reason for adding"
+                                className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
+                                maxLength="200"
                               />
-                              <button
-                                onClick={() => handleAddCoins(user._id)}
-                                disabled={addingCoins || !addAmount}
-                                className="px-2 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 disabled:opacity-50"
-                              >
-                                {addingCoins ? '...' : '✓'}
-                              </button>
-                              <button
-                                onClick={() => {
-                                  setEditingUser(null);
-                                  setAddAmount('');
-                                  setActionType(null);
-                                }}
-                                className="px-2 py-1 bg-gray-500 text-white text-xs rounded hover:bg-gray-600"
-                              >
-                                ✕
-                              </button>
                             </div>
                           ) : actionType === 'remove' ? (
                             <div className="flex flex-col space-y-2">
@@ -326,6 +347,8 @@ export default function Gcoins() {
                               onClick={() => {
                                 setEditingUser(user._id);
                                 setActionType('add');
+                                setAddAmount('');
+                                setAddReason('');
                               }}
                               className="px-2 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700"
                             >
@@ -335,6 +358,8 @@ export default function Gcoins() {
                               onClick={() => {
                                 setEditingUser(user._id);
                                 setActionType('remove');
+                                setRemoveAmount('');
+                                setRemoveReason('');
                               }}
                               disabled={(user.orderHistory?.gcoins || 0) === 0}
                               className="px-2 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"

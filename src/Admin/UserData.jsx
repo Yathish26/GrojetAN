@@ -68,6 +68,7 @@ export default function UserData() {
   const [updatingBusinessUser, setUpdatingBusinessUser] = useState(false);
   const [showAddGcoinsForm, setShowAddGcoinsForm] = useState(false);
   const [gcoinsAmount, setGcoinsAmount] = useState('');
+  const [gcoinsReason, setGcoinsReason] = useState('');
   const [addingGcoins, setAddingGcoins] = useState(false);
   const [updatingSubscription, setUpdatingSubscription] = useState(false);
   const [showSubscriptionForm, setShowSubscriptionForm] = useState(false);
@@ -667,6 +668,11 @@ export default function UserData() {
       return;
     }
 
+    if (!gcoinsReason.trim()) {
+      toast.error('Please enter a reason for adding G-Coins');
+      return;
+    }
+
     const amount = parseInt(gcoinsAmount);
     if (isNaN(amount) || amount <= 0) {
       toast.error('Please enter a valid positive amount');
@@ -683,6 +689,7 @@ export default function UserData() {
         credentials: 'include',
         body: JSON.stringify({
           amount: amount,
+          reason: gcoinsReason.trim(),
           addedBy: currentUser?.name || currentUser?.email || 'Admin'
         })
       });
@@ -703,6 +710,7 @@ export default function UserData() {
         toast.success(`Successfully added ${amount} G-Coins to user`);
         setShowAddGcoinsForm(false);
         setGcoinsAmount('');
+        setGcoinsReason('');
       } else {
         const errorData = await response.json();
         toast.error(errorData.message || 'Failed to add G-Coins');
@@ -962,35 +970,49 @@ export default function UserData() {
 
                 {/* Add G-Coins Inline Input */}
                 {showAddGcoinsForm && (
-                  <div className="mt-4 flex items-center space-x-2 p-3 bg-purple-50 border border-purple-200 rounded-lg">
-                    <FiStar className="w-4 h-4 text-purple-600" />
-                    <input
-                      type="number"
-                      value={gcoinsAmount}
-                      onChange={(e) => setGcoinsAmount(e.target.value.replace(/[^0-9]/g, ''))}
-                      placeholder="Enter G-Coins amount"
-                      className="flex-1 px-3 py-2 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-purple-800 focus:border-purple-800"
+                  <div className="mt-4 p-3 bg-purple-50 border border-purple-200 rounded-lg space-y-3">
+                    <div className="flex items-center gap-2">
+                      <FiStar className="w-4 h-4 text-purple-600" />
+                      <input
+                        type="number"
+                        value={gcoinsAmount}
+                        onChange={(e) => setGcoinsAmount(e.target.value.replace(/[^0-9]/g, ''))}
+                        placeholder="Enter G-Coins amount"
+                        className="flex-1 px-3 py-2 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-purple-800 focus:border-purple-800"
+                        disabled={addingGcoins}
+                        min="1"
+                        autoFocus
+                      />
+                    </div>
+                    <textarea
+                      value={gcoinsReason}
+                      onChange={(e) => setGcoinsReason(e.target.value)}
+                      placeholder="Enter reason for adding G-Coins"
+                      className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-purple-800 focus:border-purple-800 resize-none"
+                      rows="2"
                       disabled={addingGcoins}
-                      min="1"
-                      autoFocus
+                      maxLength="250"
                     />
-                    <button
-                      onClick={handleAddGcoins}
-                      disabled={addingGcoins || !gcoinsAmount}
-                      className="px-3 py-2 bg-purple-800 text-white text-sm rounded hover:bg-purple-900 disabled:opacity-50 transition-colors"
-                    >
-                      {addingGcoins ? '...' : '✓'}
-                    </button>
-                    <button
-                      onClick={() => {
-                        setShowAddGcoinsForm(false);
-                        setGcoinsAmount('');
-                      }}
-                      className="px-3 py-2 bg-gray-500 text-white text-sm rounded hover:bg-gray-600 transition-colors"
-                      disabled={addingGcoins}
-                    >
-                      ✕
-                    </button>
+                    <div className="flex items-center justify-end space-x-2">
+                      <button
+                        onClick={handleAddGcoins}
+                        disabled={addingGcoins || !gcoinsAmount || !gcoinsReason.trim()}
+                        className="px-3 py-2 bg-purple-800 text-white text-sm rounded hover:bg-purple-900 disabled:opacity-50 transition-colors"
+                      >
+                        {addingGcoins ? '...' : '✓'}
+                      </button>
+                      <button
+                        onClick={() => {
+                          setShowAddGcoinsForm(false);
+                          setGcoinsAmount('');
+                          setGcoinsReason('');
+                        }}
+                        className="px-3 py-2 bg-gray-500 text-white text-sm rounded hover:bg-gray-600 transition-colors"
+                        disabled={addingGcoins}
+                      >
+                        ✕
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
