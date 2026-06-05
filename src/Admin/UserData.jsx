@@ -668,7 +668,9 @@ export default function UserData() {
       return;
     }
 
-    if (!gcoinsReason.trim()) {
+    const trimmedReason = gcoinsReason.trim();
+
+    if (!trimmedReason) {
       toast.error('Please enter a reason for adding G-Coins');
       return;
     }
@@ -689,8 +691,7 @@ export default function UserData() {
         credentials: 'include',
         body: JSON.stringify({
           amount: amount,
-          reason: gcoinsReason.trim(),
-          addedBy: currentUser?.name || currentUser?.email || 'Admin'
+          reason: trimmedReason
         })
       });
 
