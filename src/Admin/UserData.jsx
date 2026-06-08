@@ -948,25 +948,26 @@ export default function UserData() {
                   )}
                 </div>
 
+                {(adminRole === 'super_admin' || adminRole === 'admin') && (
+                  <button
+                    onClick={() => setShowAddGcoinsForm(!showAddGcoinsForm)}
+                    className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-purple-800 hover:bg-purple-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled={updatingStatus}
+                  >
+                    <FiStar className="mr-2" />
+                    Add G-Coins
+                  </button>
+                )}
+
                 {adminRole === 'super_admin' && (
-                  <>
-                    <button
-                      onClick={() => setShowAddGcoinsForm(!showAddGcoinsForm)}
-                      className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-purple-800 hover:bg-purple-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                      disabled={updatingStatus}
-                    >
-                      <FiStar className="mr-2" />
-                      Add G-Coins
-                    </button>
-                    <button
-                      onClick={handleDeleteUser}
-                      className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-red-800 hover:bg-red-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                      disabled={updatingStatus}
-                    >
-                      <FiTrash2 className="mr-2" />
-                      {updatingStatus ? 'Deleting...' : 'Delete User'}
-                    </button>
-                  </>
+                  <button
+                    onClick={handleDeleteUser}
+                    className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-red-800 hover:bg-red-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled={updatingStatus}
+                  >
+                    <FiTrash2 className="mr-2" />
+                    {updatingStatus ? 'Deleting...' : 'Delete User'}
+                  </button>
                 )}
 
                 {/* Add G-Coins Inline Input */}
