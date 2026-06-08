@@ -26,6 +26,8 @@ import {
   ScanFace,
   Book,
   BriefcaseBusiness,
+  BookOpenText,
+  MessageCirclePlus,
 } from 'lucide-react';
 import { MdAdminPanelSettings } from 'react-icons/md';
 import toast from 'react-hot-toast';
@@ -207,7 +209,7 @@ const Layout = ({ children, title }) => {
     { name: 'Subscription', icon: CalendarHeart, path: '/subscription', roles: ['super_admin', 'admin'] },
     { name: 'Business Users', icon: BriefcaseBusiness, path: '/businessusers', roles: ['super_admin', 'admin'] },
 
-  { name: 'Users', icon: Users, path: '/users', roles: ['super_admin', 'admin'] },
+    { name: 'Users', icon: Users, path: '/users', roles: ['super_admin', 'admin'] },
     { name: 'User Analytics', icon: BarChart3, path: '/user-analytics', roles: ['super_admin'] },
     { name: 'Merchant Enquiries', icon: Store, path: '/merchant-enquiries', roles: ['super_admin', 'admin'] },
     { name: 'Merchants', icon: Store, path: '/merchants', roles: ['super_admin', 'admin'] },
@@ -231,7 +233,7 @@ const Layout = ({ children, title }) => {
     { name: 'S3 Media Manager', icon: Package, path: '/s3-store', roles: ['super_admin'] },
     { name: 'Admin Management', icon: Shield, path: '/admin-management', roles: ['super_admin'] },
     { name: 'Security', icon: ShieldPlus, path: '/security', roles: ['super_admin'] },
-    { name: 'Logs', icon: FileText, path: '/logs', roles: ['super_admin','admin'] },
+    { name: 'Logs', icon: FileText, path: '/logs', roles: ['super_admin', 'admin'] },
     { name: 'Update Notes', icon: FileText, path: '/update-notes', roles: ['super_admin'] },
     { name: 'Super Tags', icon: Star, path: '/super-tags', roles: ['super_admin'] },
     { name: 'Tags', icon: Tag, path: '/tags', roles: ['super_admin'] },
@@ -240,6 +242,9 @@ const Layout = ({ children, title }) => {
     { name: 'Email Sender', icon: Mail, path: '/email-sender', roles: ['super_admin', 'admin'] },
     { name: 'Tickets', icon: TicketsPlane, path: '/tickets', roles: ['super_admin', 'admin'] },
     { name: 'Ticket Groups', icon: Boxes, path: '/ticket-groups', roles: ['super_admin'] },
+    { name: 'Documentation', icon: BookOpenText, path: '/documentation', roles: ['super_admin', 'admin'] },
+    { name: 'Add Docs', icon: MessageCirclePlus, path: '/addDocs', roles: ['super_admin'] },
+
   ];
 
   const filteredMenuItems = menuItems.filter(item =>

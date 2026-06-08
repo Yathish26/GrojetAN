@@ -73,6 +73,8 @@ import BusinessUsers from './Admin/BusinessUsers.jsx'
 import Attendance from './Admin/Attendance.jsx'
 import AttendanceReport from './Admin/AttendanceReport.jsx'
 import XpressFranchiseRequests from './Admin/XpressFranchiseRequests.jsx'
+import Documentation from './Admin/Documentation.jsx'
+import AddDocs from './Admin/AddDocs.jsx'
 
 function App() {
   return (
@@ -212,6 +214,10 @@ function App() {
             <Route path="/settings" element={<Settings />} />
             <Route path="/app-controls" element={<AppControls />} />
             <Route path="/s3-store" element={<S3store />} />
+
+            {/* Documentation */}
+            <Route path="/documentation" element={<Documentation />} />
+            <Route path="/addDocs" element={<AddDocs />} />
 
             {/* 404 */}
             <Route path="*" element={<Error404 />} />
