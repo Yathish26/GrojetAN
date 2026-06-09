@@ -1148,9 +1148,9 @@ const XpressOrderDetails = () => {
 
   return (
     <Layout title={`Xpress Order #${order.orderNumber}`}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
         {/* Header */}
-        <div className="mb-8">
+        <div className="mb-6 sm:mb-8">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-4">
             <button
               onClick={() => navigate('/xpress')}
@@ -1159,7 +1159,7 @@ const XpressOrderDetails = () => {
               <ArrowLeft size={20} className="mr-2" />
               Back to Xpress Orders
             </button>
-            <div className="flex flex-col sm:flex-row gap-2">
+            <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
               <button
                 onClick={async () => {
                   setRefreshingOrder(true);
@@ -1173,7 +1173,7 @@ const XpressOrderDetails = () => {
                   }
                 }}
                 disabled={refreshingOrder}
-                className="flex items-center px-3 py-2 text-sm bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 disabled:opacity-50"
+                className="w-full sm:w-auto justify-center flex items-center px-3 py-2 text-sm bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 disabled:opacity-50"
               >
                 <RefreshCw size={16} className={`mr-2 ${refreshingOrder ? 'animate-spin' : ''}`} />
                 {refreshingOrder ? 'Refreshing...' : 'Refresh'}
@@ -1205,14 +1205,14 @@ const XpressOrderDetails = () => {
                     toast.error('Failed to export order');
                   }
                 }}
-                className="flex items-center px-3 py-2 text-sm bg-green-100 text-green-700 rounded-lg hover:bg-green-200"
+                className="w-full sm:w-auto justify-center flex items-center px-3 py-2 text-sm bg-green-100 text-green-700 rounded-lg hover:bg-green-200"
               >
                 <Download size={16} className="mr-2" />
                 Export to Excel
               </button>
               <button
                 onClick={handleDownloadInvoice}
-                className="flex items-center px-3 py-2 text-sm bg-red-100 text-red-700 rounded-lg hover:bg-red-200"
+                className="w-full sm:w-auto justify-center flex items-center px-3 py-2 text-sm bg-red-100 text-red-700 rounded-lg hover:bg-red-200"
               >
                 <FileText size={16} className="mr-2" />
                 Download Invoice
@@ -1222,8 +1222,8 @@ const XpressOrderDetails = () => {
 
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div>
-              <div className='flex gap-2 items-center'>
-                <h1 className="text-3xl font-bold text-gray-900">Order #{order.orderNumber} </h1>
+              <div className='flex flex-wrap gap-2 items-start sm:items-center'>
+                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 break-all">Order #{order.orderNumber} </h1>
                 {order.isFirstOrder && (
                   <div className='bg-blue-600 text-white rounded-full w-fit py-1 px-3 flex gap-2 items-center'>
                     <Star size={20} className="text-white" />
@@ -1250,7 +1250,7 @@ const XpressOrderDetails = () => {
                 </div>
               )}
             </div>
-            <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 w-full md:w-auto">
               <span className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-medium border ${getStatusColor(order.status)}`}>
                 {getStatusIcon(order.status)}
                 <span className="ml-2 capitalize">{order.status.replace('_', ' ')}</span>
@@ -1266,7 +1266,7 @@ const XpressOrderDetails = () => {
                   value={order.status}
                   onChange={(e) => updateOrderStatus(e.target.value)}
                   disabled={updating}
-                  className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50"
+                  className="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50"
                 >
                   <option value="pending">Pending</option>
                   <option value="picked_up">Picked Up</option>
@@ -1278,7 +1278,7 @@ const XpressOrderDetails = () => {
                 <button
                   onClick={() => setShowDeleteModal(true)}
                   disabled={updating}
-                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+                  className="w-full sm:w-auto px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                 >
                   <Trash2 size={16} className="mr-2" />
                   Delete Order
@@ -1343,7 +1343,7 @@ const XpressOrderDetails = () => {
                       ? 'Live Tracking'
                       : 'Route Preview'}
                   </h2>
-                  <div className="h-96 w-full rounded-lg overflow-hidden">
+                  <div className="h-72 sm:h-96 w-full rounded-lg overflow-hidden">
                     <GoogleMap
                       center={{
                         lat: (parseFloat(order.pickup.coordinates.latitude) + parseFloat(order.drop.coordinates.latitude)) / 2,
@@ -1477,8 +1477,8 @@ const XpressOrderDetails = () => {
                         }`}
                       aria-label="Delivery agent assignment"
                     >
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center">
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3">
+                        <div className="flex items-start sm:items-center">
                           <div className={`w-10 h-10 rounded-full flex items-center justify-center mr-3 ${order.assignment.status === 'accepted' ? 'bg-green-100' :
                             order.assignment.status === 'rejected' ? 'bg-red-100' :
                               'bg-yellow-100'
@@ -1535,11 +1535,11 @@ const XpressOrderDetails = () => {
                           </div>
                         </div>
                         {order.status !== 'delivered' && (
-                          <div className="flex gap-2">
+                          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
                             <button
                               onClick={refreshAssignmentStatus}
                               disabled={refreshingStatus}
-                              className="px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 disabled:opacity-50"
+                              className="w-full sm:w-auto px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 disabled:opacity-50"
                             >
                               {refreshingStatus ? 'Refreshing...' : 'Refresh Status'}
                             </button>
@@ -1547,7 +1547,7 @@ const XpressOrderDetails = () => {
                               onClick={() => {
                                 setOrder(prev => ({ ...prev, assignment: null }));
                               }}
-                              className="px-3 py-1 text-sm bg-red-100 text-red-700 rounded-lg hover:bg-red-200"
+                              className="w-full sm:w-auto px-3 py-1 text-sm bg-red-100 text-red-700 rounded-lg hover:bg-red-200"
                             >
                               Reassign
                             </button>
@@ -1578,7 +1578,7 @@ const XpressOrderDetails = () => {
                       </div>
                     ) : (
                       <div className="space-y-4">
-                        <div className="flex items-center justify-between">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                           <div>
                             <h3 className="text-lg font-medium text-gray-900">Online Agents ({agents.length})</h3>
                             <p className="text-sm text-gray-500">
@@ -1587,17 +1587,17 @@ const XpressOrderDetails = () => {
                                 : 'Showing all online agents (pickup location not available for distance sorting)'}
                             </p>
                           </div>
-                          <div className="flex gap-2">
+                          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
                             <button
                               onClick={fetchAgents}
                               disabled={Object.values(assigningAgent).some(Boolean)}
-                              className="px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 disabled:opacity-50"
+                              className="w-full sm:w-auto px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 disabled:opacity-50"
                             >
                               Refresh
                             </button>
                             <button
                               onClick={() => setShowAgentsList(false)}
-                              className="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
+                              className="w-full sm:w-auto px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
                             >
                               Hide
                             </button>
@@ -1627,7 +1627,7 @@ const XpressOrderDetails = () => {
                         ) : (
                           <div className="space-y-3 max-h-64 overflow-y-auto">
                             {agents.map((agent) => (
-                              <div key={agent._id} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50">
+                              <div key={agent._id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50">
                                 <div className="flex items-center">
                                   <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center mr-3">
                                     <div className="w-3 h-3 bg-green-500 rounded-full"></div>
@@ -1648,7 +1648,7 @@ const XpressOrderDetails = () => {
                                 <button
                                   onClick={() => assignAgent(agent._id)}
                                   disabled={Boolean(assigningAgent[agent._id])}
-                                  className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                                  className="w-full sm:w-auto px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                   {assigningAgent[agent._id] ? 'Assigning...' : 'Assign'}
                                 </button>
@@ -1679,7 +1679,7 @@ const XpressOrderDetails = () => {
                     </div>
                     <h3 className="text-lg font-medium text-gray-900">Pickup Location</h3>
                   </div>
-                  <div className="ml-11 space-y-2">
+                  <div className="ml-0 sm:ml-11 space-y-2">
                     <p className="text-sm text-gray-900 font-medium">{order.pickup?.name || 'N/A'}</p>
                     <p className="text-sm text-gray-600">{order.pickup?.address || 'N/A'}</p>
                     <p className="text-sm text-gray-600 flex items-center">
@@ -1720,7 +1720,7 @@ const XpressOrderDetails = () => {
                     </div>
                     <h3 className="text-lg font-medium text-gray-900">Drop Location</h3>
                   </div>
-                  <div className="ml-11 space-y-2">
+                  <div className="ml-0 sm:ml-11 space-y-2">
                     <p className="text-sm text-gray-900 font-medium">{order.drop?.name || 'N/A'}</p>
                     <p className="text-sm text-gray-600">{order.drop?.address || 'N/A'}</p>
                     <p className="text-sm text-gray-600 flex items-center">
@@ -1936,21 +1936,21 @@ const XpressOrderDetails = () => {
                   </div>
                 )}
                 {order.razorpayOrderId && (
-                  <div className="flex justify-between text-sm">
+                  <div className="flex flex-col sm:flex-row sm:justify-between text-sm gap-1 sm:gap-3">
                     <span className="text-gray-600">Razorpay Order ID</span>
-                    <span className="text-gray-900 font-mono text-xs">{order.razorpayOrderId}</span>
+                    <span className="text-gray-900 font-mono text-xs break-all sm:text-right">{order.razorpayOrderId}</span>
                   </div>
                 )}
                 {order.razorpayPaymentId && (
-                  <div className="flex justify-between text-sm">
+                  <div className="flex flex-col sm:flex-row sm:justify-between text-sm gap-1 sm:gap-3">
                     <span className="text-gray-600">Payment ID</span>
-                    <span className="text-gray-900 font-mono text-xs">{order.razorpayPaymentId}</span>
+                    <span className="text-gray-900 font-mono text-xs break-all sm:text-right">{order.razorpayPaymentId}</span>
                   </div>
                 )}
                 {order.razorpaySignature && (
-                  <div className="flex justify-between text-sm">
+                  <div className="flex flex-col sm:flex-row sm:justify-between text-sm gap-1 sm:gap-3">
                     <span className="text-gray-600">Signature</span>
-                    <span className="text-gray-900 font-mono text-xs break-all">{order.razorpaySignature}</span>
+                    <span className="text-gray-900 font-mono text-xs break-all sm:text-right">{order.razorpaySignature}</span>
                   </div>
                 )}
               </div>
@@ -2159,7 +2159,7 @@ const XpressOrderDetails = () => {
       {/* Cancel Order Confirmation Modal */}
       {showCancelModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg max-w-md w-full mx-4">
+          <div className="bg-white p-4 sm:p-6 rounded-lg max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center mb-4">
               <AlertCircle size={24} className="text-red-500 mr-3" />
               <h3 className="text-lg font-semibold text-gray-900">
@@ -2201,7 +2201,7 @@ const XpressOrderDetails = () => {
               </div>
             </div>
 
-            <div className="flex space-x-3">
+            <div className="flex flex-col sm:flex-row gap-3">
               <button
                 onClick={() => {
                   setShowCancelModal(false);
@@ -2237,7 +2237,7 @@ const XpressOrderDetails = () => {
       {/* Delete Order Confirmation Modal */}
       {showDeleteModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg max-w-md w-full mx-4">
+          <div className="bg-white p-4 sm:p-6 rounded-lg max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center mb-4">
               <Trash2 size={24} className="text-red-500 mr-3" />
               <h3 className="text-lg font-semibold text-gray-900">
@@ -2265,7 +2265,7 @@ const XpressOrderDetails = () => {
               </div>
             </div>
 
-            <div className="flex space-x-3">
+            <div className="flex flex-col sm:flex-row gap-3">
               <button
                 onClick={() => {
                   setShowDeleteModal(false);
@@ -2299,7 +2299,7 @@ const XpressOrderDetails = () => {
       {/* Location Edit Modal */}
       {editingLocation && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg max-w-4xl w-full mx-4">
+          <div className="bg-white p-4 sm:p-6 rounded-lg max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
             <h3 className="text-lg font-semibold mb-4">
               Change {editingLocation === 'pickup' ? 'Pickup' : 'Drop'} Location
             </h3>
@@ -2313,7 +2313,7 @@ const XpressOrderDetails = () => {
                 className="flex-1 p-2 border rounded"
               />
             </div>
-            <div className="h-96 mb-4">
+            <div className="h-72 sm:h-96 mb-4">
               <GoogleMap
                 center={{
                   lat: parseFloat(tempCoordinates.latitude),
@@ -2338,7 +2338,7 @@ const XpressOrderDetails = () => {
                 />
               </GoogleMap>
             </div>
-            <div className="flex justify-end space-x-2">
+            <div className="flex flex-col sm:flex-row sm:justify-end gap-2">
               <button
                 onClick={() => setEditingLocation(null)}
                 className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"

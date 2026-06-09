@@ -219,25 +219,25 @@ export default function Security() {
 
     return (
         <Layout title="Security">
-            <div className="p-6 space-y-6">
+            <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
                 {/* Header */}
-                <div className="bg-white rounded-lg shadow-sm border border-neutral-200 p-6">
-                    <div className="flex items-center gap-3 mb-4">
+                <div className="bg-white rounded-lg shadow-sm border border-neutral-200 p-4 sm:p-6">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-4">
                         <Shield className="w-8 h-8 text-green-600" />
-                        <h2 className="text-2xl font-bold text-neutral-900">Security Dashboard</h2>
+                        <h2 className="text-xl sm:text-2xl font-bold text-neutral-900">Security Dashboard</h2>
                     </div>
-                    <p className="text-neutral-600">
+                    <p className="text-sm sm:text-base text-neutral-600">
                         Monitor and manage security settings for the Grojet platform.
                     </p>
                 </div>
 
                 {/* Account Deletion Requests Section */}
-                <div className="bg-white rounded-lg shadow-sm border border-neutral-200 p-6">
-                    <div className="flex items-center gap-3 mb-4">
+                <div className="bg-white rounded-lg shadow-sm border border-neutral-200 p-4 sm:p-6">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-4">
                         <Trash2 className="w-6 h-6 text-red-600" />
                         <h3 className="text-lg font-semibold text-neutral-900">Account Deletion Requests</h3>
                     </div>
-                    <p className="text-neutral-600 mb-4">
+                    <p className="text-sm sm:text-base text-neutral-600 mb-4">
                         Manage user account deletion requests. Review and process pending requests.
                     </p>
 
@@ -293,24 +293,24 @@ export default function Security() {
                         <div className="space-y-4">
                             {deleteRequests.map((request) => (
                                 <div key={request._id} className="border border-neutral-200 rounded-lg p-4">
-                                    <div className="flex items-start justify-between">
+                                    <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
                                         <div className="flex-1">
-                                            <div className="flex items-center gap-2 mb-2">
+                                            <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-x-2 gap-y-1 mb-2">
                                                 <User className="w-4 h-4 text-neutral-600" />
                                                 <span className="font-medium text-neutral-900">
                                                     {request.userId?.personalInfo?.name || 'Unknown User'}
                                                 </span>
-                                                <span className="text-sm text-neutral-500">
+                                                <span className="text-sm text-neutral-500 break-all">
                                                     ({request.userId?.personalInfo?.email || 'No email'})
                                                 </span>
                                                 {request.userId?.personalInfo?.phone && (
-                                                    <span className="text-sm text-neutral-500">
+                                                    <span className="text-sm text-neutral-500 break-all">
                                                         - {request.userId.personalInfo.phone}
                                                     </span>
                                                 )}
                                             </div>
 
-                                            <div className="mb-2">
+                                            <div className="mb-2 break-words">
                                                 <span className="text-sm font-medium text-neutral-700">Reason:</span>
                                                 <span className="text-sm text-neutral-600 ml-2">{request.reason}</span>
                                             </div>
@@ -332,18 +332,18 @@ export default function Security() {
                                             </div>
                                         </div>
 
-                                        <div className="flex gap-2 ml-4">
+                                        <div className="flex flex-col sm:flex-row gap-2 w-full lg:w-auto lg:ml-4">
                                             <button
                                                 onClick={() => handleApprove(request.userId._id)}
                                                 disabled={processing === request.userId._id}
-                                                className="px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                                                className="w-full sm:w-auto px-3 py-2 bg-red-600 text-white text-sm rounded hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
                                             >
                                                 {processing === request.userId._id ? 'Processing...' : 'Delete Account'}
                                             </button>
                                             <button
                                                 onClick={() => handleReject(request.userId._id)}
                                                 disabled={processing === request.userId._id}
-                                                className="px-3 py-1 bg-green-600 text-white text-sm rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                                                className="w-full sm:w-auto px-3 py-2 bg-green-600 text-white text-sm rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
                                             >
                                                 Reject
                                             </button>
