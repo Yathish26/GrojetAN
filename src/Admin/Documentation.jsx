@@ -92,7 +92,18 @@ const Documentation = () => {
                                 <div>
                                     <h2 className="text-base font-semibold text-gray-900 mb-1">{doc.title}</h2>
                                     <p className="text-xs text-gray-400 break-all line-clamp-2">{doc.link}</p>
-                                </div>
+                                    {doc.tags.length > 0 && (
+                                        <div className="flex flex-wrap gap-2 mt-1">
+                                            {doc.tags.map((tag, index) => (
+                                                <span
+                                                    key={index}
+                                                    className="text-xs text-blue-800 bg-blue-200 px-2 py-1 rounded"
+                                                >
+                                                    {tag}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    )}                                </div>
                                 <a
                                     href={doc.link}
                                     target="_blank"

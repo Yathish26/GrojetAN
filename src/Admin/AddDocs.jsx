@@ -7,6 +7,7 @@ function AddDocs() {
     const navigate = useNavigate();
     const [title, setTitle] = useState('');
     const [link, setLink] = useState('');
+    const [tags, setTags] = useState("");
     const [submitting, setSubmitting] = useState(false);
 
     const isValidHttpUrl = (value) => {
@@ -27,6 +28,7 @@ function AddDocs() {
         if (!trimmedTitle) { toast.error('Please enter a title'); return; }
         if (!trimmedLink) { toast.error('Please enter a link'); return; }
         if (!isValidHttpUrl(trimmedLink)) { toast.error('Please enter a valid URL (http or https)'); return; }
+        if (!tags) { toast.error('Please select a tags'); return; }
 
         try {
             setSubmitting(true);
@@ -34,7 +36,7 @@ function AddDocs() {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',
-                body: JSON.stringify({ title: trimmedTitle, link: trimmedLink }),
+                body: JSON.stringify({ title: trimmedTitle, link: trimmedLink, tags: tags.split(',').map(tag => tag.trim()) }),
             });
             const data = await res.json();
             if (!res.ok) {
@@ -44,6 +46,7 @@ function AddDocs() {
             toast.success('Documentation link saved');
             setTitle('');
             setLink('');
+            setTags('');
             navigate('/documentation');
         } catch (err) {
             console.error('Submit error:', err);
@@ -75,6 +78,22 @@ function AddDocs() {
                                 maxLength={120}
                                 disabled={submitting}
                             />
+                        </div>
+
+                        <div>
+                            <label htmlFor="doc-tag" className="block text-sm font-medium text-gray-700 mb-1.5">
+                                Tags
+                            </label>
+                            <input
+                                id="doc-tag"
+                                type="text"
+                                value={tags}
+                                onChange={(e) => setTags(e.target.value)}
+                                placeholder="e.g. admin, onboarding, payments"
+                                className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                                disabled={submitting}
+                            />
+                            <p className="text-xs text-gray-500 mt-1">Enter comma-separated tags (like YouTube).</p>
                         </div>
 
                         <div>

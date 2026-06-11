@@ -65,7 +65,7 @@
         }
 
         const script = document.createElement('script');
-        script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=drawing,geometry,places&callback=initGoogleMaps`;
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=drawing,geometry,places&v=3.64&callback=initGoogleMaps`;
         script.id = 'gmaps-script';
         script.async = true;
         script.defer = true;
@@ -103,7 +103,7 @@
           return;
         }
         const staticScript = document.createElement('script');
-        staticScript.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=drawing,geometry,places&callback=initGoogleMaps`;
+        staticScript.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=drawing,geometry,places&v=3.64&callback=initGoogleMaps`;
         staticScript.id = 'gmaps-script-fallback';
         staticScript.async = true;
         staticScript.defer = true;
