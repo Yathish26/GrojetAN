@@ -51,8 +51,16 @@ const XpressOrderDetails = () => {
   const lastAgentLocationRef = useRef(null);
   const [agentLocation, setAgentLocation] = useState(null);
   const allowedRoles = ['super_admin', 'admin'];
+  const [customerId, setCustomerId] = useState(null);
   const navigate = useNavigate();
   const { id } = useParams();
+
+  const suggestions = [
+    "Delivery delayed due to rain",
+    "Your delivery is taking a little longer than expected",
+    "Your order is being assigned. All riders are currently busy",
+  ];
+
 
   const formatDate = (dateString) => {
     if (!dateString) return 'N/A';
@@ -164,6 +172,7 @@ const XpressOrderDetails = () => {
       const data = await response.json();
       if (data.success) {
         setOrder(data.order);
+        setCustomerId(data.order.userId._id);
         // Calculate directions after order is loaded
         if (data.order.pickup?.coordinates && data.order.drop?.coordinates) {
           calculateDirections(data.order.pickup.coordinates, data.order.drop.coordinates);
@@ -1088,6 +1097,45 @@ const XpressOrderDetails = () => {
         return 'Pending';
     }
   };
+  const [message, setMessage] = useState("");
+  const sendNotification = async () => {
+    if (message.trim() === "") {
+      toast.error("Please enter a notification message");
+
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_SERVER}/admin/users/${customerId}/send-notification/notoken`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            title: "Grojet",
+            message: message,
+            screen: "Homescreen",
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (response.ok) {
+        toast.success("Notification sent successfully!");
+        console.log(data);
+        setMessage("");
+      } else {
+        toast.error(data.message || "Failed to send notification");
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Something went wrong");
+    }
+  };
+
 
   const isAuthorized = allowedRoles.includes(currentUser?.role);
 
@@ -1980,9 +2028,9 @@ const XpressOrderDetails = () => {
                       .map((event, index) => (
                         <div key={index} className="flex items-start">
                           <div className={`w-3 h-3 rounded-full mr-3 mt-1 ${event.status === 'assigned' ? 'bg-blue-500' :
-                              event.status === 'accepted' ? 'bg-green-500' :
-                                event.status === 'rejected' ? 'bg-red-500' :
-                                  'bg-gray-500'
+                            event.status === 'accepted' ? 'bg-green-500' :
+                              event.status === 'rejected' ? 'bg-red-500' :
+                                'bg-gray-500'
                             }`}></div>
                           <div className="flex-1">
                             <p className="text-sm font-medium text-gray-900">
@@ -2033,9 +2081,9 @@ const XpressOrderDetails = () => {
                 {order.assignment?.agent && !order.assignmentHistory?.some(h => h.status === 'accepted') && (
                   <div className="flex items-start">
                     <div className={`w-3 h-3 rounded-full mr-3 mt-1 ${order.assignment.status === 'pending' ? 'bg-yellow-500' :
-                        order.assignment.status === 'accepted' ? 'bg-green-500' :
-                          order.assignment.status === 'rejected' ? 'bg-red-500' :
-                            'bg-gray-500'
+                      order.assignment.status === 'accepted' ? 'bg-green-500' :
+                        order.assignment.status === 'rejected' ? 'bg-red-500' :
+                          'bg-gray-500'
                       }`}></div>
                     <div className="flex-1">
                       <p className="text-sm font-medium text-gray-900">
@@ -2152,6 +2200,41 @@ const XpressOrderDetails = () => {
                 </div>
               </div>
             )}
+
+            <div className=" rounded-lg bg-white shadow-sm border p-4 md:p-6 flex justify-center flex-col items-center">
+              <p className="text-xl font-semibold text-gray-900 mb-4">Send Notifications To Customer</p>
+              <div className="relative w-64">
+                <input
+                  type="text"
+                  placeholder="Enter notification message"
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  className="w-full border border-gray-700 rounded-lg p-2 pr-10"
+                />
+
+                {message && (
+                  <X
+                    size={18}
+                    onClick={() => setMessage("")}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-gray-500 hover:text-black"
+                  />
+                )}
+              </div>
+              <div className="flex flex-wrap gap-2 mt-2 justify-center">
+                {suggestions.map((text, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setMessage(text)}
+                    className="border border-blue-500 text-blue-600 bg-blue-50 px-3 py-2 rounded-lg text-sm hover:bg-blue-100"
+                  >
+                    {text}
+                  </button>
+                ))}
+              </div>
+              <button onClick={sendNotification} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg mt-4 ">
+                Send Notification
+              </button>
+            </div>
           </div>
         </div>
       </div>
