@@ -69,6 +69,7 @@ export default function Analytics() {
   const [redirecting, setRedirecting] = useState(false);
   const allowedRoles = ['super_admin', 'admin'];
   const [productsAddedData, setProductsAddedData] = useState([]);
+  const [riderFilter, setRiderFilter] = useState("day");
 
   const fetchCurrentUser = useCallback(async () => {
     try {
@@ -299,7 +300,7 @@ export default function Analytics() {
 
   const sendDailyReport = async () => {
     if (!isAuthorized) return;
-    
+
     // Prompt for email address
     const email = prompt('Enter email address to send the daily sales report:');
     if (!email) return;
@@ -504,6 +505,64 @@ export default function Analytics() {
     }
   };
 
+  // Rider Analytics (Dummy Data)
+  const riderRideCounts = {
+    day: [18, 25, 12, 30, 21, 15, 27],
+    week: [110, 145, 92, 170, 138, 99, 160],
+    month: [480, 610, 430, 760, 590, 510, 700],
+    all: [3250, 4890, 2710, 6125, 5230, 3915, 5800],
+  };
+
+  const riderAnalyticsData = {
+    labels: ["Ramesh", "Suresh", "Akash", "Rahul", "Vijay", "Kiran", "Ajay"],
+    datasets: [
+      {
+        label:
+          riderFilter === "day"
+            ? "Rides Per Day"
+            : riderFilter === "week"
+              ? "Rides Per Week"
+              : riderFilter === "month"
+                ? "Rides Per Month"
+                : "All Time Rides",
+        data: riderRideCounts[riderFilter],
+        backgroundColor: "rgba(59,130,246,0.7)",
+        borderColor: "rgba(59,130,246,1)",
+        borderWidth: 1,
+      },
+    ],
+  };
+  const riderAnalyticsOptions = {
+    responsive: true,
+    plugins: {
+      legend: {
+        display: false,
+      },
+    },
+    scales: {
+      x: {
+        title: {
+          display: true,
+          text: "Riders",
+        },
+      },
+      y: {
+        beginAtZero: true,
+        title: {
+          display: true,
+          text:
+            riderFilter === "day"
+              ? "Rides / Day"
+              : riderFilter === "week"
+                ? "Rides / Week"
+                : riderFilter === "month"
+                  ? "Rides / Month"
+                  : "Total Rides",
+        },
+      },
+    },
+  };
+
   if (loading) {
     return (
       <Layout title="Analytics">
@@ -685,6 +744,42 @@ export default function Analytics() {
                 </div>
               )}
             </div>
+          </div>
+        </div>
+        {/* Rider Analytics */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+          {/* Header */}
+          <div className="p-4 sm:p-6 border-b border-gray-200 flex items-center justify-between">
+            <div>
+              <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                <Truck className="w-5 h-5" />
+                Rider Analytics
+              </h2>
+              <p className="text-sm text-gray-600 mt-1">
+                Number of rides completed by each rider
+              </p>
+            </div>
+
+            <select
+              value={riderFilter}
+              onChange={(e) => setRiderFilter(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+            >
+              <option value="day">Per Day</option>
+              <option value="week">Per Week</option>
+              <option value="month">Per Month</option>
+              <option value="all">All Time</option>
+            </select>
+          </div>
+
+          {/* Graph */}
+          <div className="p-4 sm:p-6">
+            <Bar
+              data={riderAnalyticsData}
+              options={riderAnalyticsOptions}
+              height={120}
+          
+            />
           </div>
         </div>
       </div>

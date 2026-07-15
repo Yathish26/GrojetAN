@@ -2201,40 +2201,42 @@ const XpressOrderDetails = () => {
               </div>
             )}
 
-            <div className=" rounded-lg bg-white shadow-sm border p-4 md:p-6 flex justify-center flex-col items-center">
-              <p className="text-xl font-semibold text-gray-900 mb-4">Send Notifications To Customer</p>
-              <div className="relative w-64">
-                <input
-                  type="text"
-                  placeholder="Enter notification message"
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  className="w-full border border-gray-700 rounded-lg p-2 pr-10"
-                />
-
-                {message && (
-                  <X
-                    size={18}
-                    onClick={() => setMessage("")}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-gray-500 hover:text-black"
+            {order.status !== 'delivered' && (
+              <div className=" rounded-lg bg-white shadow-sm border p-4 md:p-6 flex justify-center flex-col items-center">
+                <p className="text-xl font-semibold text-gray-900 mb-4">Send Notifications To Customer</p>
+                <div className="relative w-64">
+                  <input
+                    type="text"
+                    placeholder="Enter notification message"
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value)}
+                    className="w-full border border-gray-700 rounded-lg p-2 pr-10"
                   />
-                )}
+
+                  {message && (
+                    <X
+                      size={18}
+                      onClick={() => setMessage("")}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-gray-500 hover:text-black"
+                    />
+                  )}
+                </div>
+                <div className="flex flex-wrap gap-2 mt-2 justify-center">
+                  {suggestions.map((text, index) => (
+                    <button
+                      key={index}
+                      onClick={() => setMessage(text)}
+                      className="border border-blue-500 text-blue-600 bg-blue-50 px-3 py-2 rounded-lg text-sm hover:bg-blue-100"
+                    >
+                      {text}
+                    </button>
+                  ))}
+                </div>
+                <button onClick={sendNotification} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg mt-4 ">
+                  Send Notification
+                </button>
               </div>
-              <div className="flex flex-wrap gap-2 mt-2 justify-center">
-                {suggestions.map((text, index) => (
-                  <button
-                    key={index}
-                    onClick={() => setMessage(text)}
-                    className="border border-blue-500 text-blue-600 bg-blue-50 px-3 py-2 rounded-lg text-sm hover:bg-blue-100"
-                  >
-                    {text}
-                  </button>
-                ))}
-              </div>
-              <button onClick={sendNotification} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg mt-4 ">
-                Send Notification
-              </button>
-            </div>
+            )}
           </div>
         </div>
       </div>
