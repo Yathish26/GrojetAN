@@ -40,8 +40,15 @@ export default function AdminLogin() {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    setLoading(true);
     setError(null);
+
+    // Show offline message instead of trying to fetch when there's no network
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      setError('No internet connection. Please check your network and try again.');
+      return;
+    }
+
+    setLoading(true);
 
     try {
       if (!isOtpStep) {
@@ -101,7 +108,14 @@ export default function AdminLogin() {
         }
       }
     } catch (err) {
-      setError(err.message || 'An error occurred');
+      // If offline or fetch failed, show a friendly message
+      if (typeof navigator !== 'undefined' && !navigator.onLine) {
+        setError('No internet connection. Please check your network and try again.');
+      } else if (err && err.message && err.message.toLowerCase().includes('failed to fetch')) {
+        setError('Network request failed. Please check your connection.');
+      } else {
+        setError(err.message || 'An error occurred');
+      }
       console.error('Login error:', err);
     } finally {
       setLoading(false);
@@ -113,8 +127,15 @@ export default function AdminLogin() {
       setError('Please provide your ID to resend OTP');
       return;
     }
-    setResendLoading(true);
     setError(null);
+
+    // Don't attempt resend when offline
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      setError('No internet connection. Please check your network and try again.');
+      return;
+    }
+
+    setResendLoading(true);
     try {
       const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/auth/resend-login-otp`, {
         method: 'POST',
@@ -129,7 +150,13 @@ export default function AdminLogin() {
       setTimeout(() => setResendDisabled(false), 30000);
     } catch (err) {
       console.error('Resend OTP error:', err);
-      setError(err.message || 'Failed to resend OTP');
+      if (typeof navigator !== 'undefined' && !navigator.onLine) {
+        setError('No internet connection. Please check your network and try again.');
+      } else if (err && err.message && err.message.toLowerCase().includes('failed to fetch')) {
+        setError('Network request failed. Please check your connection.');
+      } else {
+        setError(err.message || 'Failed to resend OTP');
+      }
     } finally {
       setResendLoading(false);
     }
