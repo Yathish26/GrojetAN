@@ -31,14 +31,11 @@ export default function Admin() {
     };
 
     const cachedAdmin = getCachedAdmin();
-    const [userState, setUserState] = useState(() => cachedAdmin);
     const [userChecking, setUserChecking] = useState(() => !cachedAdmin);
 
     const fetchCurrentUser = useCallback(async () => {
         try {
-            if (!userState) {
-                setUserChecking(true);
-            }
+            setUserChecking(true);
             const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/auth/profile`, { credentials: 'include' });
             if (response.status === 401) {
                 setRedirecting(true);
@@ -53,7 +50,6 @@ export default function Admin() {
             }
             if (response.ok && data.admin) {
                 setCurrentUser(data.admin);
-                setUserState(data.admin);
                 try {
                     localStorage.setItem('adminUser', JSON.stringify(data.admin));
                 } catch (err) {
@@ -71,7 +67,7 @@ export default function Admin() {
         } finally {
             setUserChecking(false);
         }
-    }, [navigate, userState]);
+    }, [navigate]);
 
     useEffect(() => { fetchCurrentUser(); }, [fetchCurrentUser]);
 
