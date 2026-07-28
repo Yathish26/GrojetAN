@@ -231,18 +231,18 @@ const Logs = () => {
                 </div>
                 <div className="flex flex-col sm:flex-row sm:items-center sm:gap-3">
                   <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-                    <div className="flex items-center gap-2">
-                      <label className="text-sm text-gray-600 whitespace-nowrap">Filter by date</label>
+                    <div className="flex flex-wrap items-center gap-2 min-w-0">
+                      <label className="text-sm text-gray-600 whitespace-nowrap hidden sm:inline">Filter by date</label>
                       <input
                         type="date"
                         value={selectedDate}
                         onChange={handleDateChange}
-                        className="border border-gray-300 rounded-lg px-3 py-2 bg-white text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        className="flex-1 min-w-0 border border-gray-300 rounded-lg px-3 py-2 bg-white text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                       />
                       {selectedDate && (
                         <button
                           onClick={clearDateFilter}
-                          className="px-3 py-2 border border-gray-300 rounded-lg bg-white text-sm text-gray-700 hover:bg-gray-100"
+                          className="flex-shrink-0 px-3 py-2 border border-gray-300 rounded-lg bg-white text-sm text-gray-700 hover:bg-gray-100"
                         >
                           Clear
                         </button>
@@ -272,7 +272,7 @@ const Logs = () => {
                       </button>
                     </div>
                   </div>
-                  <div className="mt-2 sm:mt-0 flex items-center gap-2 text-sm text-gray-700">
+                  <div className="mt-2 sm:mt-0 flex flex-wrap items-center gap-2 text-sm text-gray-700 min-w-0">
                     <button
                       onClick={handlePrevPage}
                       disabled={loading || page <= 1}
@@ -300,7 +300,7 @@ const Logs = () => {
                     </button>
 
                     <label className="flex items-center gap-1">
-                      <span className="text-xs text-gray-500">Rows:</span>
+                      <span className="text-xs text-gray-500 hidden sm:inline">Rows:</span>
                       <select
                         value={limit}
                         onChange={handleLimitChange}
@@ -364,31 +364,31 @@ const Logs = () => {
               {/* Desktop table view */}
               <div className="hidden md:block overflow-x-auto">
                 <div className="max-h-[calc(100vh-250px)] overflow-y-auto">
-                  <table className="min-w-full table-fixed divide-y divide-gray-200 bg-white border border-gray-200 rounded-lg">
+                  <table className="min-w-full divide-y divide-gray-200 bg-white border border-gray-200 rounded-lg">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="w-40 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Timestamp</th>
-                    <th className="w-36 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
-                    <th className="w-24 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Platform</th>
-                    <th className="w-[12rem] px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Message</th>
-                    <th className="w-24 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Level</th>
-                    <th className="w-24 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Version</th>
+                        <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Timestamp</th>
+                        <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
+                        <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Platform</th>
+                        <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Message</th>
+                        <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Level</th>
+                        <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Version</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {logs.map((log) => (
                     <tr key={log.id}>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         <div>{log.timestampDate}</div>
                         {log.timestampTime && (
-                          <div className="text-xs font-semibold text-black-500">{log.timestampTime}</div>
+                              <div className="text-xs font-semibold text-black-500">{log.timestampTime}</div>
                         )}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{log.user}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{log.platform}</td>
-                      <td className="px-6 py-4 text-sm text-gray-900 align-top">
-                        <div className="max-w-[12rem] whitespace-pre-line break-words">{formatMessageForDisplay(log.message)}</div>
-                      </td>
+                          <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500 max-w-xs truncate">{log.user}</td>
+                          <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500">{log.platform}</td>
+                          <td className="px-4 sm:px-6 py-4 text-sm text-gray-900 align-top">
+                            <div className="max-w-xl md:max-w-2xl whitespace-pre-line break-words">{formatMessageForDisplay(log.message)}</div>
+                          </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
                           log.level === 'ERROR' ? 'bg-red-100 text-red-800' :
@@ -399,7 +399,7 @@ const Logs = () => {
                           {log.level}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{log.version}</td>
+                          <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500">{log.version}</td>
                     </tr>
                   ))}
                 </tbody>

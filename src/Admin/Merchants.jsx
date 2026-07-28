@@ -946,8 +946,9 @@ const Merchants = () => {
                                                             </div>
                                                         </td>
                                                         <td className="px-6 py-4 whitespace-nowrap">
-                                                            <span className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${getStatusColor(merchant.storeStatus)}`}>
-                                                                {getStatusIcon(merchant.storeStatus)} {merchant.storeStatus}
+                                                            <span className={`inline-flex items-center px-2 sm:px-3 py-1 text-xs font-semibold rounded-full ${getStatusColor(merchant.storeStatus)}`}>
+                                                                <span className="mr-1">{getStatusIcon(merchant.storeStatus)}</span>
+                                                                <span className="hidden sm:inline">{merchant.storeStatus}</span>
                                                             </span>
                                                         </td>
                                                         <td className="px-6 py-4 whitespace-nowrap text-center">
@@ -1004,8 +1005,9 @@ const Merchants = () => {
                                                                     </h3>
                                                                     <p className="text-sm text-gray-500 font-mono">ID: {merchant.merchantId}</p>
                                                                 </div>
-                                                                <span className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ml-2 flex-shrink-0 ${getStatusColor(merchant.storeStatus)}`}>
-                                                                    {getStatusIcon(merchant.storeStatus)} {merchant.storeStatus}
+                                                                <span className={`inline-flex items-center px-2 sm:px-3 py-1 text-xs font-semibold rounded-full ml-2 flex-shrink-0 ${getStatusColor(merchant.storeStatus)}`}>
+                                                                    <span className="mr-1">{getStatusIcon(merchant.storeStatus)}</span>
+                                                                    <span className="hidden sm:inline">{merchant.storeStatus}</span>
                                                                 </span>
                                                             </div>
 
