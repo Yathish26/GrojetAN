@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Layout from '../Components/Layout';
 import * as XLSX from 'xlsx';
-import { RotateCw } from 'lucide-react';
+import { RotateCw, Download, ChevronLeft, ChevronRight } from 'lucide-react';
 
 const Logs = () => {
   const [logs, setLogs] = useState([]);
@@ -250,42 +250,55 @@ const Logs = () => {
                     </div>
 
                     <div className="flex items-center gap-2">
-                    <button
-                      onClick={fetchLogs}
-                      disabled={loading}
-                      className="inline-flex items-center justify-center w-9 h-9 border border-gray-300 rounded-lg text-gray-700 bg-white hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-400 transition-colors disabled:opacity-60"
-                      aria-label="Refresh logs"
-                      title="Refresh logs"
-                    >
-                      <RotateCw size={16} className={loading ? 'animate-spin' : ''} />
-                    </button>
-                    <button
-                      onClick={handleExportExcel}
-                      disabled={exporting}
-                      className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors"
-                    >
-                      {exporting ? 'Exporting...' : 'Export to Excel'}
-                    </button>
+                      <button
+                        onClick={fetchLogs}
+                        disabled={loading}
+                        className="inline-flex items-center justify-center w-9 h-9 border border-gray-300 rounded-lg text-gray-700 bg-white hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-400 transition-colors disabled:opacity-60"
+                        aria-label="Refresh logs"
+                        title="Refresh logs"
+                      >
+                        <RotateCw size={16} className={loading ? 'animate-spin' : ''} />
+                      </button>
+
+                      <button
+                        onClick={handleExportExcel}
+                        disabled={exporting}
+                        className="inline-flex items-center px-3 sm:px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors"
+                        aria-label={exporting ? 'Exporting' : 'Export to Excel'}
+                        title={exporting ? 'Exporting...' : 'Export to Excel'}
+                      >
+                        <Download className="h-4 w-4 mr-0 sm:mr-2" />
+                        <span className="hidden sm:inline">{exporting ? 'Exporting...' : 'Export to Excel'}</span>
+                      </button>
                     </div>
                   </div>
                   <div className="mt-2 sm:mt-0 flex items-center gap-2 text-sm text-gray-700">
                     <button
                       onClick={handlePrevPage}
                       disabled={loading || page <= 1}
-                      className="px-3 py-1 border border-gray-300 rounded-lg bg-white hover:bg-gray-100 disabled:opacity-50"
+                      className="px-3 py-1 border border-gray-300 rounded-lg bg-white hover:bg-gray-100 disabled:opacity-50 flex items-center gap-2"
+                      title="Previous"
+                      aria-label="Previous"
                     >
-                      Previous
+                      <ChevronLeft className="h-4 w-4" />
+                      <span className="hidden sm:inline">Previous</span>
                     </button>
+
                     <span>
                       Page {page} / {pages} ({total} logs)
                     </span>
+
                     <button
                       onClick={handleNextPage}
                       disabled={loading || page >= pages}
-                      className="px-3 py-1 border border-gray-300 rounded-lg bg-white hover:bg-gray-100 disabled:opacity-50"
+                      className="px-3 py-1 border border-gray-300 rounded-lg bg-white hover:bg-gray-100 disabled:opacity-50 flex items-center gap-2"
+                      title="Next"
+                      aria-label="Next"
                     >
-                      Next
+                      <span className="hidden sm:inline">Next</span>
+                      <ChevronRight className="h-4 w-4" />
                     </button>
+
                     <label className="flex items-center gap-1">
                       <span className="text-xs text-gray-500">Rows:</span>
                       <select
@@ -320,9 +333,38 @@ const Logs = () => {
               No logs found.
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <div className="max-h-[calc(100vh-250px)] overflow-y-auto">
-                <table className="min-w-full table-fixed divide-y divide-gray-200 bg-white border border-gray-200 rounded-lg">
+            <>
+              {/* Mobile card view */}
+              <div className="md:hidden space-y-4">
+                {logs.map((log) => (
+                  <div key={log.id} className="bg-white border border-gray-200 rounded-lg p-4">
+                    <div className="flex items-start justify-between">
+                      <div className="text-sm font-medium text-gray-900">{log.user}</div>
+                      <div className="text-xs text-gray-500">{log.timestamp}</div>
+                    </div>
+                    <div className="mt-2 text-sm text-gray-700">
+                      <div className="font-medium">Platform: <span className="text-gray-600">{log.platform}</span></div>
+                      <div className="mt-2 whitespace-pre-line break-words text-sm text-gray-900">{formatMessageForDisplay(log.message)}</div>
+                    </div>
+                    <div className="mt-3 flex items-center justify-between">
+                      <div>
+                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                          log.level === 'ERROR' ? 'bg-red-100 text-red-800' :
+                          log.level === 'WARN' ? 'bg-yellow-100 text-yellow-800' :
+                          log.level === 'INFO' ? 'bg-blue-100 text-blue-800' :
+                          'bg-gray-100 text-gray-800'
+                        }`}>{log.level}</span>
+                      </div>
+                      <div className="text-xs text-gray-500">v{log.version}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Desktop table view */}
+              <div className="hidden md:block overflow-x-auto">
+                <div className="max-h-[calc(100vh-250px)] overflow-y-auto">
+                  <table className="min-w-full table-fixed divide-y divide-gray-200 bg-white border border-gray-200 rounded-lg">
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="w-40 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Timestamp</th>
@@ -364,6 +406,7 @@ const Logs = () => {
               </table>
             </div>
             </div>
+            </>
           )}
         </div>
       </div>

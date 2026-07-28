@@ -4,7 +4,7 @@ import {
     Search, Filter, Plus, Eye, Edit, Trash2, Store,
     Phone, Mail, MapPin, Star, Package, DollarSign,
     Calendar, User, MoreVertical, Download, Map, X,
-    IndianRupeeIcon, Send, Bell
+    IndianRupeeIcon, Send, Bell, ChevronLeft, ChevronRight
 } from 'lucide-react';
 import Layout from '../Components/Layout';
 import { GoogleMap, Marker } from '../Components/GoogleMapComponents';
@@ -1040,7 +1040,8 @@ const Merchants = () => {
                                                     disabled={currentPage === 1}
                                                     className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                                                 >
-                                                    Previous
+                                                    <ChevronLeft className="h-4 w-4 mr-0 sm:mr-2" />
+                                                    <span className="hidden sm:inline">Previous</span>
                                                 </button>
                                                 {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                                                     const pageNum = Math.max(1, Math.min(totalPages - 4, currentPage - 2)) + i;
@@ -1062,7 +1063,8 @@ const Merchants = () => {
                                                     disabled={currentPage * 5 >= totalMerchants}
                                                     className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                                                 >
-                                                    Next
+                                                    <span className="hidden sm:inline">Next</span>
+                                                    <ChevronRight className="h-4 w-4 ml-0 sm:ml-2" />
                                                 </button>
                                             </div>
                                         </div>

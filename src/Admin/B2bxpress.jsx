@@ -765,7 +765,7 @@ export default function B2bxpress() {
                 </div>
               </div>
               <div className="mb-4">
-                <div className="h-64 rounded-xl border border-gray-300 overflow-hidden">
+                <div className="h-48 sm:h-64 rounded-xl border border-gray-300 overflow-hidden">
                   <GoogleMap
                     center={latitude && longitude ? { lat: parseFloat(latitude), lng: parseFloat(longitude) } : { lat: 12.9141, lng: 74.8560 }}
                     zoom={8}
@@ -803,7 +803,7 @@ export default function B2bxpress() {
                 </div>
                 <p className="mt-2 text-xs text-gray-500">Click on the map to select pickup location</p>
               </div>
-              <div className="flex gap-4">
+              <div className="flex flex-col sm:flex-row gap-4">
                 <div className="flex-1">
                   <input
                     type="number"
@@ -835,8 +835,8 @@ export default function B2bxpress() {
                 />
               </div>
               <div className="mt-4 grid gap-4">
-                <div className="flex items-center gap-4">
-                  <label className="w-32 text-sm font-medium text-gray-700 whitespace-nowrap">
+                <div className="flex flex-col md:flex-row md:items-center gap-4">
+                  <label className="md:w-32 text-sm font-medium text-gray-700">
                     Sender name :
                   </label>
                   <input
@@ -848,8 +848,8 @@ export default function B2bxpress() {
                     className="flex-1 rounded-xl border border-gray-300 bg-white px-4 py-2 text-sm text-gray-900 outline-none transition focus:border-green-500 focus:ring-2 focus:ring-green-100"
                   />
                 </div>
-                <div className="flex items-center gap-4">
-                  <label className="w-32 text-sm font-medium text-gray-700 whitespace-nowrap">
+                <div className="flex flex-col md:flex-row md:items-center gap-4">
+                  <label className="md:w-32 text-sm font-medium text-gray-700">
                     Phone no :
                   </label>
                   <input
@@ -863,8 +863,8 @@ export default function B2bxpress() {
                     className="flex-1 rounded-xl border border-gray-300 bg-white px-4 py-2 text-sm text-gray-900 outline-none transition focus:border-green-500 focus:ring-2 focus:ring-green-100"
                   />
                 </div>
-                <div className="flex items-center gap-4">
-                  <label className="w-32 text-sm font-medium text-gray-700 whitespace-nowrap">
+                <div className="flex flex-col md:flex-row md:items-center gap-4">
+                  <label className="md:w-32 text-sm font-medium text-gray-700">
                     Landmark :
                   </label>
                   <input
@@ -932,8 +932,8 @@ export default function B2bxpress() {
                   />
                 </div>
               </div>
-              <div className="mb-4">
-                <div className="h-64 rounded-xl border border-gray-300 overflow-hidden">
+                <div className="mb-4">
+                <div className="h-48 sm:h-64 rounded-xl border border-gray-300 overflow-hidden">
                   <GoogleMap
                     center={dropLatitude && dropLongitude ? { lat: parseFloat(dropLatitude), lng: parseFloat(dropLongitude) } : { lat: 12.9141, lng: 74.8560 }}
                     zoom={8}
@@ -971,7 +971,7 @@ export default function B2bxpress() {
                 </div>
                 <p className="mt-2 text-xs text-gray-500">Click on the map to select drop location</p>
               </div>
-              <div className="flex gap-4">
+              <div className="flex flex-col sm:flex-row gap-4">
                 <div className="flex-1">
                   <input
                     type="number"
@@ -1003,8 +1003,8 @@ export default function B2bxpress() {
                 />
               </div>
               <div className="mt-4 grid gap-4">
-                <div className="flex items-center gap-4">
-                  <label className="w-32 text-sm font-medium text-gray-700 whitespace-nowrap">
+                <div className="flex flex-col md:flex-row md:items-center gap-4">
+                  <label className="md:w-32 text-sm font-medium text-gray-700">
                     Receiver name :
                   </label>
                   <input
@@ -1016,8 +1016,8 @@ export default function B2bxpress() {
                     className="flex-1 rounded-xl border border-gray-300 bg-white px-4 py-2 text-sm text-gray-900 outline-none transition focus:border-green-500 focus:ring-2 focus:ring-green-100"
                   />
                 </div>
-                <div className="flex items-center gap-4">
-                  <label className="w-32 text-sm font-medium text-gray-700 whitespace-nowrap">
+                <div className="flex flex-col md:flex-row md:items-center gap-4">
+                  <label className="md:w-32 text-sm font-medium text-gray-700">
                     Phone no :
                   </label>
                   <input
@@ -1031,8 +1031,8 @@ export default function B2bxpress() {
                     className="flex-1 rounded-xl border border-gray-300 bg-white px-4 py-2 text-sm text-gray-900 outline-none transition focus:border-green-500 focus:ring-2 focus:ring-green-100"
                   />
                 </div>
-                <div className="flex items-center gap-4">
-                  <label className="w-32 text-sm font-medium text-gray-700 whitespace-nowrap">
+                <div className="flex flex-col md:flex-row md:items-center gap-4">
+                  <label className="md:w-32 text-sm font-medium text-gray-700">
                     Landmark :
                   </label>
                   <input

@@ -81,6 +81,79 @@ export default function Products() {
 
   const navigate = useNavigate();
 
+  const filtersRef = useRef(null);
+
+  useEffect(() => {
+    const el = filtersRef.current;
+    if (!el) return;
+
+    let isDown = false;
+    let startX;
+    let scrollLeft;
+
+    const onMouseDown = (e) => {
+      isDown = true;
+      el.classList.add('cursor-grabbing');
+      startX = e.pageX - el.offsetLeft;
+      scrollLeft = el.scrollLeft;
+    };
+
+    const onMouseLeave = () => {
+      isDown = false;
+      el.classList.remove('cursor-grabbing');
+    };
+
+    const onMouseUp = () => {
+      isDown = false;
+      el.classList.remove('cursor-grabbing');
+    };
+
+    const onMouseMove = (e) => {
+      if (!isDown) return;
+      e.preventDefault();
+      const x = e.pageX - el.offsetLeft;
+      const walk = (x - startX) * 1; // scroll-fast multiplier
+      el.scrollLeft = scrollLeft - walk;
+    };
+
+    const onTouchStart = (e) => {
+      isDown = true;
+      startX = e.touches[0].pageX - el.offsetLeft;
+      scrollLeft = el.scrollLeft;
+    };
+
+    const onTouchMove = (e) => {
+      if (!isDown) return;
+      const x = e.touches[0].pageX - el.offsetLeft;
+      const walk = (x - startX) * 1;
+      el.scrollLeft = scrollLeft - walk;
+    };
+
+    const onTouchEnd = () => {
+      isDown = false;
+    };
+
+    el.addEventListener('mousedown', onMouseDown);
+    el.addEventListener('mouseleave', onMouseLeave);
+    el.addEventListener('mouseup', onMouseUp);
+    el.addEventListener('mousemove', onMouseMove);
+
+    el.addEventListener('touchstart', onTouchStart, { passive: true });
+    el.addEventListener('touchmove', onTouchMove, { passive: true });
+    el.addEventListener('touchend', onTouchEnd);
+
+    return () => {
+      el.removeEventListener('mousedown', onMouseDown);
+      el.removeEventListener('mouseleave', onMouseLeave);
+      el.removeEventListener('mouseup', onMouseUp);
+      el.removeEventListener('mousemove', onMouseMove);
+
+      el.removeEventListener('touchstart', onTouchStart);
+      el.removeEventListener('touchmove', onTouchMove);
+      el.removeEventListener('touchend', onTouchEnd);
+    };
+  }, []);
+
   // Current user / role guard
   const [currentUser, setCurrentUser] = useState(null);
   const [checkingUser, setCheckingUser] = useState(true);
@@ -1124,107 +1197,111 @@ export default function Products() {
                 </div>
               </div>
 
-              {/* Filters */}
-              <div className="flex flex-wrap items-center gap-4">
-                <div className="flex items-center gap-2">
-                  <Filter className="h-5 w-5 text-gray-500" />
-                  <span className="text-sm font-medium text-gray-700">Filters:</span>
-                </div>
+              {/* Filters - horizontally scrollable on small screens, draggable */}
+              <div className="-mx-6 px-6 md:mx-0 md:px-0">
+                <div className="overflow-x-auto">
+                  <div ref={filtersRef} className="flex items-center gap-4 whitespace-nowrap md:whitespace-normal md:flex-wrap cursor-grab py-2">
+                    <div className="flex items-center gap-2">
+                      <Filter className="h-5 w-5 text-gray-500" />
+                      <span className="text-sm font-medium text-gray-700">Filters:</span>
+                    </div>
 
-                {/* Category Filter */}
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-gray-600">Category:</span>
-                  <select
-                    value={filters.category}
-                    onChange={handleCategoryFilter}
-                    className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    <option value="">All Categories</option>
-                    {categorylist.map(category => (
-                      <option key={category._id} value={category._id}>
-                        {category.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Status Filter */}
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-gray-600">Status:</span>
-                  <div className="flex rounded-lg border border-gray-300 overflow-hidden">
-                    {[
-                      { key: 'all', label: 'All', color: 'bg-gray-100 text-gray-700 hover:bg-gray-200' },
-                      { key: 'active', label: 'Active', color: 'bg-green-100 text-green-700 hover:bg-green-200' },
-                      { key: 'inactive', label: 'Inactive', color: 'bg-red-100 text-red-700 hover:bg-red-200' },
-                      { key: 'no_photos', label: 'No Photos', color: 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200' },
-                      { key: 'no_tags', label: 'No Tags', color: 'bg-purple-100 text-purple-700 hover:bg-purple-200' },
-                      { key: 'no_description', label: 'No Description', color: 'bg-orange-100 text-orange-700 hover:bg-orange-200' }
-                    ].map(({ key, label, color }) => (
-                      <button
-                        key={key}
-                        onClick={() => handleStatusFilter({ target: { value: key } })}
-                        className={`px-3 py-1.5 text-xs font-medium transition-colors ${filters.status === key
-                          ? color.replace('hover:', '')
-                          : 'bg-white text-gray-600 hover:bg-gray-50'
-                          } ${key !== 'all' ? 'border-l border-gray-300' : ''}`}
+                    {/* Category Filter */}
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-gray-600">Category:</span>
+                      <select
+                        value={filters.category}
+                        onChange={handleCategoryFilter}
+                        className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       >
-                        {label}
-                      </button>
-                    ))}
+                        <option value="">All Categories</option>
+                        {categorylist.map(category => (
+                          <option key={category._id} value={category._id}>
+                            {category.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Status Filter */}
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-gray-600">Status:</span>
+                      <div className="flex rounded-lg border border-gray-300 overflow-hidden">
+                        {[
+                          { key: 'all', label: 'All', color: 'bg-gray-100 text-gray-700 hover:bg-gray-200' },
+                          { key: 'active', label: 'Active', color: 'bg-green-100 text-green-700 hover:bg-green-200' },
+                          { key: 'inactive', label: 'Inactive', color: 'bg-red-100 text-red-700 hover:bg-red-200' },
+                          { key: 'no_photos', label: 'No Photos', color: 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200' },
+                          { key: 'no_tags', label: 'No Tags', color: 'bg-purple-100 text-purple-700 hover:bg-purple-200' },
+                          { key: 'no_description', label: 'No Description', color: 'bg-orange-100 text-orange-700 hover:bg-orange-200' }
+                        ].map(({ key, label, color }) => (
+                          <button
+                            key={key}
+                            onClick={() => handleStatusFilter({ target: { value: key } })}
+                            className={`px-3 py-1.5 text-xs font-medium transition-colors ${filters.status === key
+                              ? color.replace('hover:', '')
+                              : 'bg-white text-gray-600 hover:bg-gray-50'
+                              } ${key !== 'all' ? 'border-l border-gray-300' : ''}`}
+                          >
+                            {label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Starts With Filter */}
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-gray-600">Starts with:</span>
+                      <select
+                        value={filters.startsWith}
+                        onChange={handleStartsWithFilter}
+                        className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      >
+                        <option value="all">All Letters</option>
+                        {Array.from({ length: 26 }, (_, i) => String.fromCharCode(65 + i)).map(letter => (
+                          <option key={letter} value={letter}>
+                            {letter}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Sort Filter */}
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-gray-600">Sort by:</span>
+                      <select
+                        value={filters.sort}
+                        onChange={handleSortFilter}
+                        className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      >
+                        <option value="name_asc">A - Z</option>
+                        <option value="name_desc">Z - A</option>
+                        <option value="price_asc">Price: Low to High</option>
+                        <option value="price_desc">Price: High to Low</option>
+                        <option value="created_desc">Newest First</option>
+                        <option value="created_asc">Oldest First</option>
+                        <option value="updated_desc">Last Updated First</option>
+                        <option value="updated_asc">Oldest Updated First</option>
+                      </select>
+                    </div>
+
+                    {/* Reset Filters */}
+                    <button
+                      onClick={() => {
+                        setPendingSearch('');
+                        setSearchTerm('');
+                        setFilters({ category: '', status: 'all', sort: 'name_asc', startsWith: 'all' });
+                        setPage(1);
+                        fetchProducts(1, '', { category: '', status: 'all', sort: 'name_asc', startsWith: 'all' });
+                        fetchAvailableCount();
+                      }}
+                      className="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
+                    >
+                      <RotateCcw size={14} className="mr-1" />
+                      Reset
+                    </button>
                   </div>
                 </div>
-
-                {/* Starts With Filter */}
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-gray-600">Starts with:</span>
-                  <select
-                    value={filters.startsWith}
-                    onChange={handleStartsWithFilter}
-                    className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    <option value="all">All Letters</option>
-                    {Array.from({ length: 26 }, (_, i) => String.fromCharCode(65 + i)).map(letter => (
-                      <option key={letter} value={letter}>
-                        {letter}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Sort Filter */}
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-gray-600">Sort by:</span>
-                  <select
-                    value={filters.sort}
-                    onChange={handleSortFilter}
-                    className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    <option value="name_asc">A - Z</option>
-                    <option value="name_desc">Z - A</option>
-                    <option value="price_asc">Price: Low to High</option>
-                    <option value="price_desc">Price: High to Low</option>
-                    <option value="created_desc">Newest First</option>
-                    <option value="created_asc">Oldest First</option>
-                    <option value="updated_desc">Last Updated First</option>
-                    <option value="updated_asc">Oldest Updated First</option>
-                  </select>
-                </div>
-
-                {/* Reset Filters */}
-                <button
-                  onClick={() => {
-                    setPendingSearch('');
-                    setSearchTerm('');
-                    setFilters({ category: '', status: 'all', sort: 'name_asc', startsWith: 'all' });
-                    setPage(1);
-                    fetchProducts(1, '', { category: '', status: 'all', sort: 'name_asc', startsWith: 'all' });
-                    fetchAvailableCount();
-                  }}
-                  className="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
-                >
-                  <RotateCcw size={14} className="mr-1" />
-                  Reset
-                </button>
               </div>
             </div>
           </div>

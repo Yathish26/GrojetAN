@@ -253,51 +253,153 @@ export default function Subscription() {
         </div>
 
         <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-          <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-gray-900">
-              Total Subscribers: {subscribedUsers.length}
-            </h2>
-            <div className="flex items-center space-x-2">
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Search className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  type="text"
-                  placeholder="Search by name, phone, or email..."
-                  value={searchTerm}
-                  onChange={handleSearch}
-                  className="block w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-600 sm:text-sm transition-colors"
-                  disabled={loading || searching}
-                />
-                {searchTerm && (
-                  <button
-                    onClick={clearSearch}
-                    className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                    disabled={loading || searching}
-                  >
-                    <span className="text-gray-400 hover:text-gray-600">×</span>
-                  </button>
-                )}
-                {searching && (
-                  <div className="absolute inset-y-0 right-8 flex items-center">
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+          <div className="px-6 py-4 border-b border-gray-200">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-3 md:space-y-0">
+              <h2 className="text-lg font-semibold text-gray-900">
+                Total Subscribers: {subscribedUsers.length}
+              </h2>
+
+              <div className="flex flex-col md:flex-row items-stretch md:items-center space-y-2 md:space-y-0 md:space-x-2 w-full md:w-auto">
+                <div className="relative flex-1 md:flex-initial w-full md:w-auto">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Search className="h-5 w-5 text-gray-400" />
                   </div>
-                )}
+                  <input
+                    type="text"
+                    placeholder="Search by name, phone, or email..."
+                    value={searchTerm}
+                    onChange={handleSearch}
+                    className="block w-full md:w-80 pl-10 pr-10 py-2 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-600 sm:text-sm transition-colors"
+                    disabled={loading || searching}
+                  />
+                  {searchTerm && (
+                    <button
+                      onClick={clearSearch}
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                      disabled={loading || searching}
+                      type="button"
+                    >
+                      <span className="text-gray-400 hover:text-gray-600">×</span>
+                    </button>
+                  )}
+                  {searching && (
+                    <div className="absolute inset-y-0 right-8 flex items-center">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex-shrink-0 flex items-center">
+                  <button
+                    onClick={handleExportExcel}
+                    disabled={loading || searching || isExporting || subscribedUsers.length === 0}
+                    className="inline-flex items-center px-3 sm:px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    type="button"
+                    aria-label={isExporting ? 'Exporting' : 'Export Excel'}
+                    title={isExporting ? 'Exporting...' : 'Export Excel'}
+                  >
+                    <Download className="h-4 w-4 mr-0 sm:mr-2" />
+                    <span className="hidden sm:inline">{isExporting ? 'Exporting...' : 'Export Excel'}</span>
+                  </button>
+                </div>
               </div>
-              <button
-                onClick={handleExportExcel}
-                disabled={loading || searching || isExporting || subscribedUsers.length === 0}
-                className="inline-flex items-center px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                type="button"
-              >
-                <Download className="h-4 w-4 mr-2" />
-                {isExporting ? 'Exporting...' : 'Export Excel'}
-              </button>
             </div>
           </div>
 
-          
+          {/* Mobile list view */}
+          <div className="md:hidden">
+            {subscribedUsers.length === 0 ? (
+              <div className="p-4 text-center text-gray-500">
+                <Users className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                <p>No subscribed users found</p>
+              </div>
+            ) : (
+              <div className="divide-y divide-gray-200">
+                {subscribedUsers.map((user) => {
+                  const userId = getUserId(user);
+                  const isEditing = editingUserId === userId;
+
+                  return (
+                    <div
+                      key={userId}
+                      className="p-4 hover:bg-gray-50"
+                      onClick={() => navigate(`/users/${userId}`)}
+                    >
+                      <div className="flex items-start">
+                        <div className="flex-shrink-0 h-10 w-10">
+                          <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
+                            <span className="text-sm font-medium text-blue-600">
+                              {user.name.charAt(0).toUpperCase()}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="ml-4 flex-1">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <div className="text-sm font-medium text-gray-900">{user.name}</div>
+                              <div className="text-sm text-gray-500 flex items-center"><Phone className="mr-2 h-4 w-4 text-gray-400" />{user.phone}</div>
+                            </div>
+                            <div className="text-sm text-gray-900">{user.gcoins || 0}</div>
+                          </div>
+
+                          <div className="mt-2 text-sm text-gray-600">
+                            <div className="flex items-center"><Calendar className="mr-2 h-4 w-4 text-gray-400" />{formatDate(user.subscriptionDate)}</div>
+                            <div className="mt-1">Day From: {user.dayFrom ? formatDate(user.dayFrom) : user.subscriptionDate ? formatDate(user.subscriptionDate) : '-'}</div>
+                            <div className="mt-1 flex items-center">
+                              <span className="mr-2">Day To:</span>
+                              {isEditing ? (
+                                <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                                  <input
+                                    type="date"
+                                    value={editingDayTo}
+                                    onChange={(e) => setEditingDayTo(e.target.value)}
+                                    className="rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    disabled={savingDayTo}
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={(e) => { e.stopPropagation(); handleSaveDayTo(user); }}
+                                    className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-300"
+                                    disabled={savingDayTo}
+                                    title="Save Day To"
+                                  >
+                                    {savingDayTo ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={(e) => { e.stopPropagation(); handleCancelEdit(); }}
+                                    className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-100"
+                                    disabled={savingDayTo}
+                                    title="Cancel"
+                                  >
+                                    <X className="h-4 w-4" />
+                                  </button>
+                                </div>
+                              ) : (
+                                <div className="flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
+                                  <span>{user.dayTo ? formatDate(user.dayTo) : '-'}</span>
+                                  {adminRole === 'super_admin' && (
+                                    <button
+                                      type="button"
+                                      onClick={(e) => { e.stopPropagation(); handleEditDayTo(user); }}
+                                      className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-100"
+                                      title="Edit Day To"
+                                    >
+                                      <Pencil className="h-4 w-4" />
+                                    </button>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
 
           <div className="overflow-x-auto">
             {subscribedUsers.length === 0 ? (

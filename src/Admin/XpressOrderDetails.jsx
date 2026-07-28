@@ -1196,7 +1196,7 @@ const XpressOrderDetails = () => {
 
   return (
     <Layout title={`Xpress Order #${order.orderNumber}`}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-3 sm:py-4 lg:py-6">
         {/* Header */}
         <div className="mb-6 sm:mb-8">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-4">
@@ -1384,21 +1384,21 @@ const XpressOrderDetails = () => {
             {order.pickup?.coordinates?.latitude && order.drop?.coordinates?.latitude &&
               !isNaN(parseFloat(order.pickup.coordinates.latitude)) && !isNaN(parseFloat(order.drop.coordinates.latitude)) &&
               parseFloat(order.pickup.coordinates.latitude) !== 0 && parseFloat(order.drop.coordinates.latitude) !== 0 && (
-                <div className="bg-white rounded-lg shadow-sm border p-4 md:p-6 mb-6">
+                <div className="bg-white rounded-lg shadow-sm border p-2 sm:p-4 md:p-6 mb-4">
                   <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
                     <Navigation size={20} className="mr-2" />
                     {agentLocation && order?.assignment?.agent && !['delivered', 'cancelled'].includes(order?.status || '')
                       ? 'Live Tracking'
                       : 'Route Preview'}
                   </h2>
-                  <div className="h-72 sm:h-96 w-full rounded-lg overflow-hidden">
+                  <div className="h-52 sm:h-72 md:h-96 w-full rounded-lg overflow-hidden">
                     <GoogleMap
                       center={{
                         lat: (parseFloat(order.pickup.coordinates.latitude) + parseFloat(order.drop.coordinates.latitude)) / 2,
                         lng: (parseFloat(order.pickup.coordinates.longitude) + parseFloat(order.drop.coordinates.longitude)) / 2
                       }}
                       zoom={12}
-                      style={{ height: '400px', width: '100%', border: 'none' }}
+                      style={{ height: '100%', width: '100%', border: 'none' }}
                     >
                       {/* {agentToPickupDirections && (
                         <DirectionsRenderer
@@ -2398,7 +2398,7 @@ const XpressOrderDetails = () => {
                 className="flex-1 p-2 border rounded"
               />
             </div>
-            <div className="h-72 sm:h-96 mb-4">
+            <div className="h-52 sm:h-72 mb-4">
               <GoogleMap
                 center={{
                   lat: parseFloat(tempCoordinates.latitude),

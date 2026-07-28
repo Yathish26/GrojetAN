@@ -433,18 +433,18 @@ const DeliveryRatings = () => {
                           <div className="flex-1 min-w-0">
                             <div className="flex items-start justify-between mb-2">
                               <div className="flex-1 min-w-0">
-                                <div 
+                                <div
                                   className="flex items-center gap-2 mb-1 cursor-pointer hover:text-blue-600 transition-colors"
                                   onClick={() => navigate(`/delivery-agents/${rating.deliveryAgentDbId}`)}
                                 >
                                   <Truck size={12} />
-                                  <span className="text-sm font-medium text-gray-900 truncate">
+                                  <span className="text-sm font-medium text-gray-900 whitespace-normal break-words">
                                     {rating.agentName || 'Unknown Agent'}
                                   </span>
                                 </div>
                                 <div className="flex items-center gap-2 mb-1">
                                   <User size={12} />
-                                  <span className="text-sm text-gray-600 truncate">
+                                  <span className="text-sm text-gray-600 whitespace-normal break-words">
                                     {rating.customerName || 'Unknown Customer'}
                                   </span>
                                 </div>

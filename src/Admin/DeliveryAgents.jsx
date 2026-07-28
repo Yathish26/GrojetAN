@@ -554,7 +554,7 @@ const DeliveryAgents = () => {
                   <span className="text-sm font-medium text-gray-700">Filters:</span>
                 </div>
 
-                {/* Application Status Filter */}
+                {/* Application Status Filter (responsive: icons on small screens) */}
                 <div className="flex items-center gap-2">
                   <span className="text-sm text-gray-600">Application Status:</span>
                   <div className="flex rounded-lg border border-gray-300 overflow-hidden">
@@ -567,12 +567,19 @@ const DeliveryAgents = () => {
                       <button
                         key={key}
                         onClick={() => handleFilterChange('applicationStatus', key)}
+                        title={label}
+                        aria-label={label}
                         className={`px-3 py-1.5 text-xs font-medium transition-colors ${filters.applicationStatus === key
                           ? color.replace('hover:', '')
                           : 'bg-white text-gray-600 hover:bg-gray-50'
                           } ${key !== '' ? 'border-l border-gray-300' : ''}`}
                       >
-                        {label}
+                        <span className="inline-flex items-center">
+                          {key === 'approved' && <CircleCheck className="h-4 w-4 mr-0 sm:mr-2 text-green-600" />}
+                          {key === 'rejected' && <XCircle className="h-4 w-4 mr-0 sm:mr-2 text-red-600" />}
+                          {key === 'pending' && <Clock className="h-4 w-4 mr-0 sm:mr-2 text-yellow-600" />}
+                          <span className="hidden sm:inline">{label}</span>
+                        </span>
                       </button>
                     ))}
                   </div>
