@@ -10,6 +10,8 @@ export default function Gcoins() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [editingUser, setEditingUser] = useState(null);
   const [addAmount, setAddAmount] = useState('');
   const [addReason, setAddReason] = useState('');
@@ -22,13 +24,30 @@ export default function Gcoins() {
   const navigate = useNavigate();
 
   useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm.trim());
+    }, 350);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  useEffect(() => {
     fetchUsers();
-  }, [currentPage]);
+  }, [currentPage, debouncedSearchTerm]);
 
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/users/with-gcoins?page=${currentPage}&limit=10`, {
+      const params = new URLSearchParams({
+        page: String(currentPage),
+        limit: '10'
+      });
+
+      if (debouncedSearchTerm) {
+        params.set('search', debouncedSearchTerm);
+      }
+
+      const response = await fetch(`${import.meta.env.VITE_SERVER}/admin/users/with-gcoins?${params.toString()}`, {
         credentials: 'include'
       });
 
@@ -49,6 +68,7 @@ export default function Gcoins() {
       setUsers(data.users);
       setTotalPages(data.pagination.totalPages);
       setTotalItems(data.pagination.total);
+      setError(null);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -202,9 +222,23 @@ export default function Gcoins() {
         {/* Users Section */}
         <div className="bg-white rounded-lg shadow-md">
           <div className="px-6 py-4 border-b border-gray-200">
-            <div className="flex items-center">
-              <FiClock className="w-5 h-5 text-gray-600 mr-2" />
-              <h3 className="text-lg font-semibold text-gray-900">Users with G-Coins</h3>
+            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+              <div className="flex items-center">
+                <FiClock className="w-5 h-5 text-gray-600 mr-2" />
+                <h3 className="text-lg font-semibold text-gray-900">Users with G-Coins</h3>
+              </div>
+              <div className="w-full md:w-96">
+                <input
+                  type="text"
+                  value={searchTerm}
+                  onChange={(e) => {
+                    setSearchTerm(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                  placeholder="Search by name, phone, or email"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
             </div>
           </div>
 
@@ -219,7 +253,7 @@ export default function Gcoins() {
               </div>
             ) : users.length === 0 ? (
               <div className="text-center py-8 text-gray-500">
-                No users with G-Coins found
+                {debouncedSearchTerm ? 'No matching users found' : 'No users with G-Coins found'}
               </div>
             ) : (
               <table className="min-w-full divide-y divide-gray-200">
