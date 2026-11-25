@@ -62,8 +62,6 @@ import Darkstore from './Admin/Darkstore.jsx'
 import Logs from './Admin/Logs.jsx'
 import Tags from './Admin/Tags.jsx'
 import Brands from './Admin/Brands.jsx'
-import Tickets from './Admin/Tickets.jsx'
-import TicketGroups from './Admin/TicketGroups.jsx'
 import Gcoins from './Admin/Gcoins.jsx'
 import GcoinsHistory from './Admin/GcoinsHistory.jsx'
 import B2bxpress from './Admin/B2bxpress.jsx'
@@ -202,8 +200,6 @@ function App() {
             <Route path="/super-tags/:tagName" element={<SuperTagProducts />} />
             <Route path="/tags" element={<Tags />} />
             <Route path="/brands" element={<Brands />} />
-            <Route path="/tickets" element={<Tickets />} />
-            <Route path="/ticket-groups" element={<TicketGroups />} />
 
             {/*Attendance*/}
             <Route path="/attendance" element={<Attendance />} />
